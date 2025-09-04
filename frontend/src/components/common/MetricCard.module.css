@@ -1,0 +1,94 @@
+.metricCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.metricCard:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1.2;
+}
+
+.value.blue {
+  color: #3b82f6;
+}
+
+.value.green {
+  color: #10b981;
+}
+
+.value.red {
+  color: #ef4444;
+}
+
+.subtext {
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.3;
+}
+
+.subtext.green {
+  color: #10b981;
+}
+
+.subtext.red {
+  color: #ef4444;
+}
+
+/* Compact variant */
+.metricCard.compact {
+  padding: 16px;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.metricCard.compact .content {
+  flex: 1;
+}
+
+.metricCard.compact .value {
+  font-size: 20px;
+}
+
+.metricCard.compact .icon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 0;
+}

@@ -1,0 +1,334 @@
+.stockTable {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.tableTitle {
+  padding: 20px 24px 0;
+}
+
+.tableTitle h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.table {
+  padding: 24px;
+}
+
+.tableHeader {
+  display: grid;
+  gap: 16px;
+  padding-bottom: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.tableHeader[data-type="ranking"] {
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+}
+
+.tableHeader[data-type="search"] {
+  grid-template-columns: 2fr 2fr 1fr;
+}
+
+.tableHeader[data-type="portfolio"] {
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 0.8fr 0.8fr 0.6fr 0.8fr 0.6fr;
+}
+
+.tableHeader[data-type="unregistered"] {
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 0.6fr;
+}
+
+.headerCell {
+  text-align: left;
+}
+
+.divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin-bottom: 8px;
+}
+
+.tableBody {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: grid;
+  gap: 16px;
+  padding: 12px 0;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-radius: 8px;
+}
+
+.row:hover {
+  background: #f9fafb;
+}
+
+.row.evenRow {
+  background: #f9fafb;
+}
+
+.row.evenRow:hover {
+  background: #f3f4f6;
+}
+
+/* Ranking table styles */
+.row[data-type="ranking"] {
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+}
+
+.stockInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.favoriteIcon {
+  cursor: pointer;
+}
+
+.rank {
+  font-weight: 600;
+  color: #374151;
+  min-width: 20px;
+}
+
+.logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.stockName {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.price {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.change {
+  font-weight: 500;
+}
+
+.change.positive {
+  color: #10b981;
+}
+
+.change.negative {
+  color: #ef4444;
+}
+
+.volume {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* Search table styles */
+.row[data-type="search"] {
+  grid-template-columns: 2fr 2fr 1fr;
+}
+
+.stockSearchInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stockMain {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stockCode {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.stockSector {
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.stockCategory {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.stockPrice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.priceMain {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.priceDetails {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.stockChart {
+  display: flex;
+  justify-content: center;
+}
+
+.chartPlaceholder {
+  width: 60px;
+  height: 30px;
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+/* Portfolio table styles */
+.row[data-type="portfolio"] {
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 0.8fr 0.8fr 0.6fr 0.8fr 0.6fr;
+}
+
+.row[data-type="unregistered"] {
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 0.6fr;
+}
+
+.stockInfoCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stockInfoCell .stockName {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.stockInfoCell .stockCode {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.priceCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.buyPrice {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.currentPrice {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.quantityCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.quantity {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.totalValue {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.profitCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profitRate {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.profitAmount {
+  color: #10b981;
+  font-size: 12px;
+}
+
+.weightCell {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.targetCell,
+.thresholdCell {
+  display: flex;
+}
+
+.targetInput,
+.thresholdInput {
+  width: 50px;
+  padding: 4px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.targetInput:focus,
+.thresholdInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.weightValueCell {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.excludeCell {
+  display: flex;
+  justify-content: center;
+}
+
+.excludeButton {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.excludeButton:hover {
+  background: #fef2f2;
+}
+
+.arrowIcon {
+  width: 12px;
+  height: 12px;
+}

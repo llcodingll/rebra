@@ -1,180 +1,10 @@
 import styles from './ProfitStatusPage.module.css';
-import imgPhoto14720996457855658Abf4Ff4E from "figma:asset/f2e0d0183a438e31fe7131ed2173548b7f21aea2.png";
+import { profitStatusStockData, unregisteredStocksData, rebalancingHistoryData, chartLegendData } from '../mocks/profitStatusData';
 import imgImage3 from "figma:asset/10ab81539875bd08fb11acc6c58753b6c244c1e0.png";
 import imgImage22 from "figma:asset/1ea006dc4cf62fda2e8ddd425d0178712455c473.png";
 import { imgSvg, imgSvg1, imgVector, imgVector1, imgVector2, imgVector3, imgVector4, imgVector5, imgVector6, imgVector7, imgVector8, imgVector9, imgVector10, imgFrame, imgVector11, imgVector12, imgVector13, imgVector14, imgVector15 } from "../imports/svg-fecjf";
 
 export default function ProfitStatusPage() {
-  const stockData = [
-    {
-      name: '삼성전자',
-      code: '005930',
-      buyPrice: 68000,
-      currentPrice: 71800,
-      quantity: 50,
-      totalValue: 3590000,
-      profitRate: 5.6,
-      profitAmount: 190000,
-      currentWeight: 32.1,
-      targetWeight: 30,
-      weight: 6,
-      thresholdWeight: 10,
-      logo: imgPhoto14720996457855658Abf4Ff4E
-    },
-    {
-      name: 'SK하이닉스',
-      code: '000660',
-      buyPrice: 85000,
-      currentPrice: 89500,
-      quantity: 30,
-      totalValue: 2685000,
-      profitRate: 5.3,
-      profitAmount: 135000,
-      currentWeight: 24.0,
-      targetWeight: 25,
-      weight: 5,
-      thresholdWeight: 5,
-      logo: imgPhoto14720996457855658Abf4Ff4E
-    },
-    {
-      name: 'LG에너지솔루션',
-      code: '373220',
-      buyPrice: 390000,
-      currentPrice: 412000,
-      quantity: 15,
-      totalValue: 6180000,
-      profitRate: 5.6,
-      profitAmount: 330000,
-      currentWeight: 18.5,
-      targetWeight: 20,
-      weight: 4,
-      thresholdWeight: 10,
-      logo: imgPhoto14720996457855658Abf4Ff4E
-    },
-    {
-      name: '삼성바이오로직스',
-      code: '207940',
-      buyPrice: 750000,
-      currentPrice: 789000,
-      quantity: 2,
-      totalValue: 1578000,
-      profitRate: 5.2,
-      profitAmount: 78000,
-      currentWeight: 14.1,
-      targetWeight: 15,
-      weight: 3,
-      thresholdWeight: 5,
-      logo: imgPhoto14720996457855658Abf4Ff4E
-    },
-    {
-      name: 'NAVER',
-      code: '035420',
-      buyPrice: 175000,
-      currentPrice: 183500,
-      quantity: 25,
-      totalValue: 4587500,
-      profitRate: 4.9,
-      profitAmount: 212500,
-      currentWeight: 11.4,
-      targetWeight: 10,
-      weight: 2,
-      thresholdWeight: 3,
-      logo: imgPhoto14720996457855658Abf4Ff4E
-    }
-  ];
-
-  const unregisteredStocks = [
-    {
-      name: '삼성전자',
-      code: '005930',
-      buyPrice: 68000,
-      currentPrice: 71800,
-      quantity: 50,
-      totalValue: 3590000,
-      profitRate: 5.6,
-      profitAmount: 190000,
-      logo: imgPhoto14720996457855658Abf4Ff4E
-    },
-    {
-      name: 'SK하이닉스',
-      code: '000660',
-      buyPrice: 85000,
-      currentPrice: 89500,
-      quantity: 30,
-      totalValue: 2685000,
-      profitRate: 5.3,
-      profitAmount: 135000,
-      logo: imgPhoto14720996457855658Abf4Ff4E
-    },
-    {
-      name: 'LG에너지솔루션',
-      code: '373220',
-      buyPrice: 390000,
-      currentPrice: 412000,
-      quantity: 15,
-      totalValue: 6180000,
-      profitRate: 5.6,
-      profitAmount: 330000,
-      logo: imgPhoto14720996457855658Abf4Ff4E
-    },
-    {
-      name: '삼성바이오로직스',
-      code: '207940',
-      buyPrice: 750000,
-      currentPrice: 789000,
-      quantity: 2,
-      totalValue: 1578000,
-      profitRate: 5.2,
-      profitAmount: 78000,
-      logo: imgPhoto14720996457855658Abf4Ff4E
-    },
-    {
-      name: 'NAVER',
-      code: '035420',
-      buyPrice: 175000,
-      currentPrice: 183500,
-      quantity: 25,
-      totalValue: 4587500,
-      profitRate: 4.9,
-      profitAmount: 212500,
-      logo: imgPhoto14720996457855658Abf4Ff4E
-    }
-  ];
-
-  const rebalancingHistory = [
-    {
-      date: '2024-11-15',
-      type: '자동',
-      stockCount: 3,
-      buyAmount: '+2,500,000원',
-      sellAmount: '-1,800,000원',
-      status: '성공'
-    },
-    {
-      date: '2024-10-30', 
-      type: '수동',
-      stockCount: 5,
-      buyAmount: '+3,200,000원',
-      sellAmount: '-2,900,000원',
-      status: '성공'
-    },
-    {
-      date: '2024-10-15',
-      type: '자동',
-      stockCount: 2,
-      buyAmount: '+1,200,000원',
-      sellAmount: '-800,000원',
-      status: '성공'
-    }
-  ];
-
-  const chartLegendData = [
-    { name: '삼성전자', weight: 32.1, color: '#3b82f6' },
-    { name: 'SK하이닉스', weight: 24.0, color: '#10b981' },
-    { name: 'LG에너지솔루션', weight: 18.5, color: '#f59e0b' },
-    { name: '삼성바이오로직스', weight: 14.1, color: '#ef4444' },
-    { name: 'NAVER', weight: 11.4, color: '#8b5cf6' }
-  ];
 
   return (
     <div className={styles.profitStatusPage}>
@@ -316,7 +146,7 @@ export default function ProfitStatusPage() {
             </div>
 
             <div className={styles.tableBody}>
-              {stockData.map((stock, index) => (
+              {profitStatusStockData.map((stock, index) => (
                 <div key={index} className={styles.tableRow}>
                   <div className={styles.stockInfoCell}>
                     <span className={styles.stockName}>{stock.name}</span>
@@ -389,7 +219,7 @@ export default function ProfitStatusPage() {
             </div>
 
             <div className={styles.tableBody}>
-              {unregisteredStocks.map((stock, index) => (
+              {unregisteredStocksData.map((stock, index) => (
                 <div key={index} className={styles.tableRow}>
                   <div className={styles.stockInfoCell}>
                     <span className={styles.stockName}>{stock.name}</span>
@@ -441,7 +271,7 @@ export default function ProfitStatusPage() {
             </div>
 
             <div className={styles.historyTableBody}>
-              {rebalancingHistory.map((item, index) => (
+              {rebalancingHistoryData.map((item, index) => (
                 <div key={index} className={styles.historyRow}>
                   <div className={styles.historyCell}>{item.date}</div>
                   <div className={styles.historyCell}>

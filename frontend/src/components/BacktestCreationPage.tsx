@@ -1,5 +1,10 @@
 import { useState } from 'react';
 import styles from './BacktestCreationPage.module.css';
+import Button from './common/Button';
+import Input from './common/Input';
+import Card from './common/Card';
+import { stockData } from '../mocks/stocks';
+import { portfolioData } from '../mocks/portfolio';
 import {
   imgFrame, imgFrame1, imgFrame2, imgFrame3, imgSvg
 } from '../imports/svg-l1em5';
@@ -24,29 +29,14 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
     });
   };
 
-  const stockData = [
-    { name: '삼성전자', code: '005930', sector: 'KOSPI', category: '반도체', price: '71,800원', change: '+1.2%', changeType: 'positive', volume: '1250만', marketCap: '429.0조' },
-    { name: '셀트리온', code: '068270', sector: 'KOSPI', category: '바이오', price: '145,000원', change: '-1.2%', changeType: 'negative', volume: '180만', marketCap: '62.0조' },
-    { name: '카카오', code: '035720', sector: 'KOSPI', category: '인터넷', price: '51,200원', change: '+3.5%', changeType: 'positive', volume: '210만', marketCap: '22.0조' },
-    { name: 'LG에너지솔루션', code: '373220', sector: 'KOSPI', category: '배터리', price: '412,000원', change: '+2.3%', changeType: 'positive', volume: '95만', marketCap: '96.0조' },
-    { name: 'SK하이닉스', code: '000660', sector: 'KOSPI', category: '반도체', price: '89,500원', change: '-0.8%', changeType: 'negative', volume: '820만', marketCap: '65.0조' }
-  ];
-
-  const portfolioData = [
-    { name: '삼성전자', code: '005930', buyPrice: '68,000', quantity: '30', targetWeight: '30', currentValue: '3,590,000원', threshold: '25' },
-    { name: 'SK하이닉스', code: '000660', buyPrice: '85,000', quantity: '30', targetWeight: '25', currentValue: '2,685,000원', threshold: '25' },
-    { name: 'LG에너지솔루션', code: '373220', buyPrice: '390,000', quantity: '15', targetWeight: '20', currentValue: '6,180,000원', threshold: '25' },
-    { name: '삼성바이오로직스', code: '207940', buyPrice: '750,000', quantity: '2', targetWeight: '15', currentValue: '1,578,000원', threshold: '25' },
-    { name: 'NAVER', code: '035420', buyPrice: '175,000', quantity: '25', targetWeight: '10', currentValue: '4,587,500원', threshold: '25' }
-  ];
 
   return (
     <div className={styles.backtestCreation}>
       {/* 헤더 */}
       <div className={styles.header}>
-        <button className={styles.backButton} onClick={onBack}>
+        <Button variant="ghost" onClick={onBack}>
           ← 뒤로 가기
-        </button>
+        </Button>
         <h1>백테스트 생성</h1>
       </div>
 
@@ -60,12 +50,12 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
           <div className={styles.formGrid}>
             <div className={styles.formGroup}>
               <label>테스트 이름</label>
-              <input
+              <Input
                 type="text"
                 value={backtestName}
                 onChange={(e) => setBacktestName(e.target.value)}
                 placeholder="백테스트 이름을 입력하세요"
-                className={styles.input}
+                fullWidth
               />
             </div>
 
@@ -120,10 +110,14 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
             </div>
           </div>
 
-          <button className={styles.runButton} onClick={handleRunBacktest}>
-            <img src={imgFrame3} alt="실행" />
+          <Button 
+            variant="primary" 
+            size="lg"
+            onClick={handleRunBacktest}
+            icon={<img src={imgFrame3} alt="실행" />}
+          >
             백테스트 실행
-          </button>
+          </Button>
         </div>
 
         <div className={styles.contentGrid}>

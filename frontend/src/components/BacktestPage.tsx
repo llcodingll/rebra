@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import styles from './BacktestPage.module.css';
+import { legacyBacktestData } from '../mocks/backtest';
 import { imgFrame, imgFrame1, imgFrame2, imgFrame3 } from '../imports/svg-uh39g';
 import PortfolioSelectionModal from './PortfolioSelectionModal';
 import BacktestCreationPage from './BacktestCreationPage';
@@ -11,15 +12,6 @@ export default function BacktestPage() {
   const [showResultsPage, setShowResultsPage] = useState(false);
   const [selectedPortfolio, setSelectedPortfolio] = useState<string | null>(null);
   const [selectedBacktest, setSelectedBacktest] = useState<any>(null);
-  const backtestData = Array(10).fill(null).map((_, index) => ({
-    name: '삼성전자 + SK하이닉스 포트폴리오',
-    date: '2024-01-15',
-    period: '2023.01 ~ 2024.01',
-    totalReturn: '+24.5%',
-    maxDrawdown: '-8.2%',
-    sharpeRatio: '1.45',
-    status: '완료'
-  }));
 
   const handlePortfolioModalOpen = () => {
     setIsModalOpen(true);
@@ -147,7 +139,7 @@ export default function BacktestPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {backtestData.map((item, index) => (
+                  {legacyBacktestData.map((item, index) => (
                     <tr 
                       key={index} 
                       className={`${styles.dataRow} ${styles.clickable}`}
