@@ -1,0 +1,203 @@
+.tableContainer {
+  width: 100%;
+}
+
+.tableCard {
+  background: white;
+  border: 1.199px solid rgba(0,0,0,0.1);
+  border-radius: 15.289px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.tableHeader {
+  padding: 25.181px 25.181px 6.295px;
+}
+
+.tableHeader h3 {
+  font-size: 23.982px;
+  font-family: 'Nico Moji', 'Noto Sans KR', sans-serif;
+  color: black;
+  margin: 0;
+  line-height: 16.788px;
+}
+
+.tableWrapper {
+  padding: 0 25.181px 25.181px;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.headerRow {
+  border-bottom: 1.199px solid rgba(0,0,0,0.1);
+}
+
+.headerCell {
+  padding: 8.993px 8.394px 11.392px;
+  text-align: left;
+  font-size: 14.749px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+  color: black;
+  line-height: 20.984px;
+  font-weight: normal;
+}
+
+.dataRow {
+  border-bottom: 1.199px solid rgba(0,0,0,0.1);
+}
+
+.dataRow:last-child {
+  border-bottom: none;
+}
+
+.dataCell {
+  padding: 9.893px 8.394px 11.092px;
+  vertical-align: top;
+}
+
+.stockName {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 130px;
+}
+
+.name {
+  font-size: 14.749px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+  color: black;
+  line-height: 20.984px;
+}
+
+.codeTag {
+  background: transparent;
+  border: 1.199px solid rgba(0,0,0,0.1);
+  border-radius: 8.094px;
+  padding: 3.298px 9.593px;
+  font-size: 12.591px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+  color: black;
+  text-align: center;
+  line-height: 16.788px;
+  width: fit-content;
+}
+
+.priceInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 80px;
+}
+
+.buyPrice {
+  font-size: 14.749px;
+  font-family: 'Consolas', sans-serif;
+  color: black;
+  line-height: 20.984px;
+}
+
+.currentPrice {
+  font-size: 14.749px;
+  font-family: 'Consolas', sans-serif;
+  color: #155dfc;
+  line-height: 20.984px;
+}
+
+.quantityInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 120px;
+}
+
+.quantity {
+  font-size: 14.749px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+  color: black;
+  line-height: 20.984px;
+}
+
+.value {
+  font-size: 14.749px;
+  font-family: 'Consolas', 'Noto Sans KR', sans-serif;
+  color: black;
+  line-height: 20.984px;
+}
+
+.returnInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 120px;
+}
+
+.returnWithIcon {
+  display: flex;
+  align-items: center;
+  gap: 4.197px;
+}
+
+.returnWithIcon svg {
+  width: 12.591px;
+  height: 12.591px;
+}
+
+.returnPercent {
+  font-size: 14.749px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+  color: #155dfc;
+  line-height: 20.984px;
+}
+
+.returnAmount {
+  font-size: 12.591px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+  color: #4a5565;
+  line-height: 16.788px;
+}
+
+.inputField {
+  background: #f3f3f5;
+  border: none;
+  border-radius: 8.094px;
+  padding: 10.492px 13.79px;
+  width: 67.15px;
+  height: 37.772px;
+  font-size: 14.749px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+  color: black;
+  text-align: center;
+}
+
+.inputField:focus {
+  outline: none;
+  background: white;
+  border: 1px solid #155dfc;
+}
+
+.removeButton,
+.addButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.removeButton:hover,
+.addButton:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.removeButton svg,
+.addButton svg {
+  width: 20.385px;
+  height: 20.385px;
+}

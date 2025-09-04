@@ -1,0 +1,180 @@
+.stockDetailPage {
+  background: white;
+  width: 100%;
+  min-height: 100vh;
+  padding: 32px 42px;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  color: #6b7280;
+  margin-bottom: 24px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.backButton:hover {
+  background: #f3f4f6;
+}
+
+.stockHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 40px;
+  padding: 24px 0;
+}
+
+.stockInfo {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.stockName {
+  font-size: 36px;
+  font-family: 'Sen', 'Noto Sans KR', sans-serif;
+  font-weight: bold;
+  color: #3d3d3d;
+  margin: 0;
+}
+
+.stockCode {
+  font-size: 32px;
+  font-family: 'Consolas', 'Noto Sans KR', sans-serif;
+  font-weight: bold;
+  color: #acacac;
+}
+
+.priceInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.currentPrice {
+  font-size: 48px;
+  font-family: 'Consolas', 'Noto Sans KR', sans-serif;
+  font-weight: bold;
+  color: #3d3d3d;
+  line-height: 1;
+}
+
+.priceChange {
+  font-size: 32px;
+  font-family: 'Consolas', 'Noto Sans KR', sans-serif;
+  font-weight: bold;
+  color: #ef1515;
+  line-height: 1;
+}
+
+.chartContainer {
+  display: grid;
+  grid-template-columns: 1fr 545px 401px;
+  gap: 24px;
+  height: 693px;
+}
+
+.mainChart {
+  background: white;
+  border: 4px solid #dfdfdf;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.chartImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.orderBook {
+  background: white;
+  border: 4px solid #dfdfdf;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.orderBookImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.infoPanel {
+  background: white;
+  border: 4px solid #dfdfdf;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.infoPanelImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1600px) {
+  .chartContainer {
+    grid-template-columns: 1fr;
+    grid-template-rows: 400px 300px 300px;
+    height: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .stockDetailPage {
+    padding: 16px 24px;
+  }
+
+  .stockHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .stockInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .stockName {
+    font-size: 28px;
+  }
+
+  .stockCode {
+    font-size: 24px;
+  }
+
+  .priceInfo {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .currentPrice {
+    font-size: 36px;
+  }
+
+  .priceChange {
+    font-size: 24px;
+  }
+
+  .chartContainer {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    height: auto;
+  }
+}

@@ -1,0 +1,101 @@
+.header {
+  background: white;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  padding: 14px 21px;
+  width: 100%;
+}
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.leftSection {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoIcon {
+  width: 28px;
+  height: 28px;
+  background: #030213;
+  border-radius: 6.75px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12.3px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+}
+
+.logoText {
+  font-size: 15.8px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+  color: #0f172a;
+  margin: 0;
+}
+
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.iconButton {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.iconButton img {
+  width: 14px;
+  height: 14px;
+}
+
+.badge {
+  position: absolute;
+  top: -3.5px;
+  right: -3.5px;
+  width: 17.5px;
+  height: 17.5px;
+  background: #d4183d;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 10.5px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+}
+
+.userName {
+  font-size: 14px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+  color: #0f172a;
+}

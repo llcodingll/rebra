@@ -1,0 +1,720 @@
+.profitStatusPage {
+  width: 100%;
+  background: white;
+  padding: 0;
+  margin: 0;
+}
+
+.portfolioHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 40px;
+  padding: 0 42px;
+}
+
+.portfolioTitle {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.portfolioTitle h2 {
+  font-size: 28.75px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: bold;
+  color: black;
+  margin: 0;
+}
+
+.portfolioDesc {
+  font-size: 24px;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: black;
+}
+
+.portfolioLink {
+  background: none;
+  border: none;
+  font-size: 12.578px;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #1c398e;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.rebalancingControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 90px;
+  margin-bottom: 60px;
+  padding: 40px 0;
+  background: white;
+  position: relative;
+  left: -241px;
+  width: calc(100% + 482px);
+}
+
+.controlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.controlGroup h3 {
+  font-size: 16px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  color: #4a5565;
+  margin: 0;
+}
+
+.executeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #155dfc;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  color: white;
+  font-size: 16px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  cursor: pointer;
+  box-shadow: 0px 2px 4px 0px rgba(21,93,252,0.2);
+  width: 206px;
+  height: 45px;
+}
+
+.playIcon {
+  width: 19px;
+  height: 19px;
+}
+
+.toggleContainer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.toggle {
+  position: relative;
+  width: 43px;
+  height: 21px;
+  background: #155dfc;
+  border-radius: 10.5px;
+}
+
+.toggleThumb {
+  position: absolute;
+  right: 1px;
+  top: 1.5px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0px 3.568px 5.352px 0px rgba(0,0,0,0.1);
+}
+
+.toggleLabel {
+  font-size: 17px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  color: #155dfc;
+}
+
+.periodButtons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.periodButton {
+  background: #f8f9fa;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  color: #4a5565;
+  cursor: pointer;
+  width: 47px;
+  height: 35px;
+}
+
+.periodButton.active {
+  background: #155dfc;
+  border-color: #155dfc;
+  color: white;
+}
+
+.periodInput {
+  background: #f8f9fa;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 4px;
+  padding: 8px 12px;
+  width: 59px;
+  height: 37px;
+  font-size: 13px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  color: #4a5565;
+  text-align: center;
+}
+
+.saveButton {
+  background: #155dfc;
+  border: none;
+  border-radius: 3px;
+  padding: 6px 12px;
+  color: white;
+  font-size: 12px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  width: 66px;
+  height: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.portfolioSection {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 60px;
+  padding: 0 42px;
+}
+
+.chartContainer {
+  background: white;
+  border: 4px solid #dfdfdf;
+  border-radius: 18.416px;
+  padding: 32px;
+  flex: 1;
+  position: relative;
+  height: 660px;
+}
+
+.chartImageWrapper {
+  width: 100%;
+  height: 379px;
+  margin-bottom: 32px;
+}
+
+.chartImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portfolioStats {
+  position: absolute;
+  top: 80px;
+  right: 60px;
+  width: 300px;
+}
+
+.totalReturn {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.totalReturn h3 {
+  font-size: 21.563px;
+  font-family: 'ABeeZee', 'Noto Sans KR', sans-serif;
+  color: #4a5565;
+  margin: 0 0 16px 0;
+}
+
+.returnValue {
+  font-size: 35.938px;
+  font-family: 'ABeeZee', sans-serif;
+  color: black;
+  margin: 0 0 8px 0;
+}
+
+.returnAmount {
+  font-size: 25px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  color: #0066cc;
+  margin: 0;
+}
+
+.totalAssets {
+  font-size: 21.563px;
+  font-family: 'ABeeZee', 'Noto Sans KR', sans-serif;
+  color: black;
+  margin-bottom: 32px;
+}
+
+.chartLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 292px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.legendItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.legendColor {
+  width: 15px;
+  height: 15px;
+  border-radius: 5px;
+}
+
+.legendName {
+  font-size: 17.941px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  color: black;
+}
+
+.legendWeight {
+  font-size: 17.941px;
+  font-family: 'Consolas', sans-serif;
+  color: black;
+}
+
+.recentTrades {
+  width: 400px;
+  background: white;
+  border: 1px solid rgba(0,0,0,0.3);
+  border-radius: 18px;
+  padding: 24px;
+  height: fit-content;
+}
+
+.tradeItem {
+  background: #fafbfc;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.tradeItem:last-child {
+  margin-bottom: 0;
+}
+
+.tradeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.stockName {
+  font-size: 18px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  color: black;
+  font-weight: normal;
+}
+
+.tradeResult {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.profit {
+  font-size: 14px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  color: #155dfc;
+}
+
+.loss {
+  font-size: 14px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  color: #e7000b;
+}
+
+.profitRate {
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  color: #155dfc;
+}
+
+.lossRate {
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  color: #e7000b;
+}
+
+.tradeDetail {
+  font-size: 12px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  color: #4a5565;
+}
+
+.tablesSection {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 0 42px;
+}
+
+.tableContainer {
+  background: white;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.tableHeader {
+  padding: 25px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.tableHeader h3 {
+  font-size: 24px;
+  font-family: 'Nico Moji', 'Noto Sans KR', sans-serif;
+  color: black;
+  margin: 0;
+}
+
+.table {
+  width: 100%;
+}
+
+.tableHead {
+  display: grid;
+  grid-template-columns: 228px 201px 204px 167px 124px 132px 86px 126px 112px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  background: white;
+}
+
+.columnHeader {
+  padding: 9px 8px 11px 8px;
+  font-size: 14.749px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  color: black;
+  font-weight: normal;
+}
+
+.tableBody {
+  display: flex;
+  flex-direction: column;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 228px 201px 204px 167px 124px 132px 86px 126px 112px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  align-items: center;
+  min-height: 60px;
+  padding: 8px 0;
+}
+
+.stockInfoCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 8px;
+}
+
+.stockName {
+  font-size: 14.749px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  color: black;
+  font-weight: normal;
+}
+
+.stockCode {
+  background: white;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 8px;
+  padding: 3px 10px;
+  font-size: 12.591px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+  color: black;
+  text-align: center;
+  width: fit-content;
+}
+
+.priceCell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 8px;
+}
+
+.buyPrice {
+  font-size: 14.749px;
+  font-family: 'Consolas', sans-serif;
+  color: black;
+}
+
+.currentPrice {
+  font-size: 14.749px;
+  font-family: 'Consolas', sans-serif;
+  color: #155dfc;
+}
+
+.quantityCell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 8px;
+}
+
+.quantity {
+  font-size: 14.749px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  color: black;
+}
+
+.totalValue {
+  font-size: 14.749px;
+  font-family: 'Consolas', 'Noto Sans KR', sans-serif;
+  color: black;
+}
+
+.profitCell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 8px;
+}
+
+.profitRate {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14.749px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+  color: #155dfc;
+}
+
+.arrowIcon {
+  width: 12.591px;
+  height: 12.591px;
+}
+
+.profitAmount {
+  font-size: 12.591px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  color: #4a5565;
+}
+
+.weightCell {
+  padding: 18px 8px;
+  font-size: 14.749px;
+  font-family: 'Consolas', sans-serif;
+  color: black;
+  text-align: center;
+}
+
+.targetCell {
+  padding: 11px 8px;
+}
+
+.targetInput {
+  background: #f3f3f5;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  width: 67px;
+  height: 38px;
+  font-size: 14.749px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+  color: black;
+  text-align: center;
+}
+
+.weightValueCell {
+  padding: 18px 8px;
+  font-size: 14.749px;
+  font-family: 'ABeeZee', sans-serif;
+  color: black;
+  text-align: center;
+}
+
+.thresholdCell {
+  padding: 11px 8px;
+}
+
+.thresholdInput {
+  background: #f3f3f5;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  width: 67px;
+  height: 38px;
+  font-size: 14.749px;
+  font-family: 'ABeeZee', sans-serif;
+  color: black;
+  text-align: center;
+}
+
+.excludeCell {
+  padding: 18px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.excludeIcon {
+  width: 20px;
+  height: 20px;
+  transform: scaleY(-1);
+}
+
+/* 미등록 주식 테이블 스타일 */
+.tableContainer:last-of-type .tableHead {
+  grid-template-columns: 228px 201px 204px 167px 112px;
+}
+
+.tableContainer:last-of-type .tableRow {
+  grid-template-columns: 228px 201px 204px 167px 112px;
+}
+
+.historyContainer {
+  background: white;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 13px;
+  overflow: hidden;
+  margin-top: 32px;
+}
+
+.historyHeader {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 21px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.historyIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.historyHeader h3 {
+  font-size: 14.18px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  color: black;
+  margin: 0;
+}
+
+.historyTable {
+  width: 100%;
+}
+
+.historyTableHead {
+  display: grid;
+  grid-template-columns: 210px 139px 182px 273px 273px 140px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.historyColumnHeader {
+  padding: 8px 7px 10px 7px;
+  font-size: 12.458px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  color: black;
+  font-weight: normal;
+}
+
+.historyTableBody {
+  display: flex;
+  flex-direction: column;
+}
+
+.historyRow {
+  display: grid;
+  grid-template-columns: 210px 139px 182px 273px 273px 140px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  align-items: center;
+  min-height: 40px;
+}
+
+.historyCell {
+  padding: 8px 7px;
+  font-size: 12.458px;
+  font-family: 'Segoe UI Symbol', sans-serif;
+  color: black;
+}
+
+.typeBadge {
+  background: #eceef2;
+  border-radius: 7px;
+  padding: 3px 8px;
+  font-size: 10.635px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  color: #030213;
+  text-align: center;
+}
+
+.typeBadge.manual {
+  background: white;
+  border: 1px solid rgba(0,0,0,0.1);
+  color: black;
+}
+
+.buyAmount {
+  color: #155dfc;
+  font-family: 'Consolas', 'Noto Sans KR', sans-serif;
+}
+
+.sellAmount {
+  color: #e7000b;
+  font-family: 'Consolas', 'Noto Sans KR', sans-serif;
+}
+
+.statusBadge {
+  background: white;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 7px;
+  padding: 3px 8px;
+  font-size: 10.635px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  color: #00a63e;
+  text-align: center;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1600px) {
+  .portfolioSection {
+    flex-direction: column;
+  }
+  
+  .recentTrades {
+    width: 100%;
+  }
+  
+  .rebalancingControls {
+    flex-wrap: wrap;
+    gap: 40px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .tableHead,
+  .tableRow {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .historyTableHead,
+  .historyRow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .profitStatusPage {
+    padding: 16px 24px;
+  }
+}
