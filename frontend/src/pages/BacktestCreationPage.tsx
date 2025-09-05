@@ -1,8 +1,5 @@
 import { useState } from 'react';
 import styles from './BacktestCreationPage.module.css';
-import Button from '../components/common/Button';
-import Input from '../components/common/Input';
-import Card from '../components/common/Card';
 import { stockData } from '../mocks/stocks';
 import { portfolioData } from '../mocks/portfolio';
 import {
@@ -34,9 +31,9 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
     <div className={styles.backtestCreation}>
       {/* 헤더 */}
       <div className={styles.header}>
-        <Button variant="ghost" onClick={onBack}>
+        <button className={styles.backButton} onClick={onBack}>
           ← 뒤로 가기
-        </Button>
+        </button>
         <h1>백테스트 생성</h1>
       </div>
 
@@ -50,12 +47,12 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
           <div className={styles.formGrid}>
             <div className={styles.formGroup}>
               <label>테스트 이름</label>
-              <Input
+              <input
                 type="text"
                 value={backtestName}
                 onChange={(e) => setBacktestName(e.target.value)}
                 placeholder="백테스트 이름을 입력하세요"
-                fullWidth
+                className={styles.input}
               />
             </div>
 
@@ -110,14 +107,13 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
             </div>
           </div>
 
-          <Button 
-            variant="primary" 
-            size="lg"
+          <button 
+            className={styles.primaryButton}
             onClick={handleRunBacktest}
-            icon={<img src={imgFrame3} alt="실행" />}
           >
+            <img src={imgFrame3} alt="실행" />
             백테스트 실행
-          </Button>
+          </button>
         </div>
 
         <div className={styles.contentGrid}>

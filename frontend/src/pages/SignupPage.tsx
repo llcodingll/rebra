@@ -1,6 +1,5 @@
 import kakaoIcon from 'figma:asset/b58690531dd5cbb1352f8e5c713b25639e76dae9.png';
 import AuthLayout from '../components/layout/AuthLayout';
-import Button from '../components/common/Button';
 import styles from './SignupPage.module.css';
 
 interface SignupPageProps {
@@ -26,15 +25,13 @@ export default function SignupPage({ onBack, onLogin, onSignupComplete }: Signup
       onSubmit={handleKakaoLogin}
     >
       <div className={styles.kakaoButtonContainer}>
-        <Button
-          variant="kakao"
-          size="lg"
-          fullWidth
+        <button
+          className={styles.kakaoButton}
           onClick={handleKakaoLogin}
-          icon={<img src={kakaoIcon} alt="카카오 아이콘" className={styles.kakaoIcon} />}
         >
+          <img src={kakaoIcon} alt="카카오 아이콘" className={styles.kakaoIcon} />
           카카오 계정으로 가입
-        </Button>
+        </button>
       </div>
     </AuthLayout>
   );

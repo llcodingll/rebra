@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/C:\\Users\\SSAFY\\Desktop\\새 폴더 (2)\\S13P21A406\\frontend\\src\\pages/**)",
+      "Read(/C:\\Users\\SSAFY\\Desktop\\새 폴더 (2)\\S13P21A406\\frontend\\src\\pages/**)",
+      "Read(/C:\\Users\\SSAFY\\Desktop\\새 폴더 (2)\\S13P21A406\\frontend\\src\\pages/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
