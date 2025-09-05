@@ -8,7 +8,9 @@
             "clsx": "*",
             "react": "^18.3.1",
             "react-dom": "^18.3.1",
-            "tailwind-merge": "*"
+            "react-router-dom": "^7.8.2",
+            "tailwind-merge": "*",
+            "zustand": "^5.0.8"
       },
       "devDependencies": {
             "@types/node": "^20.10.0",
