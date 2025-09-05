@@ -1,6 +1,6 @@
 import kakaoIcon from 'figma:asset/b58690531dd5cbb1352f8e5c713b25639e76dae9.png';
-import AuthLayout from './layout/AuthLayout';
-import Button from './common/Button';
+import AuthLayout from '../components/layout/AuthLayout';
+import Button from '../components/common/Button';
 import styles from './LoginPage.module.css';
 
 interface LoginPageProps {

@@ -2,19 +2,19 @@ import { useState } from 'react';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
 import MarketTicker from './components/MarketTicker';
-import DashboardPage from './components/DashboardPage';
-import BacktestPage from './components/BacktestPage';
-import SearchPage from './components/SearchPage';
-import LandingPage from './components/LandingPage';
-import SignupPage from './components/SignupPage';
-import LoginPage from './components/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import BacktestPage from './pages/BacktestPage';
+import SearchPage from './pages/SearchPage';
+import LandingPage from './pages/LandingPage';
+import SignupPage from './pages/SignupPage';
+import LoginPage from './pages/LoginPage';
 import styles from './App.module.css';
 
 type AuthState = 'landing' | 'signup' | 'login' | 'authenticated';
 type DashboardTab = 'dashboard' | 'search' | 'backtest';
 
 export default function App() {
-  const [authState, setAuthState] = useState<AuthState>('landing');
+  const [authState, setAuthState] = useState<AuthState>('authenticated');
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
 
   // 인증되지 않은 상태에서는 랜딩페이지, 로그인, 회원가입 표시

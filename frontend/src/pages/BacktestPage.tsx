@@ -2,7 +2,7 @@ import { useState } from 'react';
 import styles from './BacktestPage.module.css';
 import { legacyBacktestData } from '../mocks/backtest';
 import { imgFrame, imgFrame1, imgFrame2, imgFrame3 } from '../imports/svg-uh39g';
-import PortfolioSelectionModal from './PortfolioSelectionModal';
+import PortfolioSelectionModal from '../components/PortfolioSelectionModal';
 import BacktestCreationPage from './BacktestCreationPage';
 import BacktestResultsPage from './BacktestResultsPage';
 

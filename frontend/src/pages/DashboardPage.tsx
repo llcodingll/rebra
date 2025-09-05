@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import styles from './DashboardPage.module.css';
-import PortfolioChart from './PortfolioChart';
-import AssetTable from './AssetTable';
+import PortfolioChart from '../components/PortfolioChart';
+import AssetTable from '../components/AssetTable';
 import ProfitStatusPage from './ProfitStatusPage';
-import PortfolioSelectionModal from './PortfolioSelectionModal';
+import PortfolioSelectionModal from '../components/PortfolioSelectionModal';
 
 export default function DashboardPage() {
   const [activeSubTab, setActiveSubTab] = useState<'assets' | 'profit'>('assets');

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import styles from './BacktestCreationPage.module.css';
-import Button from './common/Button';
-import Input from './common/Input';
-import Card from './common/Card';
+import Button from '../components/common/Button';
+import Input from '../components/common/Input';
+import Card from '../components/common/Card';
 import { stockData } from '../mocks/stocks';
 import { portfolioData } from '../mocks/portfolio';
 import {
