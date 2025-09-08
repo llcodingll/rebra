@@ -46,7 +46,14 @@ export default function ProfitStatusPage() {
             <button className={styles.periodButton}>주간</button>
             <button className={`${styles.periodButton} ${styles.active}`}>월간</button>
             <button className={styles.periodButton}>연간</button>
-            <input type="number" className={styles.periodInput} defaultValue="3" />
+            <input 
+              id="period-months"
+              name="periodMonths"
+              type="number" 
+              className={styles.periodInput} 
+              defaultValue="3"
+              aria-label="기간 설정 (개월)"
+            />
             <span>개월마다</span>
             <button className={styles.saveButton}>저장</button>
           </div>
