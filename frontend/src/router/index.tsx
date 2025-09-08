@@ -10,7 +10,6 @@ const SearchPage = lazy(() => import('../pages/SearchPage'));
 const BacktestPage = lazy(() => import('../pages/BacktestPage'));
 const BacktestCreationPage = lazy(() => import('../pages/BacktestCreationPage'));
 const BacktestResultsPage = lazy(() => import('../pages/BacktestResultsPage'));
-const StockListPage = lazy(() => import('../pages/StockListPage'));
 const StockDetailPage = lazy(() => import('../pages/StockDetailPage'));
 const ProfitStatusPage = lazy(() => import('../pages/ProfitStatusPage'));
 
@@ -21,19 +20,19 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Navigate to="/login" replace />
+        element: <Navigate to='/login' replace />,
       },
       {
         path: 'landing',
-        element: <LandingPage />
+        element: <LandingPage />,
       },
       {
         path: 'signup',
-        element: <SignupPage />
+        element: <SignupPage />,
       },
       {
         path: 'login',
-        element: <LoginPage />
+        element: <LoginPage />,
       },
       {
         path: 'dashboard',
@@ -41,42 +40,38 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <DashboardPage />
+            element: <DashboardPage />,
           },
           {
             path: 'search',
-            element: <SearchPage />
+            element: <SearchPage />,
           },
           {
             path: 'backtest',
-            element: <BacktestPage />
+            element: <BacktestPage />,
           },
           {
             path: 'backtest/create',
-            element: <BacktestCreationPage />
+            element: <BacktestCreationPage />,
           },
           {
             path: 'backtest/results/:id',
-            element: <BacktestResultsPage />
-          },
-          {
-            path: 'stocks',
-            element: <StockListPage />
+            element: <BacktestResultsPage />,
           },
           {
             path: 'stocks/:symbol',
-            element: <StockDetailPage />
+            element: <StockDetailPage />,
           },
           {
             path: 'profit-status',
-            element: <ProfitStatusPage />
-          }
-        ]
+            element: <ProfitStatusPage />,
+          },
+        ],
       },
       {
         path: '*',
-        element: <Navigate to="/landing" replace />
-      }
-    ]
-  }
+        element: <Navigate to='/landing' replace />,
+      },
+    ],
+  },
 ]);

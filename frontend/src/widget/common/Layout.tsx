@@ -1,7 +1,6 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Header from './Header';
-import Navigation from './Navigation';
 import MarketTicker from './MarketTicker';
 import styles from '../../App.module.css';
 
@@ -40,8 +39,7 @@ export default function Layout() {
 
   return (
     <div className={styles.app}>
-      <Header />
-      <Navigation activeTab={activeTab} onTabChange={handleTabChange} />
+      <Header activeTab={activeTab} onTabChange={handleTabChange} />
       <MarketTicker />
       <main className={styles.main}>
         <Outlet />
