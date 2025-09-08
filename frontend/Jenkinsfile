@@ -5,34 +5,91 @@ pipeline {
         PROJECT_DIR = "${env.WORKSPACE}/frontend"
         BUILD_DIR = "${PROJECT_DIR}/build"
         DEPLOY_DIR = "/var/www/html"
+        FRONTEND_CHANGED = 'false'
+        BUILD_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
-        stage('Checkout') {
+        stage('🔍 변경사항 감지') {
             steps {
-                git branch: 'develop', 
-                    url: 'https://lab.ssafy.com/s13-fintech-finance-sub1/S13P21A406.git',
-                    credentialsId: 'gitlab-token'
+                script {
+                    echo "=== 프론트엔드 변경 감지 중 ==="
+                    def changes = []
+                    try {
+                        changes = sh(
+                            script: "git diff --name-only HEAD~1 HEAD || git ls-files",
+                            returnStdout: true
+                        ).trim().split('\n')
+                    } catch(Exception e) {
+                        echo "첫 빌드이거나 diff 실패: ${e.getMessage()}"
+                        changes = sh(
+                            script: "git ls-files",
+                            returnStdout: true
+                        ).trim().split('\n')
+                    }
+
+                    changes.each { file ->
+                        if (file.startsWith('frontend/')) {
+                            env.FRONTEND_CHANGED = 'true'
+                            echo "→ 프론트엔드 변경 감지: ${file}"
+                        }
+                    }
+
+                    echo "프론트엔드 변경 여부: ${env.FRONTEND_CHANGED}"
+                }
             }
         }
 
-        stage('Install') {
+        stage('💻 Install & Build') {
+            when {
+                environment name: 'FRONTEND_CHANGED', value: 'true'
+            }
             steps {
-                sh "cd ${PROJECT_DIR} && npm install"
+                sh """
+                    cd ${PROJECT_DIR}
+                    npm install
+                    npm run build
+                """
             }
         }
 
-        stage('Build') {
+        stage('🐳 Docker 이미지 빌드') {
+            when {
+                environment name: 'FRONTEND_CHANGED', value: 'true'
+            }
             steps {
-                sh "cd ${PROJECT_DIR} && npm run build"
+                script {
+                    dir("${PROJECT_DIR}") {
+                        sh """
+                            docker build -t frontend:${BUILD_TAG} .
+                            docker tag frontend:${BUILD_TAG} frontend:latest
+                            echo "✅ Docker 이미지 생성 완료"
+                        """
+                    }
+                }
             }
         }
 
-        stage('Deploy') {
-            steps {
-                sh "sudo rsync -avz --delete ${BUILD_DIR}/ ${DEPLOY_DIR}/"
-                sh "sudo systemctl restart nginx"
+        stage('🚀 배포') {
+            when {
+                environment name: 'FRONTEND_CHANGED', value: 'true'
             }
+            steps {
+                sh """
+                    sudo rsync -avz --delete ${BUILD_DIR}/ ${DEPLOY_DIR}/
+                    sudo systemctl restart nginx
+                    echo "✅ 배포 완료"
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 빌드/배포 성공: 프론트엔드"
+        }
+        failure {
+            echo "❌ 빌드/배포 실패! 로그 확인 필요"
         }
     }
 }
