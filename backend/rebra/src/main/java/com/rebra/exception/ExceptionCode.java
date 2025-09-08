@@ -7,11 +7,16 @@ import org.springframework.http.HttpStatus;
 public enum ExceptionCode {
 
     // ==== User 관련 ====
-    USER_NOT_FOUND(6001, "사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    USER_NOT_FOUND(6001, "사용자를 찾을수 없습니다.", HttpStatus.NOT_FOUND),
     UNAUTHORIZED_ACCESS(6003, "인증이 필요합니다.", HttpStatus.UNAUTHORIZED),
     ACCESS_DENIED(6004, "접근이 거부되었습니다.", HttpStatus.FORBIDDEN),
     INVALID_USER_FORMAT(6005, "잘못된 사용자 ID 형식입니다.", HttpStatus.BAD_REQUEST),
-    NOT_LOGGED_IN(8006, "로그인이 필요합니다.", HttpStatus.BAD_REQUEST);
+    NOT_LOGGED_IN(8006, "로그인이 필요합니다.", HttpStatus.BAD_REQUEST),
+
+    // ==== OAuth2 관련 ====
+    MISSING_AUTHORIZATION_CODE(7001, "인가코드가 필요합니다.", HttpStatus.BAD_REQUEST),
+    UNSUPPORTED_PRINCIPAL_TYPE(7002, "지원하지 않는 principal 타입입니다.", HttpStatus.BAD_REQUEST),
+    INVALID_ID_TOKEN(7003, "ID 토큰 검증에 실패했습니다.", HttpStatus.UNAUTHORIZED);
 
     private final int code;
     private final String message;

@@ -22,33 +22,36 @@ public class GlobalExceptionHandler {
     public ResponseEntity<CommonApiResponse<Void>> handleMissingParams(MissingServletRequestParameterException ex) {
         String message = ex.getParameterName() + " parameter is missing";
         log.warn("Missing parameter: {}", ex.getParameterName());
-        return ResponseEntity.badRequest().body(CommonApiResponse.fail(400, message));
+        return ResponseEntity.badRequest().body(
+                CommonApiResponse.error("MISSING_PARAMETER", message, HttpStatus.BAD_REQUEST));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<CommonApiResponse<Void>> handleBadRequest(IllegalArgumentException ex) {
         log.warn("Bad request: {}", ex.getMessage());
-        return ResponseEntity.badRequest().body(CommonApiResponse.fail(400, ex.getMessage()));
+        return ResponseEntity.badRequest().body(
+                CommonApiResponse.error("BAD_REQUEST", ex.getMessage(), HttpStatus.BAD_REQUEST));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<CommonApiResponse<Void>> handleServerError(Exception ex) {
         log.error("Internal server error", ex);
         return ResponseEntity.internalServerError()
-                .body(CommonApiResponse.fail(500, "Internal Server Error"));
+                .body(CommonApiResponse.error("INTERNAL_SERVER_ERROR", "Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR));
     }
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<CommonApiResponse<Void>> handleRuntime(RuntimeException ex) {
         log.error("Runtime exception: {}", ex.getMessage(), ex);
         return ResponseEntity.internalServerError()
-                .body(CommonApiResponse.fail(500, ex.getMessage()));
+                .body(CommonApiResponse.error("RUNTIME_ERROR", ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR));
     }
 
     @ExceptionHandler(UserException.class)
     public ResponseEntity<CommonApiResponse<Void>> handleUserException(UserException e) {
         log.warn("User exception: {}", e.getMessage());
-        return buildCommonResponse(e.getExceptionCode());
+        return ResponseEntity.status(e.getStatus())
+                .body(CommonApiResponse.error(e));
     }
 
 
@@ -63,12 +66,7 @@ public class GlobalExceptionHandler {
         log.warn("Validation failed with {} errors", errors.size());
         
         return ResponseEntity.badRequest()
-                .body(CommonApiResponse.fail(400, "입력 데이터 검증에 실패했습니다.", errorResponse));
+                .body(CommonApiResponse.error("VALIDATION_FAILED", "입력 데이터 검증에 실패했습니다.", errorResponse, HttpStatus.BAD_REQUEST));
     }
 
-    // 공통 응답 생성 메서드 (CommonApiResponse 사용)
-    private ResponseEntity<CommonApiResponse<Void>> buildCommonResponse(ExceptionCode code) {
-        return ResponseEntity.status(code.getStatus())
-                .body(CommonApiResponse.fail(code.getStatus().value(), code.getMessage()));
-    }
 }
