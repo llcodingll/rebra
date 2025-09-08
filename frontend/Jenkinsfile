@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+
+    environment {
+        PROJECT_DIR = "${env.WORKSPACE}/frontend"
+        BUILD_DIR = "${PROJECT_DIR}/build"
+        DEPLOY_DIR = "/var/www/html"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'develop', 
+                    url: 'https://lab.ssafy.com/s13-fintech-finance-sub1/S13P21A406.git',
+                    credentialsId: 'gitlab-token'
+            }
+        }
+
+        stage('Install') {
+            steps {
+                sh "cd ${PROJECT_DIR} && npm install"
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh "cd ${PROJECT_DIR} && npm run build"
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh "sudo rsync -avz --delete ${BUILD_DIR}/ ${DEPLOY_DIR}/"
+                sh "sudo systemctl restart nginx"
+            }
+        }
+    }
+}
