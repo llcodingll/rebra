@@ -4,7 +4,7 @@ import { stockData } from '../mocks/stocks';
 import { portfolioData } from '../mocks/portfolio';
 import {
   imgFrame, imgFrame1, imgFrame2, imgFrame3, imgSvg
-} from '../imports/svg-l1em5';
+} from '../assets/imports/svg-l1em5';
 
 interface BacktestCreationPageProps {
   onBack: () => void;
@@ -143,9 +143,7 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
                     <div className={styles.stockMain}>
                       <span className={styles.stockName}>{stock.name}</span>
                       <span className={styles.stockCode}>{stock.code}</span>
-                      <span className={styles.stockSector}>{stock.sector}</span>
                     </div>
-                    <div className={styles.stockCategory}>{stock.category}</div>
                   </div>
 
                   <div className={styles.stockPrice}>
@@ -157,7 +155,6 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
                     </div>
                     <div className={styles.priceDetails}>
                       <span>거래량: {stock.volume}</span>
-                      <span>시총: {stock.marketCap}</span>
                     </div>
                   </div>
 
@@ -184,7 +181,7 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
                 <div className={styles.headerCell}>종목명</div>
                 <div className={styles.headerCell}>매수가</div>
                 <div className={styles.headerCell}>수량(주)</div>
-                <div className={styles.headerCell}>목표 비중(%)</div>
+                <div className={styles.headerCell}>가중치(%)</div>
                 <div className={styles.headerCell}>평가금액</div>
                 <div className={styles.headerCell}>임계값(%)</div>
                 <div className={styles.headerCell}>삭제</div>
@@ -234,8 +231,6 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
             </div>
 
             <div className={styles.portfolioSummary}>
-              <span>목표 비중 합계: </span>
-              <span className={styles.summaryGreen}>100% </span>
               <span>총 금액 합계: </span>
               <span className={styles.summaryGreen}>100만원</span>
             </div>

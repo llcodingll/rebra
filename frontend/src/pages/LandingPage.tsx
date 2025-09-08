@@ -1,4 +1,4 @@
-import { imgVector, imgVector1, imgVector2, imgVector3, imgSvg, imgSvg1, imgSvg2, imgSvg3, imgSvg4, imgSvg5, imgSvg6, imgImage, imgVector4, imgVector5, imgVector6, imgVector7, imgVector8, imgVector9 } from '../imports/svg-25rg9';
+import { imgVector, imgVector1, imgVector2, imgVector3, imgSvg, imgSvg1, imgSvg2, imgSvg3, imgSvg4, imgSvg5, imgSvg6, imgImage, imgVector4, imgVector5, imgVector6, imgVector7, imgVector8, imgVector9 } from '../assets/imports/svg-25rg9';
 import styles from './LandingPage.module.css';
 
 interface LandingPageProps {
@@ -20,7 +20,7 @@ export default function LandingPage({ onSignup, onLogin }: LandingPageProps) {
 //           <div className={styles.leftSection}>
 //             <div className={styles.logo}>
 //               <div className={styles.logoIcon}>R</div>
-//               <span className={styles.logoText}>ReBalance Pro</span>
+//               <span className={styles.logoText}>Rebra</span>
 //             </div>
             
 //             <div className={styles.navigation}>
@@ -116,7 +116,7 @@ export default function LandingPage({ onSignup, onLogin }: LandingPageProps) {
 //         <section id="features" className={styles.featuresSection}>
 //           <div className={styles.sectionContainer}>
 //             <div className={styles.sectionHeader}>
-//               <h2>왜 ReBalance Pro인가요?</h2>
+//               <h2>왜 Rebra인가요?</h2>
 //               <p>복잡한 투자 관리를 간단하게 만들어주는 스마트한 기능들</p>
 //             </div>
             
@@ -333,7 +333,7 @@ export default function LandingPage({ onSignup, onLogin }: LandingPageProps) {
 //         <section className={styles.ctaSection}>
 //           <div className={styles.ctaContainer}>
 //             <h2>더 스마트한 투자, 지금 시작하세요</h2>
-//             <p>14일 무료 체험으로 ReBalance Pro의 모든 기능을 경험해보세요</p>
+//             <p>14일 무료 체험으로 Rebra의 모든 기능을 경험해보세요</p>
 //             <div className={styles.ctaButtons}>
 //               <button className={styles.ctaPrimary} onClick={onSignup}>
 //                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -357,7 +357,7 @@ export default function LandingPage({ onSignup, onLogin }: LandingPageProps) {
 //             <div className={styles.footerBrand}>
 //               <div className={styles.footerLogo}>
 //                 <div className={styles.logoIcon}>R</div>
-//                 <span className={styles.logoText}>ReBalance Pro</span>
+//                 <span className={styles.logoText}>Rebra</span>
 //               </div>
 //               <p>AI 기반 포트폴리오 자동 리밸런싱으로 더 스마트한 투자를 시작하세요.</p>
 //             </div>
@@ -396,7 +396,7 @@ export default function LandingPage({ onSignup, onLogin }: LandingPageProps) {
 //           </div>
 
 //           <div className={styles.footerBottom}>
-//             <span>© 2024 ReBalance Pro. All rights reserved.</span>
+//             <span>© 2024 Rebra. All rights reserved.</span>
 //             <div className={styles.footerBottomLinks}>
 //               <a href="#privacy">개인정보처리방침</a>
 //               <a href="#terms">이용약관</a>

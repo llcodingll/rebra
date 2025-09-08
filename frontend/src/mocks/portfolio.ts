@@ -1,4 +1,13 @@
-import { PortfolioItem } from '../types';
+interface PortfolioItem {
+  name: string;
+  code: string;
+  buyPrice: string;
+  quantity: string;
+  targetWeight: string;
+  currentValue: string;
+  threshold: string;
+}
+
 
 export const portfolioData: PortfolioItem[] = [
   { 

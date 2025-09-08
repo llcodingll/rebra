@@ -47,7 +47,7 @@ export default function AuthLayout({
           <div className={styles.brandSection}>
             <div className={styles.logo}>
               <div className={styles.logoIcon}>R</div>
-              <span className={styles.logoText}>ReBalance Pro</span>
+              <span className={styles.logoText}>Rebra</span>
             </div>
 
             <div className={styles.heroContent}>

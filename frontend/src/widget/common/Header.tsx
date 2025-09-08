@@ -1,5 +1,5 @@
 import styles from './Header.module.css';
-import { imgSvg, imgSvg1 } from '../imports/svg-jp00s';
+import { imgSvg, imgSvg1 } from '../../assets/imports/svg-jp00s';
 import imgPhoto14720996457855658Abf4Ff4E from "figma:asset/f2e0d0183a438e31fe7131ed2173548b7f21aea2.png";
 
 export default function Header() {
@@ -11,7 +11,7 @@ export default function Header() {
             <div className={styles.logoIcon}>
               <span>R</span>
             </div>
-            <h1 className={styles.logoText}>ReBalance Pro</h1>
+            <h1 className={styles.logoText}>Rebra</h1>
           </div>
         </div>
         
