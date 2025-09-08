@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import Header from './components/Header';
-import Navigation from './components/Navigation';
-import MarketTicker from './components/MarketTicker';
+import Header from './widget/common/Header';
+import Navigation from './widget/common/Navigation';
+import MarketTicker from './widget/common/MarketTicker';
 import DashboardPage from './pages/DashboardPage';
 import BacktestPage from './pages/BacktestPage';
 import SearchPage from './pages/SearchPage';

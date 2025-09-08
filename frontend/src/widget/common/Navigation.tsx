@@ -1,5 +1,5 @@
 import styles from './Navigation.module.css';
-import { imgVector, imgVector1, imgVector2, imgVector3, imgVector4, imgVector5, imgVector6, imgVector7, imgVector8 } from '../imports/svg-jp00s';
+import { imgVector, imgVector1, imgVector2, imgVector3, imgVector4, imgVector5, imgVector6, imgVector7, imgVector8 } from '../../assets/imports/svg-jp00s';
 
 interface NavigationProps {
   activeTab: 'dashboard' | 'search' | 'backtest';

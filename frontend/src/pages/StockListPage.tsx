@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import styles from './StockListPage.module.css';
 import { stockListData, simpleNewsData } from '../mocks/stockListData';
-import { imgIconHeroiconsMiniHttpsHeroiconsCom, imgIconHeroiconsMiniHttpsHeroiconsCom1, imgIconHeroiconsMiniHttpsHeroiconsCom2, imgIconHeroiconsMiniHttpsHeroiconsCom3, imgIconHeroiconsMiniHttpsHeroiconsCom4 } from '../imports/svg-tn9np';
+import { imgIconHeroiconsMiniHttpsHeroiconsCom, imgIconHeroiconsMiniHttpsHeroiconsCom1, imgIconHeroiconsMiniHttpsHeroiconsCom2, imgIconHeroiconsMiniHttpsHeroiconsCom3, imgIconHeroiconsMiniHttpsHeroiconsCom4 } from '../assets/imports/svg-tn9np';
 
 interface StockListPageProps {
   onStockSelect: (stockCode: string) => void;

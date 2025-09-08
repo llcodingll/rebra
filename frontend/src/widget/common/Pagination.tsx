@@ -1,3 +1,4 @@
+import React from 'react';
 import styles from './Pagination.module.css';
 
 interface PaginationProps {
@@ -32,7 +33,7 @@ export default function Pagination({
   const renderPageNumbers = () => {
     if (!showNumbers) return null;
 
-    const pages = [];
+    const pages: React.ReactNode[] = [];
     const maxVisiblePages = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);

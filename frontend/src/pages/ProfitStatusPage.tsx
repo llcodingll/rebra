@@ -2,7 +2,7 @@ import styles from './ProfitStatusPage.module.css';
 import { profitStatusStockData, unregisteredStocksData, rebalancingHistoryData, chartLegendData } from '../mocks/profitStatusData';
 import imgImage3 from "figma:asset/10ab81539875bd08fb11acc6c58753b6c244c1e0.png";
 import imgImage22 from "figma:asset/1ea006dc4cf62fda2e8ddd425d0178712455c473.png";
-import { imgSvg, imgSvg1, imgVector, imgVector1, imgVector2, imgVector3, imgVector4, imgVector5, imgVector6, imgVector7, imgVector8, imgVector9, imgVector10, imgFrame, imgVector11, imgVector12, imgVector13, imgVector14, imgVector15 } from "../imports/svg-fecjf";
+import { imgSvg, imgSvg1, imgVector, imgVector1, imgVector2, imgVector3, imgVector4, imgVector5, imgVector6, imgVector7, imgVector8, imgVector9, imgVector10, imgFrame, imgVector11, imgVector12, imgVector13, imgVector14, imgVector15 } from "../assets/imports/svg-fecjf";
 
 export default function ProfitStatusPage() {
 

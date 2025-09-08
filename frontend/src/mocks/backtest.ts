@@ -1,4 +1,31 @@
-import { BacktestResult, RebalancingHistory, ChartLegendData } from '../types';
+export interface BacktestResult {
+  id: number;
+  name: string;
+  portfolio: string;
+  period: string;
+  startDate: string;
+  endDate: string;
+  finalReturn: string;
+  maxDrawdown: string;
+  sharpeRatio: string;
+  volatility: string;
+  benchmark: string;
+  status: 'completed' | 'running' | 'failed';
+  createdAt: string;
+}
+
+
+export interface RebalancingHistory {
+  date: string;
+  type: string;
+  details: string;
+}
+
+export interface ChartLegendData {
+  label: string;
+  color: string;
+  value: string;
+}
 
 export const backtestData: BacktestResult[] = Array(10).fill(null).map((_, index) => ({
   id: index + 1,
@@ -27,7 +54,7 @@ export interface LegacyBacktest {
   status: string;
 }
 
-export const legacyBacktestData: LegacyBacktest[] = Array(10).fill(null).map((_, index) => ({
+export const legacyBacktestData: LegacyBacktest[] = Array(50).fill(null).map((_, index) => ({
   name: '삼성전자 + SK하이닉스 포트폴리오',
   date: '2024-01-15',
   period: '2023.01 ~ 2024.01',

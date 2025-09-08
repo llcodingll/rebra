@@ -50,7 +50,11 @@ Thumbs.db
 # Coverage directory used by tools like istanbul
 coverage
 *.lcov
+.claude
 
 # Temporary folders
 tmp/
 temp/
+
+# Claude Code project guidelines
+CLAUDE.md
