@@ -55,3 +55,6 @@ coverage
 # Temporary folders
 tmp/
 temp/
+
+# Claude Code project guidelines
+CLAUDE.md
