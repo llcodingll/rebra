@@ -2,10 +2,9 @@ package com.rebra.service;
 import static com.rebra.util.NonceUtil.*;
 import static org.springframework.web.util.UriComponentsBuilder.fromUriString;
 
-import com.rebra.dto.response.KakaoProfileResponse;
+import com.rebra.dto.TempToken;
 import com.rebra.dto.response.KakaoTokenResponse;
 import com.rebra.dto.response.LoginResponse;
-import com.rebra.dto.response.UserProfileResponse;
 import com.rebra.entity.RefreshToken;
 import com.rebra.entity.User;
 import com.rebra.jwt.Token;
@@ -16,6 +15,7 @@ import com.rebra.util.IdTokenValidator;
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,14 +30,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class KakaoOAuth2ServiceImpl implements KakaoOAuth2Service {
 
     private static final String KAKAO_AUTHORIZE_BASE_URL = "https://kauth.kakao.com/oauth/authorize";
-    private static final String KAKAO_USER_PROFILE_URL = "https://kapi.kakao.com/v2/user/me";
     private static final String RESPONSE_TYPE_CODE = "code";
     private static final String QUERY_PARAM_GRANT_TYPE = "authorization_code";
-    private static final String ERROR_USER_NOT_FOUND = "사용자를 찾을 수 없습니다.";
-    private static final String ERROR_DELETED_USER = "탈퇴한 사용자입니다.";
     private static final String ERROR_TOKEN_ISSUE_FAIL = "카카오 토큰 발급 실패";
-    private static final String ERROR_PROFILE_FAIL = "카카오 프로필 조회 실패";
-    private static final String ERROR_NICKNAME_FAIL = "카카오 닉네임 조회 실패";
     private static final String ERROR_IDTOKEN_INVALID = "id_token 검증 실패";
 
     @Value("${kakao.client-id}")
@@ -72,56 +67,30 @@ public class KakaoOAuth2ServiceImpl implements KakaoOAuth2Service {
     }
 
     @Override
-    public LoginResponse exchangeAuthorizationCodeForLoginAndCreateUserIfNeeded(String authorizationCode,
-                                                                                HttpSession session) {
-        log.info("id_token 검증 시작");
-        KakaoTokenResponse kakaoTokenResponse = fetchKakaoTokenByAuthorizationCode(authorizationCode);
-        log.info("id_token 추출됨: {}", kakaoTokenResponse.getIdToken());
-
-        boolean valid = IdTokenValidator.validateIdTokenClaims(kakaoTokenResponse.getIdToken(), session, clientId);
-        log.info("id_token 검증 결과: {}", valid);
-        if (!valid) {
-            throw new IllegalArgumentException(ERROR_IDTOKEN_INVALID);
-        }
+    public LoginResponse processLogin(KakaoTokenResponse kakaoTokenResponse, HttpSession session) {
+        log.info("로그인 처리 시작");
 
         String kakaoSub = IdTokenValidator.getSub(kakaoTokenResponse.getIdToken());
-        String accessToken = kakaoTokenResponse.getAccessToken();
-
-        User user = findOrCreateUserByKakaoSub(kakaoSub);
-
-        Token refreshJwtToken = tokenProvider.generateRefreshToken(user);
-
-        saveRefreshTokenForUser(user, refreshJwtToken);
-
-        boolean signupRequired = user.getNickname() == null;
-        return new LoginResponse(refreshJwtToken, user.getNickname(), signupRequired);
-    }
-
-//    @Override
-//    public void softDeleteUserAndRemoveAllRefreshTokens(Long userId) {
-//        User user = userRepository.findById(userId)
-//                .orElseThrow(() -> new RuntimeException(ERROR_USER_NOT_FOUND));
-//        user.softDelete();
-//        userRepository.save(user);
-//        deleteAllRefreshTokensByUser(user);
-//    }
-
-    @Override
-    public UserProfileResponse getUserProfile(Long userId) {
-
-        if (userId == null) {
-            throw new NullPointerException("userId가 null입니다.");
+        Optional<User> existingUser = findUserBySub(kakaoSub);
+        
+        // 신규 회원 - null 반환
+        if (existingUser.isEmpty()) {
+            return null;
         }
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-
-        return new UserProfileResponse(user.getId(), user.getNickname());
+        
+        // 기존 회원 - 로그인 처리
+        User user = existingUser.get();
+        // 멀티 디바이스 미지원 - 기존 토큰 모두 삭제
+        deleteAllRefreshTokensByUser(user);
+        // 새로운 리프레시 토큰 발급
+        Token refreshJwtToken = tokenProvider.generateRefreshToken(user);
+        saveRefreshTokenForUser(user, refreshJwtToken);
+        return new LoginResponse(refreshJwtToken, user.getNickname());
     }
+
 
     @Override
     public Token issueAccessToken(String refreshTokenValue) {
-
         if (!isValidRefreshTokenInput(refreshTokenValue)) {
             throw new IllegalArgumentException("Refresh token이 유효하지 않습니다.");
         }
@@ -137,7 +106,6 @@ public class KakaoOAuth2ServiceImpl implements KakaoOAuth2Service {
         return tokenProvider.generateAccessToken(user);
     }
 
-
     @Override
     public Token issueAccessTokenByValidRefreshToken(String refreshTokenValue) {
         if (!isValidRefreshTokenInput(refreshTokenValue)) {
@@ -151,13 +119,48 @@ public class KakaoOAuth2ServiceImpl implements KakaoOAuth2Service {
                 .map(tokenProvider::generateAccessToken)
                 .orElse(null);
     }
-
-    private User findOrCreateUserByKakaoSub(String kakaoSub) {
-        return userRepository.findBySub(kakaoSub)
-                .orElseGet(() -> userRepository.save(new User(kakaoSub)));
+    
+    // RTR 적용 토큰 갱신
+    @Override
+    public Token[] refreshTokensWithRotation(String oldRefreshToken) {
+        RefreshToken oldToken = refreshTokenRepository.findByRefreshToken(oldRefreshToken)
+                .orElseThrow(() -> new RuntimeException("Refresh token이 존재하지 않습니다."));
+        
+        if (oldToken.getExpirationDate().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Refresh token이 만료되었습니다.");
+        }
+        
+        User user = oldToken.getUser();
+        
+        // 기존 토큰 삭제 (RTR)
+        refreshTokenRepository.delete(oldToken);
+        
+        // 새로운 토큰들 발급
+        Token newAccessToken = tokenProvider.generateAccessToken(user);
+        Token newRefreshToken = tokenProvider.generateRefreshToken(user);
+        saveRefreshTokenForUser(user, newRefreshToken);
+        
+        return new Token[]{newAccessToken, newRefreshToken};
     }
 
-    private void saveRefreshTokenForUser(User user, Token refreshToken) {
+    private Optional<User> findUserBySub(String kakaoSub) {
+        return userRepository.findBySub(kakaoSub);
+    }
+    
+    public User createUserWithKakaoSub(String kakaoSub, String nickname) {
+        User user = User.builder()
+                .sub(kakaoSub)
+                .nickname(nickname)
+                .build();
+        return userRepository.save(user);
+    }
+    
+    public Token generateTempTokenForSignup(String kakaoSub) {
+        TempToken tempToken = new TempToken(kakaoSub);
+        return tokenProvider.generateTempToken(tempToken);
+    }
+
+    public void saveRefreshTokenForUser(User user, Token refreshToken) {
         int expireMinutes = tokenProvider.getRefreshTokenExpireMinutes();
         refreshTokenRepository.save(RefreshToken.builder()
                 .refreshToken(refreshToken.getToken())
@@ -171,12 +174,13 @@ public class KakaoOAuth2ServiceImpl implements KakaoOAuth2Service {
                 refreshTokenValue);
     }
 
-    private void deleteAllRefreshTokensByUser(User user) {
+    public void deleteAllRefreshTokensByUser(User user) {
         List<RefreshToken> tokens = refreshTokenRepository.findAllByUser(user);
         refreshTokenRepository.deleteAll(tokens);
     }
 
-    KakaoTokenResponse fetchKakaoTokenByAuthorizationCode(String code) {
+    @Override
+    public KakaoTokenResponse fetchKakaoTokenByAuthorizationCode(String code) {
         log.info("토큰 요청 파라미터: grant_type=authorization_code, client_id={}, redirect_uri={}, code={}",
                 clientId, redirectUri, code);
 
@@ -197,21 +201,6 @@ public class KakaoOAuth2ServiceImpl implements KakaoOAuth2Service {
             throw new RuntimeException(ERROR_TOKEN_ISSUE_FAIL);
         }
         return response;
-    }
-
-    private String fetchNicknameFromKakaoProfile(String accessToken) {
-        KakaoProfileResponse profileResponse = webClient.get()
-                .uri(KAKAO_USER_PROFILE_URL)
-                .headers(headers -> headers.setBearerAuth(accessToken))
-                .retrieve()
-                .bodyToMono(KakaoProfileResponse.class)
-                .blockOptional()
-                .orElseThrow(() -> new RuntimeException(ERROR_PROFILE_FAIL));
-
-        if (profileResponse.getProperties() == null || profileResponse.getProperties().getNickname() == null) {
-            throw new RuntimeException(ERROR_NICKNAME_FAIL);
-        }
-        return profileResponse.getProperties().getNickname();
     }
 
 }
