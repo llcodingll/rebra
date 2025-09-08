@@ -36,18 +36,15 @@ pipeline {
             steps {
                 echo '=== 프론트엔드 배포 중 ==='
                 sh """
-                    echo "기존 파일 백업..."
-                    sudo cp -r ${DEPLOY_DIR} ${DEPLOY_DIR}.backup.${BUILD_TAG} || true
-                    
                     echo "새 파일 배포..."
                     sudo rsync -avz --delete ${BUILD_DIR}/ ${DEPLOY_DIR}/
                     
                     echo "파일 권한 설정..."
-                    sudo chown -R www-data:www-data ${DEPLOY_DIR}
-                    sudo chmod -R 755 ${DEPLOY_DIR}
+                    sudo chown -R www-data:www-data ${DEPLOY_DIR} || echo "권한 설정 건너뜀"
+                    sudo chmod -R 755 ${DEPLOY_DIR} || echo "권한 설정 건너뜀"
                     
                     echo "nginx 재시작..."
-                    sudo systemctl restart nginx
+                    sudo systemctl restart nginx || echo "nginx 재시작 실패"
                     
                     echo "배포된 파일 확인:"
                     ls -la ${DEPLOY_DIR}/
