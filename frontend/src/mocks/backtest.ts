@@ -45,6 +45,7 @@ export const backtestData: BacktestResult[] = Array(10).fill(null).map((_, index
 
 // Legacy format for BacktestPage compatibility
 export interface LegacyBacktest {
+  id: number;
   name: string;
   date: string;
   period: string;
@@ -55,6 +56,7 @@ export interface LegacyBacktest {
 }
 
 export const legacyBacktestData: LegacyBacktest[] = Array(50).fill(null).map((_, index) => ({
+  id: index + 1,
   name: '삼성전자 + SK하이닉스 포트폴리오',
   date: '2024-01-15',
   period: '2023.01 ~ 2024.01',

@@ -15,6 +15,7 @@
 .leftSection {
   display: flex;
   align-items: center;
+  gap: 40px;
 }
 
 .logo {
@@ -98,4 +99,51 @@
   font-size: 14px;
   font-family: 'Segoe UI Symbol', sans-serif;
   color: #0f172a;
+}
+
+/* Navigation styles integrated into header */
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 3.5px;
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10.5px 8px;
+  height: 31.5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #b7b7b7;
+  transition: color 0.2s;
+}
+
+.navButton:hover {
+  color: #6b7280;
+}
+
+.navButton.active {
+  color: #000;
+}
+
+.navIcon {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navIcon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.navButton span {
+  font-size: 12.3px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  line-height: 17.5px;
 }

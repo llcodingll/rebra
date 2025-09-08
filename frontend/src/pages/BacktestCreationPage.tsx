@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './BacktestCreationPage.module.css';
 import { stockData } from '../mocks/stocks';
 import { portfolioData } from '../mocks/portfolio';
@@ -6,16 +7,36 @@ import {
   imgFrame, imgFrame1, imgFrame2, imgFrame3, imgSvg
 } from '../assets/imports/svg-l1em5';
 
-interface BacktestCreationPageProps {
-  onBack: () => void;
-  selectedPortfolio?: string;
-}
+export default function BacktestCreationPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const selectedPortfolioId = location.state?.portfolioId;
+  
+  // 포트폴리오 ID를 이름으로 매핑
+  const getPortfolioName = (portfolioId: string) => {
+    switch (portfolioId) {
+      case 'portfolio-1':
+        return '삼성전자 + SK하이닉스 포트폴리오';
+      case 'portfolio-2':
+        return '배당 중심 포트폴리오';
+      case 'portfolio-3':
+        return '성장주 포트폴리오';
+      case 'portfolio-4':
+        return '안전자산 포트폴리오';
+      case 'portfolio-5':
+        return '테크주 포트폴리오';
+      default:
+        return null;
+    }
+  };
 
-export default function BacktestCreationPage({ onBack, selectedPortfolio }: BacktestCreationPageProps) {
+  const selectedPortfolio = selectedPortfolioId ? getPortfolioName(selectedPortfolioId) : null;
+  
   const [backtestName, setBacktestName] = useState('');
   const [rebalancingPeriod, setRebalancingPeriod] = useState('반기');
   const [startDate, setStartDate] = useState('2023년 01월');
   const [endDate, setEndDate] = useState('2023년 12월');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleRunBacktest = () => {
     console.log('백테스트 실행:', {
@@ -31,7 +52,7 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
     <div className={styles.backtestCreation}>
       {/* 헤더 */}
       <div className={styles.header}>
-        <button className={styles.backButton} onClick={onBack}>
+        <button className={styles.backButton} onClick={() => navigate(-1)}>
           ← 뒤로 가기
         </button>
         <h1>백테스트 생성</h1>
@@ -46,8 +67,10 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
 
           <div className={styles.formGrid}>
             <div className={styles.formGroup}>
-              <label>테스트 이름</label>
+              <label htmlFor="backtest-name">테스트 이름</label>
               <input
+                id="backtest-name"
+                name="backtestName"
                 type="text"
                 value={backtestName}
                 onChange={(e) => setBacktestName(e.target.value)}
@@ -57,9 +80,11 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
             </div>
 
             <div className={styles.formGroup}>
-              <label>리밸런싱 주기</label>
+              <label htmlFor="rebalancing-period">리밸런싱 주기</label>
               <div className={styles.selectWrapper}>
                 <select
+                  id="rebalancing-period"
+                  name="rebalancingPeriod"
                   value={rebalancingPeriod}
                   onChange={(e) => setRebalancingPeriod(e.target.value)}
                   className={styles.select}
@@ -77,9 +102,11 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
             </div>
 
             <div className={styles.formGroup}>
-              <label>시작 날짜</label>
+              <label htmlFor="start-date">시작 날짜</label>
               <div className={styles.dateWrapper}>
                 <input
+                  id="start-date"
+                  name="startDate"
                   type="text"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
@@ -92,9 +119,11 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
             </div>
 
             <div className={styles.formGroup}>
-              <label>종료 날짜</label>
+              <label htmlFor="end-date">종료 날짜</label>
               <div className={styles.dateWrapper}>
                 <input
+                  id="end-date"
+                  name="endDate"
                   type="text"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
@@ -129,9 +158,14 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
                   <img src={imgSvg} alt="검색" />
                 </div>
                 <input
+                  id="stock-search"
+                  name="stockSearch"
                   type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="종목명 또는 종목코드를 입력하세요"
                   className={styles.input}
+                  aria-label="종목 검색"
                 />
               </div>
             </div>
@@ -196,24 +230,36 @@ export default function BacktestCreationPage({ onBack, selectedPortfolio }: Back
                   <div className={styles.tableCell}>{item.buyPrice}</div>
                   <div className={styles.tableCell}>
                     <input
+                      id={`quantity-${index}`}
+                      name={`quantity-${index}`}
                       type="number"
                       value={item.quantity}
+                      onChange={() => {}}
                       className={styles.numberInput}
+                      aria-label={`${item.name} 수량`}
                     />
                   </div>
                   <div className={styles.tableCell}>
                     <input
+                      id={`target-weight-${index}`}
+                      name={`targetWeight-${index}`}
                       type="number"
                       value={item.targetWeight}
+                      onChange={() => {}}
                       className={styles.numberInput}
+                      aria-label={`${item.name} 목표 비중`}
                     />
                   </div>
                   <div className={styles.tableCell}>{item.currentValue}</div>
                   <div className={styles.tableCell}>
                     <input
+                      id={`threshold-${index}`}
+                      name={`threshold-${index}`}
                       type="number"
                       value={item.threshold}
+                      onChange={() => {}}
                       className={styles.numberInput}
+                      aria-label={`${item.name} 임계치`}
                     />
                   </div>
                   <div className={styles.tableCell}>
