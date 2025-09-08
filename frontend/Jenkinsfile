@@ -57,11 +57,11 @@ pipeline {
             steps {
                 echo '=== 웹사이트 헬스체크 ==='
                 sh '''
-                    echo "nginx 상태 확인..."
-                    sudo systemctl status nginx --no-pager
+                    echo "nginx 프로세스 확인..."
+                    ps aux | grep nginx | head -3
                     
                     echo "웹사이트 접근 테스트..."
-                    sleep 5
+                    sleep 3
                     
                     for i in {1..5}; do
                         if curl -f -s http://localhost > /dev/null; then
@@ -111,9 +111,6 @@ pipeline {
         always {
             echo '=== 정리 작업 ==='
             sh '''
-                echo "오래된 백업 파일 정리 (7일 이상)..."
-                find /var/www/ -name "html.backup.*" -mtime +7 -exec sudo rm -rf {} + || true
-                
                 echo "디스크 사용량 확인:"
                 df -h
                 
