@@ -1,19 +1,13 @@
 import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import styles from './BacktestResultsPage.module.css';
+import { legacyBacktestData } from '../mocks/backtest';
 
-interface BacktestResultsPageProps {
-  onBack: () => void;
-  backtestData?: {
-    name: string;
-    date: string;
-    period: string;
-    totalReturn: string;
-    maxDrawdown: string;
-    sharpeRatio: string;
-  };
-}
-
-export default function BacktestResultsPage({ onBack, backtestData }: BacktestResultsPageProps) {
+export default function BacktestResultsPage() {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const backtestData = id ? legacyBacktestData.find(b => b.id === parseInt(id)) : null;
+  
   const defaultData = {
     name: '월간 리밸런싱 전략',
     date: '2024-01-15',
@@ -29,7 +23,7 @@ export default function BacktestResultsPage({ onBack, backtestData }: BacktestRe
     <div className={styles.backtestResults}>
       <div className={styles.container}>
           {/* 백 버튼 */}
-          <button className={styles.backButton} onClick={onBack}>
+          <button className={styles.backButton} onClick={() => navigate(-1)}>
             ← 백테스트 목록으로 돌아가기
           </button>
 

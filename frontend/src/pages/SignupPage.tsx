@@ -1,27 +1,28 @@
+import { useNavigate } from 'react-router-dom';
 import kakaoIcon from 'figma:asset/b58690531dd5cbb1352f8e5c713b25639e76dae9.png';
 import AuthLayout from '../widget/auth/AuthLayout';
 import styles from './SignupPage.module.css';
 
-interface SignupPageProps {
-  onBack: () => void;
-  onLogin: () => void;
-  onSignupComplete: () => void;
-}
+export default function SignupPage() {
+  const navigate = useNavigate();
 
-export default function SignupPage({ onBack, onLogin, onSignupComplete }: SignupPageProps) {
+  const handleBack = () => navigate('/landing');
+  const handleLogin = () => navigate('/login');
+  const handleSignupComplete = () => navigate('/dashboard');
+
   const handleKakaoLogin = () => {
-    onSignupComplete();
+    handleSignupComplete();
   };
 
   return (
     <AuthLayout
-      onBack={onBack}
+      onBack={handleBack}
       title="간편 가입하기"
       subtitle="카카오 계정으로 빠르고 안전하게 시작하세요"
       buttonText="카카오 계정으로 가입"
       alternativeText="이미 계정이 있으신가요?"
       alternativeButtonText="로그인하기"
-      onAlternativeClick={onLogin}
+      onAlternativeClick={handleLogin}
       onSubmit={handleKakaoLogin}
     >
       <div className={styles.kakaoButtonContainer}>
