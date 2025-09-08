@@ -13,5 +13,4 @@ import lombok.NoArgsConstructor;
 public class LoginResponse {
     private Token refreshToken;
     private String nickname;
-    private boolean signupRequired;
 }
