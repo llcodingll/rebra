@@ -3,6 +3,7 @@
       "version": "0.1.0",
       "private": true,
       "dependencies": {
+            "@rollup/rollup-win32-x64-msvc": "^4.50.0",
             "@tanstack/react-query": "^5.86.0",
             "axios": "^1.11.0",
             "clsx": "*",
@@ -13,6 +14,8 @@
             "zustand": "^5.0.8"
       },
       "devDependencies": {
+            "@swc/core": "^1.13.5",
+            "@swc/core-win32-x64-msvc": "^1.13.5",
             "@types/node": "^20.10.0",
             "@vitejs/plugin-react-swc": "^3.10.2",
             "vite": "6.3.5"

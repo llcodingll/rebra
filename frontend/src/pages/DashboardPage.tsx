@@ -81,12 +81,6 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-
-            {/* 자산 테이블들 */}
-            <div className={styles.tablesContainer}>
-              <AssetTable title="등록 주식" type="registered" />
-              <AssetTable title="미등록 주식" type="unregistered" />
-            </div>
           </>
         );
       case 'profit':
@@ -115,6 +109,12 @@ export default function DashboardPage() {
 
         {renderContent()}
       </div>
+
+              {/* 자산 테이블들 */}
+        <div className={styles.tablesContainer}>
+          <AssetTable title="등록 주식" type="registered" />
+          <AssetTable title="미등록 주식" type="unregistered" />
+        </div>
 
       <PortfolioSelectionModal 
         isOpen={isModalOpen}
