@@ -3,26 +3,14 @@ import styles from './AuthLayout.module.css';
 
 interface AuthLayoutProps {
   children: ReactNode;
-  onBack: () => void;
   title: string;
   subtitle: string;
-  buttonText: string;
-  alternativeText: string;
-  alternativeButtonText: string;
-  onAlternativeClick: () => void;
-  onSubmit: () => void;
 }
 
 export default function AuthLayout({
   children,
-  onBack,
   title,
   subtitle,
-  buttonText,
-  alternativeText,
-  alternativeButtonText,
-  onAlternativeClick,
-  onSubmit,
 }: AuthLayoutProps) {
   return (
     <div className={styles.authLayout}>
@@ -36,26 +24,6 @@ export default function AuthLayout({
         </div>
 
         <div className={styles.leftContent}>
-          <button className={styles.backButton} onClick={onBack}>
-            <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-              <path
-                d='M5.08333 9.16667L1 5.08333L5.08333 1'
-                stroke='white'
-                strokeWidth='1.16667'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-              />
-              <path
-                d='M9.16667 1H1'
-                stroke='white'
-                strokeWidth='1.16667'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-              />
-            </svg>
-            홈으로 돌아가기
-          </button>
-
           <div className={styles.brandSection}>
             <div className={styles.logo}>
               <div className={styles.logoIcon}>R</div>
@@ -69,7 +37,7 @@ export default function AuthLayout({
                 지금 시작하세요
               </h1>
               <p>
-                AI가 관리하는 스마트한 포트폴리오로
+                AI가 추천하는 스마트한 포트폴리오로
                 <br />더 안전하고 수익성 높은 투자를 경험해보세요
               </p>
             </div>
@@ -90,7 +58,7 @@ export default function AuthLayout({
               </div>
               <div>
                 <h3>즉시 시작</h3>
-                <p>가입 후 바로 AI 리밸런싱 서비스를 이용할 수 있어요</p>
+                <p>가입 후 바로 {/*AI*/} 리밸런싱 서비스를 이용할 수 있어요</p>
               </div>
             </div>
 
@@ -108,7 +76,7 @@ export default function AuthLayout({
               </div>
               <div>
                 <h3>안전한 보안</h3>
-                <p>은행급 보안 시스템으로 고객님의 정보를 안전하게 보호합니다</p>
+                <p>체계적인 보안 시스템으로 고객님의 정보를 안전하게 보호합니다</p>
               </div>
             </div>
 
@@ -140,7 +108,6 @@ export default function AuthLayout({
         </div>
       </div>
 
-      {/* Form Section */}
       <div className={styles.formSection}>
         <div className={styles.formContainer}>
           <div className={styles.formHeader}>
@@ -149,18 +116,6 @@ export default function AuthLayout({
           </div>
 
           {children}
-
-          <p className={styles.terms}>
-            {title.includes('로그인') ? '로그인하면' : '가입하면'} <a href='#terms'>이용약관</a>과{' '}
-            <a href='#privacy'>개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
-          </p>
-
-          <div className={styles.alternativeLink}>
-            <span>{alternativeText}</span>
-            <button onClick={onAlternativeClick} className={styles.linkButton}>
-              {alternativeButtonText}
-            </button>
-          </div>
         </div>
       </div>
     </div>
