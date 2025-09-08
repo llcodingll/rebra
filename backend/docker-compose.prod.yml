@@ -50,7 +50,7 @@ services:
     networks:
       - rebra-network
 
-  main-server:
+  rebra:
     image: rebra-main:latest
     ports:
       - "8080:8080"
