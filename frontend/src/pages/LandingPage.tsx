@@ -1,10 +1,29 @@
 import { useNavigate } from 'react-router-dom';
-import { imgVector, imgVector1, imgVector2, imgVector3, imgSvg, imgSvg1, imgSvg2, imgSvg3, imgSvg4, imgSvg5, imgSvg6, imgImage, imgVector4, imgVector5, imgVector6, imgVector7, imgVector8, imgVector9 } from '../assets/imports/svg-25rg9';
+import {
+  imgVector,
+  imgVector1,
+  imgVector2,
+  imgVector3,
+  imgSvg,
+  imgSvg1,
+  imgSvg2,
+  imgSvg3,
+  imgSvg4,
+  imgSvg5,
+  imgSvg6,
+  imgImage,
+  imgVector4,
+  imgVector5,
+  imgVector6,
+  imgVector7,
+  imgVector8,
+  imgVector9,
+} from '../assets/imports/svg-25rg9';
 import styles from './LandingPage.module.css';
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  
+
   const handleSignup = () => navigate('/signup');
   const handleLogin = () => navigate('/login');
 
@@ -18,12 +37,20 @@ export default function LandingPage() {
               <div className={styles.logoIcon}>R</div>
               <span className={styles.logoText}>Rebra</span>
             </div>
-           
+
             <div className={styles.navigation}>
-              <a href="#features" className={styles.navItem}>기능</a>
-              <a href="#how-it-works" className={styles.navItem}>사용법</a>
-              <a href="#pricing" className={styles.navItem}>요금제</a>
-              <a href="#testimonials" className={styles.navItem}>후기</a>
+              <a href='#features' className={styles.navItem}>
+                기능
+              </a>
+              <a href='#how-it-works' className={styles.navItem}>
+                사용법
+              </a>
+              <a href='#pricing' className={styles.navItem}>
+                요금제
+              </a>
+              <a href='#testimonials' className={styles.navItem}>
+                후기
+              </a>
             </div>
           </div>
 
@@ -45,33 +72,59 @@ export default function LandingPage() {
           <div className={styles.heroContainer}>
             <div className={styles.heroContent}>
               <div className={styles.heroBadge}>
-                <svg width="10" height="11" viewBox="0 0 10 11" fill="none">
-                  <path d="M1.43899 6.25114C1.3562 6.25142 1.27503 6.22821 1.20491 6.18419C1.13479 6.14018 1.07859 6.07717 1.04286 6.00249C1.00712 5.92781 0.993308 5.84452 1.00302 5.7623C1.01274 5.68008 1.04558 5.60231 1.09774 5.53801L5.42899 1.07551C5.46148 1.03801 5.50576 1.01267 5.55455 1.00365C5.60334 0.994625 5.65375 1.00246 5.6975 1.02586C5.74125 1.04926 5.77575 1.08684 5.79533 1.13244C5.8149 1.17803 5.8184 1.22892 5.80524 1.27676L4.96524 3.91051C4.94047 3.97681 4.93215 4.04812 4.941 4.11833C4.94985 4.18854 4.97559 4.25556 5.01603 4.31364C5.05647 4.37172 5.11039 4.41911 5.17318 4.45177C5.23596 4.48443 5.30572 4.50137 5.37649 4.50114H8.43899C8.52178 4.50086 8.60295 4.52407 8.67307 4.56809C8.7432 4.6121 8.79939 4.67511 8.83513 4.74979C8.87086 4.82447 8.88468 4.90776 8.87496 4.98998C8.86525 5.0722 8.8324 5.14997 8.78024 5.21426L4.44899 9.67676C4.4165 9.71427 4.37223 9.73961 4.32344 9.74863C4.27465 9.75765 4.22424 9.74982 4.18049 9.72642C4.13673 9.70302 4.10224 9.66543 4.08266 9.61984C4.06308 9.57425 4.05958 9.52336 4.07274 9.47551L4.91274 6.84177C4.93751 6.77547 4.94583 6.70416 4.93698 6.63395C4.92814 6.56374 4.90239 6.49672 4.86195 6.43864C4.82151 6.38056 4.76759 6.33316 4.70481 6.30051C4.64203 6.26785 4.57226 6.25091 4.50149 6.25114H1.43899Z" stroke="#155DFC" strokeWidth="0.875" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width='10' height='11' viewBox='0 0 10 11' fill='none'>
+                  <path
+                    d='M1.43899 6.25114C1.3562 6.25142 1.27503 6.22821 1.20491 6.18419C1.13479 6.14018 1.07859 6.07717 1.04286 6.00249C1.00712 5.92781 0.993308 5.84452 1.00302 5.7623C1.01274 5.68008 1.04558 5.60231 1.09774 5.53801L5.42899 1.07551C5.46148 1.03801 5.50576 1.01267 5.55455 1.00365C5.60334 0.994625 5.65375 1.00246 5.6975 1.02586C5.74125 1.04926 5.77575 1.08684 5.79533 1.13244C5.8149 1.17803 5.8184 1.22892 5.80524 1.27676L4.96524 3.91051C4.94047 3.97681 4.93215 4.04812 4.941 4.11833C4.94985 4.18854 4.97559 4.25556 5.01603 4.31364C5.05647 4.37172 5.11039 4.41911 5.17318 4.45177C5.23596 4.48443 5.30572 4.50137 5.37649 4.50114H8.43899C8.52178 4.50086 8.60295 4.52407 8.67307 4.56809C8.7432 4.6121 8.79939 4.67511 8.83513 4.74979C8.87086 4.82447 8.88468 4.90776 8.87496 4.98998C8.86525 5.0722 8.8324 5.14997 8.78024 5.21426L4.44899 9.67676C4.4165 9.71427 4.37223 9.73961 4.32344 9.74863C4.27465 9.75765 4.22424 9.74982 4.18049 9.72642C4.13673 9.70302 4.10224 9.66543 4.08266 9.61984C4.06308 9.57425 4.05958 9.52336 4.07274 9.47551L4.91274 6.84177C4.93751 6.77547 4.94583 6.70416 4.93698 6.63395C4.92814 6.56374 4.90239 6.49672 4.86195 6.43864C4.82151 6.38056 4.76759 6.33316 4.70481 6.30051C4.64203 6.26785 4.57226 6.25091 4.50149 6.25114H1.43899Z'
+                    stroke='#155DFC'
+                    strokeWidth='0.875'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                  />
                 </svg>
                 <span>AI 자동 리밸런싱</span>
               </div>
-             
+
               <h1 className={styles.heroTitle}>
-                투자의 미래,<br />
+                투자의 미래,
+                <br />
                 스마트한 선택
               </h1>
-             
+
               <p className={styles.heroDescription}>
-                복잡한 포트폴리오 관리를 AI가 대신합니다.<br />
+                복잡한 포트폴리오 관리를 AI가 대신합니다.
+                <br />
                 자동 리밸런싱으로 더 안전하고 수익성 높은 투자를 시작하세요.
               </p>
-             
+
               <div className={styles.heroButtons}>
                 <button className={styles.primaryButton} onClick={handleSignup}>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M1 1H9.16667" stroke="white" strokeWidth="1.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M1 1L5.08333 5.08333L1 9.16667" stroke="white" strokeWidth="1.16667" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                    <path
+                      d='M1 1H9.16667'
+                      stroke='white'
+                      strokeWidth='1.16667'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    />
+                    <path
+                      d='M1 1L5.08333 5.08333L1 9.16667'
+                      stroke='white'
+                      strokeWidth='1.16667'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    />
                   </svg>
                   무료로 시작하기
                 </button>
                 <button className={styles.secondaryButton}>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M1 1L9.16667 6.25L1 11.5V1Z" stroke="#0A0A0A" strokeWidth="1.16667" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                    <path
+                      d='M1 1L9.16667 6.25L1 11.5V1Z'
+                      stroke='#0A0A0A'
+                      strokeWidth='1.16667'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    />
                   </svg>
                   데모 영상 보기
                 </button>
@@ -100,8 +153,7 @@ export default function LandingPage() {
             <div className={styles.heroImage}>
               <div className={styles.phoneContainer}>
                 <div className={styles.phoneGradient}></div>
-                <div className={styles.phoneFrame}>
-                </div>
+                <div className={styles.phoneFrame}></div>
               </div>
             </div>
           </div>
@@ -113,9 +165,21 @@ export default function LandingPage() {
             <p>14일 무료 체험으로 Rebra의 모든 기능을 경험해보세요</p>
             <div className={styles.ctaButtons}>
               <button className={styles.ctaPrimary} onClick={handleSignup}>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M1 1H9.16667" stroke="#155DFC" strokeWidth="1.16667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M1 1L5.08333 5.08333L1 9.16667" stroke="#155DFC" strokeWidth="1.16667" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                  <path
+                    d='M1 1H9.16667'
+                    stroke='#155DFC'
+                    strokeWidth='1.16667'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                  />
+                  <path
+                    d='M1 1L5.08333 5.08333L1 9.16667'
+                    stroke='#155DFC'
+                    strokeWidth='1.16667'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                  />
                 </svg>
                 무료로 시작하기
               </button>
@@ -141,7 +205,7 @@ export default function LandingPage() {
 //               <div className={styles.logoIcon}>R</div>
 //               <span className={styles.logoText}>Rebra</span>
 //             </div>
-            
+
 //             <div className={styles.navigation}>
 //               <a href="#features" className={styles.navItem}>기능</a>
 //               <a href="#how-it-works" className={styles.navItem}>사용법</a>
@@ -173,17 +237,17 @@ export default function LandingPage() {
 //                 </svg>
 //                 <span>AI 자동 리밸런싱</span>
 //               </div>
-              
+
 //               <h1 className={styles.heroTitle}>
 //                 투자의 미래,<br />
 //                 스마트한 선택
 //               </h1>
-              
+
 //               <p className={styles.heroDescription}>
 //                 복잡한 포트폴리오 관리를 AI가 대신합니다.<br />
 //                 자동 리밸런싱으로 더 안전하고 수익성 높은 투자를 시작하세요.
 //               </p>
-              
+
 //               <div className={styles.heroButtons}>
 //                 <button className={styles.primaryButton} onClick={onSignup}>
 //                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -238,7 +302,7 @@ export default function LandingPage() {
 //               <h2>왜 Rebra인가요?</h2>
 //               <p>복잡한 투자 관리를 간단하게 만들어주는 스마트한 기능들</p>
 //             </div>
-            
+
 //             <div className={styles.featuresGrid}>
 //               <div className={styles.featureCard}>
 //                 <div className={styles.featureIcon}>
@@ -295,7 +359,7 @@ export default function LandingPage() {
 //               <h2>3단계로 시작하는 스마트 투자</h2>
 //               <p>복잡한 설정 없이 바로 시작할 수 있어요</p>
 //             </div>
-            
+
 //             <div className={styles.stepsGrid}>
 //               <div className={styles.step}>
 //                 <div className={styles.stepNumber}>01</div>
@@ -340,7 +404,7 @@ export default function LandingPage() {
 //               <h2>고객들의 이야기</h2>
 //               <p>실제 사용자들의 생생한 후기를 확인해보세요</p>
 //             </div>
-            
+
 //             <div className={styles.testimonialsGrid}>
 //               <div className={styles.testimonialCard}>
 //                 <div className={styles.stars}>
@@ -400,7 +464,7 @@ export default function LandingPage() {
 //               <h2>투자 목표에 맞는 요금제</h2>
 //               <p>언제든지 업그레이드나 다운그레이드가 가능해요</p>
 //             </div>
-            
+
 //             <div className={styles.pricingGrid}>
 //               <div className={styles.pricingCard}>
 //                 <h3>Basic</h3>

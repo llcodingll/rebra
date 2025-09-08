@@ -1,20 +1,35 @@
 import { useState } from 'react';
-import styles from './StockListPage.module.css';
-import { stockListData, simpleNewsData } from '../mocks/stockListData';
-import { imgIconHeroiconsMiniHttpsHeroiconsCom, imgIconHeroiconsMiniHttpsHeroiconsCom1, imgIconHeroiconsMiniHttpsHeroiconsCom2, imgIconHeroiconsMiniHttpsHeroiconsCom3, imgIconHeroiconsMiniHttpsHeroiconsCom4 } from '../assets/imports/svg-tn9np';
+import styles from './StockListWidget.module.css';
+import { stockListData, simpleNewsData } from './stockListData';
+import Pagination from '../common/Pagination';
 
-interface StockListPageProps {
+interface StockListWidgetProps {
   onStockSelect: (stockCode: string) => void;
 }
 
-export default function StockListPage({ onStockSelect }: StockListPageProps) {
+export default function StockListWidget({ onStockSelect }: StockListWidgetProps) {
   const [currentPage, setCurrentPage] = useState(2);
+  const totalPages = 26;
 
 
   return (
     <div className={styles.stockListPage}>
       {/* 메인 컨텐츠 영역 */}
       <div className={styles.mainContent}>
+        {/* 페이지네이션 - 테이블 위로 이동 */}
+        <div className={styles.paginationContainer}>
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            showFirstLast={true}
+            showNumbers={true}
+          />
+        </div>
+
+        {/* 구분선 - 페이지네이션 아래, 테이블 위에 위치 */}
+        <div className={styles.divider}></div>
+
         {/* 주식 테이블 */}
         <div className={styles.stockTable}>
           {/* 테이블 헤더 */}
@@ -24,9 +39,6 @@ export default function StockListPage({ onStockSelect }: StockListPageProps) {
             <span className={styles.headerChange}>등락률</span>
             <span className={styles.headerVolume}>거래대금</span>
           </div>
-
-          {/* 테이블 구분선 */}
-          <div className={styles.divider}></div>
 
           {/* 테이블 바디 */}
           <div className={styles.tableBody}>
@@ -39,17 +51,16 @@ export default function StockListPage({ onStockSelect }: StockListPageProps) {
                 <div className={styles.stockInfo}>
                   <div className={styles.favoriteIcon}>
                     {stock.isFavorite ? (
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="#ef1515">
+                      <svg width="16" height="16" viewBox="0 0 20 20" fill="#ef1515">
                         <path d="M10 15.27L16.18 19l-1.64-7.03L20 7.24l-7.19-.61L10 0 7.19 6.63 0 7.24l5.46 4.73L3.82 19z"/>
                       </svg>
                     ) : (
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="#666">
+                      <svg width="16" height="16" viewBox="0 0 20 20" fill="#666">
                         <path d="M10 15.27L16.18 19l-1.64-7.03L20 7.24l-7.19-.61L10 0 7.19 6.63 0 7.24l5.46 4.73L3.82 19z"/>
                       </svg>
                     )}
                   </div>
                   <span className={styles.rank}>{stock.rank}</span>
-                  <img src={stock.logo} alt="" className={styles.logo} />
                   <span className={styles.stockName}>{stock.name}</span>
                 </div>
                 
@@ -67,38 +78,6 @@ export default function StockListPage({ onStockSelect }: StockListPageProps) {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* 페이지네이션 */}
-        <div className={styles.pagination}>
-          <button className={styles.paginationButton}>
-            <img src={imgIconHeroiconsMiniHttpsHeroiconsCom} alt="" />
-            First
-          </button>
-          
-          <button className={styles.paginationButton}>
-            <img src={imgIconHeroiconsMiniHttpsHeroiconsCom1} alt="" />
-            Back
-          </button>
-
-          <button className={styles.pageNumber}>1</button>
-          <button className={`${styles.pageNumber} ${styles.active}`}>2</button>
-          <button className={styles.pageNumber}>3</button>
-          <button className={styles.pageNumber}>4</button>
-          <button className={styles.pageNumber}>
-            <img src={imgIconHeroiconsMiniHttpsHeroiconsCom2} alt="" />
-          </button>
-          <button className={styles.pageNumber}>25</button>
-
-          <button className={styles.paginationButton}>
-            Next
-            <img src={imgIconHeroiconsMiniHttpsHeroiconsCom3} alt="" />
-          </button>
-
-          <button className={styles.paginationButton}>
-            Last
-            <img src={imgIconHeroiconsMiniHttpsHeroiconsCom4} alt="" />
-          </button>
         </div>
       </div>
 
