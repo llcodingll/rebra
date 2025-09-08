@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import styles from './BacktestPage.module.css';
 import { legacyBacktestData } from '../mocks/backtest';
-import { imgFrame, imgFrame1, imgFrame2, imgFrame3 } from '../imports/svg-uh39g';
-import PortfolioSelectionModal from '../components/PortfolioSelectionModal';
+import { imgFrame, imgFrame1, imgFrame2, imgFrame3 } from '../assets/imports/svg-uh39g';
+import PortfolioSelectionModal from '../widget/portfolio/PortfolioSelectionModal';
 import BacktestCreationPage from './BacktestCreationPage';
 import BacktestResultsPage from './BacktestResultsPage';
-import Pagination from '../components/common/Pagination';
+import Pagination from '../widget/common/Pagination';
 
 export default function BacktestPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);

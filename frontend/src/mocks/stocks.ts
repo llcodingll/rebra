@@ -1,4 +1,19 @@
-import { Stock } from '../types';
+interface Stock {
+  name: string;
+  code: string;
+  sector: string;
+  category: string;
+  price: string;
+  change: string;
+  changeType: 'positive' | 'negative' | 'neutral';
+  volume?: string;
+  marketCap?: string;
+  buyPrice?: string;
+  quantity?: string;
+  targetWeight?: string;
+  currentValue?: string;
+  threshold?: string;
+}
 
 export const stockData: Stock[] = [
   { 
