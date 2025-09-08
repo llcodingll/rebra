@@ -1,28 +1,19 @@
 import { useState } from 'react';
 import styles from './SearchPage.module.css';
-import StockListPage from './StockListPage';
-import StockDetailPage from './StockDetailPage';
+import StockListWidget from '../widget/search/StockListWidget';
 
 export default function SearchPage() {
   const [activeSubTab, setActiveSubTab] = useState<'ranking' | 'search' | 'watchlist' | 'holdings'>('holdings');
-  const [selectedStock, setSelectedStock] = useState<string | null>(null);
 
   const handleStockSelect = (stockCode: string) => {
-    setSelectedStock(stockCode);
-  };
-
-  const handleBackToList = () => {
-    setSelectedStock(null);
+    // TODO: Navigate to StockDetailPage (separate page)
+    console.log('Navigate to stock detail:', stockCode);
   };
 
   const renderContent = () => {
-    if (selectedStock) {
-      return <StockDetailPage stockCode={selectedStock} onBack={handleBackToList} />;
-    }
-
     switch (activeSubTab) {
       case 'holdings':
-        return <StockListPage onStockSelect={handleStockSelect} />;
+        return <StockListWidget onStockSelect={handleStockSelect} />;
       case 'ranking':
         return <div className={styles.placeholder}>실시간 순위 (구현 예정)</div>;
       case 'search':
@@ -30,7 +21,7 @@ export default function SearchPage() {
       case 'watchlist':
         return <div className={styles.placeholder}>관심 종목 (구현 예정)</div>;
       default:
-        return <StockListPage onStockSelect={handleStockSelect} />;
+        return <StockListWidget onStockSelect={handleStockSelect} />;
     }
   };
 
