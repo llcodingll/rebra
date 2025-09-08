@@ -54,6 +54,16 @@ public class GlobalExceptionHandler {
                 .body(CommonApiResponse.error(e));
     }
 
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<CommonApiResponse<Void>> handleBusinessException(BusinessException e) {
+        log.warn("Business exception: {}", e.getMessage());
+        return ResponseEntity.status(e.getExceptionCode().getStatus())
+                .body(CommonApiResponse.error(
+                    String.valueOf(e.getExceptionCode().getCode()), 
+                    e.getMessage(), 
+                    e.getExceptionCode().getStatus()));
+    }
+
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<CommonApiResponse<ValidationErrorResponse>> handleValidationException(MethodArgumentNotValidException ex) {

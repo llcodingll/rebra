@@ -16,7 +16,13 @@ public enum ExceptionCode {
     // ==== OAuth2 관련 ====
     MISSING_AUTHORIZATION_CODE(7001, "인가코드가 필요합니다.", HttpStatus.BAD_REQUEST),
     UNSUPPORTED_PRINCIPAL_TYPE(7002, "지원하지 않는 principal 타입입니다.", HttpStatus.BAD_REQUEST),
-    INVALID_ID_TOKEN(7003, "ID 토큰 검증에 실패했습니다.", HttpStatus.UNAUTHORIZED);
+    INVALID_ID_TOKEN(7003, "ID 토큰 검증에 실패했습니다.", HttpStatus.UNAUTHORIZED),
+
+    // ==== JWT/Token 관련 ====
+    INVALID_TEMP_TOKEN(8001, "유효하지 않은 임시 토큰입니다.", HttpStatus.UNAUTHORIZED),
+    EXPIRED_TEMP_TOKEN(8002, "만료된 임시 토큰입니다.", HttpStatus.UNAUTHORIZED),
+    INVALID_TOKEN_TYPE(8003, "잘못된 토큰 타입입니다.", HttpStatus.BAD_REQUEST),
+    TEMP_TOKEN_PARSING_FAILED(8004, "임시 토큰 파싱에 실패했습니다.", HttpStatus.UNAUTHORIZED);
 
     private final int code;
     private final String message;
