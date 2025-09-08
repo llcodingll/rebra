@@ -27,7 +27,7 @@ export interface LegacyBacktest {
   status: string;
 }
 
-export const legacyBacktestData: LegacyBacktest[] = Array(10).fill(null).map((_, index) => ({
+export const legacyBacktestData: LegacyBacktest[] = Array(50).fill(null).map((_, index) => ({
   name: '삼성전자 + SK하이닉스 포트폴리오',
   date: '2024-01-15',
   period: '2023.01 ~ 2024.01',
