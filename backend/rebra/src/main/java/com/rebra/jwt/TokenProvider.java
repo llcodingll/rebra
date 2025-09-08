@@ -2,6 +2,8 @@ package com.rebra.jwt;
 
 import com.rebra.dto.TempToken;
 import com.rebra.entity.User;
+import com.rebra.exception.BusinessException;
+import static com.rebra.exception.ExceptionCode.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -18,9 +20,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -71,24 +71,10 @@ public class TokenProvider {
     }
 
     public boolean validateToken(String token) {
-        try {
-            log.info("JWT 토큰 유효성 검사 시작: {}", token);
-            Claims claims = Jwts.parser().setSigningKey(jwtSecretKey).parseClaimsJws(token).getBody();
-            log.debug("JWT 유효! claims = {}", claims);
-            return true;
-        } catch (SignatureException e) {
-            log.warn("JWT 서명 불일치: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid JWT signature", e);
-        } catch (ExpiredJwtException e) {
-            log.info("만료된 JWT: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Expired JWT token", e);
-        } catch (MalformedJwtException e) {
-            log.warn("잘못된 JWT 형식: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Malformed JWT token", e);
-        } catch (Exception e) {
-            log.error("JWT 파싱 예외: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid JWT token", e);
-        }
+        log.debug("JWT 토큰 유효성 검사 시작");
+        Claims claims = Jwts.parser().setSigningKey(jwtSecretKey).parseClaimsJws(token).getBody();
+        log.debug("JWT 유효함");
+        return true;
     }
 
     public Long getUserIdFromToken(String token) {
@@ -98,7 +84,7 @@ public class TokenProvider {
             return claims.get("userId", Long.class);
         } catch (Exception e) {
             log.error("JWT에서 userId 추출 실패: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid JWT token", e);
+            throw new BusinessException(INVALID_TEMP_TOKEN);
         }
     }
     
@@ -134,26 +120,29 @@ public class TokenProvider {
             String type = claims.get("type", String.class);
             
             if (!"TEMP".equals(type)) {
-                throw new IllegalArgumentException("임시 토큰이 아닙니다");
+                throw new BusinessException(INVALID_TOKEN_TYPE);
             }
             
             String tempTokenJson = claims.get("tempToken", String.class);
             TempToken tempToken = objectMapper.readValue(tempTokenJson, TempToken.class);
             
             if (tempToken.isExpired()) {
-                throw new ExpiredJwtException(null, claims, "임시 토큰이 만료되었습니다");
+                throw new BusinessException(EXPIRED_TEMP_TOKEN);
             }
             
             return tempToken;
         } catch (JsonProcessingException e) {
             log.error("임시 토큰 파싱 실패: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid temp token", e);
+            throw new BusinessException(TEMP_TOKEN_PARSING_FAILED);
         } catch (ExpiredJwtException e) {
             log.info("만료된 임시 토큰: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Expired temp token", e);
+            throw new BusinessException(EXPIRED_TEMP_TOKEN);
+        } catch (BusinessException e) {
+            // BusinessException은 그대로 재전파
+            throw e;
         } catch (Exception e) {
             log.error("임시 토큰 검증 실패: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid temp token", e);
+            throw new BusinessException(INVALID_TEMP_TOKEN);
         }
     }
 
