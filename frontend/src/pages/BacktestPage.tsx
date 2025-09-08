@@ -1,18 +1,14 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './BacktestPage.module.css';
 import { legacyBacktestData } from '../mocks/backtest';
 import { imgFrame, imgFrame1, imgFrame2, imgFrame3 } from '../assets/imports/svg-uh39g';
 import PortfolioSelectionModal from '../widget/portfolio/PortfolioSelectionModal';
-import BacktestCreationPage from './BacktestCreationPage';
-import BacktestResultsPage from './BacktestResultsPage';
 import Pagination from '../widget/common/Pagination';
 
 export default function BacktestPage() {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showCreationPage, setShowCreationPage] = useState(false);
-  const [showResultsPage, setShowResultsPage] = useState(false);
-  const [selectedPortfolio, setSelectedPortfolio] = useState<string | null>(null);
-  const [selectedBacktest, setSelectedBacktest] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const totalPages = Math.ceil(legacyBacktestData.length / itemsPerPage);
@@ -26,65 +22,17 @@ export default function BacktestPage() {
   };
 
   const handlePortfolioSelect = (portfolioId: string) => {
-    // 포트폴리오 선택 로직
-    let portfolioName = 'A 포트폴리오';
-    switch (portfolioId) {
-      case 'portfolio-1':
-        portfolioName = '삼성전자 + SK하이닉스 포트폴리오';
-        break;
-      case 'portfolio-2':
-        portfolioName = '배당 중심 포트폴리오';
-        break;
-      case 'portfolio-3':
-        portfolioName = '성장주 포트폴리오';
-        break;
-      case 'portfolio-4':
-        portfolioName = '안전자산 포트폴리오';
-        break;
-      case 'portfolio-5':
-        portfolioName = '테크주 포트폴리오';
-        break;
-    }
-    setSelectedPortfolio(portfolioName);
-    setShowCreationPage(true);
+    navigate('/dashboard/backtest/create', { state: { portfolioId } });
   };
 
   const handleDirectCreation = () => {
-    setSelectedPortfolio(null);
-    setShowCreationPage(true);
-  };
-
-  const handleBackToList = () => {
-    setShowCreationPage(false);
-    setShowResultsPage(false);
-    setSelectedPortfolio(null);
-    setSelectedBacktest(null);
+    navigate('/dashboard/backtest/create');
   };
 
   const handleBacktestClick = (backtest: any) => {
-    setSelectedBacktest(backtest);
-    setShowResultsPage(true);
+    navigate(`/dashboard/backtest/results/${backtest.id}`);
   };
 
-  // 백테스트 결과 페이지 표시
-  if (showResultsPage) {
-    return (
-      <BacktestResultsPage 
-        onBack={handleBackToList}
-        backtestData={selectedBacktest}
-      />
-    );
-  }
-
-  // 백테스트 생성 페이지 표시
-  if (showCreationPage) {
-    return (
-      <BacktestCreationPage 
-        onBack={handleBackToList}
-        selectedPortfolio={selectedPortfolio || undefined}
-      />
-    );
-  }
 
   return (
     <div className={styles.backtest}>
@@ -101,9 +49,12 @@ export default function BacktestPage() {
                   <img src={imgFrame2} alt="검색" />
                 </div>
                 <input 
+                  id="backtest-search"
+                  name="backtestSearch"
                   type="text" 
                   placeholder="백테스트 이름을 입력하세요"
                   className={styles.input}
+                  aria-label="백테스트 검색"
                 />
               </div>
 
