@@ -47,7 +47,11 @@ public class SecurityConfig {
             "/oauth2/authorization/kakao",
             "/oauth2/authorization/kakao/callback",
             "/ws/**",
-            "/actuator/**"
+            "/actuator/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/api-docs/**",
+            "/v3/api-docs/**"
     };
 
     private static final long HSTS_MAX_AGE_IN_SECONDS = 31536000L;

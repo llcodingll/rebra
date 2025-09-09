@@ -9,6 +9,10 @@ import com.rebra.service.KakaoOAuth2ServiceImpl;
 import com.rebra.service.UserService;
 import com.rebra.util.CookieUtil;
 import static com.rebra.util.CookieUtil.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,18 +28,31 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/users")
+@Tag(name = "User API", description = "사용자 관리 API")
 public class UserController {
 
 
     private final UserService userService;
     private final KakaoOAuth2ServiceImpl kakaoOAuth2Service;
 
+    @Operation(summary = "내 정보 조회", description = "현재 로그인한 사용자의 정보를 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 실패"),
+        @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+    })
     @GetMapping("/me")
     public ResponseEntity<CommonApiResponse<UserProfileResponse>> getUserInfo(@LoginUser Long userId) {
         User user = userService.findById(userId);
         return ResponseEntity.ok(CommonApiResponse.success(new UserProfileResponse(user.getId(), user.getNickname())));
     }
 
+    @Operation(summary = "로그아웃", description = "사용자를 로그아웃하고 모든 리프레시 토큰을 삭제합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "로그아웃 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 실패"),
+        @ApiResponse(responseCode = "500", description = "로그아웃 처리 중 오류 발생")
+    })
     @PostMapping("/logout")
     public ResponseEntity<CommonApiResponse<Void>> logout(@LoginUser Long userId, HttpServletResponse response) {
         try {
@@ -54,6 +71,11 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "토큰 갱신", description = "리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받습니다. (RTR 적용)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "토큰 갱신 성공"),
+        @ApiResponse(responseCode = "401", description = "리프레시 토큰이 유효하지 않거나 만료됨")
+    })
     @PostMapping("/token/refresh")
     public ResponseEntity<CommonApiResponse<Token>> refreshAccessToken(
             @CookieValue(value = REFRESH_TOKEN_COOKIE_NAME, required = false) String refreshTokenValue,

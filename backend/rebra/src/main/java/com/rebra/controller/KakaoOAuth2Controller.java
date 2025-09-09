@@ -8,6 +8,11 @@ import com.rebra.util.CookieUtil;
 import com.rebra.util.IdTokenValidator;
 import static com.rebra.exception.ExceptionCode.*;
 import com.rebra.exception.BusinessException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/oauth2/authorization/kakao")
+@Tag(name = "OAuth2 API", description = "카카오 OAuth2 로그인 API")
 public class KakaoOAuth2Controller {
 
     private static final String AUTHORIZATION_CODE_PARAM = "code";
@@ -36,6 +42,10 @@ public class KakaoOAuth2Controller {
 
     private final KakaoOAuth2Service kakaoOAuth2Service;
 
+    @Operation(summary = "카카오 로그인 시작", description = "카카오 OAuth2 인증 페이지로 리다이렉트합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "302", description = "카카오 인증 페이지로 리다이렉트")
+    })
     @GetMapping
     public ResponseEntity<Void> getKakaoAuthorizationUrl(HttpSession session) {
         String authorizationUrl = kakaoOAuth2Service.buildKakaoAuthorizeUrlAndSaveNonceInSession(session);
