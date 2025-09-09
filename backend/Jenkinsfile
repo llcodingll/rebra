@@ -348,8 +348,7 @@ environment {
         }
 
         failure {
-            script {
-                echo '''
+            echo '''
 ❌ 배포 실패!
 로그를 확인하여 문제를 해결하세요.
 
@@ -357,30 +356,14 @@ environment {
 1. 빌드 오류: ./gradlew build 직접 실행해보기
 2. Docker 오류: docker logs [컨테이너명] 확인
 3. 포트 충돌: netstat -tulpn | grep :8080 으로 포트 사용 확인
-                '''
-
-                // 실패 시 정리
-                sh '''
-                    echo "실패한 컨테이너 정리 중..."
-                    docker-compose -f docker-compose.prod.yml down || true
-                '''
-            }
+            '''
         }
 
         always {
-            script {
-                echo '=== 정리 작업 ==='
-                sh '''
-                    echo "사용하지 않는 Docker 이미지 정리 중..."
-                    docker image prune -f || true
-
-                    echo "현재 실행 중인 컨테이너:"
-                    docker ps
-
-                    echo "디스크 사용량:"
-                    df -h
-                '''
-            }
+            echo '=== 정리 작업 ==='
+            // post 블록에서는 sh 명령어 사용시 workspace 컨텍스트 문제 발생
+            // 정리 작업은 Jenkins 수동 수행 또는 별도 스크립트로 처리
+            echo '현재 post 블록에서는 Docker 명령어 실행 불가 - Jenkins 대시보드에서 수동 정리 필요'
         }
     }
 }
