@@ -22,11 +22,6 @@ export default function BacktestResultsPage() {
   return (
     <div className={styles.backtestResults}>
       <div className={styles.container}>
-          {/* 백 버튼 */}
-          <button className={styles.backButton} onClick={() => navigate(-1)}>
-            ← 백테스트 목록으로 돌아가기
-          </button>
-
           {/* 백테스트 결과 카드 */}
           <div className={styles.resultCard}>
             <h2 className={styles.resultTitle}>백테스트 결과</h2>
@@ -43,7 +38,7 @@ export default function BacktestResultsPage() {
                 <span className={styles.resultLabel}>초기 자본</span>
                 <span className={styles.resultValue}>10,000,000원</span>
                 <span className={styles.resultLabel}>최종 자본</span>
-                <span className={`${styles.resultValue} ${styles.blue}`}>13,530,000원</span>
+                <span className={`${styles.resultValue} ${styles.blue}`}>13,540,000원</span>
               </div>
               
               <div className={styles.resultColumn}>

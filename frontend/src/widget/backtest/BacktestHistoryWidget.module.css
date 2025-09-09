@@ -1,0 +1,55 @@
+.historySection {
+  width: 100%;
+  max-width: 1392px;
+}
+
+.historyCard {
+  background: white;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 12.75px;
+  padding: 20px 28px;
+  height: auto;
+  min-height: 742px;
+}
+
+.historyCard h3 {
+  font-size: 14px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  color: black;
+  margin: 0 0 20px 0;
+  line-height: 14px;
+}
+
+.tableWrapper {
+  overflow: visible;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.headerRow {
+  border-bottom: 0.8px solid rgba(0,0,0,0.1);
+  height: 40px;
+}
+
+.headerRow th {
+  padding: 16px 20px;
+  text-align: left;
+  font-size: 12px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  color: black;
+  line-height: 17.5px;
+  font-weight: normal;
+  vertical-align: middle;
+}
+
+.headerRow th:nth-child(1) { width: 280px; } /* 백테스트 이름 */
+.headerRow th:nth-child(2) { width: 120px; } /* 생성일 */
+.headerRow th:nth-child(3) { width: 140px; } /* 백테스트 기간 */
+.headerRow th:nth-child(4) { width: 120px; } /* 총 수익률 */
+.headerRow th:nth-child(5) { width: 120px; } /* 최대낙폭 */
+.headerRow th:nth-child(6) { width: 120px; } /* 샤프비율 */
+.headerRow th:nth-child(7) { width: 100px; text-align: center; } /* 상태 */
+.headerRow th:nth-child(8) { width: 60px; text-align: center; } /* 삭제 */
