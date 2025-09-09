@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rebra.dto.TempToken;
 import com.rebra.dto.request.SignupRequest;
+import com.rebra.entity.SurveyResult;
 import com.rebra.entity.User;
 import com.rebra.jwt.Token;
 import com.rebra.jwt.TokenProvider;
@@ -50,9 +51,18 @@ class SignupControllerTest {
     private KakaoOAuth2ServiceImpl kakaoOAuth2Service;
 
     private User createTestUser(Long id, String sub, String nickname) {
+        SurveyResult surveyResult = SurveyResult.builder()
+                .age(30)
+                .mainIncomeSource("급여소득")
+                .investmentPurpose(25)
+                .investmentExperience(26)
+                .riskTolerance(25)
+                .build();
+                
         User user = User.builder()
                 .sub(sub)
                 .nickname(nickname)
+                .surveyResult(surveyResult)
                 .build();
         // Entity의 ID는 ReflectionTestUtils 필요 (JPA auto-generated field, setter 없음)
         ReflectionTestUtils.setField(user, "id", id);
@@ -92,7 +102,7 @@ class SignupControllerTest {
         String nickname = "신규사용자";
         String kakaoSub = "kakao-sub-123";
         
-        SignupRequest request = new SignupRequest(nickname);
+        SignupRequest request = new SignupRequest(nickname, 30, "급여소득", 25, 26, 25);
         
         TempToken tempTokenData = new TempToken(kakaoSub);
         User createdUser = createTestUser(1L, kakaoSub, nickname);
@@ -101,7 +111,7 @@ class SignupControllerTest {
 
         given(tokenProvider.getTempTokenData(tempTokenValue)).willReturn(tempTokenData);
         given(signupService.isNicknameAvailable(nickname)).willReturn(true);
-        given(kakaoOAuth2Service.createUserWithKakaoSub(kakaoSub, nickname)).willReturn(createdUser);
+        given(kakaoOAuth2Service.createUserWithKakaoSub(kakaoSub, request)).willReturn(createdUser);
         given(tokenProvider.generateRefreshToken(createdUser)).willReturn(refreshToken);
         given(kakaoOAuth2Service.issueAccessToken("refresh-token")).willReturn(accessToken);
         // saveRefreshTokenForUser는 void 메서드이므로 아무것도 하지 않음
@@ -131,7 +141,7 @@ class SignupControllerTest {
     @DisplayName("회원가입 실패 - 임시 토큰 없음")
     void completeSignup_MissingTempToken_Fails() throws Exception {
         String nickname = "신규사용자";
-        SignupRequest request = new SignupRequest(nickname);
+        SignupRequest request = new SignupRequest(nickname, 30, "급여소득", 25, 26, 25);
 
         mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -146,7 +156,7 @@ class SignupControllerTest {
         String nickname = "중복닉네임";
         String kakaoSub = "kakao-sub-123";
         
-        SignupRequest request = new SignupRequest(nickname);
+        SignupRequest request = new SignupRequest(nickname, 30, "급여소득", 25, 26, 25);
         
         TempToken tempTokenData = new TempToken(kakaoSub);
 
@@ -166,7 +176,7 @@ class SignupControllerTest {
         String tempTokenValue = "invalid-temp-token";
         String nickname = "신규사용자";
         
-        SignupRequest request = new SignupRequest(nickname);
+        SignupRequest request = new SignupRequest(nickname, 30, "급여소득", 25, 26, 25);
 
         given(tokenProvider.getTempTokenData(tempTokenValue))
                 .willThrow(new RuntimeException("Invalid temp token"));
@@ -183,7 +193,7 @@ class SignupControllerTest {
     void completeSignup_EmptyNickname_Fails() throws Exception {
         String tempTokenValue = "valid-temp-token";
         
-        SignupRequest request = new SignupRequest("");
+        SignupRequest request = new SignupRequest("", 30, "급여소득", 25, 26, 25);
 
         mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -197,7 +207,7 @@ class SignupControllerTest {
     void completeSignup_NullNickname_Fails() throws Exception {
         String tempTokenValue = "valid-temp-token";
         
-        SignupRequest request = new SignupRequest(null);
+        SignupRequest request = new SignupRequest(null, 30, "급여소득", 25, 26, 25);
 
         mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)

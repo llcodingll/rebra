@@ -24,7 +24,7 @@ interface ApiConfig {
 }
 
 const currentConfig: ApiConfig = {
-  baseURL: 'http://localhost:8080',
+  baseURL: 'https://rebra.site',
 
   timeout: {
     default: 10000, // 10초

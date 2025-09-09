@@ -74,7 +74,7 @@ public class SignupController {
         }
         
         // 실제 사용자 생성
-        User user = kakaoOAuth2Service.createUserWithKakaoSub(tempTokenData.getSub(), signupRequest.getNickname());
+        User user = kakaoOAuth2Service.createUserWithKakaoSub(tempTokenData.getSub(), signupRequest);
         
         // Access Token + Refresh Token
         Token refreshToken = tokenProvider.generateRefreshToken(user);

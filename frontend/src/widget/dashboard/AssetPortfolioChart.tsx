@@ -275,29 +275,16 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                   </div>
                 </div>
               </div>
+              <span className={styles.thresholdValue}>10%</span>
+            </div>
 
-              {/* 비중 분석 */}
-              <div className={styles.weightAnalysis}>
-                <h5 className={styles.analysisTitle}>
-                  <Target className={styles.analysisIcon} />
-                  비중 분석
-                </h5>
-                
-                <div className={styles.weightItem}>
-                  <div className={styles.weightHeader}>
-                    <span className={styles.weightLabel}>목표 비중</span>
-                    <span className={styles.weightValue}>{selectedStock.targetWeight}%</span>
-                  </div>
-                  <div className={styles.weightBar}>
-                    <div 
-                      className={styles.weightFill}
-                      style={{ 
-                        width: `${selectedStock.targetWeight}%`,
-                        backgroundColor: '#2563eb'
-                      }}
-                    />
-                  </div>
-                </div>
+            <div className={styles.targetInfo}>
+              <div className={styles.targetLabel}>목표 비중</div>
+              <div className={styles.targetBar}>
+                <div className={styles.targetFill}></div>
+              </div>
+              <span className={styles.targetValue}>30%</span>
+            </div>
 
                 <div className={styles.weightItem}>
                   <div className={styles.weightHeader}>
