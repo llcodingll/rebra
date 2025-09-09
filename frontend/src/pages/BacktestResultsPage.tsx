@@ -43,7 +43,7 @@ export default function BacktestResultsPage() {
                 <span className={styles.resultLabel}>초기 자본</span>
                 <span className={styles.resultValue}>10,000,000원</span>
                 <span className={styles.resultLabel}>최종 자본</span>
-                <span className={`${styles.resultValue} ${styles.blue}`}>13,520,000원</span>
+                <span className={`${styles.resultValue} ${styles.blue}`}>13,530,000원</span>
               </div>
               
               <div className={styles.resultColumn}>
