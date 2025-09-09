@@ -134,7 +134,7 @@ public class TokenProvider {
             throw AuthException.tempTokenParsingFailed();
         } catch (ExpiredJwtException e) {
             log.info("만료된 임시 토큰: {}", e.getMessage());
-            throw new AuthException(EXPIRED_TEMP_TOKEN);
+            throw AuthException.expiredTempToken();
         } catch (AuthException e) {
             // AuthException은 그대로 재전파
             throw e;

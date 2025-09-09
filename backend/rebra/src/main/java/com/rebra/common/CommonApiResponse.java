@@ -1,6 +1,7 @@
 package com.rebra.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.rebra.exception.CustomRuntimeException;
 import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
@@ -40,8 +41,8 @@ public class CommonApiResponse<T> {
                 .build();
     }
     
-    // BusinessException용 - ExceptionCode에서 HttpStatus 자동 추출
-    public static <T> CommonApiResponse<T> error(com.rebra.exception.CustomRuntimeException ex) {
+    // CustomRuntimeException용 - ExceptionCode에서 HttpStatus 자동 추출
+    public static <T> CommonApiResponse<T> error(CustomRuntimeException ex) {
         return CommonApiResponse.<T>builder()
                 .success(false)
                 .status(ex.getStatus().value())
