@@ -40,8 +40,6 @@
 .submitSection {
   text-align: center;
   margin-top: 40px;
-  padding-top: 32px;
-  border-top: 1px solid #e5e7eb;
 }
 
 .submitButton {
@@ -74,19 +72,19 @@
   .signupPage {
     padding: 20px 10px;
   }
-  
+
   .header {
     padding: 30px 20px;
   }
-  
+
   .header h1 {
     font-size: 28px;
   }
-  
+
   .header p {
     font-size: 16px;
   }
-  
+
   .surveyForm {
     padding: 30px 20px;
   }

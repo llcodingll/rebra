@@ -1,71 +1,15 @@
 import styles from './ProfitStatusPage.module.css';
 import { profitStatusStockData, unregisteredStocksData, rebalancingHistoryData, chartLegendData } from '../mocks/profitStatusData';
-import imgImage3 from "figma:asset/10ab81539875bd08fb11acc6c58753b6c244c1e0.png";
-import imgImage22 from "figma:asset/1ea006dc4cf62fda2e8ddd425d0178712455c473.png";
 import { imgSvg, imgSvg1, imgVector, imgVector1, imgVector2, imgVector3, imgVector4, imgVector5, imgVector6, imgVector7, imgVector8, imgVector9, imgVector10, imgFrame, imgVector11, imgVector12, imgVector13, imgVector14, imgVector15 } from "../assets/imports/svg-fecjf";
 
 export default function ProfitStatusPage() {
 
   return (
     <div className={styles.profitStatusPage}>
-      {/* 포트폴리오 헤더 */}
-      <div className={styles.portfolioHeader}>
-        <div className={styles.portfolioTitle}>
-          <h2>A 포트폴리오</h2>
-          <span className={styles.portfolioDesc}>은퇴 자금 마련</span>
-        </div>
-        <button className={styles.portfolioLink}>
-          다른 포트폴리오 보기
-        </button>
-      </div>
-
-      {/* 리밸런싱 컨트롤 */}
-      <div className={styles.rebalancingControls}>
-        <div className={styles.controlGroup}>
-          <h3>즉시 실행</h3>
-          <button className={styles.executeButton}>
-            <img src={imgFrame} alt="" className={styles.playIcon} />
-            지금 리벨런싱 실행
-          </button>
-        </div>
-
-        <div className={styles.controlGroup}>
-          <h3>자동 리벨런싱</h3>
-          <div className={styles.toggleContainer}>
-            <div className={styles.toggle}>
-              <div className={styles.toggleTrack}></div>
-              <div className={styles.toggleThumb}></div>
-            </div>
-            <span className={styles.toggleLabel}>활성화</span>
-          </div>
-        </div>
-
-        <div className={styles.controlGroup}>
-          <h3>리밸런싱 주기</h3>
-          <div className={styles.periodButtons}>
-            <button className={styles.periodButton}>주간</button>
-            <button className={`${styles.periodButton} ${styles.active}`}>월간</button>
-            <button className={styles.periodButton}>연간</button>
-            <input 
-              id="period-months"
-              name="periodMonths"
-              type="number" 
-              className={styles.periodInput} 
-              defaultValue="3"
-              aria-label="기간 설정 (개월)"
-            />
-            <span>개월마다</span>
-            <button className={styles.saveButton}>저장</button>
-          </div>
-        </div>
-      </div>
 
       {/* 포트폴리오 차트 및 정보 */}
       <div className={styles.portfolioSection}>
         <div className={styles.chartContainer}>
-          <div className={styles.chartImageWrapper}>
-            <img src={imgImage22} alt="포트폴리오 차트" className={styles.chartImage} />
-          </div>
 
           <div className={styles.portfolioStats}>
             <div className={styles.totalReturn}>
@@ -78,7 +22,7 @@ export default function ProfitStatusPage() {
               <span>평가 자산: 180,620,000원</span>
             </div>
           </div>
-
+          {/*비율별 포트폴리오 주식 목록*/}
           <div className={styles.chartLegend}>
             {chartLegendData.map((item, index) => (
               <div key={index} className={styles.legendItem}>
@@ -94,19 +38,8 @@ export default function ProfitStatusPage() {
             ))}
           </div>
         </div>
-
+          {/*비율별 포트폴리오 주식 목록*/}
         <div className={styles.recentTrades}>
-          <div className={styles.tradeItem}>
-            <div className={styles.tradeHeader}>
-              <span className={styles.stockName}>삼성전자</span>
-              <div className={styles.tradeResult}>
-                <span className={styles.profit}>손익 +180,000원</span>
-                <span className={styles.profitRate}>+15.2%</span>
-              </div>
-            </div>
-            <span className={styles.tradeDetail}>150주(1,200,000원) 매도</span>
-          </div>
-
           <div className={styles.tradeItem}>
             <div className={styles.tradeHeader}>
               <span className={styles.stockName}>LG전자</span>
@@ -133,132 +66,7 @@ export default function ProfitStatusPage() {
 
       {/* 테이블 섹션 */}
       <div className={styles.tablesSection}>
-        {/* 등록 주식 테이블 */}
-        <div className={styles.tableContainer}>
-          <div className={styles.tableHeader}>
-            <h3>등록 주식</h3>
-          </div>
-          
-          <div className={styles.table}>
-            <div className={styles.tableHead}>
-              <div className={styles.columnHeader}>종목명</div>
-              <div className={styles.columnHeader}>매수가/현재가</div>
-              <div className={styles.columnHeader}>수량/평가금액</div>
-              <div className={styles.columnHeader}>수익률</div>
-              <div className={styles.columnHeader}>현재 비중(%)</div>
-              <div className={styles.columnHeader}>목표 비중(%)</div>
-              <div className={styles.columnHeader}>가중치</div>
-              <div className={styles.columnHeader}>임계값 비중(%)</div>
-              <div className={styles.columnHeader}>제외</div>
-            </div>
-
-            <div className={styles.tableBody}>
-              {profitStatusStockData.map((stock, index) => (
-                <div key={index} className={styles.tableRow}>
-                  <div className={styles.stockInfoCell}>
-                    <span className={styles.stockName}>{stock.name}</span>
-                    <span className={styles.stockCode}>{stock.code}</span>
-                  </div>
-                  
-                  <div className={styles.priceCell}>
-                    <div className={styles.buyPrice}>{stock.buyPrice.toLocaleString()}</div>
-                    <div className={styles.currentPrice}>{stock.currentPrice.toLocaleString()}</div>
-                  </div>
-                  
-                  <div className={styles.quantityCell}>
-                    <div className={styles.quantity}>{stock.quantity}주</div>
-                    <div className={styles.totalValue}>{stock.totalValue.toLocaleString()}원</div>
-                  </div>
-                  
-                  <div className={styles.profitCell}>
-                    <div className={styles.profitRate}>
-                      <img src={imgVector11} alt="" className={styles.arrowIcon} />
-                      +{stock.profitRate}%
-                    </div>
-                    <div className={styles.profitAmount}>(+{stock.profitAmount.toLocaleString()}원)</div>
-                  </div>
-                  
-                  <div className={styles.weightCell}>
-                    {stock.currentWeight}%
-                  </div>
-                  
-                  <div className={styles.targetCell}>
-                    <input 
-                      type="number" 
-                      defaultValue={stock.targetWeight} 
-                      className={styles.targetInput}
-                    />
-                  </div>
-                  
-                  <div className={styles.weightValueCell}>
-                    {stock.weight}
-                  </div>
-                  
-                  <div className={styles.thresholdCell}>
-                    <input 
-                      type="number" 
-                      defaultValue={stock.thresholdWeight}
-                      className={styles.thresholdInput}
-                    />
-                  </div>
-                  
-                  <div className={styles.excludeCell}>
-                    <img src={imgImage3} alt="제외" className={styles.excludeIcon} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 미등록 주식 테이블 */}
-        <div className={styles.tableContainer}>
-          <div className={styles.tableHeader}>
-            <h3>미등록 주식</h3>
-          </div>
-          
-          <div className={styles.table}>
-            <div className={styles.tableHead}>
-              <div className={styles.columnHeader}>종목명</div>
-              <div className={styles.columnHeader}>매수가/현재가</div>
-              <div className={styles.columnHeader}>수량/평가금액</div>
-              <div className={styles.columnHeader}>수익률</div>
-            </div>
-
-            <div className={styles.tableBody}>
-              {unregisteredStocksData.map((stock, index) => (
-                <div key={index} className={styles.tableRow}>
-                  <div className={styles.stockInfoCell}>
-                    <span className={styles.stockName}>{stock.name}</span>
-                    <span className={styles.stockCode}>{stock.code}</span>
-                  </div>
-                  
-                  <div className={styles.priceCell}>
-                    <div className={styles.buyPrice}>{stock.buyPrice.toLocaleString()}</div>
-                    <div className={styles.currentPrice}>{stock.currentPrice.toLocaleString()}</div>
-                  </div>
-                  
-                  <div className={styles.quantityCell}>
-                    <div className={styles.quantity}>{stock.quantity}주</div>
-                    <div className={styles.totalValue}>{stock.totalValue.toLocaleString()}원</div>
-                  </div>
-                  
-                  <div className={styles.profitCell}>
-                    <div className={styles.profitRate}>
-                      <img src={imgVector11} alt="" className={styles.arrowIcon} />
-                      +{stock.profitRate}%
-                    </div>
-                    <div className={styles.profitAmount}>(+{stock.profitAmount.toLocaleString()}원)</div>
-                  </div>
-                  
-                  <div className={styles.excludeCell}>
-                    <img src={imgImage3} alt="제외" className={styles.excludeIcon} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        
 
         {/* 리밸런싱 히스토리 */}
         <div className={styles.historyContainer}>

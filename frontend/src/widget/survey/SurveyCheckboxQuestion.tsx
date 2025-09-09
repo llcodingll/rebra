@@ -10,17 +10,22 @@ interface SurveyCheckboxQuestionProps {
   options: Option[];
   selectedValues: string[];
   onChange: (value: string, checked: boolean) => void;
+  required?: boolean;
 }
 
 export default function SurveyCheckboxQuestion({
   label,
   options,
   selectedValues,
-  onChange
+  onChange,
+  required = false
 }: SurveyCheckboxQuestionProps) {
   return (
     <div className={styles.question}>
-      <label className={styles.questionLabel}>{label}</label>
+      <label className={styles.questionLabel}>
+        {label}
+        {required && <span className={styles.required}>*</span>}
+      </label>
       <div className={styles.options}>
         {options.map((option) => (
           <label key={option.value} className={styles.checkboxLabel}>

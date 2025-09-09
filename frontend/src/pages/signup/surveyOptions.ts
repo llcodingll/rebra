@@ -16,86 +16,59 @@ export const ageOptions: Option[] = [
   { value: '60s', label: '60대 이상' },
 ];
 
-export const incomeOptions: Option[] = [
-  { value: 'under30', label: '3천만원 미만' },
-  { value: '30to60', label: '3천-6천만원' },
-  { value: '60to100', label: '6천만원-1억원' },
-  { value: 'over100', label: '1억원 이상' },
-];
-
-export const assetOptions: Option[] = [
-  { value: 'under10', label: '1천만원 미만' },
-  { value: '10to50', label: '1천-5천만원' },
-  { value: '50to100', label: '5천만원-1억원' },
-  { value: 'over100', label: '1억원 이상' },
-];
-
-export const investmentRatioOptions: Option[] = [
-  { value: 'under10', label: '10% 미만' },
-  { value: '10to30', label: '10-30%' },
-  { value: '30to50', label: '30-50%' },
-  { value: 'over50', label: '50% 이상' },
-];
-
-export const emergencyOptions: Option[] = [
-  { value: 'sufficient', label: '충분히 보유' },
-  { value: 'partial', label: '일부 보유' },
-  { value: 'minimal', label: '거의 없음' },
+export const incomeSourceOptions: Option[] = [
+  { value: 'salary', label: '급여' },
+  { value: 'business', label: '사업 소득' },
+  { value: 'pension', label: '연금' },
+  { value: 'other', label: '기타' },
 ];
 
 export const purposeOptions: Option[] = [
-  { value: 'retirement', label: '노후 대비' },
   { value: 'wealth', label: '자산 증식' },
-  { value: 'education', label: '자녀 교육비' },
+  { value: 'retirement', label: '노후 대비' },
   { value: 'shortTerm', label: '단기 수익' },
+  { value: 'education', label: '자녀 교육' },
+  { value: 'other', label: '기타' },
 ];
 
 export const periodOptions: Option[] = [
-  { value: 'under1', label: '1년 미만' },
-  { value: '1to3', label: '1-3년' },
-  { value: '3to5', label: '3-5년' },
+  { value: 'under1', label: '1년 이하' },
+  { value: '1to3', label: '1~3년' },
+  { value: '3to5', label: '3~5년' },
   { value: 'over5', label: '5년 이상' },
 ];
 
 export const experienceOptions: Option[] = [
   { value: 'none', label: '없음' },
   { value: 'under1', label: '1년 미만' },
-  { value: '1to3', label: '1-3년' },
-  { value: 'over3', label: '3년 이상' },
+  { value: '1to3', label: '1~3년' },
+  { value: '3to5', label: '3~5년' },
+  { value: 'over5', label: '5년 이상' },
 ];
 
 export const productOptions: Option[] = [
-  { value: 'deposit', label: '예금/적금만' },
+  { value: 'deposit', label: '예금/적금' },
   { value: 'stock', label: '주식' },
-  { value: 'fund', label: '펀드/ETF' },
-  { value: 'derivatives', label: '해외투자/파생상품' },
+  { value: 'bond', label: '채권' },
+  { value: 'fund', label: '펀드' },
+  { value: 'etf', label: 'ETF' },
+  { value: 'derivatives', label: '파생상품' },
+  { value: 'crypto', label: '암호화폐' },
 ];
 
 export const maxLossOptions: Option[] = [
-  { value: 'none', label: '손실 절대 불가' },
-  { value: 'under5', label: '5% 이하' },
-  { value: 'under10', label: '10% 이하' },
-  { value: 'over20', label: '20% 이상' },
+  { value: 'none', label: '손실을 원하지 않음' },
+  { value: 'under5', label: '원금의 5%' },
+  { value: 'under10', label: '10%' },
+  { value: 'under20', label: '20%' },
+  { value: 'over30', label: '30% 이상 가능' },
 ];
 
 export const styleOptions: Option[] = [
-  { value: 'safe', label: '원금보장 최우선' },
   { value: 'stable', label: '안정성 중시' },
-  { value: 'balanced', label: '균형 추구' },
-  { value: 'aggressive', label: '적극적 수익 추구' },
-];
-
-export const declineOptions: Option[] = [
-  { value: 'sell', label: '즉시 매도' },
-  { value: 'partialSell', label: '일부 매도' },
-  { value: 'hold', label: '유지 관망' },
-  { value: 'buy', label: '추가 매수' },
-];
-
-export const liquidityOptions: Option[] = [
-  { value: 'rare', label: '거의 없음' },
-  { value: 'sometimes', label: '가끔 있음' },
-  { value: 'often', label: '자주 있음' },
+  { value: 'balanced', label: '안정성과 수익의 균형' },
+  { value: 'aggressive', label: '적극적인 수익 추구' },
+  { value: 'highRisk', label: '고위험 고수익 추구' },
 ];
 
 export const agreements: Agreement[] = [
