@@ -44,7 +44,9 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<CommonApiResponse<UserProfileResponse>> getUserInfo(@LoginUser Long userId) {
         User user = userService.findById(userId);
-        return ResponseEntity.ok(CommonApiResponse.success(new UserProfileResponse(user.getId(), user.getNickname())));
+        return ResponseEntity.ok(CommonApiResponse.success(
+            new UserProfileResponse(user.getId(), user.getNickname())
+        ));
     }
 
     @Operation(summary = "로그아웃", description = "사용자를 로그아웃하고 모든 리프레시 토큰을 삭제합니다.")

@@ -89,7 +89,7 @@ class AuthenticationIntegrationTest {
         Token tempJwtToken = tokenProvider.generateTempToken(tempToken);
 
         // 2. 회원가입 완료
-        SignupRequest signupRequest = new SignupRequest(nickname);
+        SignupRequest signupRequest = new SignupRequest(nickname, 30, "급여소득", 25, 26, 25);
 
         MvcResult signupResult = mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -213,7 +213,7 @@ class AuthenticationIntegrationTest {
         TempToken tempToken = new TempToken(kakaoSub);
         Token tempJwtToken = tokenProvider.generateTempToken(tempToken);
 
-        SignupRequest request = new SignupRequest("임시토큰사용자");
+        SignupRequest request = new SignupRequest("임시토큰사용자", 30, "급여소득", 25, 26, 25);
 
         mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -230,7 +230,7 @@ class AuthenticationIntegrationTest {
                 java.time.LocalDateTime.now().minusMinutes(31));
         Token expiredTempJwtToken = tokenProvider.generateTempToken(expiredTempToken);
 
-        SignupRequest request = new SignupRequest("만료토큰사용자");
+        SignupRequest request = new SignupRequest("만료토큰사용자", 30, "급여소득", 25, 26, 25);
 
         mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)

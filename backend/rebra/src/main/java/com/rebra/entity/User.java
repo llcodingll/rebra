@@ -2,6 +2,7 @@ package com.rebra.entity;
 
 import com.rebra.common.BaseEntity;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -42,6 +43,9 @@ public class User extends BaseEntity {
     
     @Column(unique = true)
     private String nickname;
+    
+    @Embedded
+    private SurveyResult surveyResult;
 
     public User(String sub) {
         this.sub = sub;
