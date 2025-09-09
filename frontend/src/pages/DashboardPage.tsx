@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import styles from './DashboardPage.module.css';
-import PortfolioChart from '../widget/dashboard/PortfolioChart';
+import DashBoardSettingsTab from './DashBoardSettingsTab';
+import AssetPortfolioChart from '../widget/dashboard/AssetPortfolioChart';
 import AssetTable from '../widget/dashboard/AssetTable';
 import ProfitStatusPage from './ProfitStatusPage';
 import PortfolioSelectionModal from '../widget/portfolio/PortfolioSelectionModal';
@@ -44,45 +45,7 @@ export default function DashboardPage() {
   const renderContent = () => {
     switch (activeSubTab) {
       case 'assets':
-        return (
-          <>
-            {/* 리밸런싱 컨트롤 */}
-            <div className={styles.rebalancingControls}>
-              <div className={styles.controlGroup}>
-                <h3>즉시 실행</h3>
-                <button className={styles.executeButton}>
-                  <svg width="19" height="19" viewBox="0 0 19 19" fill="none">
-                    <path d="M4.75589 2.38672L15.7495 9.33007L4.75589 16.2734V2.38672Z" fill="white" stroke="white" strokeWidth="1.38867" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  지금 리벨런싱 실행
-                </button>
-              </div>
-
-              <div className={styles.controlGroup}>
-                <h3>자동 리벨런싱</h3>
-                <div className={styles.toggleContainer}>
-                  <div className={styles.toggle}>
-                    <div className={styles.toggleTrack}></div>
-                    <div className={styles.toggleThumb}></div>
-                  </div>
-                  <span className={styles.toggleLabel}>활성화</span>
-                </div>
-              </div>
-
-              <div className={styles.controlGroup}>
-                <h3>리밸런싱 주기</h3>
-                <div className={styles.periodButtons}>
-                  <button className={styles.periodButton}>주간</button>
-                  <button className={`${styles.periodButton} ${styles.active}`}>월간</button>
-                  <button className={styles.periodButton}>연간</button>
-                  <input type="number" className={styles.periodInput} defaultValue="3" />
-                  <span>개월마다</span>
-                  <button className={styles.saveButton}>저장</button>
-                </div>
-              </div>
-            </div>
-          </>
-        );
+        return <AssetPortfolioChart />;
       case 'profit':
         return <ProfitStatusPage />;
       default:
@@ -91,6 +54,11 @@ export default function DashboardPage() {
   };
 
   return (
+    <div>
+            {/* 리밸런싱 실행 설정*/}
+
+          
+
     <div className={styles.dashboard}>
       <div className={styles.container}>
         {/* 포트폴리오 선택 섹션 */}
@@ -104,8 +72,23 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* 포트폴리오 차트 - 탭 기능 포함 */}
-        <PortfolioChart activeTab={activeSubTab} onTabChange={setActiveSubTab} />
+        <DashBoardSettingsTab />
+
+        {/* 탭 헤더 */}
+        <div className={styles.tabHeader}>
+          <button 
+            className={`${styles.tab} ${activeSubTab === 'assets' ? styles.active : ''}`}
+            onClick={() => setActiveSubTab('assets')}
+          >
+            자산 현황
+          </button>
+          <button 
+            className={`${styles.tab} ${activeSubTab === 'profit' ? styles.active : ''}`}
+            onClick={() => setActiveSubTab('profit')}
+          >
+            수익률 현황
+          </button>
+        </div>
 
         {renderContent()}
       </div>
@@ -121,6 +104,7 @@ export default function DashboardPage() {
         onClose={handleModalClose}
         onSelect={handlePortfolioSelect}
       />
+    </div>
     </div>
   );
 }
