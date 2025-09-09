@@ -115,10 +115,12 @@ environment {
             }
             steps {
                 echo '=== Shared 모듈 빌드 중 ==='
-                sh '''
-                    chmod +x ./gradlew
-                    ./gradlew :shared:clean :shared:build -x test
-                '''
+                dir('backend/rebra') {
+                    sh '''
+                        chmod +x ./gradlew
+                        ./gradlew clean build -x test
+                    '''
+                }
                 echo '✅ Shared 모듈 빌드 완료'
             }
         }
@@ -131,11 +133,14 @@ environment {
                     }
                     steps {
                         echo '=== 메인 서버 빌드 중 ==='
-                        sh '''
-                            ./gradlew :rebra:clean :rebra:build -x test
-                            echo "빌드된 JAR 파일 확인:"
-                            ls -la rebra/build/libs/
-                        '''
+                        dir('backend/rebra') {
+                            sh '''
+                                chmod +x ./gradlew
+                                ./gradlew clean build -x test
+                                echo "빌드된 JAR 파일 확인:"
+                                ls -la build/libs/
+                            '''
+                        }
                         echo '✅ 메인 서버 빌드 완료'
                     }
                 }
@@ -169,7 +174,7 @@ environment {
                     steps {
                         echo '=== 메인 서버 Docker 이미지 빌드 중 ==='
                         script {
-                            dir('rebra') {
+                            dir('backend/rebra') {
                                 sh """
                                     docker build -t rebra-main:${BUILD_TAG} .
                                     docker tag rebra-main:${BUILD_TAG} rebra-main:latest
@@ -264,25 +269,27 @@ environment {
                         */
 
                         // 기존 서비스 중지 (Graceful shutdown)
-                        sh '''
-                            echo "기존 서비스들을 안전하게 중지합니다..."
-                            docker-compose -f docker-compose.prod.yml down --remove-orphans || true
-                        '''
+                        dir('backend') {
+                            sh '''
+                                echo "기존 서비스들을 안전하게 중지합니다..."
+                                docker-compose -f docker-compose.prod.yml down --remove-orphans || true
+                            '''
 
-                        // 새 서비스 시작
-                        sh '''
-                            echo "새로운 버전의 서비스들을 시작합니다..."
-                            docker-compose -f docker-compose.prod.yml up -d
-                        '''
+                            // 새 서비스 시작
+                            sh '''
+                                echo "새로운 버전의 서비스들을 시작합니다..."
+                                docker-compose -f docker-compose.prod.yml up -d
+                            '''
 
-                        // 서비스 상태 확인
-                        sh '''
-                            echo "서비스 시작 대기 중..."
-                            sleep 30
+                            // 서비스 상태 확인
+                            sh '''
+                                echo "서비스 시작 대기 중..."
+                                sleep 30
 
-                            echo "실행 중인 컨테이너 확인:"
-                            docker-compose -f docker-compose.prod.yml ps
-                        '''
+                                echo "실행 중인 컨테이너 확인:"
+                                docker-compose -f docker-compose.prod.yml ps
+                            '''
+                        }
 
                     } else {
                         echo '변경된 서비스가 없어 배포를 건너뜁니다.'
