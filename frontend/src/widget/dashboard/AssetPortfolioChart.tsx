@@ -1,121 +1,322 @@
+import { useState } from 'react';
+import { motion } from 'motion/react';
 import styles from './AssetPortfolioChart.module.css';
-// SVG paths are embedded directly in the component
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { TrendingUp, TrendingDown, BarChart3, Target, AlertCircle } from 'lucide-react';
 
-export default function AssetPortfolioChart() {
+interface Stock {
+  name: string;
+  code: string;
+  buyPrice: string;
+  currentPrice: string;
+  quantity: string;
+  value: string;
+  return: string;
+  returnAmount: string;
+  currentWeight: string;
+  targetWeight: string;
+  weight: string;
+  threshold: string;
+  type: 'registered' | 'unregistered';
+}
+
+interface AssetPortfolioChartProps {
+  data: Stock[];
+}
+
+// 커스텀 툴팁 컴포넌트
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className={styles.tooltip}>
+        <p className={styles.tooltipTitle}>{data.name}</p>
+        <p className={styles.tooltipValue}>비중: {data.value}%</p>
+      </div>
+    );
+  }
+  return null;
+};
+
+export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) {
+  const [selectedStock, setSelectedStock] = useState(data[0] || null);
+  const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
+
+  // 총 평가액 계산
+  const totalValue = data.reduce((sum, stock) => {
+    const value = parseInt(stock.value.replace(/[^0-9]/g, ''));
+    return sum + value;
+  }, 0);
+
+  // 총 수익 계산 
+  const totalReturn = data.reduce((sum, stock) => {
+    const returnAmount = parseInt(stock.returnAmount.replace(/[^0-9+-]/g, ''));
+    return sum + returnAmount;
+  }, 0);
+
+  const totalReturnPercent = ((totalReturn / (totalValue - totalReturn)) * 100).toFixed(1);
+  const isPositiveReturn = totalReturn >= 0;
+
+  // Recharts용 데이터 변환
+  const chartData = data.map((stock, index) => ({
+    name: stock.name,
+    code: stock.code,
+    value: parseFloat(stock.currentWeight.replace('%', '')),
+    color: `hsl(${index * 60}, 70%, 50%)`
+  }));
+
+  // 주식 테마에 맞는 색상 팔레트
+  const COLORS = [
+    '#2563eb', // 파란색 (신뢰감)
+    '#10b981', // 초록색 (성장)
+    '#f59e0b', // 주황색 (에너지)
+    '#ef4444', // 빨간색 (주의)
+    '#8b5cf6', // 보라색 (혁신)
+    '#06b6d4', // 청록색 (안정)
+  ];
+
+  const handleStockSelect = (stock: Stock) => {
+    setSelectedStock(stock);
+  };
+
+  const handleMouseEnter = (data: any, index: number) => {
+    setHoveredSegment(data.name);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredSegment(null);
+  };
+
+  const handlePieClick = (chartEntry: any, index: number) => {
+    // 클릭된 차트 엔트리의 이름으로 실제 주식 데이터 찾기
+    const clickedStock = data.find(stock => stock.name === chartEntry.name);
+    if (clickedStock) {
+      setSelectedStock(clickedStock);
+    }
+  };
+
   return (
     <div className={styles.chartContainer}>
-      <div className={styles.chartCard}>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className={styles.chartCard}
+      >
+        {/* 헤더 */}
+        <div className={styles.header}>
+          <div className={styles.headerLeft}>
+            <BarChart3 className={styles.headerIcon} />
+            <h2 className={styles.title}>포트폴리오 구성</h2>
+          </div>
+          <div className={styles.headerBadge}>
+            <span>총 {data.length}개 종목</span>
+          </div>
+        </div>
 
-        {/* 차트 영역 */}
-        <div className={styles.chartArea}>
-          
-          {/* 왼쪽 패널 (총 평가액 + 범례) */}
+        {/* 메인 컨텐츠 */}
+        <div className={styles.content}>
+          {/* 왼쪽: 총 평가액 + 범례 */}
           <div className={styles.leftPanel}>
             {/* 총 평가액 정보 */}
-            <div className={styles.totalValue}>
-              <h3>총 평가액</h3>
-              <div className={styles.amount}>18,620,500원</div>
-              <div className={styles.change}>+405,000원(+3.2%)</div>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className={styles.totalValueSection}
+            >
+              <div className={styles.totalValueHeader}>
+                <h3>총 평가액</h3>
+                <div className={styles.returnIcon}>
+                  {isPositiveReturn ? (
+                    <TrendingUp className={styles.iconPositive} />
+                  ) : (
+                    <TrendingDown className={styles.iconNegative} />
+                  )}
+                </div>
+              </div>
+              <div className={styles.amount}>{totalValue.toLocaleString()}원</div>
+              <div className={`${styles.returnInfo} ${isPositiveReturn ? styles.positive : styles.negative}`}>
+                <span className={styles.returnAmount}>
+                  {totalReturn >= 0 ? '+' : ''}{totalReturn.toLocaleString()}원
+                </span>
+                <span className={styles.returnPercent}>
+                  ({totalReturn >= 0 ? '+' : ''}{totalReturnPercent}%)
+                </span>
+              </div>
+            </motion.div>
 
             {/* 범례 */}
-            <div className={styles.legend}>
-              <div className={styles.legendItem}>
-                <div className={`${styles.legendColor} ${styles.samsung}`}></div>
-                <span className={styles.legendLabel}>삼성전자</span>
-                <span className={styles.legendValue}>32.1%</span>
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className={styles.legend}
+            >
+              <h4 className={styles.legendTitle}>포트폴리오 구성</h4>
+              <div className={styles.legendList}>
+                {data.map((stock, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 + 0.4 }}
+                    className={`${styles.legendItem} ${
+                      selectedStock?.code === stock.code ? styles.selected : ''
+                    } ${hoveredSegment === stock.name ? styles.hovered : ''}`}
+                    onClick={() => handleStockSelect(stock)}
+                  >
+                    <div 
+                      className={styles.legendColor} 
+                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                    />
+                    <div className={styles.legendContent}>
+                      <span className={styles.legendName}>{stock.name}</span>
+                      <span className={styles.legendCode}>{stock.code}</span>
+                    </div>
+                    <div className={styles.legendValues}>
+                      <span className={styles.legendWeight}>{stock.currentWeight}</span>
+                      <span className={`${styles.legendReturn} ${
+                        stock.return.startsWith('+') ? styles.positive : styles.negative
+                      }`}>
+                        {stock.return}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
-              <div className={styles.legendItem}>
-                <div className={`${styles.legendColor} ${styles.sk}`}></div>
-                <span className={styles.legendLabel}>SK하이닉스</span>
-                <span className={styles.legendValue}>24.0%</span>
-              </div>
-              <div className={styles.legendItem}>
-                <div className={`${styles.legendColor} ${styles.lg}`}></div>
-                <span className={styles.legendLabel}>LG에너지솔루션</span>
-                <span className={styles.legendValue}>18.5%</span>
-              </div>
-              <div className={styles.legendItem}>
-                <div className={`${styles.legendColor} ${styles.bio}`}></div>
-                <span className={styles.legendLabel}>삼성바이오로직스</span>
-                <span className={styles.legendValue}>14.1%</span>
-              </div>
-              <div className={styles.legendItem}>
-                <div className={`${styles.legendColor} ${styles.naver}`}></div>
-                <span className={styles.legendLabel}>NAVER</span>
-                <span className={styles.legendValue}>11.4%</span>
-              </div>
-            </div>
+            </motion.div>
           </div>
 
-          {/* 가운데 차트 */}
-          <div className={styles.chartWrapper}>
-            <div className={styles.donutChart}>
-              {/* SVG 도넛 차트 */}
+          {/* 중앙: 차트 */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className={styles.chartWrapper}
+          >
+            <div className={styles.chartInner}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    innerRadius={80}
+                    outerRadius={140}
+                    paddingAngle={3}
+                    dataKey="value"
+                    strokeWidth={0}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                    onClick={handlePieClick}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={COLORS[index % COLORS.length]}
+                        style={{
+                          filter: hoveredSegment === entry.name 
+                            ? 'drop-shadow(0 8px 16px rgba(0,0,0,0.2)) brightness(1.1)' 
+                            : 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-          </div>
+          </motion.div>
 
-          {/* 오른쪽 개별 주식 정보 */}
-          <div className={styles.stockDetail}>
-            <div className={styles.stockInfo}>
-              <div className={styles.stockIcon}></div>
-              <div className={styles.stockName}>
-                <h4>삼성전자</h4>
-                <span>005930</span>
+          {/* 오른쪽: 상세 정보 */}
+          {selectedStock && (
+            <motion.div 
+              key={selectedStock.code}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              className={styles.detailPanel}
+            >
+              <div className={styles.stockHeader}>
+                <div className={styles.stockTitleRow}>
+                  <h4 className={styles.stockName}>{selectedStock.name}</h4>
+                  <span className={styles.stockCode}>{selectedStock.code}</span>
+                </div>
+                <div className={styles.stockPrice}>
+                  <span className={styles.currentPrice}>{selectedStock.currentPrice}</span>
+                </div>
               </div>
-            </div>
 
-            <div className={styles.stockMetrics}>
-              <div className={styles.metric}>
-                <label>수량</label>
-                <span>50주</span>
-              </div>
-              <div className={styles.metric}>
-                <label>평가금액</label>
-                <span>3,590,000원</span>
-              </div>
-              <div className={styles.metric}>
-                <label>수익률</label>
-                <span className={styles.positive}>+8.5%</span>
-              </div>
-              <div className={styles.metric}>
-                <label>현재 비중</label>
-                <span>32.1%</span>
-              </div>
-            </div>
-
-            <div className={styles.thresholdInfo}>
-              <div className={styles.thresholdLabel}>임계값 비중</div>
-              <div className={styles.thresholdBar}>
-                <div className={styles.thresholdFill}></div>
+              <div className={styles.stockMetrics}>
+                <div className={styles.metricRow}>
+                  <div className={styles.metric}>
+                    <span className={styles.metricLabel}>보유 수량</span>
+                    <span className={styles.metricValue}>{selectedStock.quantity}</span>
+                  </div>
+                  <div className={styles.metric}>
+                    <span className={styles.metricLabel}>평가 금액</span>
+                    <span className={styles.metricValue}>{selectedStock.value}</span>
+                  </div>
+                </div>
+                
+                <div className={styles.metricRow}>
+                  <div className={styles.metric}>
+                    <span className={styles.metricLabel}>수익률</span>
+                    <span className={`${styles.metricValue} ${
+                      selectedStock.return.startsWith('+') ? styles.positive : styles.negative
+                    }`}>
+                      {selectedStock.return}
+                    </span>
+                  </div>
+                  <div className={styles.metric}>
+                    <span className={styles.metricLabel}>현재 비중</span>
+                    <span className={styles.metricValue}>{selectedStock.currentWeight}</span>
+                  </div>
+                </div>
               </div>
               <span className={styles.thresholdValue}>10%</span>
             </div>
 
             <div className={styles.targetInfo}>
-              <div className={styles.targetLabel}>가중치</div>
+              <div className={styles.targetLabel}>목표 비중</div>
               <div className={styles.targetBar}>
                 <div className={styles.targetFill}></div>
               </div>
               <span className={styles.targetValue}>30%</span>
             </div>
 
-            <div className={styles.compareTable}>
-              <div className={styles.compareRow}>
-                <span>현재</span>
-                <span>목표</span>
-                <span>필요량</span>
+                <div className={styles.weightItem}>
+                  <div className={styles.weightHeader}>
+                    <span className={styles.weightLabel}>임계값</span>
+                    <span className={styles.weightValue}>{selectedStock.threshold}%</span>
+                  </div>
+                  <div className={styles.weightBar}>
+                    <div 
+                      className={styles.weightFill}
+                      style={{ 
+                        width: `${selectedStock.threshold}%`,
+                        backgroundColor: '#ef4444'
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className={styles.compareValues}>
-                <span>32.1%</span>
-                <span className={styles.targetBlue}>30%</span>
-                <span className={styles.negative}>-2.1%</span>
-              </div>
-            </div>
-          </div>
 
+              {/* 리밸런싱 정보 */}
+              <div className={styles.rebalancingInfo}>
+                <div className={styles.rebalancingHeader}>
+                  <AlertCircle className={styles.rebalancingIcon} />
+                  <span>리밸런싱 필요량</span>
+                </div>
+                <div className={styles.rebalancingValue}>
+                  {(parseFloat(selectedStock.currentWeight) - parseFloat(selectedStock.targetWeight)).toFixed(1)}%
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
