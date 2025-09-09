@@ -38,8 +38,8 @@ dependencies {
 	implementation 'org.apache.kafka:kafka-streams'
 	implementation 'org.springframework.session:spring-session-data-redis'
 
-	implementation group: 'com.youhogeon.finance', name: 'kis_client', version: '<latest version>'
-	implementation group: 'com.youhogeon.finance', name: 'kis_api', version: '<latest version>'
+	implementation group: 'com.youhogeon.finance', name: 'kis_client', version: '0.3.10'
+	implementation group: 'com.youhogeon.finance', name: 'kis_api', version: '0.3.6'
 
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
