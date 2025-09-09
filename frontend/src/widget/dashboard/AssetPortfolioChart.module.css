@@ -9,7 +9,7 @@
   border-radius: 18.497px;
   padding: 28px;
   position: relative;
-  height: 621px;
+  height: auto;
 }
 
 .tabHeader {
@@ -37,34 +37,38 @@
 
 .chartArea {
   display: flex;
-  align-items: center;
+  align-items: center;                 /* 위쪽 기준 정렬 */
   justify-content: space-between;
-  height: 400px;
-  position: relative;
+  gap: 40px;                     /* 좌우 간격 */
+  padding: 32px 40px;            /* 카드 안 여백 */
+  height: auto;                  /* 자동 높이 */
 }
 
-.chartWrapper {
-  flex: 1;
+/* 왼쪽 패널 (총 평가액 + 범례) */
+.leftPanel {
+  order: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 320px;
+}
+
+/* 가운데: 차트 자리 */
+.chartWrapper {                      /* 가운데로 이동 */
+  flex: 0 0 380px;               /* 가운데 고정 폭(원 차트 들어올 자리) */
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
+/* 도넛 크기(원 차트 들어올 때 유지) */
 .donutChart {
-  width: 350px;
+  width: 300px;
   height: 350px;
-  position: relative;
-}
-
-.donutChart svg {
-  width: 100%;
-  height: 100%;
 }
 
 .totalValue {
-  position: absolute;
-  left: 90px;
-  top: 140px;
+  position: static;
   text-align: left;
 }
 
@@ -91,14 +95,12 @@
   line-height: 23.663px;
 }
 
+/* 범례 */
 .legend {
-  position: absolute;
-  right: 100px;
-  top: 200px;
+  position: static;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 293px;
+  gap: 10px;
 }
 
 .legendItem {
@@ -150,11 +152,12 @@
   line-height: 25.637px;
 }
 
+/* 상세 영역: 범례 아래로 자연스럽게 흐르게 */
 .stockDetail {
-  position: absolute;
-  right: 30px;
-  bottom: 30px;
-  width: 400px;
+  position: static;              /* absolute 제거 */
+  right: auto; bottom: auto;
+  width: 320px;                  /* 범례와 동일 폭 */
+  margin: 16px 0 0 auto;         /* 우측 정렬 감각 유지 */
 }
 
 .stockInfo {

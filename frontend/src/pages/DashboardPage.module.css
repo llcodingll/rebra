@@ -186,6 +186,29 @@
   min-width: 66px;
 }
 
+.tabHeader {
+  display: flex;
+  gap: 0;
+  margin-bottom: 30px;
+}
+
+.tab {
+  padding: 12px 24px;
+  border: none;
+  background: none;
+  font-size: 19.083px;
+  font-family: 'Inter', sans-serif;
+  color: #4a5565;
+  cursor: pointer;
+  border-bottom: 1.607px solid #4a5565;
+  position: relative;
+}
+
+.tab.active {
+  color: black;
+  border-bottom-color: black;
+}
+
 .tablesContainer {
   display: flex;
   flex-direction: column;
