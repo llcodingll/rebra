@@ -348,17 +348,15 @@ public class BacktestCalculatorService {
     private void calculateFinalResults(BacktestResult result, Portfolio portfolio, 
                                      BacktestContext context, int rebalancingCount) {
         // 기본 정보
+        double initialValue = portfolio.getInitialValue();
         double finalValue = portfolio.getTotalValue(
             context.priceDataMap.get(context.tradingDates.get(context.tradingDates.size() - 1)));
-        double totalReturn = (finalValue - result.initialValue) / result.initialValue;
+        double totalReturn = (finalValue - initialValue) / initialValue;
         
         // 바이앤홀드 수익률 계산
         Map<String, Double> initialPrices = context.priceDataMap.get(context.startDate);
         Map<String, Double> finalPrices = context.priceDataMap.get(
             context.tradingDates.get(context.tradingDates.size() - 1));
-        
-        // Portfolio에서 초기 가치 가져오기 (중복 계산 제거)
-        double initialValue = portfolio.getInitialValue();
         double buyHoldValue = portfolioManagerService.calculateBuyAndHoldValue(
             context.request.getStocks(), initialPrices, finalPrices);
         double buyHoldReturn = (buyHoldValue - initialValue) / initialValue;
@@ -375,8 +373,8 @@ public class BacktestCalculatorService {
         
         // 추가 수익률 지표 계산
         double periodGrowthRate = calculatePeriodGrowthRate(periodReturns);
-        double volatility = calculateVolatility(periodReturns);
-        double annualizedReturn = calculateAnnualizedReturn(totalReturn, context.tradingDates.size());
+        double volatility = calculateVolatility(periodReturns, periodGrowthRate);
+        double annualizedReturn = calculateAnnualizedReturn(totalReturn, context.startDate, context.endDate);
         double sharpeRatio = calculateSharpeRatio(annualizedReturn, volatility);
         double timeWeightedReturn = calculateTimeWeightedReturn(periodReturns);
         
@@ -449,18 +447,13 @@ public class BacktestCalculatorService {
      * 변동성을 계산한다 (일일 수익률의 연환산 표준편차)
      * 
      * @param periodReturns 각 기간별 수익률 리스트
+     * @param meanReturn 평균 수익률
      * @return 연환산 변동성
      */
-    private double calculateVolatility(List<Double> periodReturns) {
+    private double calculateVolatility(List<Double> periodReturns, double meanReturn) {
         if (periodReturns == null || periodReturns.size() < 2) {
             return 0.0;
         }
-        
-        // 평균 수익률 계산
-        double meanReturn = periodReturns.stream()
-                .mapToDouble(Double::doubleValue)
-                .average()
-                .orElse(0.0);
         
         // 분산 계산
         double variance = periodReturns.stream()
@@ -477,16 +470,23 @@ public class BacktestCalculatorService {
      * 연환산 수익률을 계산한다
      * 
      * @param totalReturn 총 수익률
-     * @param totalDays 총 거래일 수
+     * @param startDate 백테스트 시작일
+     * @param endDate 백테스트 종료일
      * @return 연환산 수익률
      */
-    private double calculateAnnualizedReturn(double totalReturn, int totalDays) {
-        if (totalDays <= 0) {
+    private double calculateAnnualizedReturn(double totalReturn, LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null || !endDate.isAfter(startDate)) {
             return 0.0;
         }
         
-        // 복리 계산: (1 + 총수익률)^(252/총거래일수) - 1
-        double compoundGrowthRate = Math.pow(1 + totalReturn, (double) TRADING_DAYS_PER_YEAR / totalDays);
+        // 실제 경과 일수 계산
+        long actualDays = ChronoUnit.DAYS.between(startDate, endDate);
+        if (actualDays <= 0) {
+            return 0.0;
+        }
+        
+        // 복리 계산: (1 + 총수익률)^(365/실제경과일수) - 1
+        double compoundGrowthRate = Math.pow(1 + totalReturn, 365.0 / actualDays);
         return compoundGrowthRate - 1.0;
     }
     
