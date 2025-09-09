@@ -348,7 +348,7 @@ environment {
         }
 
         failure {
-            node {
+            script {
                 echo '''
 ❌ 배포 실패!
 로그를 확인하여 문제를 해결하세요.
@@ -368,7 +368,7 @@ environment {
         }
 
         always {
-            node {
+            script {
                 echo '=== 정리 작업 ==='
                 sh '''
                     echo "사용하지 않는 Docker 이미지 정리 중..."
