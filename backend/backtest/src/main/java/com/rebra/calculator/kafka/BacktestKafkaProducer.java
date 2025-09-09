@@ -201,19 +201,24 @@ public class BacktestKafkaProducer {
      * @return 예상 메시지 크기 (bytes)
      */
     private long estimateMessageSize(BacktestResponse response) {
-        long size = 1000; // 기본 메타데이터 크기
+        long size = 500; // 기본 메타데이터 (backtestId, status, calculationTimeMs, JSON 구조 오버헤드)
 
-        // 상세 기록 크기 추정
+        // 요약 정보 크기 추정 (BacktestSummaryDto)
+        if (response.getSummary() != null) {
+            // 13개 필드 * 평균 20bytes + JSON 키 오버헤드
+            size += 400; // finalValue, totalReturn, buyHoldReturn, periodGrowthRate 등
+        }
+
+        // 상세 기록 크기 추정 (BacktestDetailDto 리스트)
         if (response.getDetails() != null) {
-            size += response.getDetails().size() * 200; // 상세 기록당 약 200bytes
+            // 각 DetailDto당 약 12개 필드 * 평균 20bytes + JSON 오버헤드
+            size += response.getDetails().size() * 300; // periodDate, portfolioValue 등
         }
 
-        // 거래 기록 크기 추정
-        if (response.getRebalancingHistory() != null) {
-            size += response.getRebalancingHistory().size() * 300; // 거래 기록당 약 300bytes
+        // 에러 메시지 크기 추정 (실패 시)
+        if (response.getErrorMessage() != null) {
+            size += response.getErrorMessage().length() * 2; // UTF-8 고려
         }
-
-        // 차입 기록은 제거됨
 
         return size;
     }

@@ -397,7 +397,6 @@ public class BacktestCalculatorService {
         summary.setFinalValue(finalValue);
         summary.setTotalReturn(totalReturn);
         summary.setBuyHoldReturn(buyHoldReturn);
-        summary.setExcessReturn(totalReturn - buyHoldReturn);
         summary.setMaxDrawdown(maxDrawdown);
         summary.setRebalancingCount(rebalancingCount);
         summary.setTotalFee(portfolio.getTotalTradingCost());

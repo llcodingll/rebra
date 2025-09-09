@@ -198,9 +198,11 @@ public class PortfolioManagerService {
                 peak = currentValue;
             }
             
-            double drawdown = (currentValue - peak) / peak;
-            if (drawdown < maxDrawdown) {
-                maxDrawdown = drawdown;
+            if (peak > 0) {
+                double drawdown = (currentValue - peak) / peak;
+                if (drawdown < maxDrawdown) {
+                    maxDrawdown = drawdown;
+                }
             }
         }
         
