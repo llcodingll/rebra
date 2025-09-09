@@ -7,9 +7,8 @@ import com.rebra.service.KakaoOAuth2Service;
 import com.rebra.util.CookieUtil;
 import com.rebra.util.IdTokenValidator;
 import static com.rebra.exception.ExceptionCode.*;
-import com.rebra.exception.BusinessException;
+import com.rebra.exception.auth.AuthException;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -62,7 +61,7 @@ public class KakaoOAuth2Controller {
 
         if (code == null || code.trim().isEmpty()) {
             log.warn("인가코드가 빈 값으로 들어옴");
-            throw new BusinessException(MISSING_AUTHORIZATION_CODE);
+            throw AuthException.missingAuthorizationCode();
         }
         
         // 카카오 토큰 요청 (한 번만)
@@ -71,7 +70,7 @@ public class KakaoOAuth2Controller {
         // ID토큰 검증
         boolean valid = IdTokenValidator.validateIdTokenClaims(kakaoTokenResponse.getIdToken(), session, clientId);
         if (!valid) {
-            throw new BusinessException(INVALID_ID_TOKEN);
+            throw AuthException.invalidIdToken();
         }
         
         // sub 추출

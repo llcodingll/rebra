@@ -2,7 +2,7 @@ package com.rebra.jwt;
 
 import com.rebra.dto.TempToken;
 import com.rebra.entity.User;
-import com.rebra.exception.BusinessException;
+import com.rebra.exception.auth.AuthException;
 import static com.rebra.exception.ExceptionCode.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,9 +11,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Header;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.SignatureException;
 import java.time.Duration;
 import java.util.Date;
 import lombok.Getter;
@@ -84,7 +82,7 @@ public class TokenProvider {
             return claims.get("userId", Long.class);
         } catch (Exception e) {
             log.error("JWT에서 userId 추출 실패: {}", e.getMessage(), e);
-            throw new BusinessException(INVALID_TEMP_TOKEN);
+            throw AuthException.invalidTempToken();
         }
     }
     
@@ -120,29 +118,29 @@ public class TokenProvider {
             String type = claims.get("type", String.class);
             
             if (!"TEMP".equals(type)) {
-                throw new BusinessException(INVALID_TOKEN_TYPE);
+                throw AuthException.invalidTokenType();
             }
             
             String tempTokenJson = claims.get("tempToken", String.class);
             TempToken tempToken = objectMapper.readValue(tempTokenJson, TempToken.class);
             
             if (tempToken.isExpired()) {
-                throw new BusinessException(EXPIRED_TEMP_TOKEN);
+                throw AuthException.expiredTempToken();
             }
             
             return tempToken;
         } catch (JsonProcessingException e) {
             log.error("임시 토큰 파싱 실패: {}", e.getMessage(), e);
-            throw new BusinessException(TEMP_TOKEN_PARSING_FAILED);
+            throw AuthException.tempTokenParsingFailed();
         } catch (ExpiredJwtException e) {
             log.info("만료된 임시 토큰: {}", e.getMessage());
-            throw new BusinessException(EXPIRED_TEMP_TOKEN);
-        } catch (BusinessException e) {
-            // BusinessException은 그대로 재전파
+            throw new AuthException(EXPIRED_TEMP_TOKEN);
+        } catch (AuthException e) {
+            // AuthException은 그대로 재전파
             throw e;
         } catch (Exception e) {
             log.error("임시 토큰 검증 실패: {}", e.getMessage(), e);
-            throw new BusinessException(INVALID_TEMP_TOKEN);
+            throw AuthException.invalidTempToken();
         }
     }
 

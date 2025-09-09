@@ -3,6 +3,7 @@ package com.rebra.exception;
 import com.rebra.common.CommonApiResponse;
 import com.rebra.dto.common.ValidationErrorDetail;
 import com.rebra.dto.common.ValidationErrorResponse;
+import com.rebra.exception.auth.AuthException;
 import com.rebra.exception.user.UserException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,14 +55,11 @@ public class GlobalExceptionHandler {
                 .body(CommonApiResponse.error(e));
     }
 
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<CommonApiResponse<Void>> handleBusinessException(BusinessException e) {
-        log.warn("Business exception: {}", e.getMessage());
-        return ResponseEntity.status(e.getExceptionCode().getStatus())
-                .body(CommonApiResponse.error(
-                    String.valueOf(e.getExceptionCode().getCode()), 
-                    e.getMessage(), 
-                    e.getExceptionCode().getStatus()));
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<CommonApiResponse<Void>> handleAuthException(AuthException e) {
+        log.warn("Auth exception: {}", e.getMessage());
+        return ResponseEntity.status(e.getStatus())
+                .body(CommonApiResponse.error(e));
     }
 
 
