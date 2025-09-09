@@ -93,7 +93,7 @@ export default function AssetPortfolioChart() {
             </div>
 
             <div className={styles.targetInfo}>
-              <div className={styles.targetLabel}>목표 비중</div>
+              <div className={styles.targetLabel}>가중치</div>
               <div className={styles.targetBar}>
                 <div className={styles.targetFill}></div>
               </div>
