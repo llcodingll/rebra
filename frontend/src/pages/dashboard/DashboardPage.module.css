@@ -20,8 +20,26 @@
 
 .portfolioTitle {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.portfolioInfo {
+  display: flex;
   align-items: center;
   gap: 24px;
+}
+
+.portfolioStats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stockCount {
+  font-size: 14px;
+  color: #6b7280;
+  font-family: 'Inter', sans-serif;
 }
 
 .portfolioTitle h2 {
