@@ -24,7 +24,7 @@ interface ApiConfig {
 }
 
 const currentConfig: ApiConfig = {
-  baseURL: '',
+  baseURL: 'http://localhost:8080',
 
   timeout: {
     default: 10000, // 10초
