@@ -1,6 +1,6 @@
 import styles from './ProfitStatusPage.module.css';
-import { profitStatusStockData, unregisteredStocksData, rebalancingHistoryData, chartLegendData } from '../mocks/profitStatusData';
-import { imgSvg, imgSvg1, imgVector, imgVector1, imgVector2, imgVector3, imgVector4, imgVector5, imgVector6, imgVector7, imgVector8, imgVector9, imgVector10, imgFrame, imgVector11, imgVector12, imgVector13, imgVector14, imgVector15 } from "../assets/imports/svg-fecjf";
+import { profitStatusStockData, unregisteredStocksData, rebalancingHistoryData, chartLegendData } from '../../mocks/profitStatusData';
+import { imgSvg, imgSvg1, imgVector, imgVector1, imgVector2, imgVector3, imgVector4, imgVector5, imgVector6, imgVector7, imgVector8, imgVector9, imgVector10, imgFrame, imgVector11, imgVector12, imgVector13, imgVector14, imgVector15 } from "../../assets/imports/svg-fecjf";
 
 export default function ProfitStatusPage() {
 
