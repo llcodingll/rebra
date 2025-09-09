@@ -1,3 +1,4 @@
+import { getApiConfig } from '../../shared/config/apiConfig';
 import styles from './KakaoLoginWidget.module.css';
 
 interface KakaoLoginWidgetProps {
@@ -6,9 +7,11 @@ interface KakaoLoginWidgetProps {
 
 export default function KakaoLoginWidget({ onLoginSuccess }: KakaoLoginWidgetProps) {
   const handleKakaoLogin = () => {
-    // TODO: 서버에서 카카오톡 로그인 절차를 밟고 클라이언트에 결과를 반환
-    // 일단은 바로 성공 처리
-    onLoginSuccess();
+    const apiConfig = getApiConfig();
+    const kakaoOAuthUrl = `${apiConfig.baseURL}/oauth2/authorization/kakao`;
+
+    // 카카오 OAuth 인증 페이지로 리다이렉트
+    window.location.href = kakaoOAuthUrl;
   };
 
   return (
