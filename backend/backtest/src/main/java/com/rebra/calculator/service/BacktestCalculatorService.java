@@ -218,7 +218,6 @@ public class BacktestCalculatorService {
     private BacktestResult runBacktest(Portfolio portfolio, BacktestContext context) {
         BacktestResult result = new BacktestResult();
         result.details = new ArrayList<>();
-        result.rebalancingTrades = new ArrayList<>();
         
         LocalDate lastRebalancingDate = null; // 아직 리밸런싱이 발생하지 않음
         int rebalancingCount = 0; // 초기 구성은 리밸런싱이 아님
@@ -253,33 +252,31 @@ public class BacktestCalculatorService {
                 currentDate, portfolio, context.stocks, currentPrices, lastRebalancingDate);
             
             // 리밸런싱 실행
+            List<Trade> rebalancingTrades = null;
             if (shouldRebalance) {
-                List<Trade> trades = portfolioManagerService.executeRebalancing(
+                rebalancingTrades = portfolioManagerService.executeRebalancing(
                     portfolio, context.stocks, currentPrices, currentDate);
                 
-                if (!trades.isEmpty()) {
+                if (!rebalancingTrades.isEmpty()) {
                     rebalancingCount++;
                     lastRebalancingDate = currentDate;
                     
-                    // 거래 기록 추가
-                    String reason = context.rebalancingStrategy.getRebalancingReason(
-                        currentDate, portfolio, context.stocks, currentPrices, lastRebalancingDate);
-                    
-                    addRebalancingTrades(result, trades, reason, context);
                     
                     if (rebalancingCount == 1) {
                         log.info("첫 번째 리밸런싱 실행 - 날짜: {}, 거래수: {}, 사유: {}", 
-                                currentDate, trades.size(), reason);
+                                currentDate, rebalancingTrades.size(), reason);
                     } else {
                         log.debug("리밸런싱 실행 - 날짜: {}, 거래수: {}, 사유: {}", 
-                                currentDate, trades.size(), reason);
+                                currentDate, rebalancingTrades.size(), reason);
                     }
+                } else {
+                    rebalancingTrades = null; // 빈 리스트면 null로 설정
                 }
             }
 
             // 일일 상세 기록 추가
             addDailyDetail(result, portfolio, currentPrices, currentDate, shouldRebalance, 
-                          context.request.getBacktestId());
+                          context.request.getBacktestId(), rebalancingTrades);
             
             // 다음 반복을 위해 현재 날짜를 이전 처리 날짜로 업데이트
             previousProcessedDate = currentDate;
@@ -295,40 +292,12 @@ public class BacktestCalculatorService {
      * 차입 기록을 결과에 추가한다
      */
 
-    /**
-     * 리밸런싱 거래 기록을 결과에 추가한다
-     */
-    private void addRebalancingTrades(BacktestResult result, List<Trade> trades, String reason, 
-                                    BacktestContext context) {
-        Map<String, Double> beforeWeights = calculateCurrentWeights(context, trades.get(0).getTradeDate(), true);
-        Map<String, Double> afterWeights = calculateCurrentWeights(context, trades.get(0).getTradeDate(), false);
-        
-        for (Trade trade : trades) {
-            RebalancingTradeDto dto = new RebalancingTradeDto();
-            dto.setBacktestRecordId(context.request.getBacktestId());
-            dto.setTradeDate(trade.getTradeDate());
-            dto.setStockCode(trade.getStockCode());
-            dto.setTradeType(trade.getTradeType().name());
-            dto.setTradeQuantity(trade.getQuantity());
-            dto.setTradePrice(trade.getPrice());
-            dto.setTradeAmount(trade.getAmount());
-            dto.setTradeFee(trade.getFee());
-            dto.setTax(trade.getTax());
-            dto.setTotalCost(trade.getTotalCost());
-            dto.setNetAmount(trade.getNetAmount());
-            dto.setActualWeightBefore(beforeWeights.get(trade.getStockCode()));
-            dto.setActualWeightAfter(afterWeights.get(trade.getStockCode()));
-            dto.setRebalancingReason(reason);
-            
-            result.rebalancingTrades.add(dto);
-        }
-    }
 
     /**
      * 일일 상세 기록을 결과에 추가한다
      */
     private void addDailyDetail(BacktestResult result, Portfolio portfolio, Map<String, Double> currentPrices,
-                               LocalDate currentDate, boolean wasRebalanced, Long backtestId) {
+                               LocalDate currentDate, boolean wasRebalanced, Long backtestId, List<Trade> rebalancingTrades) {
         double portfolioValue = portfolio.getTotalValue(currentPrices);
         double cumulativeReturn = portfolio.getCumulativeReturn(currentPrices);
         
@@ -342,6 +311,22 @@ public class BacktestCalculatorService {
             }
         }
         
+        // 리밸런싱 총 매수/매도 금액 계산
+        double totalBuyAmount = 0.0;
+        double totalSellAmount = 0.0;
+        
+        if (rebalancingTrades != null && !rebalancingTrades.isEmpty()) {
+            totalBuyAmount = rebalancingTrades.stream()
+                .filter(Trade::isBuy)
+                .mapToDouble(Trade::getAmount)
+                .sum();
+                
+            totalSellAmount = rebalancingTrades.stream()
+                .filter(Trade::isSell)
+                .mapToDouble(Trade::getAmount)
+                .sum();
+        }
+        
         BacktestDetailDto detail = new BacktestDetailDto();
         detail.setBacktestRecordId(backtestId);
         detail.setPeriodDate(currentDate);
@@ -353,6 +338,8 @@ public class BacktestCalculatorService {
         detail.setDailyBorrowingInterest(portfolio.isBorrowing() ? 
             feeCalculatorService.calculateDailyBorrowingInterest(portfolio.getCurrentBorrowingAmount()) : 0.0);
         detail.setCumulativeReturn(cumulativeReturn);
+        detail.setTotalBuyAmount(totalBuyAmount);
+        detail.setTotalSellAmount(totalSellAmount);
         
         result.details.add(detail);
     }
@@ -437,7 +424,6 @@ public class BacktestCalculatorService {
             backtestId,
             result.summary,
             result.details,
-            result.rebalancingTrades,
             calculationTime
         );
     }
@@ -521,14 +507,6 @@ public class BacktestCalculatorService {
         return (annualizedReturn - RISK_FREE_RATE) / volatility;
     }
     
-    /**
-     * 특정 시점의 포트폴리오 비중을 계산한다 (거래 전/후 구분)
-     */
-    private Map<String, Double> calculateCurrentWeights(BacktestContext context, LocalDate date, boolean beforeTrade) {
-        // 실제 구현에서는 해당 시점의 정확한 비중을 계산해야 함
-        // 여기서는 간단한 구현만 제공
-        return new HashMap<>();
-    }
 
     /**
      * 백테스트 실행 컨텍스트
@@ -549,7 +527,6 @@ public class BacktestCalculatorService {
     private static class BacktestResult {
         BacktestSummaryDto summary;
         List<BacktestDetailDto> details;
-        List<RebalancingTradeDto> rebalancingTrades;
         double initialValue;
     }
 }

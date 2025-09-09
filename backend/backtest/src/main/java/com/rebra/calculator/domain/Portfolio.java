@@ -45,11 +45,6 @@ public class Portfolio {
     private double totalBorrowingCost;
     
     
-    /**
-     * 거래 기록 목록
-     * 발생한 모든 거래의 상세 기록
-     */
-    private final List<Trade> tradeHistory;
     
     /**
      * 최대 차입 금액 (원)
@@ -78,7 +73,6 @@ public class Portfolio {
         this.holdings = new HashMap<>();
         this.totalTradingCost = 0.0;
         this.totalBorrowingCost = 0.0;
-        this.tradeHistory = new ArrayList<>();
         this.maxBorrowingAmount = 0.0;
         this.minCashBalance = 0.0;
         this.initialValue = 0.0; // 초기 구성 완료 후 설정
@@ -141,8 +135,6 @@ public class Portfolio {
         totalTradingCost += trade.getTotalCost();
         updateCashStatistics();
         
-        // 기록 추가
-        tradeHistory.add(trade);
         
         log.debug("매수 실행 - {}: {}주 @{:.0f}원, 현금잔액: {:.0f}원", 
                 stockCode, quantity, price, cash);
@@ -193,8 +185,6 @@ public class Portfolio {
         totalTradingCost += trade.getTotalCost();
         updateCashStatistics();
         
-        // 기록 추가
-        tradeHistory.add(trade);
         
         log.debug("매도 실행 - {}: {}주 @{:.0f}원, 현금잔액: {:.0f}원", 
                 stockCode, quantity, price, cash);
@@ -464,8 +454,6 @@ public class Portfolio {
         copy.initialValue = this.initialValue;
         
         
-        copy.tradeHistory.clear();  
-        this.tradeHistory.forEach(trade -> copy.tradeHistory.add(trade.copy()));
         
         return copy;
     }

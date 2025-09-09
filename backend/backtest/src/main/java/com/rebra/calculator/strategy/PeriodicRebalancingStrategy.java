@@ -58,27 +58,18 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
             return false;
         }
 
-        try {
-            // 주기에 따른 리밸런싱 날짜인지 확인
-            boolean isRebalancingDate = rebalancingPeriod.isRebalancingDate(currentDate);
-            
-            if (isRebalancingDate) {
-                log.debug("주기적 리밸런싱 날짜 도달: {} (주기: {})", 
-                        currentDate, rebalancingPeriod.getDisplayName());
-            }
-            
-            return isRebalancingDate;
-
-        } catch (Exception e) {
-            log.error("주기적 리밸런싱 필요 여부 판단 중 오류 발생", e);
-            return false;
-        }
+        // 주기별 리밸런싱은 메인 서버에서 이미 리밸런싱 날짜만 필터링해서 보내므로
+        // 계산 서버에서는 항상 리밸런싱을 실행해야 함
+        log.debug("주기적 리밸런싱 실행: {} (주기: {})", 
+                currentDate, rebalancingPeriod.getDisplayName());
+        
+        return true;
     }
 
     @Override
     public String getRebalancingReason(LocalDate currentDate, Portfolio portfolio, List<Stock> stocks,
                                      Map<String, Double> currentPrices, LocalDate lastRebalancingDate) {
-        if (!shouldRebalance(currentDate, portfolio, stocks, currentPrices, lastRebalancingDate)) {
+        if (currentDate == null) {
             return "NO_REBALANCING_NEEDED";
         }
 

@@ -49,12 +49,6 @@ public class BacktestResponse {
     @JsonProperty("details")
     private List<BacktestDetailDto> details;
     
-    /**
-     * 리밸런싱 거래 내역
-     * 발생한 모든 거래의 상세 기록
-     */
-    @JsonProperty("rebalancing_history")
-    private List<RebalancingTradeDto> rebalancingHistory;
     
     
     /**
@@ -77,21 +71,18 @@ public class BacktestResponse {
      * @param backtestId 백테스트 ID
      * @param summary 요약 결과
      * @param details 상세 결과
-     * @param rebalancingHistory 리밸런싱 내역
      * @param calculationTimeMs 계산 소요 시간
      * @return 성공 응답 객체
      */
     public static BacktestResponse success(Long backtestId, 
                                          BacktestSummaryDto summary,
                                          List<BacktestDetailDto> details,
-                                         List<RebalancingTradeDto> rebalancingHistory,
                                          Long calculationTimeMs) {
         BacktestResponse response = new BacktestResponse();
         response.setBacktestId(backtestId);
         response.setStatus(BacktestStatus.COMPLETED);
         response.setSummary(summary);
         response.setDetails(details);
-        response.setRebalancingHistory(rebalancingHistory);
         response.setCalculationTimeMs(calculationTimeMs);
         return response;
     }
@@ -152,24 +143,8 @@ public class BacktestResponse {
         return true;
     }
 
-    /**
-     * 리밸런싱 거래 내역이 있는지 확인
-     * 
-     * @return 거래 내역이 있으면 true
-     */
-    public boolean hasRebalancingHistory() {
-        return rebalancingHistory != null && !rebalancingHistory.isEmpty();
-    }
 
 
-    /**
-     * 총 거래 횟수를 반환
-     * 
-     * @return 총 거래 횟수
-     */
-    public int getTotalTradeCount() {
-        return hasRebalancingHistory() ? rebalancingHistory.size() : 0;
-    }
 
 
     /**
@@ -258,7 +233,6 @@ public class BacktestResponse {
             sb.append(String.format("리밸런싱 횟수: %d회\n", summary.getRebalancingCount()));
             sb.append(String.format("승률: %.1f%%\n", summary.getWinRate() * 100));
             sb.append(String.format("백테스트 기간: %d일\n", getBacktestPeriodDays()));
-            sb.append(String.format("총 거래 건수: %d건\n", getTotalTradeCount()));
             
             if (summary.getTotalBorrowingCost() != null && summary.getTotalBorrowingCost() > 0) {
                 sb.append(String.format("최대 차입금: %,.0f원\n", summary.getMaxBorrowingAmount()));

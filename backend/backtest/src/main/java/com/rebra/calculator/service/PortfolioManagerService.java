@@ -360,13 +360,6 @@ public class PortfolioManagerService {
                 continue;
             }
             
-            int currentHoldings = portfolio.getHoldings(action.stockCode);
-            if (currentHoldings < action.quantity) {
-                log.warn("매도 수량이 보유 수량을 초과합니다. 종목: {}, 보유: {}, 매도요청: {}", 
-                        action.stockCode, currentHoldings, action.quantity);
-                action.quantity = currentHoldings; // 보유 수량만큼만 매도
-            }
-            
             if (action.quantity < MINIMUM_TRADING_UNIT) {
                 continue;
             }
@@ -388,6 +381,9 @@ public class PortfolioManagerService {
                 
                 log.debug("매도 실행 - {}: {}주 @{:.0f}원", action.stockCode, action.quantity, action.price);
                 
+            } catch (IllegalArgumentException e) {
+                log.warn("매도 실행 실패 - 종목: {}, 수량: {}, 사유: {}", 
+                        action.stockCode, action.quantity, e.getMessage());
             } catch (Exception e) {
                 log.error("매도 실행 중 오류 발생: {}", action.stockCode, e);
             }

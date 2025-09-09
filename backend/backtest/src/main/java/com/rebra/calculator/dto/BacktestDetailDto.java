@@ -98,6 +98,20 @@ public class BacktestDetailDto {
      */
     @JsonProperty("excess_return") 
     private Double excessReturn;
+    
+    /**
+     * 총 매수 금액 (원)
+     * 해당 주기 리밸런싱에서 발생한 총 매수 금액
+     */
+    @JsonProperty("total_buy_amount")
+    private Double totalBuyAmount;
+    
+    /**
+     * 총 매도 금액 (원)
+     * 해당 주기 리밸런싱에서 발생한 총 매도 금액
+     */
+    @JsonProperty("total_sell_amount")
+    private Double totalSellAmount;
 
     /**
      * 간단한 생성자 (필수 필드만)
@@ -223,6 +237,24 @@ public class BacktestDetailDto {
      */
     public double getSafeExcessReturn() {
         return excessReturn != null ? excessReturn : 0.0;
+    }
+    
+    /**
+     * 총 매수 금액을 안전하게 반환
+     * 
+     * @return 총 매수 금액 (null이면 0.0 반환)
+     */
+    public double getSafeTotalBuyAmount() {
+        return totalBuyAmount != null ? totalBuyAmount : 0.0;
+    }
+    
+    /**
+     * 총 매도 금액을 안전하게 반환
+     * 
+     * @return 총 매도 금액 (null이면 0.0 반환)
+     */
+    public double getSafeTotalSellAmount() {
+        return totalSellAmount != null ? totalSellAmount : 0.0;
     }
 
     /**
@@ -373,7 +405,7 @@ public class BacktestDetailDto {
      * @return CSV 형태 문자열
      */
     public String toCsv() {
-        return String.format("%s,%.0f,%.6f,%.6f,%.6f,%s,%s,%.0f,%.0f,%.6f", 
+        return String.format("%s,%.0f,%.6f,%.6f,%.6f,%s,%s,%.0f,%.0f,%.6f,%.0f,%.0f", 
                 periodDate,
                 getSafePortfolioValue(),
                 getSafePeriodReturn(),
@@ -383,7 +415,9 @@ public class BacktestDetailDto {
                 isBorrowing() ? "Y" : "N",
                 getSafeCashBalance(),
                 getSafeBorrowingAmount(),
-                getSafeDailyBorrowingInterest());
+                getSafeDailyBorrowingInterest(),
+                getSafeTotalBuyAmount(),
+                getSafeTotalSellAmount());
     }
 
     /**
@@ -392,7 +426,7 @@ public class BacktestDetailDto {
      * @return CSV 헤더 문자열
      */
     public static String getCsvHeader() {
-        return "Date,PortfolioValue,PeriodReturn,CumulativeReturn,ExcessReturn,Rebalanced,Borrowing,CashBalance,BorrowingAmount,DailyInterest";
+        return "Date,PortfolioValue,PeriodReturn,CumulativeReturn,ExcessReturn,Rebalanced,Borrowing,CashBalance,BorrowingAmount,DailyInterest,TotalBuyAmount,TotalSellAmount";
     }
 
     @Override
