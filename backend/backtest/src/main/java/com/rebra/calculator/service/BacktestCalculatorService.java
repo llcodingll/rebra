@@ -263,11 +263,11 @@ public class BacktestCalculatorService {
                     
                     
                     if (rebalancingCount == 1) {
-                        log.info("첫 번째 리밸런싱 실행 - 날짜: {}, 거래수: {}, 사유: {}", 
-                                currentDate, rebalancingTrades.size(), reason);
+                        log.info("첫 번째 리밸런싱 실행 - 날짜: {}, 거래수: {}", 
+                                currentDate, rebalancingTrades.size());
                     } else {
-                        log.debug("리밸런싱 실행 - 날짜: {}, 거래수: {}, 사유: {}", 
-                                currentDate, rebalancingTrades.size(), reason);
+                        log.debug("리밸런싱 실행 - 날짜: {}, 거래수: {}", 
+                                currentDate, rebalancingTrades.size());
                     }
                 } else {
                     rebalancingTrades = null; // 빈 리스트면 null로 설정
@@ -276,7 +276,7 @@ public class BacktestCalculatorService {
 
             // 일일 상세 기록 추가
             addDailyDetail(result, portfolio, currentPrices, currentDate, shouldRebalance, 
-                          context.request.getBacktestId(), rebalancingTrades);
+                          rebalancingTrades);
             
             // 다음 반복을 위해 현재 날짜를 이전 처리 날짜로 업데이트
             previousProcessedDate = currentDate;
@@ -297,7 +297,7 @@ public class BacktestCalculatorService {
      * 일일 상세 기록을 결과에 추가한다
      */
     private void addDailyDetail(BacktestResult result, Portfolio portfolio, Map<String, Double> currentPrices,
-                               LocalDate currentDate, boolean wasRebalanced, Long backtestId, List<Trade> rebalancingTrades) {
+                               LocalDate currentDate, boolean wasRebalanced, List<Trade> rebalancingTrades) {
         double portfolioValue = portfolio.getTotalValue(currentPrices);
         double cumulativeReturn = portfolio.getCumulativeReturn(currentPrices);
         
@@ -328,13 +328,11 @@ public class BacktestCalculatorService {
         }
         
         BacktestDetailDto detail = new BacktestDetailDto();
-        detail.setBacktestRecordId(backtestId);
         detail.setPeriodDate(currentDate);
         detail.setPortfolioValue(portfolioValue);
         detail.setPeriodReturn(periodReturn);
         detail.setIsRebalanced(wasRebalanced);
         detail.setCashBalance(portfolio.getCash());
-        detail.setBorrowingAmount(portfolio.getCurrentBorrowingAmount());
         detail.setDailyBorrowingInterest(portfolio.isBorrowing() ? 
             feeCalculatorService.calculateDailyBorrowingInterest(portfolio.getCurrentBorrowingAmount()) : 0.0);
         detail.setCumulativeReturn(cumulativeReturn);
@@ -370,7 +368,6 @@ public class BacktestCalculatorService {
                 .map(BacktestDetailDto::getPeriodReturn)
                 .collect(Collectors.toList());
         
-        double winRate = portfolioManagerService.calculateWinRate(periodReturns);
         List<Double> portfolioValues = result.details.stream()
                 .map(BacktestDetailDto::getPortfolioValue)
                 .collect(Collectors.toList());
@@ -381,28 +378,28 @@ public class BacktestCalculatorService {
         double volatility = calculateVolatility(periodReturns);
         double annualizedReturn = calculateAnnualizedReturn(totalReturn, context.tradingDates.size());
         double sharpeRatio = calculateSharpeRatio(annualizedReturn, volatility);
+        double timeWeightedReturn = calculateTimeWeightedReturn(periodReturns);
         
         // 요약 결과 생성
-        result.summary = createSummary(finalValue, totalReturn, buyHoldReturn, winRate, 
+        result.summary = createSummary(finalValue, totalReturn, buyHoldReturn, 
                                      maxDrawdown, rebalancingCount, portfolio, 
-                                     periodGrowthRate, volatility, sharpeRatio);
+                                     periodGrowthRate, volatility, sharpeRatio, timeWeightedReturn);
         
-        log.info("최종 결과 계산 완료 - 최종가치: {:.0f}원, 총수익률: {:.2f}%, 바이앤홀드: {:.2f}%, 샤프비율: {:.2f}",
-                finalValue, totalReturn * 100, buyHoldReturn * 100, sharpeRatio);
+        log.info("최종 결과 계산 완료 - 최종가치: {:.0f}원, 총수익률: {:.2f}%, TWR: {:.2f}%, 바이앤홀드: {:.2f}%, 샤프비율: {:.2f}",
+                finalValue, totalReturn * 100, timeWeightedReturn * 100, buyHoldReturn * 100, sharpeRatio);
     }
 
     /**
      * 백테스트 요약을 생성한다
      */
     private BacktestSummaryDto createSummary(double finalValue, double totalReturn, double buyHoldReturn,
-                                           double winRate, double maxDrawdown, int rebalancingCount, Portfolio portfolio,
-                                           double periodGrowthRate, double volatility, double sharpeRatio) {
+                                           double maxDrawdown, int rebalancingCount, Portfolio portfolio,
+                                           double periodGrowthRate, double volatility, double sharpeRatio, double timeWeightedReturn) {
         BacktestSummaryDto summary = new BacktestSummaryDto();
         summary.setFinalValue(finalValue);
         summary.setTotalReturn(totalReturn);
         summary.setBuyHoldReturn(buyHoldReturn);
         summary.setExcessReturn(totalReturn - buyHoldReturn);
-        summary.setWinRate(winRate);
         summary.setMaxDrawdown(maxDrawdown);
         summary.setRebalancingCount(rebalancingCount);
         summary.setTotalFee(portfolio.getTotalTradingCost());
@@ -412,6 +409,7 @@ public class BacktestCalculatorService {
         summary.setPeriodGrowthRate(periodGrowthRate);
         summary.setVolatility(volatility);
         summary.setSharpeRatio(sharpeRatio);
+        summary.setTimeWeightedReturn(timeWeightedReturn);
         
         return summary;
     }
@@ -505,6 +503,31 @@ public class BacktestCalculatorService {
         }
         
         return (annualizedReturn - RISK_FREE_RATE) / volatility;
+    }
+    
+    /**
+     * 시간 가중 수익률을 계산한다
+     * 각 기간의 수익률을 복리로 계산하여 리밸런싱 영향을 제거한 순수 투자 성과를 측정
+     * 
+     * @param periodReturns 각 기간별 수익률 리스트
+     * @return 시간 가중 수익률
+     */
+    private double calculateTimeWeightedReturn(List<Double> periodReturns) {
+        if (periodReturns == null || periodReturns.isEmpty()) {
+            return 0.0;
+        }
+        
+        // 각 기간 수익률을 (1 + r)로 변환하여 곱한 후 1을 빼서 최종 수익률 계산
+        double twrProduct = periodReturns.stream()
+                .map(r -> 1 + r)  // (1 + 수익률)로 변환
+                .reduce(1.0, (a, b) -> a * b);  // 곱셈 누적
+        
+        double timeWeightedReturn = twrProduct - 1.0;
+        
+        log.debug("시간 가중 수익률 계산 완료 - 기간수: {}, TWR: {:.4f}", 
+                periodReturns.size(), timeWeightedReturn);
+        
+        return timeWeightedReturn;
     }
     
 

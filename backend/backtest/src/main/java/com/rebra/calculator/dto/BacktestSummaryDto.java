@@ -75,12 +75,6 @@ public class BacktestSummaryDto {
     @JsonProperty("total_borrowing_cost")
     private Double totalBorrowingCost;
     
-    /**
-     * 승률
-     * 수익이 발생한 기간 / 전체 기간
-     */
-    @JsonProperty("win_rate")
-    private Double winRate;
     
     /**
      * 최대 차입 금액 (원)
@@ -116,6 +110,13 @@ public class BacktestSummaryDto {
      */
     @JsonProperty("sharpe_ratio")
     private Double sharpeRatio;
+
+    /**
+     * 시간 가중 수익률 (Time-Weighted Return)
+     * 리밸런싱 시점의 현금 흐름을 제거한 순수 투자 성과
+     */
+    @JsonProperty("time_weighted_return")
+    private Double timeWeightedReturn;
 
     /**
      * 순수익을 계산한다 (거래비용 및 차입비용 차감 후)
@@ -209,7 +210,7 @@ public class BacktestSummaryDto {
      * @return 높은 성과면 true
      */
     public boolean isHighPerformance() {
-        return totalReturn != null && totalReturn > 0 && winRate != null && winRate >= 0.5;
+        return totalReturn != null && totalReturn > 0;
     }
 
     /**
@@ -254,14 +255,7 @@ public class BacktestSummaryDto {
             else if (excessReturn > 0) score += 10;
         }
         
-        // 승률 평가 (20점)
-        if (winRate != null) {
-            if (winRate >= 0.7) score += 20;
-            else if (winRate >= 0.6) score += 16;
-            else if (winRate >= 0.5) score += 12;
-            else if (winRate >= 0.4) score += 8;
-            else if (winRate >= 0.3) score += 4;
-        }
+        // 승률 평가 제거됨
         
         // 샤프 비율 평가 (15점)
         if (sharpeRatio != null) {
@@ -317,9 +311,6 @@ public class BacktestSummaryDto {
                 return false;
             }
             
-            if (winRate != null && (winRate < 0.0 || winRate > 1.0)) {
-                return false;
-            }
             
             // 논리적 일관성 검증
             if (excessReturn != null && Math.abs((totalReturn - buyHoldReturn) - excessReturn) > 0.001) {
@@ -339,10 +330,9 @@ public class BacktestSummaryDto {
      * @return 간단한 요약
      */
     public String getSimpleSummary() {
-        return String.format("총수익률: %.2f%%, 초과수익률: %.2f%%, 승률: %.1f%%, 리밸런싱: %d회",
+        return String.format("총수익률: %.2f%%, 초과수익률: %.2f%%, 리밸런싱: %d회",
                 (totalReturn != null ? totalReturn * 100 : 0),
                 (excessReturn != null ? excessReturn * 100 : 0),
-                (winRate != null ? winRate * 100 : 0),
                 (rebalancingCount != null ? rebalancingCount : 0));
     }
 
@@ -358,7 +348,7 @@ public class BacktestSummaryDto {
         sb.append(String.format("총 수익률: %.2f%%\n", (totalReturn != null ? totalReturn * 100 : 0)));
         sb.append(String.format("바이앤홀드: %.2f%%\n", (buyHoldReturn != null ? buyHoldReturn * 100 : 0)));
         sb.append(String.format("초과 수익률: %.2f%%\n", (excessReturn != null ? excessReturn * 100 : 0)));
-        sb.append(String.format("승률: %.1f%%\n", (winRate != null ? winRate * 100 : 0)));
+        sb.append(String.format("시간 가중 수익률: %.2f%%\n", (timeWeightedReturn != null ? timeWeightedReturn * 100 : 0)));
         sb.append(String.format("총 비용: %,.0f원 (거래비용: %,.0f원, 차입비용: %,.0f원)\n", 
                 getTotalCost(), 
                 (totalFee != null ? totalFee : 0),

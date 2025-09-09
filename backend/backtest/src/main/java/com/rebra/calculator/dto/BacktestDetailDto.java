@@ -21,12 +21,6 @@ import java.time.LocalDate;
 @ToString
 public class BacktestDetailDto {
     
-    /**
-     * 백테스트 기록 ID
-     * BACKTEST_RECORD 테이블과의 외래키
-     */
-    @JsonProperty("backtest_record_id")
-    private Long backtestRecordId;
     
     /**
      * 백테스트 주기 기준일자
@@ -64,12 +58,6 @@ public class BacktestDetailDto {
     @JsonProperty("cash_balance")
     private Double cashBalance;
     
-    /**
-     * 차입 금액 (원)
-     * 현금이 음수인 경우의 차입 금액 (양수로 표시)
-     */
-    @JsonProperty("borrowing_amount")
-    private Double borrowingAmount;
     
     /**
      * 일일 차입 이자 (원)
@@ -92,12 +80,6 @@ public class BacktestDetailDto {
     @JsonProperty("buy_hold_return")
     private Double buyHoldReturn;
     
-    /**
-     * 초과 수익률
-     * 누적 수익률 - 바이앤홀드 수익률
-     */
-    @JsonProperty("excess_return") 
-    private Double excessReturn;
     
     /**
      * 총 매수 금액 (원)
@@ -116,15 +98,13 @@ public class BacktestDetailDto {
     /**
      * 간단한 생성자 (필수 필드만)
      * 
-     * @param backtestRecordId 백테스트 기록 ID
      * @param periodDate 기준 날짜
      * @param portfolioValue 포트폴리오 가치
      * @param periodReturn 주기 수익률
      * @param isRebalanced 리밸런싱 여부
      */
-    public BacktestDetailDto(Long backtestRecordId, LocalDate periodDate, 
+    public BacktestDetailDto(LocalDate periodDate, 
                            Double portfolioValue, Double periodReturn, Boolean isRebalanced) {
-        this.backtestRecordId = backtestRecordId;
         this.periodDate = periodDate;
         this.portfolioValue = portfolioValue;
         this.periodReturn = periodReturn;
@@ -137,7 +117,7 @@ public class BacktestDetailDto {
      * @return 차입 상태면 true
      */
     public boolean isBorrowing() {
-        return borrowingAmount != null && borrowingAmount > 0;
+        return cashBalance != null && cashBalance < 0;
     }
 
     /**
@@ -188,10 +168,10 @@ public class BacktestDetailDto {
     /**
      * 차입 금액을 안전하게 반환
      * 
-     * @return 차입 금액 (null이면 0.0 반환)
+     * @return 차입 금액 (cashBalance가 음수일 때 절댓값, 아니면 0.0)
      */
     public double getSafeBorrowingAmount() {
-        return borrowingAmount != null ? borrowingAmount : 0.0;
+        return (cashBalance != null && cashBalance < 0) ? Math.abs(cashBalance) : 0.0;
     }
 
     /**
@@ -230,14 +210,6 @@ public class BacktestDetailDto {
         return cumulativeReturn != null ? cumulativeReturn : 0.0;
     }
 
-    /**
-     * 초과 수익률을 안전하게 반환
-     * 
-     * @return 초과 수익률 (null이면 0.0 반환)
-     */
-    public double getSafeExcessReturn() {
-        return excessReturn != null ? excessReturn : 0.0;
-    }
     
     /**
      * 총 매수 금액을 안전하게 반환
@@ -311,9 +283,6 @@ public class BacktestDetailDto {
     public boolean isValid() {
         try {
             // 필수 필드 검증
-            if (backtestRecordId == null || backtestRecordId <= 0) {
-                return false;
-            }
             
             if (periodDate == null) {
                 return false;
@@ -332,22 +301,12 @@ public class BacktestDetailDto {
             }
             
             // 논리적 일관성 검증
-            if (borrowingAmount != null && borrowingAmount < 0) {
-                return false; // 차입 금액은 음수일 수 없음
-            }
             
             if (dailyBorrowingInterest != null && dailyBorrowingInterest < 0) {
                 return false; // 차입 이자는 음수일 수 없음
             }
             
-            // 차입 상태와 현금 잔액의 일관성 검증
-            if (isBorrowing() && cashBalance != null && cashBalance >= 0) {
-                return false; // 차입 중인데 현금이 양수면 논리적 오류
-            }
-            
-            if (!isBorrowing() && cashBalance != null && cashBalance < 0) {
-                return false; // 차입이 없는데 현금이 음수면 논리적 오류
-            }
+            // 차입 상태와 현금 잔액의 일관성은 isBorrowing() 메서드에서 자동 처리됨
             
             return true;
             
@@ -382,9 +341,6 @@ public class BacktestDetailDto {
                 getSafePeriodReturn() * 100, getPerformanceGrade()));
         sb.append(String.format("누적 수익률: %.2f%%\n", getSafeCumulativeReturn() * 100));
         
-        if (excessReturn != null) {
-            sb.append(String.format("초과 수익률: %.2f%%\n", getSafeExcessReturn() * 100));
-        }
         
         sb.append(String.format("현금 잔액: %,.0f원\n", getSafeCashBalance()));
         
@@ -410,7 +366,7 @@ public class BacktestDetailDto {
                 getSafePortfolioValue(),
                 getSafePeriodReturn(),
                 getSafeCumulativeReturn(),
-                getSafeExcessReturn(),
+                0.0, // excessReturn 제거됨
                 wasRebalanced() ? "Y" : "N",
                 isBorrowing() ? "Y" : "N",
                 getSafeCashBalance(),
@@ -435,12 +391,11 @@ public class BacktestDetailDto {
         if (obj == null || getClass() != obj.getClass()) return false;
         
         BacktestDetailDto that = (BacktestDetailDto) obj;
-        return java.util.Objects.equals(backtestRecordId, that.backtestRecordId) &&
-               java.util.Objects.equals(periodDate, that.periodDate);
+        return java.util.Objects.equals(periodDate, that.periodDate);
     }
 
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(backtestRecordId, periodDate);
+        return java.util.Objects.hash(periodDate);
     }
 }

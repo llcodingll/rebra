@@ -231,7 +231,6 @@ public class BacktestResponse {
             sb.append(String.format("총 거래비용: %,.0f원\n", summary.getTotalFee()));
             sb.append(String.format("총 차입비용: %,.0f원\n", summary.getTotalBorrowingCost()));
             sb.append(String.format("리밸런싱 횟수: %d회\n", summary.getRebalancingCount()));
-            sb.append(String.format("승률: %.1f%%\n", summary.getWinRate() * 100));
             sb.append(String.format("백테스트 기간: %d일\n", getBacktestPeriodDays()));
             
             if (summary.getTotalBorrowingCost() != null && summary.getTotalBorrowingCost() > 0) {

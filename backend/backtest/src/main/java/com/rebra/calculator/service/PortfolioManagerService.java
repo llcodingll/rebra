@@ -178,29 +178,6 @@ public class PortfolioManagerService {
         return totalValue;
     }
 
-    /**
-     * 포트폴리오의 승률을 계산한다
-     * 수익이 발생한 기간의 비율
-     * 
-     * @param periodReturns 주기별 수익률 목록
-     * @return 승률 (0.0 ~ 1.0)
-     */
-    public double calculateWinRate(List<Double> periodReturns) {
-        if (periodReturns == null || periodReturns.isEmpty()) {
-            return 0.0;
-        }
-        
-        long winCount = periodReturns.stream()
-                .mapToLong(ret -> ret > 0 ? 1 : 0)
-                .sum();
-        
-        double winRate = (double) winCount / periodReturns.size();
-        
-        log.debug("승률 계산 - 총 {}기간 중 {}기간 수익, 승률: {:.2f}%", 
-                periodReturns.size(), winCount, winRate * 100);
-        
-        return winRate;
-    }
 
     /**
      * 최대 낙폭(Maximum Drawdown)을 계산한다
