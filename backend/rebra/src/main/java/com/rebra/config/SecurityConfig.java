@@ -31,8 +31,8 @@ public class SecurityConfig {
     private final TokenProvider tokenProvider;
     private final KakaoOAuth2Service kakaoOAuth2Service;
 
-    // @Value("${app.cors.allowed-origins}")
-    // private String allowedOriginsString;
+     @Value("${app.cors.allowed-origins}")
+     private String allowedOriginsString;
 
     private static final List<String> ALLOWED_METHODS = List.of(
             "GET", "POST", "PUT", "DELETE", "OPTIONS"
@@ -92,8 +92,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // 개발 단계: 모든 origin 허용
-        // List<String> allowedOrigins = Arrays.asList(allowedOriginsString.split(","));
-        // configuration.setAllowedOrigins(allowedOrigins);
+         List<String> allowedOrigins = Arrays.asList(allowedOriginsString.split(","));
+         configuration.setAllowedOrigins(allowedOrigins);
         configuration.addAllowedOriginPattern("*");
         configuration.addAllowedOrigin("https://kauth.kakao.com");
         configuration.setAllowedMethods(ALLOWED_METHODS);
