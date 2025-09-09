@@ -305,7 +305,7 @@ environment {
                         echo '=== 메인 서버 헬스체크 ==='
                         sh '''
                             for i in {1..30}; do
-                                if curl -f http://localhost:8080/actuator/health; then
+                                if curl -f http://localhost:8080/; then
                                     echo "✅ 메인 서버가 정상적으로 실행 중입니다 ($i/30)"
                                     break
                                 fi
@@ -350,7 +350,7 @@ environment {
 빌드 번호: ${BUILD_NUMBER}
 
 서비스 확인:
-- 메인 서버: http://13.125.20.43:8080/actuator/health
+- 메인 서버: http://13.125.20.43:8080/
 // - 계산 서버: http://13.125.20.43:8081/actuator/health // 임시 주석 처리
                     """
                 } else {
