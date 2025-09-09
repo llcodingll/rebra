@@ -71,6 +71,16 @@ services:
       - KAFKA_SERVERS=kafka:9092
       - SERVER_DOMAIN=rebra.site
       - CORS_ALLOWED_ORIGINS=https://rebra.site,https://www.rebra.site
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ACCESS_TOKEN_MINUTE_TIME=30
+      - JWT_REFRESH_TOKEN_MINUTE_TIME=10080
+      - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
+      - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
+      - KAKAO_REDIRECT_URL=https://rebra.site/oauth2/authorization/kakao/callback
+      - KAKAO_TOKEN_URL=https://kauth.kakao.com/oauth/token
+      - GMS_API_KEY=temp-gms-api-key
+      - GMS_GPT_URL=https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions
+      - DDL_AUTO=create
     depends_on:
       - postgres
       - redis
