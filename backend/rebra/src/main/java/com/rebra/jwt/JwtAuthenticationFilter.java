@@ -1,0 +1,140 @@
+package com.rebra.jwt;
+
+import com.rebra.service.KakaoOAuth2Service;
+import com.rebra.util.CookieUtil;
+import static com.rebra.util.CookieUtil.*;
+import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Collections;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+@Slf4j
+@RequiredArgsConstructor
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private final TokenProvider tokenProvider;
+    private final KakaoOAuth2Service kakaoOAuth2Service;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        try {
+            String token = extractJwtFromRequest(request);
+
+            if (token == null) {
+                token = extractJwtFromCookie(request);
+            }
+
+            if (token != null) {
+                try {
+                    // 토큰 유효성 검사
+                    if (tokenProvider.validateToken(token)) {
+                        setAuthentication(token);
+                    }
+                } catch (ExpiredJwtException e) {
+                    log.info("액세스 토큰이 만료됨. 자동 갱신 시도...");
+
+                    // 리프레시 토큰으로 자동 갱신 시도
+                    String  newAccessToken = tryAutoRefreshToken(request, response);
+                    if (newAccessToken != null) {
+                        log.info("토큰 자동 갱신 성공");
+                        setAuthentication(newAccessToken);
+                    } else {
+                        log.warn("토큰 자동 갱신 실패. 재로그인 필요");
+                        // 갱신 실패 시 쿠키 정리
+                        CookieUtil.deleteAccessTokenCookie(response);
+                        CookieUtil.deleteRefreshTokenCookie(response);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("JWT 필터에서 예외 발생: {}", e.getMessage());
+            // 예외 발생 시에도 필터 체인은 계속 진행 (인증 없는 상태로)
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private void setAuthentication(String token) {
+        Long userId = tokenProvider.getUserIdFromToken(token);
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    private String extractJwtFromRequest(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        log.debug("Authorization 헤더: {}", bearerToken);
+
+        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+            return null;
+        }
+
+        return bearerToken.substring(7);
+    }
+
+    private String extractJwtFromCookie(HttpServletRequest request) {
+        return extractTokenFromCookie(request, ACCESS_TOKEN_COOKIE_NAME);
+    }
+
+    private String extractRefreshTokenFromCookie(HttpServletRequest request) {
+        return extractTokenFromCookie(request, REFRESH_TOKEN_COOKIE_NAME);
+    }
+
+    private String extractTokenFromCookie(HttpServletRequest request, String cookieName) {
+        if (request.getCookies() == null) {
+            return null;
+        }
+
+        for (Cookie cookie : request.getCookies()) {
+            if (cookieName.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 리프레시 토큰을 사용하여 액세스 토큰 자동 갱신 (RTR 적용)
+     * @return 새로 발급된 액세스 토큰 문자열 (실패시 null)
+     */
+    private String tryAutoRefreshToken(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            String refreshToken = extractRefreshTokenFromCookie(request);
+            if (refreshToken == null) {
+                log.debug("리프레시 토큰이 쿠키에 없음");
+                return null;
+            }
+
+            // RTR 적용: 액세스 토큰과 리프레시 토큰 모두 갱신
+            Token[] tokens = kakaoOAuth2Service.refreshTokensWithRotation(refreshToken);
+            if (tokens == null || tokens.length != 2) {
+                log.debug("RTR 토큰 갱신 실패");
+                return null;
+            }
+
+            Token newAccessToken = tokens[0];
+            Token newRefreshToken = tokens[1];
+
+            // 새로운 토큰들을 쿠키에 설정
+            CookieUtil.addAccessTokenCookie(response, newAccessToken.getToken());
+            CookieUtil.addRefreshTokenCookie(response, newRefreshToken.getToken());
+
+            log.info("RTR 자동 갱신 완료");
+            return newAccessToken.getToken(); // 토큰 문자열만 반환
+
+        } catch (Exception e) {
+            log.error("토큰 자동 갱신 중 오류: {}", e.getMessage());
+            return null;
+        }
+    }
+}

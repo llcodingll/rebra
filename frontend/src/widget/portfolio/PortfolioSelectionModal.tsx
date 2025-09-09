@@ -7,6 +7,7 @@ interface PortfolioSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (portfolioId: string) => void;
+  portfolios: Portfolio[];
 }
 
 interface Portfolio {
@@ -19,64 +20,7 @@ interface Portfolio {
   description?: string;
 }
 
-const portfolios: Portfolio[] = [
-  {
-    id: 'portfolio-1',
-    name: '삼성전자 + SK하이닉스 포트폴리오',
-    return: '+24.5%',
-    stockCount: 3,
-    createdDate: '2024-01-15',
-    returnPositive: true,
-    description: '반도체 대장주 중심'
-  },
-  {
-    id: 'portfolio-2',
-    name: '배당 중심 포트폴리오',
-    return: '+18.2%',
-    stockCount: 5,
-    createdDate: '2024-02-10',
-    returnPositive: true,
-    description: '안정적인 배당 수익'
-  },
-  {
-    id: 'portfolio-3',
-    name: '성장주 포트폴리오',
-    return: '+32.8%',
-    stockCount: 8,
-    createdDate: '2024-03-05',
-    returnPositive: true,
-    description: '고성장 기업 투자'
-  },
-  {
-    id: 'portfolio-4',
-    name: '안전자산 포트폴리오',
-    return: '+12.1%',
-    stockCount: 4,
-    createdDate: '2024-01-20',
-    returnPositive: true,
-    description: '리스크 최소화'
-  },
-  {
-    id: 'portfolio-5',
-    name: '테크주 포트폴리오',
-    return: '+28.9%',
-    stockCount: 6,
-    createdDate: '2024-02-28',
-    returnPositive: true,
-    description: '기술 혁신 기업'
-  },
-  {
-    id: 'portfolio-6',
-    name: '글로벌 포트폴리오',
-    return: '-5.2%',
-    stockCount: 12,
-    createdDate: '2024-03-15',
-    returnPositive: false,
-    description: '해외 주식 분산투자'
-  }
-];
-
-export default function PortfolioSelectionModal({ isOpen, onClose, onSelect }: PortfolioSelectionModalProps) {
+export default function PortfolioSelectionModal({ isOpen, onClose, onSelect, portfolios }: PortfolioSelectionModalProps) {
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(null);
 
   const handleBackdropClick = (e: React.MouseEvent) => {
