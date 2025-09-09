@@ -3,7 +3,7 @@ import { lazy } from 'react';
 import App from '../App';
 import Layout from '../widget/common/Layout';
 import LandingPage from '../pages/LandingPage';
-import SignupPage from '../pages/SignupPage';
+import SignupPage from '../pages/signup';
 import LoginPage from '../pages/LoginPage';
 const DashboardPage = lazy(() => import('../pages/DashboardPage'));
 const SearchPage = lazy(() => import('../pages/SearchPage'));

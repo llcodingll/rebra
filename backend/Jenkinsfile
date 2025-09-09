@@ -39,7 +39,7 @@ pipeline {
                     changes.each { file ->
                         echo "  - ${file}"
 
-                        if (file.startsWith('main-server/')) {
+                        if (file.startsWith('rebra/')) {
                             env.MAIN_SERVER_CHANGED = 'true'
                             echo "    → 메인 서버 변경 감지"
                         }
@@ -96,9 +96,9 @@ pipeline {
                     steps {
                         echo '=== 메인 서버 빌드 중 ==='
                         sh '''
-                            ./gradlew :main-server:clean :main-server:build -x test
+                            ./gradlew :rebra:clean :rebra:build -x test
                             echo "빌드된 JAR 파일 확인:"
-                            ls -la main-server/build/libs/
+                            ls -la rebra/build/libs/
                         '''
                         echo '✅ 메인 서버 빌드 완료'
                     }
@@ -130,7 +130,7 @@ pipeline {
                     steps {
                         echo '=== 메인 서버 Docker 이미지 빌드 중 ==='
                         script {
-                            dir('main-server') {
+                            dir('rebra') {
                                 sh """
                                     docker build -t rebra-main:${BUILD_TAG} .
                                     docker tag rebra-main:${BUILD_TAG} rebra-main:latest
