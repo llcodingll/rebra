@@ -313,7 +313,7 @@ export default function LandingPage() {
 //                   </svg>
 //                 </div>
 //                 <h3>자동 리밸런싱</h3>
-//                 <p>목표 비중을 설정하면 AI가 자동으로 포트폴리오를 균형있게 조정합니다.</p>
+//                 <p>가중치를 설정하면 AI가 자동으로 포트폴리오를 균형있게 조정합니다.</p>
 //               </div>
 
 //               <div className={styles.featureCard}>

@@ -15,9 +15,11 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.rebra.dto.TempToken;
+import com.rebra.dto.request.SignupRequest;
 import com.rebra.dto.response.KakaoTokenResponse;
 import com.rebra.dto.response.LoginResponse;
 import com.rebra.entity.RefreshToken;
+import com.rebra.entity.SurveyResult;
 import com.rebra.entity.User;
 import com.rebra.jwt.Token;
 import com.rebra.jwt.TokenProvider;
@@ -165,8 +167,10 @@ class KakaoOAuth2ServiceImplTest {
     void createUserWithKakaoSub_Success() {
         User savedUser = createUser(USER_ID_1, USER_SUB_NEW, NICKNAME_NEW_USER);
         given(userRepository.save(any(User.class))).willReturn(savedUser);
+        
+        SignupRequest signupRequest = new SignupRequest(NICKNAME_NEW_USER, 30, "급여소득", 25, 26, 25);
 
-        User result = kakaoOAuth2Service.createUserWithKakaoSub(USER_SUB_NEW, NICKNAME_NEW_USER);
+        User result = kakaoOAuth2Service.createUserWithKakaoSub(USER_SUB_NEW, signupRequest);
 
         assertNotNull(result);
         assertEquals(USER_SUB_NEW, result.getSub());
@@ -346,9 +350,18 @@ class KakaoOAuth2ServiceImplTest {
     }
 
     private User createUser(Long id, String sub, String nickname) {
+        SurveyResult surveyResult = SurveyResult.builder()
+                .age(30)
+                .mainIncomeSource("급여소득")
+                .investmentPurpose(25)
+                .investmentExperience(26)
+                .riskTolerance(25)
+                .build();
+                
         User user = User.builder()
                 .sub(sub)
                 .nickname(nickname)
+                .surveyResult(surveyResult)
                 .build();
         ReflectionTestUtils.setField(user, "id", id);
         return user;

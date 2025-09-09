@@ -7,9 +7,9 @@ import SignupPage from '../pages/signup';
 import LoginPage from '../pages/LoginPage';
 const DashboardPage = lazy(() => import('../pages/dashboard/DashboardPage'));
 const SearchPage = lazy(() => import('../pages/SearchPage'));
-const BacktestPage = lazy(() => import('../pages/BacktestPage'));
-const BacktestCreationPage = lazy(() => import('../pages/BacktestCreationPage'));
-const BacktestResultsPage = lazy(() => import('../pages/BacktestResultsPage'));
+const BacktestPage = lazy(() => import('../pages/backtest/BacktestPage'));
+const BacktestCreationPage = lazy(() => import('../pages/backtest/BacktestCreationPage'));
+const BacktestResultsPage = lazy(() => import('../pages/backtest/BacktestResultsPage'));
 const StockDetailPage = lazy(() => import('../pages/StockDetailPage'));
 const ProfitStatusPage = lazy(() => import('../pages/dashboard/ProfitStatusPage'));
 

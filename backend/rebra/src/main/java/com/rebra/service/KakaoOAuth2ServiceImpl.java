@@ -3,9 +3,11 @@ import static com.rebra.util.NonceUtil.*;
 import static org.springframework.web.util.UriComponentsBuilder.fromUriString;
 
 import com.rebra.dto.TempToken;
+import com.rebra.dto.request.SignupRequest;
 import com.rebra.dto.response.KakaoTokenResponse;
 import com.rebra.dto.response.LoginResponse;
 import com.rebra.entity.RefreshToken;
+import com.rebra.entity.SurveyResult;
 import com.rebra.entity.User;
 import com.rebra.jwt.Token;
 import com.rebra.jwt.TokenProvider;
@@ -147,10 +149,19 @@ public class KakaoOAuth2ServiceImpl implements KakaoOAuth2Service {
         return userRepository.findBySub(kakaoSub);
     }
     
-    public User createUserWithKakaoSub(String kakaoSub, String nickname) {
+    public User createUserWithKakaoSub(String kakaoSub, SignupRequest signupRequest) {
+        SurveyResult surveyResult = SurveyResult.builder()
+                .age(signupRequest.getAge())
+                .mainIncomeSource(signupRequest.getMainIncomeSource())
+                .investmentPurpose(signupRequest.getInvestmentPurpose())
+                .investmentExperience(signupRequest.getInvestmentExperience())
+                .riskTolerance(signupRequest.getRiskTolerance())
+                .build();
+                
         User user = User.builder()
                 .sub(kakaoSub)
-                .nickname(nickname)
+                .nickname(signupRequest.getNickname())
+                .surveyResult(surveyResult)
                 .build();
         return userRepository.save(user);
     }

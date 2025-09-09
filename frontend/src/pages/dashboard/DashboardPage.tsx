@@ -164,6 +164,7 @@ export default function DashboardPage() {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         onSelect={handlePortfolioSelect}
+        portfolios={portfolios}
       />
     </div>
     </div>

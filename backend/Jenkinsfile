@@ -1,9 +1,40 @@
 pipeline {
     agent any
 
-    environment {
-        // Docker Hub 정보 (선택사항)
-        DOCKER_HUB_REPO = 'rebra_backend'
+environment {
+        // Docker 이미지 정보
+        DOCKER_IMAGE = "/rebra-backend"
+        DOCKER_TAG = "${BUILD_NUMBER}"
+
+        // Jenkins에 저장된 credential ID들
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+
+        // RDS 연결 정보 - Jenkins Credentials에서 보안 관리
+        DB_HOST = credentials('postgresql-host')  // Jenkins Secret 사용
+        DB_PORT = "5432"
+        DB_NAME = "rebra"
+        DB_USERNAME = credentials('postgresql-username')
+        DB_PASSWORD = credentials('postgresql-password')  // Jenkins Secret 사용
+
+        // GMS API 설정 - Jenkins Credentials에서 보안 관리
+        GMS_API_KEY = credentials('gms-api-key')  // Jenkins Secret 사용
+        GMS_WHISPER_URL = "https://gms.ssafy.io/gmsapi/api.openai.com/v1/audio/transcriptions"
+        GMS_GPT_URL = "https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions"
+
+        // JWT 설정 - Jenkins Credentials에서 보안 관리
+        JWT_SECRET_KEY = credentials('jwt-secret-key')  // Jenkins Secret 사용
+        JWT_ACCESS_TOKEN_MINUTE_TIME = "30"
+        JWT_REFRESH_TOKEN_MINUTE_TIME = "10080"
+
+        // Kakao OAuth2 설정 - Jenkins Credentials에서 보안 관리
+        KAKAO_CLIENT_ID = credentials('kakao-client-id')  // Jenkins Secret 사용
+        KAKAO_CLIENT_SECRET = credentials('kakao-client-secret')  // Jenkins Secret 사용
+        KAKAO_REDIRECT_URL = "https://rebra.site/oauth2/authorization/kakao/callback"
+        KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token"
+
+        // 배포 환경 설정
+        SPRING_PROFILES_ACTIVE = "prod"
+        DDL_AUTO = "create"  // 첫 배포: create, 이후: update 또는 validate
 
         // 환경변수
         MAIN_SERVER_CHANGED = 'false'
@@ -43,7 +74,7 @@ pipeline {
                             env.MAIN_SERVER_CHANGED = 'true'
                             echo "    → 메인 서버 변경 감지"
                         }
-                        if (file.startsWith('calc-server/')) {
+                        if (file.startsWith('backtest/')) {
                             env.CALC_SERVER_CHANGED = 'true'
                             echo "    → 계산 서버 변경 감지"
                         }
@@ -111,9 +142,9 @@ pipeline {
                     steps {
                         echo '=== 계산 서버 빌드 중 ==='
                         sh '''
-                            ./gradlew :calc-server:clean :calc-server:build -x test
+                            ./gradlew :backtest:clean :backtest:build -x test
                             echo "빌드된 JAR 파일 확인:"
-                            ls -la calc-server/build/libs/
+                            ls -la backtest/build/libs/
                         '''
                         echo '✅ 계산 서버 빌드 완료'
                     }
@@ -151,7 +182,7 @@ pipeline {
                     steps {
                         echo '=== 계산 서버 Docker 이미지 빌드 중 ==='
                         script {
-                            dir('calc-server') {
+                            dir('backtest') {
                                 sh """
                                     docker build -t rebra-calc:${BUILD_TAG} .
                                     docker tag rebra-calc:${BUILD_TAG} rebra-calc:latest
