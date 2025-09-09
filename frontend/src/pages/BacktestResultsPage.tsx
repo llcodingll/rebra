@@ -22,11 +22,6 @@ export default function BacktestResultsPage() {
   return (
     <div className={styles.backtestResults}>
       <div className={styles.container}>
-          {/* 백 버튼 */}
-          <button className={styles.backButton} onClick={() => navigate(-1)}>
-            ← 백테스트 목록으로 돌아가기
-          </button>
-
           {/* 백테스트 결과 카드 */}
           <div className={styles.resultCard}>
             <h2 className={styles.resultTitle}>백테스트 결과</h2>

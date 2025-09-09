@@ -1,0 +1,219 @@
+.dataRow {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  height: 64px;
+  transition: all 0.2s ease;
+  background: white;
+  position: relative;
+}
+
+.dataRow.clickable {
+  cursor: pointer;
+}
+
+.dataRow.clickable:hover {
+  background: #f8f9fb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border-bottom-color: rgba(3, 2, 19, 0.15);
+}
+
+.dataRow:last-child {
+  border-bottom: none;
+}
+
+.dataRow td {
+  padding: 16px 20px;
+  vertical-align: middle;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 500;
+  color: #030213;
+}
+
+/* Name Cell */
+.nameCell {
+  font-weight: 600;
+  color: #030213;
+  width: 280px;
+  font-size: 15px;
+}
+
+/* Date Cell */
+.dateCell {
+  color: #717182;
+  font-size: 13px;
+  font-weight: 500;
+  width: 120px;
+}
+
+/* Period Cell */
+.periodCell {
+  color: #717182;
+  font-size: 13px;
+  font-weight: 500;
+  width: 140px;
+}
+
+.periodCell span {
+  background: #ececf0;
+  color: #030213;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Return Cell */
+.returnCell {
+  color: #059669;
+  font-weight: 700;
+  font-size: 16px;
+  width: 120px;
+}
+
+.returnCell.negative {
+  color: #dc2626;
+}
+
+/* Drawdown Cell */
+.drawdownCell {
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 14px;
+  width: 120px;
+}
+
+/* Sharpe Cell */
+.sharpeCell {
+  color: #030213;
+  font-weight: 600;
+  font-size: 14px;
+  width: 120px;
+}
+
+.sharpeCell span {
+  background: #e9ebef;
+  color: #030213;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Status Cell */
+.statusCell {
+  text-align: center;
+  vertical-align: middle;
+  width: 100px;
+}
+
+.statusBadge {
+  background: #059669;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  line-height: 1.2;
+}
+
+/* Action Cell */
+.actionCell {
+  text-align: center;
+  width: 60px;
+  vertical-align: middle;
+}
+
+.deleteButton {
+  background: white;
+  border: 1px solid #ececf0;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 36px;
+  height: 36px;
+}
+
+.deleteButton:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.deleteButton img,
+.deleteButton svg {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+  transition: color 0.2s ease;
+}
+
+.deleteButton:hover img,
+.deleteButton:hover svg {
+  color: #dc2626;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dataRow {
+    height: auto;
+    min-height: 56px;
+  }
+  
+  .dataRow td {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+  
+  .nameCell {
+    max-width: 200px;
+    font-size: 14px;
+  }
+  
+  .returnCell {
+    font-size: 15px;
+  }
+  
+  .periodCell span,
+  .sharpeCell span {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+  
+  .statusBadge {
+    padding: 5px 12px;
+    font-size: 11px;
+  }
+  
+  .deleteButton {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .deleteButton img,
+  .deleteButton svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dataRow td {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  
+  .nameCell {
+    font-size: 13px;
+  }
+  
+  .returnCell {
+    font-size: 14px;
+  }
+}

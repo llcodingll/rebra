@@ -1,0 +1,97 @@
+.searchSection {
+  width: 100%;
+  max-width: 1392px;
+}
+
+.searchCard {
+  background: white;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 12.75px;
+  padding: 20px 24px;
+  height: 147px;
+}
+
+.searchCard h3 {
+  font-size: 14px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  color: black;
+  margin: 0 0 20px 0;
+  line-height: 14px;
+}
+
+.searchControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  height: 80px;
+}
+
+.searchInput {
+  flex: 1;
+  max-width: 680px;
+  position: relative;
+  height: 32px;
+}
+
+.searchInput input {
+  width: 100%;
+  height: 100%;
+  background: white;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 6.75px;
+  padding: 9px 16px 7px 40px;
+  font-size: 12px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  color: #999999;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+}
+
+.searchIcon img {
+  width: 100%;
+  height: 100%;
+}
+
+.createButtons {
+  display: flex;
+  gap: 16px;
+}
+
+.createFromPortfolio,
+.createDirect {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 6.75px;
+  font-size: 14px;
+  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.createFromPortfolio {
+  background: white;
+  border: 1px solid rgba(0,0,0,0.1);
+  color: black;
+}
+
+.createDirect {
+  background: #030213;
+  border: none;
+  color: white;
+}
+
+.createFromPortfolio img,
+.createDirect img {
+  width: 14px;
+  height: 14px;
+}

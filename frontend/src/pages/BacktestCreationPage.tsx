@@ -50,19 +50,11 @@ export default function BacktestCreationPage() {
 
   return (
     <div className={styles.backtestCreation}>
-      {/* 헤더 */}
-      <div className={styles.header}>
-        <button className={styles.backButton} onClick={() => navigate(-1)}>
-          ← 뒤로 가기
-        </button>
-        <h1>백테스트 생성</h1>
-      </div>
-
       <div className={styles.container}>
         {/* 백테스트 설정 카드 */}
         <div className={styles.settingsCard}>
           <div className={styles.cardHeader}>
-            <h3>백테스트 설정</h3>
+            <h3>백테스트 생성</h3>
           </div>
 
           <div className={styles.formGrid}>
