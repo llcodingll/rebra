@@ -6,6 +6,7 @@ import styles from './RealTimeChart.module.css';
 interface RealTimeChartProps {
   stockCode: string;
   stockName: string;
+  onPriceUpdate?: (price: number, change: { amount: number; rate: number }) => void;
 }
 
 interface ChartData {
@@ -19,7 +20,7 @@ interface VolumeData {
   color?: string;
 }
 
-export default function RealTimeChart({ stockCode, stockName }: RealTimeChartProps) {
+export default function RealTimeChart({ stockCode, stockName, onPriceUpdate }: RealTimeChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const priceSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
@@ -111,10 +112,16 @@ export default function RealTimeChart({ stockCode, stockName }: RealTimeChartPro
     const priceChangeFromInitial = currentPrice - initialPrice;
     const priceRateFromInitial = (priceChangeFromInitial / initialPrice) * 100;
     
-    setPriceChange({
+    const changData = {
       amount: Math.round(priceChangeFromInitial),
       rate: parseFloat(priceRateFromInitial.toFixed(2))
-    });
+    };
+    setPriceChange(changData);
+    
+    // 부모 컴포넌트에 실시간 데이터 전달
+    if (onPriceUpdate) {
+      onPriceUpdate(Math.round(currentPrice), changData);
+    }
     
     setVolume(volumeData[volumeData.length - 1]?.value || 0);
 
@@ -156,10 +163,16 @@ export default function RealTimeChart({ stockCode, stockName }: RealTimeChartPro
       const priceChangeFromInitial = newPrice - initialPrice;
       const priceRateFromInitial = (priceChangeFromInitial / initialPrice) * 100;
       
-      setPriceChange({
+      const changeData = {
         amount: Math.round(priceChangeFromInitial),
         rate: parseFloat(priceRateFromInitial.toFixed(2))
-      });
+      };
+      setPriceChange(changeData);
+      
+      // 실시간 업데이트를 부모에게 전달
+      if (onPriceUpdate) {
+        onPriceUpdate(Math.round(newPrice), changeData);
+      }
     }, 3000); // 3초마다 업데이트
   };
 
@@ -216,10 +229,6 @@ export default function RealTimeChart({ stockCode, stockName }: RealTimeChartPro
         type: 'volume',
       },
       priceScaleId: '',
-      scaleMargins: {
-        top: 0.7,
-        bottom: 0,
-      },
     });
 
     chartRef.current = chart;

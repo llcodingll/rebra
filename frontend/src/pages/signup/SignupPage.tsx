@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SurveySection from '../../widget/survey/SurveySection';
-import SurveyRadioQuestion from '../../widget/survey/SurveyRadioQuestion';
-import SurveyCheckboxQuestion from '../../widget/survey/SurveyCheckboxQuestion';
-import SurveyTextInput from '../../widget/survey/SurveyTextInput';
-import AgreementCheckboxes from '../../widget/survey/AgreementCheckboxes';
+import SurveySection from '../../widgets/survey/SurveySection';
+import SurveyRadioQuestion from '../../widgets/survey/SurveyRadioQuestion';
+import SurveyCheckboxQuestion from '../../widgets/survey/SurveyCheckboxQuestion';
+import SurveyTextInput from '../../widgets/survey/SurveyTextInput';
+import AgreementCheckboxes from '../../widgets/survey/AgreementCheckboxes';
 import {
   ageOptions,
   incomeSourceOptions,

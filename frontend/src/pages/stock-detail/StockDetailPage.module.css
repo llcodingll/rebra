@@ -1,0 +1,65 @@
+.container {
+  width: 100%;
+  background: #fafafa;
+  min-height: 100vh;
+  padding: 0;
+}
+
+/* 주식 정보 및 보유 현황 섹션 */
+.stockInfoSection {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 0 20px;
+}
+
+
+/* 메인 콘텐츠 (3열 레이아웃) */
+.mainContent {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 20px;
+  padding: 0 20px;
+}
+
+/* 좌측: 차트 */
+.chartSection {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+
+/* 반응형 디자인 */
+@media (max-width: 1400px) {
+  .mainContent {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+}
+
+@media (max-width: 1200px) {
+  .mainContent {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .stockInfoSection {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 12px;
+  }
+  
+  .stockInfoSection {
+    padding: 0;
+  }
+  
+  .mainContent {
+    padding: 0;
+  }
+}

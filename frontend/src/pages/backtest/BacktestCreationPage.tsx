@@ -33,7 +33,7 @@ const mockStocks: Stock[] = [
     change: '+1,200원 (+1.71%)',
     changeType: 'positive',
     volume: '12,345,678',
-    sector: '반도체'
+    sector: '반도체',
   },
   {
     name: 'SK하이닉스',
@@ -42,7 +42,7 @@ const mockStocks: Stock[] = [
     change: '+2,100원 (+2.42%)',
     changeType: 'positive',
     volume: '8,765,432',
-    sector: '반도체'
+    sector: '반도체',
   },
   {
     name: '카카오',
@@ -51,7 +51,7 @@ const mockStocks: Stock[] = [
     change: '-850원 (-1.71%)',
     changeType: 'negative',
     volume: '5,432,109',
-    sector: 'IT서비스'
+    sector: 'IT서비스',
   },
   {
     name: 'NAVER',
@@ -60,8 +60,8 @@ const mockStocks: Stock[] = [
     change: '+3,500원 (+1.88%)',
     changeType: 'positive',
     volume: '2,109,876',
-    sector: 'IT서비스'
-  }
+    sector: 'IT서비스',
+  },
 ];
 
 const mockPortfolio: PortfolioItem[] = [
@@ -71,7 +71,7 @@ const mockPortfolio: PortfolioItem[] = [
     buyPrice: '70,000원',
     quantity: 10,
     targetWeight: 40,
-    threshold: 5
+    threshold: 5,
   },
   {
     name: 'SK하이닉스',
@@ -79,8 +79,8 @@ const mockPortfolio: PortfolioItem[] = [
     buyPrice: '85,000원',
     quantity: 5,
     targetWeight: 30,
-    threshold: 5
-  }
+    threshold: 5,
+  },
 ];
 
 interface BacktestCreationPageProps {
@@ -111,13 +111,12 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
   const [searchTerm, setSearchTerm] = useState('');
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(mockPortfolio);
 
-  const filteredStocks = mockStocks.filter(stock => 
-    stock.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    stock.code.includes(searchTerm)
+  const filteredStocks = mockStocks.filter(
+    (stock) => stock.name.toLowerCase().includes(searchTerm.toLowerCase()) || stock.code.includes(searchTerm)
   );
 
   const handleAddToPortfolio = (stock: Stock) => {
-    const existingItem = portfolioItems.find(item => item.code === stock.code);
+    const existingItem = portfolioItems.find((item) => item.code === stock.code);
     if (existingItem) return;
 
     const newItem: PortfolioItem = {
@@ -126,14 +125,14 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
       buyPrice: stock.price,
       quantity: 1,
       targetWeight: 10,
-      threshold: 5
+      threshold: 5,
     };
 
     setPortfolioItems([...portfolioItems, newItem]);
   };
 
   const handleRemoveFromPortfolio = (code: string) => {
-    setPortfolioItems(portfolioItems.filter(item => item.code !== code));
+    setPortfolioItems(portfolioItems.filter((item) => item.code !== code));
   };
 
   const handleRunBacktest = () => {
@@ -142,7 +141,7 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
       period: rebalancingPeriod,
       startDate,
       endDate,
-      portfolio: portfolioItems
+      portfolio: portfolioItems,
     });
   };
 
