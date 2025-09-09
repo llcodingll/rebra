@@ -70,18 +70,20 @@ environment {
                     changes.each { file ->
                         echo "  - ${file}"
 
-                        if (file.startsWith('rebra/')) {
+                        // backend/ 폴더 내 변경사항 감지 (현재 작업 디렉토리가 backend/)
+                        if (file.startsWith('backend/rebra/') || file.startsWith('backend/Jenkinsfile') || file.startsWith('backend/docker-compose')) {
                             env.MAIN_SERVER_CHANGED = 'true'
-                            echo "    → 메인 서버 변경 감지"
+                            echo "    → 메인 서버 변경 감지: ${file}"
                         }
-                        if (file.startsWith('backtest/')) {
-                            env.CALC_SERVER_CHANGED = 'true'
-                            echo "    → 계산 서버 변경 감지"
-                        }
-                        if (file.startsWith('shared/')) {
-                            env.SHARED_CHANGED = 'true'
-                            echo "    → 공통 모듈 변경 감지"
-                        }
+                        // 백테스트, 공통 모듈은 현재 미사용으로 주석처리
+                        // if (file.startsWith('backtest/')) {
+                        //     env.CALC_SERVER_CHANGED = 'true'
+                        //     echo "    → 계산 서버 변경 감지"
+                        // }
+                        // if (file.startsWith('shared/')) {
+                        //     env.SHARED_CHANGED = 'true'
+                        //     echo "    → 공통 모듈 변경 감지"
+                        // }
                     }
 
                     // shared 모듈이 변경되면 모든 서버 재배포
