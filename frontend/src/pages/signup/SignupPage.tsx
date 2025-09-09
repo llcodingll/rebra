@@ -72,7 +72,9 @@ export default function SignupPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Survey Data:', surveyData);
-    navigate('/dashboard');
+
+    // 히스토리를 완전히 초기화하고 대시보드를 새로운 시작점으로 설정
+    window.location.replace('/dashboard');
   };
 
   const handleNicknameChange = (value: string) => {
@@ -213,7 +215,7 @@ export default function SignupPage() {
           </SurveySection>
 
           <div className={styles.submitSection}>
-            <button type='submit' className={styles.submitButton} disabled={!isFormValid()}>
+            <button type='submit' className={styles.submitButton} disabled={false}>
               제출하기
             </button>
           </div>

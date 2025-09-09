@@ -4,7 +4,10 @@ import styles from './LoginPage.module.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const handleLoginSuccess = () => navigate('/signup');
+  const handleLoginSuccess = () => {
+    // 히스토리 초기화하고 회원가입으로 이동
+    window.location.replace('/signup');
+  };
 
   return (
     <div className={styles.loginPage}>
