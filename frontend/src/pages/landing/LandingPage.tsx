@@ -18,7 +18,7 @@ import {
   imgVector7,
   imgVector8,
   imgVector9,
-} from '../assets/imports/svg-25rg9';
+} from '../../assets/imports/svg-25rg9';
 import styles from './LandingPage.module.css';
 
 export default function LandingPage() {

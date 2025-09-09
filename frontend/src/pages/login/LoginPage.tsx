@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import KakaoLoginWidget from '../widget/auth/KakaoLoginWidget';
+import KakaoLoginWidget from '../../widgets/auth/KakaoLoginWidget';
 import styles from './LoginPage.module.css';
 
 export default function LoginPage() {

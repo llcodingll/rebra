@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './BacktestPage.module.css';
 import { legacyBacktestData } from '../../mocks/backtest';
-import PortfolioSelectionModal from '../../widget/portfolio/PortfolioSelectionModal';
-import Pagination from '../../widget/common/Pagination';
-import BacktestSearchWidget from '../../widget/backtest/BacktestSearchWidget';
-import BacktestHistoryWidget from '../../widget/backtest/BacktestHistoryWidget';
+import PortfolioSelectionModal from '../../widgets/portfolio/PortfolioSelectionModal';
+import Pagination from '../../widgets/common/Pagination';
+import BacktestSearchWidget from '../../widgets/backtest/BacktestSearchWidget';
+import BacktestHistoryWidget from '../../widgets/backtest/BacktestHistoryWidget';
 
 export default function BacktestPage() {
   const navigate = useNavigate();

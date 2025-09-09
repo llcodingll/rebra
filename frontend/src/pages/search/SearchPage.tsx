@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import styles from './SearchPage.module.css';
-import StockListWidget from '../widget/search/StockListWidget';
+import StockListWidget from '../../widgets/search/StockListWidget';
 
 export default function SearchPage() {
   const [activeSubTab, setActiveSubTab] = useState<'ranking' | 'search' | 'watchlist' | 'holdings'>('holdings');
@@ -61,9 +61,7 @@ export default function SearchPage() {
       </div>
 
       {/* 메인 컨텐츠 */}
-      <div className={styles.content}>
-        {renderContent()}
-      </div>
+      <div className={styles.content}>{renderContent()}</div>
     </div>
   );
 }
