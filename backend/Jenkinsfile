@@ -7,7 +7,7 @@ environment {
         DOCKER_TAG = "${BUILD_NUMBER}"
 
         // Jenkins에 저장된 credential ID들
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        // DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')  // 임시 주석 처리 - 현재 사용하지 않음
 
         // RDS 연결 정보 - Jenkins Credentials에서 보안 관리
         DB_HOST = credentials('postgresql-host')  // Jenkins Secret 사용
@@ -17,8 +17,8 @@ environment {
         DB_PASSWORD = credentials('postgresql-password')  // Jenkins Secret 사용
 
         // GMS API 설정 - Jenkins Credentials에서 보안 관리
-        GMS_API_KEY = credentials('gms-api-key')  // Jenkins Secret 사용
-        GMS_WHISPER_URL = "https://gms.ssafy.io/gmsapi/api.openai.com/v1/audio/transcriptions"
+        // GMS_API_KEY = credentials('gms-api-key')  // 임시 주석 처리 - credential 미등록
+        GMS_API_KEY = "temp-gms-api-key"  // 임시값
         GMS_GPT_URL = "https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions"
 
         // JWT 설정 - Jenkins Credentials에서 보안 관리
