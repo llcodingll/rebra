@@ -4,8 +4,8 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_DB: Rebra
-      POSTGRES_USER: postgres
+      POSTGRES_DB: rebra
+      POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5432:5432"
@@ -58,8 +58,8 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_NAME=Rebra
-      - DB_USERNAME=postgres
+      - DB_NAME=rebra
+      - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -73,7 +73,7 @@ services:
       - rebra-network
     restart: unless-stopped
 
-  calc-server:
+  backtest:
     image: rebra-calc:latest
     ports:
       - "8081:8080"
@@ -81,8 +81,8 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_NAME=Rebra
-      - DB_USERNAME=postgres
+      - DB_NAME=rebra
+      - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
