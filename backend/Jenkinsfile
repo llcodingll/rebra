@@ -36,10 +36,8 @@ environment {
         SPRING_PROFILES_ACTIVE = "prod"
         DDL_AUTO = "create"  // 첫 배포: create, 이후: update 또는 validate
 
-        // 환경변수
-        MAIN_SERVER_CHANGED = 'false'
-        CALC_SERVER_CHANGED = 'false'
-        SHARED_CHANGED = 'false'
+        // 환경변수는 script 단계에서 동적으로 설정
+        // MAIN_SERVER_CHANGED, CALC_SERVER_CHANGED, SHARED_CHANGED는 변경사항 감지 단계에서 설정됨
 
         // 빌드 번호
         BUILD_TAG = "${BUILD_NUMBER}"
@@ -50,6 +48,11 @@ environment {
             steps {
                 script {
                     echo "=== 변경된 파일 감지 중 ==="
+
+                    // 환경변수 초기화
+                    env.MAIN_SERVER_CHANGED = 'false'
+                    env.CALC_SERVER_CHANGED = 'false'  
+                    env.SHARED_CHANGED = 'false'
 
                     // Git에서 변경된 파일 목록 가져오기
                     def changes = []
