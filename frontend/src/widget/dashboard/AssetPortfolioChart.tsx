@@ -276,7 +276,6 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                 </div>
               </div>
               <span className={styles.thresholdValue}>10%</span>
-            </div>
 
             <div className={styles.targetInfo}>
               <div className={styles.targetLabel}>목표 비중</div>
@@ -301,7 +300,6 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                     />
                   </div>
                 </div>
-              </div>
 
               {/* 리밸런싱 정보 */}
               <div className={styles.rebalancingInfo}>
