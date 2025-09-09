@@ -11,6 +11,7 @@ interface SurveyRadioQuestionProps {
   options: Option[];
   value: string;
   onChange: (value: string) => void;
+  required?: boolean;
 }
 
 export default function SurveyRadioQuestion({
@@ -18,11 +19,15 @@ export default function SurveyRadioQuestion({
   name,
   options,
   value,
-  onChange
+  onChange,
+  required = false
 }: SurveyRadioQuestionProps) {
   return (
     <div className={styles.question}>
-      <label className={styles.questionLabel}>{label}</label>
+      <label className={styles.questionLabel}>
+        {label}
+        {required && <span className={styles.required}>*</span>}
+      </label>
       <div className={styles.options}>
         {options.map((option) => (
           <label key={option.value} className={styles.radioLabel}>
