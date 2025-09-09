@@ -12,6 +12,7 @@ const BacktestCreationPage = lazy(() => import('../pages/BacktestCreationPage'))
 const BacktestResultsPage = lazy(() => import('../pages/BacktestResultsPage'));
 const StockDetailPage = lazy(() => import('../pages/StockDetailPage'));
 const ProfitStatusPage = lazy(() => import('../pages/ProfitStatusPage'));
+const KisTestPage = lazy(() => import('../pages/KisTestPage'));
 
 export const router = createBrowserRouter([
   {
@@ -67,6 +68,10 @@ export const router = createBrowserRouter([
             element: <ProfitStatusPage />,
           },
         ],
+      },
+      {
+        path: 'kis-test',
+        element: <KisTestPage />,
       },
       {
         path: '*',
