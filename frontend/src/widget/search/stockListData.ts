@@ -15,8 +15,8 @@ export interface SimpleNewsItem {
   time: string;
 }
 
-import imgImage11 from "figma:asset/5eb297e5fb5eb77d91e0dc360108bf8fa1a12b20.png";
-import imgImage12 from "figma:asset/54116abb0da9577e8e87663b82466c2e36792369.png";
+import imgImage11 from 'figma:asset/5eb297e5fb5eb77d91e0dc360108bf8fa1a12b20.png';
+import imgImage12 from 'figma:asset/54116abb0da9577e8e87663b82466c2e36792369.png';
 
 export const stockListData: StockListItem[] = [
   {
@@ -28,7 +28,7 @@ export const stockListData: StockListItem[] = [
     changePercent: true,
     volume: '1234억',
     logo: imgImage12,
-    isFavorite: true
+    isFavorite: true,
   },
   {
     rank: 2,
@@ -39,7 +39,7 @@ export const stockListData: StockListItem[] = [
     changePercent: false,
     volume: '1111억',
     logo: imgImage11,
-    isFavorite: false
+    isFavorite: false,
   },
   {
     rank: 3,
@@ -50,7 +50,7 @@ export const stockListData: StockListItem[] = [
     changePercent: true,
     volume: '999억',
     logo: imgImage11,
-    isFavorite: false
+    isFavorite: false,
   },
   {
     rank: 4,
@@ -61,7 +61,7 @@ export const stockListData: StockListItem[] = [
     changePercent: true,
     volume: '888억',
     logo: imgImage11,
-    isFavorite: false
+    isFavorite: false,
   },
   {
     rank: 5,
@@ -72,7 +72,7 @@ export const stockListData: StockListItem[] = [
     changePercent: false,
     volume: '777억',
     logo: imgImage12,
-    isFavorite: true
+    isFavorite: true,
   },
   {
     rank: 6,
@@ -83,7 +83,7 @@ export const stockListData: StockListItem[] = [
     changePercent: true,
     volume: '666억',
     logo: imgImage11,
-    isFavorite: false
+    isFavorite: false,
   },
   {
     rank: 7,
@@ -94,7 +94,7 @@ export const stockListData: StockListItem[] = [
     changePercent: true,
     volume: '555억',
     logo: imgImage11,
-    isFavorite: false
+    isFavorite: false,
   },
   {
     rank: 8,
@@ -105,7 +105,7 @@ export const stockListData: StockListItem[] = [
     changePercent: true,
     volume: '444억',
     logo: imgImage11,
-    isFavorite: false
+    isFavorite: false,
   },
   {
     rank: 9,
@@ -116,7 +116,7 @@ export const stockListData: StockListItem[] = [
     changePercent: true,
     volume: '333억',
     logo: imgImage11,
-    isFavorite: false
+    isFavorite: false,
   },
   {
     rank: 10,
@@ -127,29 +127,29 @@ export const stockListData: StockListItem[] = [
     changePercent: false,
     volume: '222억',
     logo: imgImage11,
-    isFavorite: false
-  }
+    isFavorite: false,
+  },
 ];
 
 export const simpleNewsData: SimpleNewsItem[] = [
   {
     title: '이곳은 뜨끈한 뉴스가 들어갈 곳 제목이 들어간다. 최대 두 줄...',
-    time: '1분 전'
+    time: '1분 전',
   },
   {
     title: '이곳은 뜨끈한 뉴스가 들어갈 곳 제목이 들어간다. 최대 두 줄...',
-    time: '2분 전'
+    time: '2분 전',
   },
   {
     title: '이곳은 뜨끈한 뉴스가 들어갈 곳 제목이 들어간다. 최대 두 줄...',
-    time: '2분 전'
+    time: '2분 전',
   },
   {
     title: '이곳은 뜨끈한 뉴스가 들어갈 곳 제목이 들어간다. 최대 두 줄...',
-    time: '2분 전'
+    time: '2분 전',
   },
   {
     title: '이곳은 뜨끈한 뉴스가 들어갈 곳 제목이 들어간다. 최대 두 줄...',
-    time: '2분 전'
-  }
+    time: '2분 전',
+  },
 ];

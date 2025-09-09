@@ -1,19 +1,13 @@
 import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import styles from './BacktestResultsPage.module.css';
+import { legacyBacktestData } from '../mocks/backtest';
 
-interface BacktestResultsPageProps {
-  onBack: () => void;
-  backtestData?: {
-    name: string;
-    date: string;
-    period: string;
-    totalReturn: string;
-    maxDrawdown: string;
-    sharpeRatio: string;
-  };
-}
-
-export default function BacktestResultsPage({ onBack, backtestData }: BacktestResultsPageProps) {
+export default function BacktestResultsPage() {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const backtestData = id ? legacyBacktestData.find(b => b.id === parseInt(id)) : null;
+  
   const defaultData = {
     name: '월간 리밸런싱 전략',
     date: '2024-01-15',
@@ -28,11 +22,6 @@ export default function BacktestResultsPage({ onBack, backtestData }: BacktestRe
   return (
     <div className={styles.backtestResults}>
       <div className={styles.container}>
-          {/* 백 버튼 */}
-          <button className={styles.backButton} onClick={onBack}>
-            ← 백테스트 목록으로 돌아가기
-          </button>
-
           {/* 백테스트 결과 카드 */}
           <div className={styles.resultCard}>
             <h2 className={styles.resultTitle}>백테스트 결과</h2>
@@ -49,7 +38,7 @@ export default function BacktestResultsPage({ onBack, backtestData }: BacktestRe
                 <span className={styles.resultLabel}>초기 자본</span>
                 <span className={styles.resultValue}>10,000,000원</span>
                 <span className={styles.resultLabel}>최종 자본</span>
-                <span className={`${styles.resultValue} ${styles.blue}`}>13,520,000원</span>
+                <span className={`${styles.resultValue} ${styles.blue}`}>13,540,000원</span>
               </div>
               
               <div className={styles.resultColumn}>
