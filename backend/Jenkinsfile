@@ -1,0 +1,339 @@
+pipeline {
+    agent any
+
+    environment {
+        // Docker Hub 정보 (선택사항)
+        DOCKER_HUB_REPO = 'rebra_backend'
+
+        // 환경변수
+        MAIN_SERVER_CHANGED = 'false'
+        CALC_SERVER_CHANGED = 'false'
+        SHARED_CHANGED = 'false'
+
+        // 빌드 번호
+        BUILD_TAG = "${BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('🔍 변경사항 감지') {
+            steps {
+                script {
+                    echo "=== 변경된 파일 감지 중 ==="
+
+                    // Git에서 변경된 파일 목록 가져오기
+                    def changes = []
+                    try {
+                        changes = sh(
+                            script: "git diff --name-only HEAD~1 HEAD || git ls-files",
+                            returnStdout: true
+                        ).trim().split('\n')
+                    } catch (Exception e) {
+                        echo "첫 빌드이거나 diff 실패: ${e.getMessage()}"
+                        changes = sh(
+                            script: "git ls-files",
+                            returnStdout: true
+                        ).trim().split('\n')
+                    }
+
+                    echo "변경된 파일들:"
+                    changes.each { file ->
+                        echo "  - ${file}"
+
+                        if (file.startsWith('rebra/')) {
+                            env.MAIN_SERVER_CHANGED = 'true'
+                            echo "    → 메인 서버 변경 감지"
+                        }
+                        if (file.startsWith('calc-server/')) {
+                            env.CALC_SERVER_CHANGED = 'true'
+                            echo "    → 계산 서버 변경 감지"
+                        }
+                        if (file.startsWith('shared/')) {
+                            env.SHARED_CHANGED = 'true'
+                            echo "    → 공통 모듈 변경 감지"
+                        }
+                    }
+
+                    // shared 모듈이 변경되면 모든 서버 재배포
+                    if (env.SHARED_CHANGED == 'true') {
+                        env.MAIN_SERVER_CHANGED = 'true'
+                        env.CALC_SERVER_CHANGED = 'true'
+                        echo "공통 모듈 변경으로 인해 모든 서비스 재빌드합니다"
+                    }
+
+                    echo """
+=== 빌드 계획 ===
+메인 서버 빌드: ${env.MAIN_SERVER_CHANGED}
+계산 서버 빌드: ${env.CALC_SERVER_CHANGED}
+공통 모듈 변경: ${env.SHARED_CHANGED}
+                    """
+                }
+            }
+        }
+
+        stage('📦 Shared 모듈 빌드') {
+            when {
+                anyOf {
+                    environment name: 'MAIN_SERVER_CHANGED', value: 'true'
+                    environment name: 'CALC_SERVER_CHANGED', value: 'true'
+                }
+            }
+            steps {
+                echo '=== Shared 모듈 빌드 중 ==='
+                sh '''
+                    chmod +x ./gradlew
+                    ./gradlew :shared:clean :shared:build -x test
+                '''
+                echo '✅ Shared 모듈 빌드 완료'
+            }
+        }
+
+        stage('🏗️ 서비스 빌드') {
+            parallel {
+                stage('메인 서버 빌드') {
+                    when {
+                        environment name: 'MAIN_SERVER_CHANGED', value: 'true'
+                    }
+                    steps {
+                        echo '=== 메인 서버 빌드 중 ==='
+                        sh '''
+                            ./gradlew :rebra:clean :rebra:build -x test
+                            echo "빌드된 JAR 파일 확인:"
+                            ls -la rebra/build/libs/
+                        '''
+                        echo '✅ 메인 서버 빌드 완료'
+                    }
+                }
+
+                stage('계산 서버 빌드') {
+                    when {
+                        environment name: 'CALC_SERVER_CHANGED', value: 'true'
+                    }
+                    steps {
+                        echo '=== 계산 서버 빌드 중 ==='
+                        sh '''
+                            ./gradlew :calc-server:clean :calc-server:build -x test
+                            echo "빌드된 JAR 파일 확인:"
+                            ls -la calc-server/build/libs/
+                        '''
+                        echo '✅ 계산 서버 빌드 완료'
+                    }
+                }
+            }
+        }
+
+        stage('🐳 Docker 이미지 빌드') {
+            parallel {
+                stage('메인 서버 Docker 빌드') {
+                    when {
+                        environment name: 'MAIN_SERVER_CHANGED', value: 'true'
+                    }
+                    steps {
+                        echo '=== 메인 서버 Docker 이미지 빌드 중 ==='
+                        script {
+                            dir('rebra') {
+                                sh """
+                                    docker build -t rebra-main:${BUILD_TAG} .
+                                    docker tag rebra-main:${BUILD_TAG} rebra-main:latest
+
+                                    echo "생성된 Docker 이미지:"
+                                    docker images | grep rebra-main
+                                """
+                            }
+                        }
+                        echo '✅ 메인 서버 Docker 이미지 빌드 완료'
+                    }
+                }
+
+                stage('계산 서버 Docker 빌드') {
+                    when {
+                        environment name: 'CALC_SERVER_CHANGED', value: 'true'
+                    }
+                    steps {
+                        echo '=== 계산 서버 Docker 이미지 빌드 중 ==='
+                        script {
+                            dir('calc-server') {
+                                sh """
+                                    docker build -t rebra-calc:${BUILD_TAG} .
+                                    docker tag rebra-calc:${BUILD_TAG} rebra-calc:latest
+
+                                    echo "생성된 Docker 이미지:"
+                                    docker images | grep rebra-calc
+                                """
+                            }
+                        }
+                        echo '✅ 계산 서버 Docker 이미지 빌드 완료'
+                    }
+                }
+            }
+        }
+
+        stage('🚀 서비스 배포') {
+            steps {
+                script {
+                    echo '=== 배포 시작 ==='
+
+                    // 환경변수 파일 생성
+                    sh '''
+                        echo "DB_PASSWORD=rebra09081135" > .env
+                        echo "REDIS_PASSWORD=rebra09081135" >> .env
+                        cat .env
+                    '''
+
+                    if (env.MAIN_SERVER_CHANGED == 'true' || env.CALC_SERVER_CHANGED == 'true') {
+                        echo '변경된 서비스들을 배포합니다...'
+
+                        // 🎯 Blog 경험: 진행 중인 백테스팅 확인 및 대기
+                        if (env.CALC_SERVER_CHANGED == 'true') {
+                            echo '=== 계산 서버 배포 전 진행 중인 작업 확인 ==='
+                            sh '''
+                                echo "진행 중인 백테스팅 작업 확인 중..."
+
+                                # 계산 서버 로그에서 진행 중인 백테스팅 확인
+                                RUNNING_JOBS=$(docker logs rebra-calc 2>&1 | grep -c "백테스팅 진행 중" || echo "0")
+
+                                if [ "$RUNNING_JOBS" -gt 0 ]; then
+                                    echo "⏳ 진행 중인 백테스팅 작업이 ${RUNNING_JOBS}개 있습니다."
+                                    echo "작업 완료를 기다립니다... (최대 10분 대기)"
+
+                                    # 10분 동안 30초마다 확인
+                                    for i in {1..20}; do
+                                        sleep 30
+                                        RUNNING_JOBS=$(docker logs rebra-calc 2>&1 | grep -c "백테스팅 진행 중" || echo "0")
+
+                                        if [ "$RUNNING_JOBS" -eq 0 ]; then
+                                            echo "✅ 모든 백테스팅 작업이 완료되었습니다."
+                                            break
+                                        fi
+
+                                        echo "⏳ 대기 중... ($i/20) - 남은 작업: ${RUNNING_JOBS}개"
+                                    done
+
+                                    if [ "$RUNNING_JOBS" -gt 0 ]; then
+                                        echo "⚠️ 경고: 일부 작업이 여전히 진행 중이지만, 타임아웃으로 배포를 진행합니다."
+                                        echo "📝 참고: 진행 중인 작업은 재시작 시 중단될 수 있습니다."
+                                    fi
+                                else
+                                    echo "✅ 진행 중인 백테스팅 작업이 없습니다. 안전하게 배포합니다."
+                                fi
+                            '''
+                        }
+
+                        // 기존 서비스 중지 (Graceful shutdown)
+                        sh '''
+                            echo "기존 서비스들을 안전하게 중지합니다..."
+                            docker-compose -f docker-compose.prod.yml down --remove-orphans || true
+                        '''
+
+                        // 새 서비스 시작
+                        sh '''
+                            echo "새로운 버전의 서비스들을 시작합니다..."
+                            docker-compose -f docker-compose.prod.yml up -d
+                        '''
+
+                        // 서비스 상태 확인
+                        sh '''
+                            echo "서비스 시작 대기 중..."
+                            sleep 30
+
+                            echo "실행 중인 컨테이너 확인:"
+                            docker-compose -f docker-compose.prod.yml ps
+                        '''
+
+                    } else {
+                        echo '변경된 서비스가 없어 배포를 건너뜁니다.'
+                    }
+                }
+            }
+        }
+
+        stage('🏥 헬스체크') {
+            steps {
+                script {
+                    if (env.MAIN_SERVER_CHANGED == 'true') {
+                        echo '=== 메인 서버 헬스체크 ==='
+                        sh '''
+                            for i in {1..30}; do
+                                if curl -f http://localhost:8080/actuator/health; then
+                                    echo "✅ 메인 서버가 정상적으로 실행 중입니다 ($i/30)"
+                                    break
+                                fi
+                                echo "⏳ 메인 서버 시작 대기 중... ($i/30)"
+                                sleep 10
+                            done
+                        '''
+                    }
+
+                    if (env.CALC_SERVER_CHANGED == 'true') {
+                        echo '=== 계산 서버 헬스체크 ==='
+                        sh '''
+                            for i in {1..30}; do
+                                if curl -f http://localhost:8081/actuator/health; then
+                                    echo "✅ 계산 서버가 정상적으로 실행 중입니다 ($i/30)"
+                                    break
+                                fi
+                                echo "⏳ 계산 서버 시작 대기 중... ($i/30)"
+                                sleep 10
+                            done
+                        '''
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            script {
+                def deployedServices = []
+                if (env.MAIN_SERVER_CHANGED == 'true') deployedServices.add('메인 서버')
+                if (env.CALC_SERVER_CHANGED == 'true') deployedServices.add('계산 서버')
+
+                if (deployedServices.size() > 0) {
+                    echo """
+🎉 배포 성공!
+배포된 서비스: ${deployedServices.join(', ')}
+빌드 번호: ${BUILD_NUMBER}
+
+서비스 확인:
+- 메인 서버: http://13.125.20.43:8080/actuator/health
+- 계산 서버: http://13.125.20.43:8081/actuator/health
+                    """
+                } else {
+                    echo '변경사항이 없어 배포하지 않았습니다.'
+                }
+            }
+        }
+
+        failure {
+            echo '''
+❌ 배포 실패!
+로그를 확인하여 문제를 해결하세요.
+
+일반적인 해결 방법:
+1. 빌드 오류: ./gradlew build 직접 실행해보기
+2. Docker 오류: docker logs [컨테이너명] 확인
+3. 포트 충돌: netstat -tulpn | grep :8080 으로 포트 사용 확인
+            '''
+
+            // 실패 시 정리
+            sh '''
+                echo "실패한 컨테이너 정리 중..."
+                docker-compose -f docker-compose.prod.yml down || true
+            '''
+        }
+
+        always {
+            echo '=== 정리 작업 ==='
+            sh '''
+                echo "사용하지 않는 Docker 이미지 정리 중..."
+                docker image prune -f || true
+
+                echo "현재 실행 중인 컨테이너:"
+                docker ps
+
+                echo "디스크 사용량:"
+                df -h
+            '''
+        }
+    }
+}

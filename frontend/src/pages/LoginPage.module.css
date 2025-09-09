@@ -1,170 +1,145 @@
 .loginPage {
-  width: 100%;
-  height: 100vh;
   display: flex;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-/* Background Section */
 .background {
   flex: 1;
-  background: linear-gradient(135deg, #155dfc, #9810fa);
   position: relative;
   overflow: hidden;
-  padding: 42px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
 }
 
 .backgroundDecorations {
   position: absolute;
   inset: 0;
-  opacity: 0.1;
+  pointer-events: none;
+}
+
+.decoration1,
+.decoration2,
+.decoration3,
+.decoration4 {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .decoration1 {
-  position: absolute;
-  left: 35px;
-  top: 35px;
-  width: 112px;
-  height: 112px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
+  width: 200px;
+  height: 200px;
+  top: 10%;
+  left: 10%;
+  animation: float 6s ease-in-out infinite;
 }
 
 .decoration2 {
-  position: absolute;
-  right: 70px;
-  top: 140px;
-  width: 70px;
-  height: 70px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
+  width: 150px;
+  height: 150px;
+  top: 60%;
+  left: 5%;
+  animation: float 8s ease-in-out infinite reverse;
 }
 
 .decoration3 {
-  position: absolute;
-  left: 70px;
-  bottom: 112px;
-  width: 140px;
-  height: 140px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  top: 20%;
+  right: 15%;
+  animation: float 7s ease-in-out infinite;
 }
 
 .decoration4 {
-  position: absolute;
-  right: 35px;
-  bottom: 35px;
-  width: 84px;
-  height: 84px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  bottom: 15%;
+  right: 20%;
+  animation: float 9s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(10deg);
+  }
 }
 
 .leftContent {
   position: relative;
   z-index: 1;
-  height: 100%;
+  padding-left: 80px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-}
-
-.backButton {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12.3px;
-  line-height: 17.5px;
-  margin-bottom: 21px;
-  align-self: flex-start;
-  position: absolute;
-  top: 0;
-  left: -14px;
-  padding: 8px;
-  border-radius: 6.75px;
-  transition: background 0.2s;
-}
-
-.backButton:hover {
-  background: rgba(255, 255, 255, 0.1);
+  height: 100%;
+  justify-content: center;
 }
 
 .brandSection {
-  margin-top: 59.5px;
-  display: flex;
-  flex-direction: column;
-  gap: 21px;
+  margin-bottom: 40px;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 10.5px;
+  gap: 12px;
+  margin-bottom: 32px;
 }
 
 .logoIcon {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 8.75px;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
+  background: white;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 17.5px;
-  line-height: 24.5px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #667eea;
 }
 
 .logoText {
+  font-size: 24px;
+  font-weight: bold;
   color: white;
-  font-size: 21px;
-  line-height: 28px;
-}
-
-.heroContent {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
 }
 
 .heroContent h1 {
+  font-size: 32px;
+  font-weight: bold;
   color: white;
-  font-size: 42px;
-  line-height: 52.5px;
-  margin: 0;
-  font-weight: normal;
+  margin-bottom: 16px;
+  line-height: 1.2;
 }
 
 .heroContent p {
-  color: #dbeafe;
-  font-size: 17.5px;
-  line-height: 28.44px;
-  margin: 0;
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
 }
 
 .features {
   display: flex;
   flex-direction: column;
-  gap: 21px;
+  gap: 24px;
+  margin-bottom: 40px;
 }
 
 .feature {
   display: flex;
+  gap: 16px;
   align-items: flex-start;
-  gap: 14px;
 }
 
 .featureIcon {
+  width: 40px;
+  height: 40px;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 8.75px;
-  width: 28px;
-  height: 28px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -172,217 +147,45 @@
 }
 
 .feature h3 {
+  font-size: 16px;
+  font-weight: 600;
   color: white;
-  font-size: 14px;
-  line-height: 21px;
-  margin: 0 0 2.5px 0;
-  font-weight: normal;
+  margin-bottom: 4px;
 }
 
 .feature p {
-  color: #dbeafe;
-  font-size: 12.3px;
-  line-height: 19.91px;
-  margin: 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.4;
 }
 
-.appPreview {
-  margin-top: 28px;
-  padding: 28px 270px 0;
-}
-
-.appImage {
-  width: 336px;
-  height: 504.3px;
-  background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
-  border-radius: 14px;
-  box-shadow: 0px 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-
-/* Form Section */
 .formSection {
-  flex: 0 0 auto;
-  width: 100%;
-  max-width: 500px;
-  background: white;
+  width: 500px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 42px;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0 40px 40px 0;
 }
 
 .formContainer {
   width: 100%;
-  max-width: 392px;
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
+  max-width: 400px;
+  padding: 40px;
 }
 
 .formHeader {
-  background: white;
-  border-radius: 12.75px;
-  box-shadow: 0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 8px 10px -6px rgba(0, 0, 0, 0.1);
-  padding: 35px 21px;
   text-align: center;
+  margin-bottom: 32px;
 }
 
 .formHeader h1 {
-  color: #0a0a0a;
-  font-size: 24px;
-  line-height: 32px;
-  margin: 0 0 8px 0;
-  font-weight: normal;
+  font-size: 28px;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 8px;
 }
 
 .formHeader p {
-  color: #4a5565;
   font-size: 16px;
-  line-height: 24px;
-  margin: 0;
-}
-
-.kakaoButtonContainer {
-  margin-bottom: 24px;
-}
-
-.kakaoButton {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 16px 24px;
-  background: #fee500;
-  color: #000;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.kakaoButton:hover {
-  background: #fdd835;
-}
-
-.kakaoIcon {
-  width: 20px;
-  height: 20px;
-}
-
-.terms {
-  color: #4a5565;
-  font-size: 13px;
-  line-height: 20px;
-  text-align: center;
-  margin: 0;
-}
-
-.terms a {
-  color: #155dfc;
-  text-decoration: none;
-}
-
-.terms a:hover {
-  text-decoration: underline;
-}
-
-.signupLink {
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.signupLink span {
-  color: #4a5565;
-  font-size: 14px;
-  line-height: 21px;
-}
-
-.linkButton {
-  background: none;
-  border: none;
-  color: #155dfc;
-  font-size: 14px;
-  line-height: 21px;
-  cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-  font-weight: 600;
-}
-
-.linkButton:hover {
-  color: #1247d8;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .loginPage {
-    flex-direction: column;
-  }
-  
-  .background {
-    flex: 0 0 auto;
-    height: 50vh;
-    min-height: 400px;
-  }
-  
-  .formSection {
-    flex: 1;
-    max-width: none;
-    padding: 20px;
-  }
-  
-  .appPreview {
-    display: none;
-  }
-  
-  .features {
-    gap: 14px;
-  }
-  
-  .heroContent h1 {
-    font-size: 32px;
-    line-height: 40px;
-  }
-}
-
-@media (max-width: 768px) {
-  .background {
-    padding: 20px;
-    height: 40vh;
-    min-height: 300px;
-  }
-  
-  .brandSection {
-    margin-top: 40px;
-    gap: 14px;
-  }
-  
-  .heroContent h1 {
-    font-size: 28px;
-    line-height: 36px;
-  }
-  
-  .features {
-    display: none;
-  }
-  
-  .formSection {
-    padding: 20px;
-  }
-  
-  .formContainer {
-    max-width: none;
-  }
-  
-  .formOptions {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
+  color: #ffffff;
 }
