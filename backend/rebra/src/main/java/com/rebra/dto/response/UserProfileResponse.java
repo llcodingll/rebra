@@ -1,9 +1,9 @@
 package com.rebra.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 
-@Getter
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class UserProfileResponse {
     private Long userId;

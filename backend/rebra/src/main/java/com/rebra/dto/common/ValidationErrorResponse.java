@@ -1,10 +1,10 @@
 package com.rebra.dto.common;
 
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 
-@Getter
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class ValidationErrorResponse {
     

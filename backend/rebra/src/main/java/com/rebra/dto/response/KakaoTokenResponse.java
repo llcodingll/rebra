@@ -3,12 +3,10 @@ package com.rebra.dto.response;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Getter
-@Builder
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -35,17 +33,5 @@ public class KakaoTokenResponse {
     @JsonProperty("scope")
     public String scope;
 
-    @Override
-    public String toString() {
-        return "KakaoTokenResponse{" +
-                "tokenType='" + tokenType + '\'' +
-                ", accessToken='" + accessToken + '\'' +
-                ", idToken='" + idToken + '\'' +
-                ", expiresIn=" + expiresIn +
-                ", refreshToken='" + refreshToken + '\'' +
-                ", refreshTokenExpiresIn=" + refreshTokenExpiresIn +
-                ", scope='" + scope + '\'' +
-                '}';
-    }
 
 }
