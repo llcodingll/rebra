@@ -29,7 +29,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,8 +89,7 @@ class AuthenticationIntegrationTest {
         Token tempJwtToken = tokenProvider.generateTempToken(tempToken);
 
         // 2. 회원가입 완료
-        SignupRequest signupRequest = new SignupRequest();
-        ReflectionTestUtils.setField(signupRequest, "nickname", nickname);
+        SignupRequest signupRequest = new SignupRequest(nickname);
 
         MvcResult signupResult = mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -215,8 +213,7 @@ class AuthenticationIntegrationTest {
         TempToken tempToken = new TempToken(kakaoSub);
         Token tempJwtToken = tokenProvider.generateTempToken(tempToken);
 
-        SignupRequest request = new SignupRequest();
-        ReflectionTestUtils.setField(request, "nickname", "임시토큰사용자");
+        SignupRequest request = new SignupRequest("임시토큰사용자");
 
         mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -233,8 +230,7 @@ class AuthenticationIntegrationTest {
                 java.time.LocalDateTime.now().minusMinutes(31));
         Token expiredTempJwtToken = tokenProvider.generateTempToken(expiredTempToken);
 
-        SignupRequest request = new SignupRequest();
-        ReflectionTestUtils.setField(request, "nickname", "만료토큰사용자");
+        SignupRequest request = new SignupRequest("만료토큰사용자");
 
         mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)

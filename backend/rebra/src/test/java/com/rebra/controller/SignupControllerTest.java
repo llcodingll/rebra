@@ -54,6 +54,7 @@ class SignupControllerTest {
                 .sub(sub)
                 .nickname(nickname)
                 .build();
+        // Entity의 ID는 ReflectionTestUtils 필요 (JPA auto-generated field, setter 없음)
         ReflectionTestUtils.setField(user, "id", id);
         return user;
     }
@@ -91,8 +92,7 @@ class SignupControllerTest {
         String nickname = "신규사용자";
         String kakaoSub = "kakao-sub-123";
         
-        SignupRequest request = new SignupRequest();
-        ReflectionTestUtils.setField(request, "nickname", nickname);
+        SignupRequest request = new SignupRequest(nickname);
         
         TempToken tempTokenData = new TempToken(kakaoSub);
         User createdUser = createTestUser(1L, kakaoSub, nickname);
@@ -131,8 +131,7 @@ class SignupControllerTest {
     @DisplayName("회원가입 실패 - 임시 토큰 없음")
     void completeSignup_MissingTempToken_Fails() throws Exception {
         String nickname = "신규사용자";
-        SignupRequest request = new SignupRequest();
-        ReflectionTestUtils.setField(request, "nickname", nickname);
+        SignupRequest request = new SignupRequest(nickname);
 
         mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -147,8 +146,7 @@ class SignupControllerTest {
         String nickname = "중복닉네임";
         String kakaoSub = "kakao-sub-123";
         
-        SignupRequest request = new SignupRequest();
-        ReflectionTestUtils.setField(request, "nickname", nickname);
+        SignupRequest request = new SignupRequest(nickname);
         
         TempToken tempTokenData = new TempToken(kakaoSub);
 
@@ -168,8 +166,7 @@ class SignupControllerTest {
         String tempTokenValue = "invalid-temp-token";
         String nickname = "신규사용자";
         
-        SignupRequest request = new SignupRequest();
-        ReflectionTestUtils.setField(request, "nickname", nickname);
+        SignupRequest request = new SignupRequest(nickname);
 
         given(tokenProvider.getTempTokenData(tempTokenValue))
                 .willThrow(new RuntimeException("Invalid temp token"));
@@ -186,8 +183,7 @@ class SignupControllerTest {
     void completeSignup_EmptyNickname_Fails() throws Exception {
         String tempTokenValue = "valid-temp-token";
         
-        SignupRequest request = new SignupRequest();
-        ReflectionTestUtils.setField(request, "nickname", "");
+        SignupRequest request = new SignupRequest("");
 
         mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -201,8 +197,7 @@ class SignupControllerTest {
     void completeSignup_NullNickname_Fails() throws Exception {
         String tempTokenValue = "valid-temp-token";
         
-        SignupRequest request = new SignupRequest();
-        // nickname을 null로 설정
+        SignupRequest request = new SignupRequest(null);
 
         mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)

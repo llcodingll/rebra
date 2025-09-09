@@ -1,8 +1,5 @@
 package com.rebra.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
@@ -12,9 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import com.rebra.annotation.LoginUser;
-import com.rebra.config.resolver.LoginUserArgumentResolver;
 import com.rebra.config.TestSecurityConfig;
-import com.rebra.jwt.TokenProvider;
 import com.rebra.entity.User;
 import com.rebra.jwt.Token;
 import com.rebra.service.KakaoOAuth2ServiceImpl;
@@ -52,9 +47,6 @@ class UserControllerTest {
 
     @Mock
     private KakaoOAuth2ServiceImpl kakaoOAuth2Service;
-    
-    @Mock
-    private TokenProvider tokenProvider;
 
     @InjectMocks
     private UserController userController;
@@ -92,10 +84,6 @@ class UserControllerTest {
         return user;
     }
     
-    private String createValidJwtToken(Long userId) {
-        // 실제 JWT 토큰을 시뮬레이션
-        return "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsIm5pY2tOYW1lIjoi7YWM7Iqk7Yq47IKs7Jqp7J6QIn0.mock-signature";
-    }
 
     @Test
     @DisplayName("내 정보 조회 성공")

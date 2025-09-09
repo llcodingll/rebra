@@ -59,11 +59,7 @@ class KakaoOAuth2ControllerTest {
     }
 
     private KakaoTokenResponse createKakaoTokenResponse(String idToken) {
-        KakaoTokenResponse response = new KakaoTokenResponse();
-        ReflectionTestUtils.setField(response, "idToken", idToken);
-        ReflectionTestUtils.setField(response, "accessToken", "kakao-access-token");
-        ReflectionTestUtils.setField(response, "refreshToken", "kakao-refresh-token");
-        return response;
+        return new KakaoTokenResponse("Bearer", "kakao-access-token", idToken, 3600, "kakao-refresh-token", 604800, "openid");
     }
 
     @Test

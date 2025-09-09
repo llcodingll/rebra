@@ -13,7 +13,6 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
-import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 import com.rebra.dto.TempToken;
 import com.rebra.dto.response.KakaoTokenResponse;
@@ -104,10 +103,10 @@ class KakaoOAuth2ServiceImplTest {
     void setUp() {
         openMocks(this);
 
-        setField(kakaoOAuth2Service, "clientId", DUMMY_CLIENT_ID);
-        setField(kakaoOAuth2Service, "clientSecret", DUMMY_CLIENT_SECRET);
-        setField(kakaoOAuth2Service, "redirectUri", DUMMY_REDIRECT_URI);
-        setField(kakaoOAuth2Service, "tokenUrl", DUMMY_TOKEN_URL);
+        ReflectionTestUtils.setField(kakaoOAuth2Service, "clientId", DUMMY_CLIENT_ID);
+        ReflectionTestUtils.setField(kakaoOAuth2Service, "clientSecret", DUMMY_CLIENT_SECRET);
+        ReflectionTestUtils.setField(kakaoOAuth2Service, "redirectUri", DUMMY_REDIRECT_URI);
+        ReflectionTestUtils.setField(kakaoOAuth2Service, "tokenUrl", DUMMY_TOKEN_URL);
 
         when(tokenProvider.generateAccessToken(any(User.class))).thenReturn(new Token(TOKEN_ACCESS_SAMPLE));
         when(tokenProvider.generateRefreshToken(any(User.class))).thenReturn(new Token(TOKEN_REFRESH_SAMPLE));
@@ -364,13 +363,7 @@ class KakaoOAuth2ServiceImplTest {
     }
 
     private KakaoTokenResponse createKakaoTokenResponse(String idToken) {
-        KakaoTokenResponse tokenResponse = new KakaoTokenResponse();
-        setField(tokenResponse, "tokenType", "Bearer");
-        setField(tokenResponse, "accessToken", "access-token");
-        setField(tokenResponse, "refreshToken", "refresh-token");
-        setField(tokenResponse, "idToken", idToken);
-        setField(tokenResponse, "expiresIn", 3600);
-        return tokenResponse;
+        return new KakaoTokenResponse("Bearer", "access-token", idToken, 3600, "refresh-token", 604800, "openid");
     }
 
     private void mockKakaoTokenRequest(KakaoTokenResponse tokenResponse) {
