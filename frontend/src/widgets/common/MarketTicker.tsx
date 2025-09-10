@@ -49,7 +49,7 @@ export default function MarketTicker() {
 
     const animate = () => {
       if (!content) return;
-      
+
       translateX -= speed;
 
       // 첫 번째 아이템이 화면을 완전히 벗어났는지 체크
@@ -57,7 +57,7 @@ export default function MarketTicker() {
       if (firstItem) {
         const firstItemRect = firstItem.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
-        
+
         // 첫 번째 아이템이 완전히 왼쪽으로 사라졌을 때
         if (firstItemRect.right < containerRect.left) {
           // 첫 번째 아이템을 맨 뒤로 이동 (DOM 조작)
@@ -131,7 +131,6 @@ export default function MarketTicker() {
       <div className={styles.container}>
         <div className={styles.scrollContainer} ref={containerRef}>
           <div className={styles.scrollContent} ref={contentRef}>
-            {/* 여러 번 반복해서 연속성 보장 */}
             {renderMarketItems()}
             {renderMarketItems()}
             {renderMarketItems()}
