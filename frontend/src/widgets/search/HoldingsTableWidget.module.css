@@ -1,4 +1,4 @@
-.stockListWidget {
+.holdingsTableWidget {
   display: flex;
   flex-direction: column;
   background: white;
@@ -213,4 +213,3 @@
   width: 16px;
   height: 16px;
 }
-

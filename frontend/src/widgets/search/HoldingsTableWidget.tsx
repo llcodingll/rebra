@@ -1,19 +1,18 @@
 import { useState } from 'react';
-import styles from './StockListWidget.module.css';
+import styles from './HoldingsTableWidget.module.css';
 import { stockListData } from './stockListData';
 import Pagination from '../common/Pagination';
 
-interface StockListWidgetProps {
+interface HoldingsTableWidgetProps {
   onStockSelect: (stockCode: string) => void;
 }
 
-export default function StockListWidget({ onStockSelect }: StockListWidgetProps) {
+export default function HoldingsTableWidget({ onStockSelect }: HoldingsTableWidgetProps) {
   const [currentPage, setCurrentPage] = useState(2);
   const totalPages = 26;
 
-
   return (
-    <div className={styles.stockListWidget}>
+    <div className={styles.holdingsTableWidget}>
       {/* 페이지네이션 - 테이블 위로 이동 */}
       <div className={styles.paginationContainer}>
         <Pagination 

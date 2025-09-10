@@ -1,18 +1,9 @@
-export interface ApiSuccessResponse<T = unknown> {
-  status: 'SUCCESS';
-  message: string;
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  status: number;
   data: T;
+  errorCode: string;
+  errorMessage: string;
+  errorData: string;
   timestamp: string;
 }
-
-export interface ApiErrorResponse {
-  status: 'ERROR';
-  message: string;
-  error: {
-    code: string;
-    details?: unknown;
-  };
-  timestamp: string;
-}
-
-export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;

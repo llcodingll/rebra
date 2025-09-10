@@ -1,51 +1,81 @@
 import { useState } from 'react';
-import styles from './StockListWidget.module.css';
+import styles from './RankingTableWidget.module.css';
 import { stockListData } from './stockListData';
-import Pagination from '../common/Pagination';
 
-interface StockListWidgetProps {
+interface RankingTableWidgetProps {
   onStockSelect: (stockCode: string) => void;
 }
 
-export default function StockListWidget({ onStockSelect }: StockListWidgetProps) {
-  const [currentPage, setCurrentPage] = useState(2);
-  const totalPages = 26;
+type SortType = 'volume' | 'change' | 'price';
 
+export default function RankingTableWidget({ onStockSelect }: RankingTableWidgetProps) {
+  const [sortType, setSortType] = useState<SortType>('volume');
+
+  const sortedData = [...stockListData].sort((a, b) => {
+    switch (sortType) {
+      case 'volume':
+        return parseFloat(b.volume.replace(/[^\d.-]/g, '')) - parseFloat(a.volume.replace(/[^\d.-]/g, ''));
+      case 'change':
+        return Math.abs(b.change) - Math.abs(a.change);
+      case 'price':
+        return b.price - a.price;
+      default:
+        return 0;
+    }
+  });
 
   return (
-    <div className={styles.stockListWidget}>
-      {/* 페이지네이션 - 테이블 위로 이동 */}
-      <div className={styles.paginationContainer}>
-        <Pagination 
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          showFirstLast={true}
-          showNumbers={true}
-        />
+    <div className={styles.rankingTableWidget}>
+      {/* 정렬 컨트롤 */}
+      <div className={styles.controlContainer}>
+        <div className={styles.sortButtons}>
+          <button
+            className={`${styles.sortButton} ${sortType === 'volume' ? styles.active : ''}`}
+            onClick={() => setSortType('volume')}
+          >
+            거래량순
+          </button>
+          <button
+            className={`${styles.sortButton} ${sortType === 'change' ? styles.active : ''}`}
+            onClick={() => setSortType('change')}
+          >
+            등락률순
+          </button>
+          <button
+            className={`${styles.sortButton} ${sortType === 'price' ? styles.active : ''}`}
+            onClick={() => setSortType('price')}
+          >
+            현재가순
+          </button>
+        </div>
       </div>
 
-      {/* 구분선 - 페이지네이션 아래, 테이블 위에 위치 */}
+      {/* 구분선 */}
       <div className={styles.divider}></div>
 
       {/* 주식 테이블 */}
       <div className={styles.stockTable}>
         {/* 테이블 헤더 */}
         <div className={styles.tableHeader}>
-          <span className={styles.headerRank}>종목</span>
+          <span className={styles.headerRank}>순위</span>
+          <span className={styles.headerStock}>종목</span>
           <span className={styles.headerPrice}>현재가</span>
           <span className={styles.headerChange}>등락률</span>
-          <span className={styles.headerVolume}>거래대금</span>
+          <span className={styles.headerVolume}>거래량</span>
         </div>
 
         {/* 테이블 바디 */}
         <div className={styles.tableBody}>
-          {stockListData.map((stock, index) => (
+          {sortedData.map((stock, index) => (
             <div
               key={stock.rank}
               className={`${styles.stockRow} ${index % 2 === 1 ? styles.evenRow : ''}`}
               onClick={() => onStockSelect(stock.code)}
             >
+              <div className={styles.rank}>
+                {index + 1}
+              </div>
+              
               <div className={styles.stockInfo}>
                 <div className={styles.favoriteIcon}>
                   {stock.isFavorite ? (
@@ -58,7 +88,6 @@ export default function StockListWidget({ onStockSelect }: StockListWidgetProps)
                     </svg>
                   )}
                 </div>
-                <span className={styles.rank}>{stock.rank}</span>
                 <span className={styles.stockName}>{stock.name}</span>
               </div>
               

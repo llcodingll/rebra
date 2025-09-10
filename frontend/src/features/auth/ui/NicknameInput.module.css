@@ -1,0 +1,92 @@
+.nicknameInput {
+  margin-bottom: 1.5rem;
+}
+
+.inputGroup {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.input::placeholder {
+  color: #9ca3af;
+}
+
+.inputError {
+  border-color: #dc3545;
+}
+
+.inputError:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.inputSuccess {
+  border-color: #28a745;
+}
+
+.inputSuccess:focus {
+  border-color: #28a745;
+  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+}
+
+.checkButton {
+  padding: 0.75rem 1.5rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-width: 100px;
+}
+
+.checkButton:hover:not(:disabled) {
+  background-color: #0056b3;
+  transform: translateY(-1px);
+}
+
+.checkButton:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.validationMessage {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.successMessage {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #28a745;
+  font-weight: 500;
+}
+
+.errorMessage {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #dc3545;
+  font-weight: 500;
+}

@@ -23,47 +23,105 @@ export default function OrderBook({ orderBook, stockInfo }: OrderBookProps) {
     return new Intl.NumberFormat('ko-KR').format(num);
   };
 
+  // 임시 데이터 (실제로는 props로 받아야 함)
+  const tradeInfo = {
+    high: 99800,
+    low: 48400, 
+    volume: 68800,
+    value: 69800,
+    previousClose: 68500,
+    totalVolume: 1063950525,
+    foreignRatio: 73.50,
+    institutionalRatio: 69450
+  };
+
   return (
     <div className={styles.orderBookSection}>
       <div className={styles.orderBookHeader}>
         <h3>호가</h3>
-        <div className={styles.orderBookStats}>
-          <span className={styles.bidTotal}>매수 총량: 134.99%</span>
-          <span className={styles.askTotal}>매도 총량: 10.33%</span>
+      </div>
+      
+      <div className={styles.orderBookContent}>
+        {/* 우측 상단 거래정보 박스 */}
+        <div className={styles.tradeInfoBox}>
+          <div className={styles.tradeInfoItem}>
+            <span className={styles.infoLabel}>상승VI</span>
+            <span className={styles.infoValue}>-</span>
+          </div>
+          <div className={styles.tradeInfoItem}>
+            <span className={styles.infoLabel}>하향VI</span>
+            <span className={styles.infoValue}>-</span>
+          </div>
+          <div className={styles.tradeInfoItem}>
+            <span className={styles.infoLabel}>시작</span>
+            <span className={styles.infoValue}>{formatNumber(tradeInfo.volume)}</span>
+          </div>
+          <div className={styles.tradeInfoItem}>
+            <span className={styles.infoLabel}>최고</span>
+            <span className={styles.infoValue}>{formatNumber(tradeInfo.value)}</span>
+          </div>
+          <div className={styles.tradeInfoItem}>
+            <span className={styles.infoLabel}>최저</span>
+            <span className={styles.infoValue}>{formatNumber(tradeInfo.previousClose)}</span>
+          </div>
+          <div className={styles.tradeInfoItem}>
+            <span className={styles.infoLabel}>거래량</span>
+            <span className={styles.infoValue}>{formatNumber(tradeInfo.totalVolume)}</span>
+          </div>
+          <div className={styles.tradeInfoItem}>
+            <span className={styles.infoLabel}>외인비다</span>
+            <span className={styles.infoValue}>{tradeInfo.foreignRatio}%</span>
+          </div>
+          <div className={styles.tradeInfoItem}>
+            <span className={styles.infoLabel}>증권사</span>
+            <span className={styles.infoValue}>-</span>
+          </div>
+        </div>
+
+        {/* 좌측 하단 체결강도 박스 */}
+        <div className={styles.strengthBox}>
+          <div className={styles.strengthLabel}>체결강도</div>
+          <div className={styles.strengthValue}>228.00%</div>
+        </div>
+
+        {/* 메인 호가 테이블 (스크롤 가능) */}
+        <div className={styles.orderBookTable}>
+          {/* 매도 호가 (전체) */}
+          {orderBook.asks.slice().reverse().map((ask, index) => (
+            <div key={`ask-${index}`} className={styles.orderRow}>
+              <div className={styles.askQuantityCell}>{formatNumber(ask.quantity)}</div>
+              <div className={styles.priceCell}>
+                <div className={styles.price}>{formatNumber(ask.price)}</div>
+                <div className={styles.changeRate}>+{((ask.price - stockInfo.currentPrice) / stockInfo.currentPrice * 100).toFixed(2)}%</div>
+              </div>
+              <div className={styles.emptyCell}></div>
+            </div>
+          ))}
+          
+          {/* 현재가 행 */}
+          <div className={styles.currentPriceRow}>
+            <div className={styles.emptyCell}></div>
+            <div className={styles.currentPriceCell}>
+              <span className={styles.currentIcon}>ㅁ</span>
+              <span className={styles.currentPrice}>{formatNumber(stockInfo.currentPrice)}</span>
+            </div>
+            <div className={styles.currentVolumeCell}>394</div>
+          </div>
+          
+          {/* 매수 호가 (전체) */}
+          {orderBook.bids.map((bid, index) => (
+            <div key={`bid-${index}`} className={styles.orderRow}>
+              <div className={styles.emptyCell}></div>
+              <div className={styles.priceCell}>
+                <div className={styles.price}>{formatNumber(bid.price)}</div>
+                <div className={styles.changeRate}>-{((stockInfo.currentPrice - bid.price) / stockInfo.currentPrice * 100).toFixed(2)}%</div>
+              </div>
+              <div className={styles.bidQuantityCell}>{formatNumber(bid.quantity)}</div>
+            </div>
+          ))}
         </div>
       </div>
       
-      <div className={styles.orderBook}>
-        {/* 매도 호가 (상단) */}
-        <div className={styles.asks}>
-          {orderBook.asks.slice().reverse().map((ask, index) => (
-            <div key={index} className={styles.orderItem}>
-              <div className={styles.askBar} style={{ width: `${ask.size * 20}%` }}></div>
-              <span className={styles.quantity}>{formatNumber(ask.quantity)}</span>
-              <span className={styles.askPrice}>{formatNumber(ask.price)}</span>
-              <span className={styles.size}>{ask.size}%</span>
-            </div>
-          ))}
-        </div>
-
-        {/* 현재가 */}
-        <div className={styles.currentPriceRow}>
-          <span className={styles.currentPrice}>{formatNumber(stockInfo.currentPrice)}</span>
-          <span className={styles.spread}>±{formatNumber(200)}</span>
-        </div>
-
-        {/* 매수 호가 (하단) */}
-        <div className={styles.bids}>
-          {orderBook.bids.map((bid, index) => (
-            <div key={index} className={styles.orderItem}>
-              <div className={styles.bidBar} style={{ width: `${bid.size * 20}%` }}></div>
-              <span className={styles.quantity}>{formatNumber(bid.quantity)}</span>
-              <span className={styles.bidPrice}>{formatNumber(bid.price)}</span>
-              <span className={styles.size}>{bid.size}%</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import SurveySection from '../../widgets/survey/SurveySection';
 import SurveyRadioQuestion from '../../widgets/survey/SurveyRadioQuestion';
 import SurveyCheckboxQuestion from '../../widgets/survey/SurveyCheckboxQuestion';
-import SurveyTextInput from '../../widgets/survey/SurveyTextInput';
 import AgreementCheckboxes from '../../widgets/survey/AgreementCheckboxes';
+import NicknameInput from '../../features/auth/ui/NicknameInput';
+import { authApi } from '../../features/auth/api/authApi';
+import { ScoreCalculator } from '../../features/auth/lib/scoreCalculator';
+import { isOk } from '../../shared/util/result';
 import {
   ageOptions,
   incomeSourceOptions,
@@ -33,8 +36,6 @@ interface SurveyData {
   decisionConfirmation: boolean;
 }
 
-type DuplicateCheckStatus = 'none' | 'checking' | 'available' | 'unavailable';
-
 export default function SignupPage() {
   const navigate = useNavigate();
   const [surveyData, setSurveyData] = useState<SurveyData>({
@@ -52,7 +53,8 @@ export default function SignupPage() {
     decisionConfirmation: false,
   });
 
-  const [duplicateCheckStatus, setDuplicateCheckStatus] = useState<DuplicateCheckStatus>('none');
+  const [isNicknameValid, setIsNicknameValid] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: keyof SurveyData, value: string | boolean) => {
     setSurveyData((prev) => ({ ...prev, [field]: value }));
@@ -69,40 +71,50 @@ export default function SignupPage() {
     setSurveyData((prev) => ({ ...prev, [key]: checked }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Survey Data:', surveyData);
+    
+    if (!isFormValid() || isSubmitting) return;
 
-    // 히스토리를 완전히 초기화하고 대시보드를 새로운 시작점으로 설정
-    window.location.replace('/dashboard');
+    setIsSubmitting(true);
+
+    // 점수 계산
+    const scores = ScoreCalculator.calculateScores(surveyData);
+    
+    // API 요청 데이터 생성
+    const signupData = {
+      nickname: surveyData.nickname,
+      age: ScoreCalculator.convertAgeToNumber(surveyData.age),
+      mainIncomeSource: ScoreCalculator.convertIncomeSource(surveyData.incomeSource),
+      investmentPurpose: scores.investmentPurpose,
+      investmentExperience: scores.investmentExperience,
+      riskTolerance: scores.riskTolerance,
+    };
+
+    console.log('Signup Data:', signupData);
+
+    // 회원가입 API 호출
+    const result = await authApi.signup(signupData);
+    
+    if (isOk(result)) {
+      console.log('회원가입 성공:', result.data);
+      // 히스토리를 완전히 초기화하고 대시보드를 새로운 시작점으로 설정
+      window.location.replace('/dashboard');
+    } else {
+      console.error('회원가입 실패:', result.error);
+      alert('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.');
+      setIsSubmitting(false);
+    }
   };
 
   const handleNicknameChange = (value: string) => {
     handleInputChange('nickname', value);
-    if (duplicateCheckStatus !== 'none') {
-      setDuplicateCheckStatus('none');
-    }
-  };
-
-  const handleDuplicateCheck = async () => {
-    if (!surveyData.nickname) return;
-
-    setDuplicateCheckStatus('checking');
-
-    // 시뮬레이션: 실제로는 API 호출
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // 간단한 시뮬레이션: 'admin', 'test' 닉네임은 중복으로 처리
-    const unavailableNicknames = ['admin', 'test', 'user'];
-    const isAvailable = !unavailableNicknames.includes(surveyData.nickname.toLowerCase());
-
-    setDuplicateCheckStatus(isAvailable ? 'available' : 'unavailable');
   };
 
   const isFormValid = () => {
     return (
       surveyData.nickname &&
-      duplicateCheckStatus === 'available' &&
+      isNicknameValid &&
       surveyData.age &&
       surveyData.incomeSource &&
       surveyData.purpose &&
@@ -127,14 +139,10 @@ export default function SignupPage() {
 
         <form onSubmit={handleSubmit} className={styles.surveyForm}>
           <SurveySection title='기본 정보' required={true}>
-            <SurveyTextInput
-              label=''
-              placeholder='닉네임을 입력해주세요'
+            <NicknameInput
               value={surveyData.nickname}
               onChange={handleNicknameChange}
-              showDuplicateCheck={true}
-              onDuplicateCheck={handleDuplicateCheck}
-              duplicateCheckStatus={duplicateCheckStatus}
+              onValidityChange={setIsNicknameValid}
             />
             <SurveyRadioQuestion
               label='현재 나이대는 어떻게 되시나요?'
@@ -215,8 +223,12 @@ export default function SignupPage() {
           </SurveySection>
 
           <div className={styles.submitSection}>
-            <button type='submit' className={styles.submitButton} disabled={false}>
-              제출하기
+            <button 
+              type='submit' 
+              className={styles.submitButton} 
+              disabled={!isFormValid() || isSubmitting}
+            >
+              {isSubmitting ? '제출 중...' : '제출하기'}
             </button>
           </div>
         </form>

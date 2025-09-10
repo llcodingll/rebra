@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import styles from './SearchPage.module.css';
-import StockListWidget from '../../widgets/search/StockListWidget';
+import HoldingsTableWidget from '../../widgets/search/HoldingsTableWidget';
+import RankingTableWidget from '../../widgets/search/RankingTableWidget';
+import SearchTableWidget from '../../widgets/search/SearchTableWidget';
+import WatchlistTableWidget from '../../widgets/search/WatchlistTableWidget';
+import NewsWidget from '../../widgets/common/NewsWidget';
 
 export default function SearchPage() {
   const [activeSubTab, setActiveSubTab] = useState<'ranking' | 'search' | 'watchlist' | 'holdings'>('holdings');
@@ -13,15 +17,15 @@ export default function SearchPage() {
   const renderContent = () => {
     switch (activeSubTab) {
       case 'holdings':
-        return <StockListWidget onStockSelect={handleStockSelect} />;
+        return <HoldingsTableWidget onStockSelect={handleStockSelect} />;
       case 'ranking':
-        return <div className={styles.placeholder}>실시간 순위 (구현 예정)</div>;
+        return <RankingTableWidget onStockSelect={handleStockSelect} />;
       case 'search':
-        return <div className={styles.placeholder}>종목 검색 (구현 예정)</div>;
+        return <SearchTableWidget onStockSelect={handleStockSelect} />;
       case 'watchlist':
-        return <div className={styles.placeholder}>관심 종목 (구현 예정)</div>;
+        return <WatchlistTableWidget onStockSelect={handleStockSelect} />;
       default:
-        return <StockListWidget onStockSelect={handleStockSelect} />;
+        return <HoldingsTableWidget onStockSelect={handleStockSelect} />;
     }
   };
 
@@ -60,8 +64,18 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* 메인 컨텐츠 */}
-      <div className={styles.content}>{renderContent()}</div>
+      {/* 메인 컨텐츠 - 7:3 레이아웃 */}
+      <div className={styles.mainContent}>
+        {/* 좌측 테이블 영역 (70%) */}
+        <div className={styles.tableArea}>
+          {renderContent()}
+        </div>
+
+        {/* 우측 뉴스 영역 (30%) */}
+        <div className={styles.newsArea}>
+          <NewsWidget />
+        </div>
+      </div>
     </div>
   );
 }
