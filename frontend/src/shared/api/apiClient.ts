@@ -104,10 +104,10 @@ export class ApiClient {
     const result = await wrapAsync(apiCall);
 
     if (isOk(result)) {
-      if (result.data.status === 'SUCCESS') {
+      if (result.data.success) {
         return Ok(result.data.data); // 성공 데이터만 반환
       } else {
-        // 비즈니스 에러를 중앙에서 처리 (HTTP 200이지만 success: 'ERROR')
+        // 비즈니스 에러를 중앙에서 처리 (HTTP 200이지만 success: false)
         return Err(ErrorProcessor.processBusinessError(result.data as any));
       }
     } else {
