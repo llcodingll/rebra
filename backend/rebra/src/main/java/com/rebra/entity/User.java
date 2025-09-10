@@ -19,8 +19,6 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users", 
     uniqueConstraints = @UniqueConstraint(columnNames = "sub"),
@@ -47,8 +45,12 @@ public class User extends BaseEntity {
     @Embedded
     private SurveyResult surveyResult;
 
-    public User(String sub) {
+    @Builder
+    public User(String sub, String password, String phoneNumber, String nickname, SurveyResult surveyResult) {
         this.sub = sub;
+        this.password = password;
+        this.phoneNumber = phoneNumber;
+        this.nickname = nickname;
+        this.surveyResult = surveyResult;
     }
-
 }

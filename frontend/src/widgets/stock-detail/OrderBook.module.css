@@ -1,0 +1,127 @@
+.orderBookSection {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 16px;
+}
+
+.orderBookHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.orderBookHeader h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.orderBookStats {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.bidTotal {
+  color: #dc2626;
+}
+
+.askTotal {
+  color: #2563eb;
+}
+
+.orderBook {
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+}
+
+.asks {
+  margin-bottom: 4px;
+}
+
+.bids {
+  margin-top: 4px;
+}
+
+.orderItem {
+  display: grid;
+  grid-template-columns: 1fr 50px 50px 30px;
+  align-items: center;
+  height: 20px;
+  position: relative;
+  padding: 0 4px;
+}
+
+.askBar {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  background: rgba(37, 99, 235, 0.1);
+  z-index: 1;
+}
+
+.bidBar {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  background: rgba(220, 38, 38, 0.1);
+  z-index: 1;
+}
+
+.quantity {
+  text-align: right;
+  font-weight: 500;
+  z-index: 2;
+  position: relative;
+  color: #374151;
+}
+
+.askPrice {
+  text-align: right;
+  color: #2563eb;
+  font-weight: 600;
+  z-index: 2;
+  position: relative;
+}
+
+.bidPrice {
+  text-align: right;
+  color: #dc2626;
+  font-weight: 600;
+  z-index: 2;
+  position: relative;
+}
+
+.size {
+  text-align: right;
+  color: #9ca3af;
+  font-size: 10px;
+  z-index: 2;
+  position: relative;
+}
+
+.currentPriceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 28px;
+  background: #f3f4f6;
+  padding: 0 8px;
+  margin: 4px 0;
+  font-weight: 700;
+  font-size: 12px;
+  color: #111827;
+}
+
+.spread {
+  font-size: 10px;
+  color: #6b7280;
+}

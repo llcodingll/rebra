@@ -23,7 +23,6 @@ interface TooltipData {
 }
 
 export default function BacktestResultsPage() {
-
   // 샘플 거래 데이터
   const tradeData: TradeData[] = [
     { date: '2023-01', buyAmount: 1000000, sellAmount: 0, portfolioValue: 1000000 },
@@ -37,18 +36,18 @@ export default function BacktestResultsPage() {
     { date: '2023-09', buyAmount: 300000, sellAmount: 200000, portfolioValue: 1320000 },
     { date: '2023-10', buyAmount: 150000, sellAmount: 350000, portfolioValue: 1280000 },
     { date: '2023-11', buyAmount: 400000, sellAmount: 100000, portfolioValue: 1300000 },
-    { date: '2023-12', buyAmount: 250000, sellAmount: 300000, portfolioValue: 1350000 }
+    { date: '2023-12', buyAmount: 250000, sellAmount: 300000, portfolioValue: 1350000 },
   ];
 
   // 성과 데이터 계산
-  const portfolioValues = tradeData.map(d => d.portfolioValue);
+  const portfolioValues = tradeData.map((d) => d.portfolioValue);
   const buyHoldValues = portfolioValues.map((_, i) => 1000000 * (1 + i * 0.024)); // 2.4% 월간 성장
   const kospiValues = portfolioValues.map((_, i) => 1000000 * (1 + i * 0.018)); // 1.8% 월간 성장
 
   // 퍼센트로 변환
-  const portfolioPercents = portfolioValues.map(value => (value / 1000000) * 100);
-  const buyHoldPercents = buyHoldValues.map(value => (value / 1000000) * 100);
-  const kospiPercents = kospiValues.map(value => (value / 1000000) * 100);
+  const portfolioPercents = portfolioValues.map((value) => (value / 1000000) * 100);
+  const buyHoldPercents = buyHoldValues.map((value) => (value / 1000000) * 100);
+  const kospiPercents = kospiValues.map((value) => (value / 1000000) * 100);
 
   // 차트 스케일 계산
   const allValues = [...portfolioPercents, ...buyHoldPercents, ...kospiPercents];
@@ -72,14 +71,15 @@ export default function BacktestResultsPage() {
     const width = 800;
     const height = 400;
     const padding = 40;
-    
-    return values.map((value, index) => {
-      const x = (index / (values.length - 1)) * (width - 2 * padding) + padding;
-      const y = height - padding - ((value - chartMin) / chartRange) * (height - 2 * padding);
-      return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
-    }).join(' ');
-  };
 
+    return values
+      .map((value, index) => {
+        const x = (index / (values.length - 1)) * (width - 2 * padding) + padding;
+        const y = height - padding - ((value - chartMin) / chartRange) * (height - 2 * padding);
+        return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
+      })
+      .join(' ');
+  };
 
   return (
     <div className={styles.container}>

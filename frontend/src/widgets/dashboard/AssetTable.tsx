@@ -1,11 +1,28 @@
 import styles from './AssetTable.module.css';
 
-interface AssetTableProps {
-  title: string;
+interface Stock {
+  name: string;
+  code: string;
+  buyPrice: string;
+  currentPrice: string;
+  quantity: string;
+  value: string;
+  return: string;
+  returnAmount: string;
+  currentWeight: string;
+  targetWeight: string;
+  weight: string;
+  threshold: string;
   type: 'registered' | 'unregistered';
 }
 
-export default function AssetTable({ title, type }: AssetTableProps) {
+interface AssetTableProps {
+  title: string;
+  type: 'registered' | 'unregistered';
+  data: Stock[];
+}
+
+export default function AssetTable({ title, type, data }: AssetTableProps) {
   const registeredColumns = [
     '종목명', '매수가/현재가', '수량/평가금액', '수익률', '현재 비중(%)', '목표 비중(%)', '가중치', '임계값 비중(%)', '제외'
   ];
@@ -15,79 +32,6 @@ export default function AssetTable({ title, type }: AssetTableProps) {
   ];
 
   const columns = type === 'registered' ? registeredColumns : unregisteredColumns;
-
-  const stockData = [
-    {
-      name: '삼성전자',
-      code: '005930',
-      buyPrice: '68,000',
-      currentPrice: '71,800',
-      quantity: '50주',
-      value: '3,590,000원',
-      return: '+5.6%',
-      returnAmount: '(+190,000원)',
-      currentWeight: '32.1%',
-      targetWeight: '30',
-      weight: '6',
-      threshold: '10'
-    },
-    {
-      name: 'SK하이닉스',
-      code: '000660',
-      buyPrice: '85,000',
-      currentPrice: '89,500',
-      quantity: '30주',
-      value: '2,685,000원',
-      return: '+5.3%',
-      returnAmount: '(+135,000원)',
-      currentWeight: '24.0%',
-      targetWeight: '25',
-      weight: '5',
-      threshold: '5'
-    },
-    {
-      name: 'LG에너지솔루션',
-      code: '373220',
-      buyPrice: '390,000',
-      currentPrice: '412,000',
-      quantity: '15주',
-      value: '6,180,000원',
-      return: '+5.6%',
-      returnAmount: '(+330,000원)',
-      currentWeight: '18.5%',
-      targetWeight: '20',
-      weight: '4',
-      threshold: '10'
-    },
-    {
-      name: '삼성바이오로직스',
-      code: '207940',
-      buyPrice: '750,000',
-      currentPrice: '789,000',
-      quantity: '2주',
-      value: '1,578,000원',
-      return: '+5.2%',
-      returnAmount: '(+78,000원)',
-      currentWeight: '14.1%',
-      targetWeight: '15',
-      weight: '3',
-      threshold: '5'
-    },
-    {
-      name: 'NAVER',
-      code: '035420',
-      buyPrice: '175,000',
-      currentPrice: '183,500',
-      quantity: '25주',
-      value: '4,587,500원',
-      return: '+4.9%',
-      returnAmount: '(+212,500원)',
-      currentWeight: '11.4%',
-      targetWeight: '10',
-      weight: '2',
-      threshold: '3'
-    }
-  ];
 
   return (
     <div className={styles.tableContainer}>
@@ -108,7 +52,7 @@ export default function AssetTable({ title, type }: AssetTableProps) {
               </tr>
             </thead>
             <tbody>
-              {stockData.map((stock, index) => (
+              {data.map((stock, index) => (
                 <tr key={index} className={styles.dataRow}>
                   <td className={styles.dataCell}>
                     <div className={styles.stockName}>
