@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Trash2, TrendingUp } from 'lucide-react';
-import styles from '../../pages/backtest/BacktestCreationPage.module.css';
+import styles from './MyPortfolio.module.css';
 
 interface PortfolioItem {
   name: string;

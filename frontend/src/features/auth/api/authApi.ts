@@ -18,7 +18,7 @@ export interface SignupResponse {
 }
 
 export interface NicknameCheckResponse {
-  isDuplicated: boolean;
+  duplicated: boolean;
 }
 
 class AuthApi {

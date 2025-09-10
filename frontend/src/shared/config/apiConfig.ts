@@ -24,7 +24,7 @@ interface ApiConfig {
 }
 
 const currentConfig: ApiConfig = {
-  baseURL: 'https://rebra.site',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
 
   timeout: {
     default: 10000, // 10초

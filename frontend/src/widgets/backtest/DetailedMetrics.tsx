@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import styles from '../../pages/backtest/BacktestResultsPage.module.css';
+import styles from './DetailedMetrics.module.css';
 
 interface MetricData {
   label: string;

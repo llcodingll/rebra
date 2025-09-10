@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Search, Plus } from 'lucide-react';
-import styles from '../../pages/backtest/BacktestCreationPage.module.css';
+import styles from './StockSearch.module.css';
 
 interface Stock {
   name: string;
