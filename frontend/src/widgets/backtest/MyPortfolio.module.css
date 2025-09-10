@@ -1,0 +1,273 @@
+/* Portfolio Card */
+.portfolioCard {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  height: fit-content;
+}
+
+.portfolioCard .cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  margin-bottom: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.cardHeader h3 {
+  color: #030213;
+  margin: 0;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.selectedPortfolio {
+  background: #e9ebef;
+  color: #030213;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.portfolioTable {
+  padding: 0 24px;
+  overflow-x: auto;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 60px;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  min-width: 800px;
+}
+
+.headerCell {
+  color: #030213;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 60px;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  align-items: center;
+  min-width: 800px;
+  transition: all 0.2s ease;
+}
+
+.tableRow:hover {
+  background: #f8f9fb;
+  margin: 0 -12px;
+  padding: 16px 12px;
+  border-radius: 8px;
+  border-bottom-color: transparent;
+}
+
+.tableRow:last-child {
+  border-bottom: none;
+}
+
+.tableCell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tableCell .stockInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tableCell .stockName {
+  color: #030213;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.tableCell .stockCode {
+  background: #ececf0;
+  color: #030213;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  width: fit-content;
+}
+
+.priceText,
+.valueText {
+  color: #030213;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.numberInput {
+  background: #f8f9fb;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  padding: 8px 6px;
+  color: #030213;
+  font-size: 12px;
+  width: 60px;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.numberInput:focus {
+  border-color: #030213;
+  background: white;
+  box-shadow: 0 0 0 2px rgba(3, 2, 19, 0.08);
+}
+
+.unit {
+  color: #717182;
+  font-size: 11px;
+  margin-left: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.deleteButton {
+  background: #f8f9fb;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 36px;
+  height: 36px;
+}
+
+.deleteButton:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.deleteIcon {
+  width: 16px;
+  height: 16px;
+  color: #717182;
+  transition: color 0.2s ease;
+}
+
+.deleteButton:hover .deleteIcon {
+  color: #dc2626;
+}
+
+.portfolioSummary {
+  padding: 20px 24px 24px 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.summaryItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #717182;
+  font-size: 14px;
+}
+
+.summaryIcon {
+  width: 16px;
+  height: 16px;
+  color: #059669;
+}
+
+.summaryValue {
+  color: #030213;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* Empty State */
+.emptyState {
+  padding: 60px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.emptyIcon {
+  width: 48px;
+  height: 48px;
+  color: #ececf0;
+}
+
+.emptyState h4 {
+  color: #030213;
+  margin: 0;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.emptyState p {
+  color: #717182;
+  margin: 0;
+  font-size: 14px;
+  max-width: 300px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .tableHeader,
+  .tableRow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .tableHeader {
+    display: none;
+  }
+  
+  .tableRow {
+    background: #f8f9fb;
+    padding: 16px;
+    border-radius: 8px;
+    border-bottom: none;
+    margin-bottom: 8px;
+  }
+  
+  .tableCell {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .tableCell::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #717182;
+    font-size: 12px;
+    flex-shrink: 0;
+    min-width: 80px;
+  }
+  
+  .numberInput {
+    width: 60px;
+  }
+}

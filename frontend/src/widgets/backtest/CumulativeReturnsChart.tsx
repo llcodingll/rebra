@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { DollarSign } from 'lucide-react';
-import styles from '../../pages/backtest/BacktestResultsPage.module.css';
+import styles from './CumulativeReturnsChart.module.css';
 
 interface TradeData {
   date: string;

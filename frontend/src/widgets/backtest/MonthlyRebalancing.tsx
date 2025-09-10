@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Info } from 'lucide-react';
-import styles from '../../pages/backtest/BacktestResultsPage.module.css';
+import styles from './MonthlyRebalancing.module.css';
 
 interface MonthlyRebalancingProps {
   rebalancingData?: number[];

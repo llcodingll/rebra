@@ -1,0 +1,200 @@
+/* Stock Search Card */
+.stockSearchCard {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  height: fit-content;
+}
+
+.stockSearchCard .cardHeader {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.cardHeader {
+  padding: 24px 24px 0 24px;
+  margin-bottom: 24px;
+}
+
+.cardHeader h3 {
+  color: #030213;
+  margin: 0;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.searchWrapper {
+  padding: 0 24px 20px 24px;
+}
+
+.searchInputWrapper {
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: #717182;
+}
+
+.searchInput {
+  background: #f8f9fb;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 14px 16px 14px 48px;
+  color: #030213;
+  font-size: 14px;
+  width: 100%;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.searchInput:focus {
+  border-color: #030213;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(3, 2, 19, 0.08);
+}
+
+.searchInput::placeholder {
+  color: #717182;
+}
+
+.stockList {
+  padding: 0 24px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.stockItem {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.stockItem:hover {
+  background: #f8f9fb;
+  border-color: rgba(3, 2, 19, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.stockInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stockHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stockName {
+  color: #030213;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.stockCode {
+  background: #ececf0;
+  color: #030213;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.stockPrice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.price {
+  color: #030213;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.change {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.change.positive {
+  color: #059669;
+}
+
+.change.negative {
+  color: #dc2626;
+}
+
+.stockDetails {
+  color: #717182;
+  font-size: 13px;
+}
+
+.addButton {
+  background: #030213;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.addButton:hover:not(:disabled) {
+  background: #1a1a2e;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(3, 2, 19, 0.2);
+}
+
+.addButton.added,
+.addButton:disabled {
+  background: #059669;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.addIcon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .stockItem {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .addButton {
+    align-self: flex-end;
+    min-width: 100px;
+  }
+}
