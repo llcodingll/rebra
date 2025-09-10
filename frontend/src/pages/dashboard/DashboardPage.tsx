@@ -3,7 +3,7 @@ import styles from './DashboardPage.module.css';
 import DashBoardSettingsTab from './DashBoardSettingsTab';
 import AssetPortfolioChart from '../../widget/dashboard/AssetPortfolioChart';
 import AssetTable from '../../widget/dashboard/AssetTable';
-import ProfitStatusPage from './ProfitStatusPage';
+import ProfitPortfolioChart from '../../widget/dashboard/ProfitPortfolioChart';
 import PortfolioSelectionModal from '../../widget/portfolio/PortfolioSelectionModal';
 
 interface Portfolio {
@@ -215,7 +215,7 @@ export default function DashboardPage() {
       case 'assets':
         return <AssetPortfolioChart data={stockData.filter(stock => stock.type === 'registered')} />;
       case 'profit':
-        return <ProfitStatusPage />;
+        return <ProfitPortfolioChart data={stockData.filter(stock => stock.type === 'registered')} />;
       default:
         return null;
     }

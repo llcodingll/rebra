@@ -1,0 +1,586 @@
+/* 컨테이너 */
+.chartContainer {
+  width: 700%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.chartCard {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.chartCard:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ececf0;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerIcon {
+  width: 24px;
+  height: 24px;
+  color: #f59e0b;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #030213;
+  margin: 0;
+}
+
+.headerControls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.chartToggle {
+  display: flex;
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.toggleBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleBtn:hover {
+  color: #475569;
+}
+
+.toggleBtn.active {
+  background: #ffffff;
+  color: #030213;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.headerBadge {
+  background: #fef3f2;
+  color: #b91c1c;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #fecaca;
+}
+
+/* 메인 컨텐츠 */
+.content {
+  display: grid;
+  grid-template-columns: 320px 1fr 320px;
+  gap: 40px;
+  align-items: start;
+}
+
+/* 왼쪽 패널 */
+.leftPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* 수익률 요약 섹션 */
+.profitSummarySection {
+  background: linear-gradient(135deg, #fefcbf 0%, #fef3c7 100%);
+  border: 1px solid #fde047;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.profitSummaryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.profitSummaryHeader h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #475569;
+  margin: 0;
+}
+
+.returnIcon {
+  padding: 6px;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.iconPositive {
+  width: 16px;
+  height: 16px;
+  color: #10b981;
+}
+
+.iconNegative {
+  width: 16px;
+  height: 16px;
+  color: #ef4444;
+}
+
+.profitPercent {
+  font-size: 36px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.profitAmount {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.totalValue {
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+/* 수익률 순위 섹션 */
+.rankingSection {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.rankingTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #030213;
+  margin: 0 0 16px 0;
+}
+
+.rankingIcon {
+  width: 16px;
+  height: 16px;
+  color: #f59e0b;
+}
+
+.rankingList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rankingItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.rankingItem:hover {
+  background: #f8fafc;
+}
+
+.rankingItem.selected {
+  background: #eff6ff;
+  border: 1px solid #3b82f6;
+}
+
+.rankingItem.hovered {
+  background: #f1f5f9;
+  transform: translateX(4px);
+}
+
+.rankNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rankColor {
+  width: 16px;
+  height: 16px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.rankContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rankName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #030213;
+  line-height: 1.3;
+}
+
+.rankCode {
+  font-size: 12px;
+  font-weight: 500;
+  color: #717182;
+}
+
+.rankValues {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.rankReturn {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.rankWeight {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+/* 차트 영역 */
+.chartWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.chartInner {
+  position: relative;
+  width: 320px;
+  height: 320px;
+}
+
+/* 상세 패널 */
+.detailPanel {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.stockHeader {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.stockTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.stockName {
+  font-size: 18px;
+  font-weight: 700;
+  color: #030213;
+  margin: 0;
+}
+
+.stockCode {
+  font-size: 14px;
+  font-weight: 500;
+  color: #717182;
+  background: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.stockPrice {
+  margin-top: 8px;
+}
+
+.currentPrice {
+  font-size: 20px;
+  font-weight: 700;
+  color: #030213;
+}
+
+/* 수익 정보 */
+.profitInfo {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.profitHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #166534;
+}
+
+.profitIcon {
+  width: 16px;
+  height: 16px;
+  color: #10b981;
+}
+
+.lossIcon {
+  width: 16px;
+  height: 16px;
+  color: #ef4444;
+}
+
+.profitMetrics {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profitRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profitLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.profitValue {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* 메트릭 */
+.stockMetrics {
+  margin-bottom: 24px;
+}
+
+.metricRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.metricRow:last-child {
+  margin-bottom: 0;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metricLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: #717182;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metricValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: #030213;
+}
+
+/* 투자 전략 정보 */
+.strategyInfo {
+  background: #fef3f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.strategyHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.strategyIcon {
+  width: 16px;
+  height: 16px;
+  color: #f59e0b;
+}
+
+.strategyHeader span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.strategyContent {
+  color: #7c2d12;
+}
+
+.strategyText {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* 툴팁 */
+.tooltip {
+  background: #030213;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.tooltipTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+}
+
+.tooltipValue {
+  font-size: 12px;
+  font-weight: 500;
+  color: #e2e8f0;
+  margin: 0 0 2px 0;
+}
+
+.tooltipAmount {
+  font-size: 12px;
+  font-weight: 500;
+  color: #10b981;
+  margin: 0;
+}
+
+/* 공통 스타일 */
+.positive {
+  color: #10b981;
+}
+
+.negative {
+  color: #ef4444;
+}
+
+.selected {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.hovered {
+  background: #f1f5f9;
+}
+
+/* 반응형 */
+@media (max-width: 1200px) {
+  .content {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  
+  .chartWrapper {
+    order: -1;
+  }
+  
+  .leftPanel {
+    order: 1;
+  }
+  
+  .detailPanel {
+    order: 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .chartContainer {
+    padding: 16px;
+  }
+  
+  .chartCard {
+    padding: 20px;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .headerControls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .chartToggle {
+    flex: 1;
+  }
+  
+  .toggleBtn {
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .chartInner {
+    width: 280px;
+    height: 280px;
+  }
+  
+  .metricRow {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .profitPercent {
+    font-size: 28px;
+  }
+}

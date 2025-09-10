@@ -11,7 +11,7 @@ const BacktestPage = lazy(() => import('../pages/backtest/BacktestPage'));
 const BacktestCreationPage = lazy(() => import('../pages/backtest/BacktestCreationPage'));
 const BacktestResultsPage = lazy(() => import('../pages/backtest/BacktestResultsPage'));
 const StockDetailPage = lazy(() => import('../pages/StockDetailPage'));
-const ProfitStatusPage = lazy(() => import('../pages/dashboard/ProfitStatusPage'));
+const ProfitStatusPage = lazy(() => import('../widget/dashboard/ProfitPortfolioChart'));
 
 export const router = createBrowserRouter([
   {
