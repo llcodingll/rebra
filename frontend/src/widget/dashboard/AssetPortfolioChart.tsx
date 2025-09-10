@@ -175,7 +175,6 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                       <span className={styles.legendCode}>{stock.code}</span>
                     </div>
                     <div className={styles.legendValues}>
-                      
                       <span className={styles.legendWeight}>{stock.currentWeight}</span>
                       <span className={`${styles.legendReturn} ${
                         stock.return.startsWith('+') ? styles.positive : styles.negative
@@ -302,7 +301,7 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                   </div>
                 </div>
 
-              {/* 리벨런싱 정보 */}
+              {/* 리밸런싱 정보 */}
               <div className={styles.rebalancingInfo}>
                 <div className={styles.rebalancingHeader}>
                   <AlertCircle className={styles.rebalancingIcon} />
