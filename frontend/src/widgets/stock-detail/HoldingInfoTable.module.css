@@ -1,29 +1,61 @@
-.holdingTable {
+.holdingContainer {
   flex: 1;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-.tableHeader {
-  background: #f9fafb;
-  padding: 12px 16px;
-  font-size: 14px;
+.externalHeader {
+  font-size: 16px;
   font-weight: 600;
-  color: #374151;
-  border-bottom: 1px solid #e5e7eb;
+  color: #6b7280;
+  padding: 12px 0px 6px 8px;
+}
+
+.holdingTable {
+  flex: 1;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  overflow: hidden;
 }
 
 .tableContent {
   display: flex;
+  background: white;
 }
 
 .tableColumn {
   flex: 1;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid #d1d5db;
   display: flex;
   flex-direction: column;
+}
+
+.tableColumn:first-child {
+  border-right: 2px solid #d1d5db;
+}
+
+.singleColumn .columnHeader {
+  height: 40px;
+}
+
+.singleColumnData {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: center;
+  min-height: 52px;
+}
+
+.singleDataValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2a2a2a;
+  text-align: center;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tableColumn:last-child {
@@ -32,7 +64,7 @@
 
 .columnHeader {
   background: #f9fafb;
-  padding: 4px 8px;
+  padding: 2px 6px;
   font-size: 11px;
   font-weight: 500;
   color: #6b7280;
@@ -46,7 +78,7 @@
 
 .columnHeaderSecond {
   background: #f9fafb;
-  padding: 4px 8px;
+  padding: 4px 6px;
   font-size: 11px;
   font-weight: 500;
   color: #6b7280;
@@ -65,10 +97,9 @@
 }
 
 .dataValue {
-  padding: 8px 8px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  color: #111827;
+  color: #2a2a2a;
   text-align: center;
   flex: 1;
   display: flex;
@@ -80,30 +111,34 @@
   border-bottom: 1px solid #f3f4f6;
 }
 
+.profitValue {
+  color: #dc2626 !important;
+}
+
 @media (max-width: 768px) {
   .tableContent {
     flex-direction: column;
   }
-  
+
   .tableColumn {
     border-right: none;
     border-bottom: 1px solid #e5e7eb;
   }
-  
+
   .tableColumn:last-child {
     border-bottom: none;
   }
-  
+
   .columnData {
     flex-direction: row;
   }
-  
+
   .dataValue {
     flex: 1;
     border-bottom: none;
     border-right: 1px solid #f3f4f6;
   }
-  
+
   .dataValue:last-child {
     border-right: none;
   }

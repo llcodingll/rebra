@@ -11,6 +11,17 @@
   gap: 20px;
   margin-bottom: 20px;
   padding: 0 20px;
+  align-items: stretch; /* 두 컴포넌트가 동일한 높이를 갖도록 */
+}
+
+.stockBasicInfoWrapper {
+  flex: 3; /* 30% 영역 */
+  min-width: 0; /* flex-shrink 허용 */
+}
+
+.holdingInfoWrapper {
+  flex: 7; /* 70% 영역 */
+  min-width: 0; /* flex-shrink 허용 */
 }
 
 

@@ -203,9 +203,13 @@ export default function StockDetailPage() {
     <div className={styles.container}>
       {/* 주식 정보 및 보유 현황 섹션 */}
       <div className={styles.stockInfoSection}>
-        <StockBasicInfo stockInfo={stockInfo} realTimePrice={realTimePrice} realTimePriceChange={realTimePriceChange} />
-
-        <HoldingInfoTable holdingData={holdingData} />
+        <div className={styles.stockBasicInfoWrapper}>
+          <StockBasicInfo stockInfo={stockInfo} realTimePrice={realTimePrice} realTimePriceChange={realTimePriceChange} />
+        </div>
+        
+        <div className={styles.holdingInfoWrapper}>
+          <HoldingInfoTable holdingData={holdingData} />
+        </div>
       </div>
 
       {/* 메인 콘텐츠 (3열 레이아웃) */}

@@ -12,11 +12,7 @@ interface StockBasicInfoProps {
   realTimePriceChange?: { amount: number; rate: number } | null;
 }
 
-export default function StockBasicInfo({ 
-  stockInfo, 
-  realTimePrice, 
-  realTimePriceChange 
-}: StockBasicInfoProps) {
+export default function StockBasicInfo({ stockInfo, realTimePrice, realTimePriceChange }: StockBasicInfoProps) {
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);
   };
@@ -32,9 +28,7 @@ export default function StockBasicInfo({
         <span className={styles.stockCode}>{stockInfo.code}</span>
       </div>
       <div className={styles.priceInfo}>
-        <span className={styles.currentPrice}>
-          {formatPrice(realTimePrice || stockInfo.currentPrice)}
-        </span>
+        <span className={styles.currentPrice}>{formatPrice(realTimePrice || stockInfo.currentPrice)}</span>
         <div className={styles.priceChange}>
           {realTimePriceChange ? (
             <>
