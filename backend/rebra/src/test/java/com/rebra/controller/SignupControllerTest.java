@@ -79,7 +79,9 @@ class SignupControllerTest {
         mockMvc.perform(get("/auth/nickname/check")
                 .param("nickname", nickname))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.duplicated").value(false));
     }
 
     @Test
@@ -92,7 +94,9 @@ class SignupControllerTest {
         mockMvc.perform(get("/auth/nickname/check")
                 .param("nickname", nickname))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").value(false));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.duplicated").value(true));
     }
 
     @Test

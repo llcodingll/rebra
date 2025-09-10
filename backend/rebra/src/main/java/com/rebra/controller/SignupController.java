@@ -3,6 +3,7 @@ package com.rebra.controller;
 import com.rebra.common.CommonApiResponse;
 import com.rebra.dto.TempToken;
 import com.rebra.dto.request.SignupRequest;
+import com.rebra.dto.response.NicknameCheckResponse;
 import com.rebra.dto.response.SignupResponse;
 import com.rebra.entity.User;
 import com.rebra.jwt.Token;
@@ -45,11 +46,12 @@ public class SignupController {
         @ApiResponse(responseCode = "400", description = "잘못된 닉네임 형식")
     })
     @GetMapping("/nickname/check")
-    public ResponseEntity<Boolean> checkNicknameAvailability(
+    public ResponseEntity<CommonApiResponse<NicknameCheckResponse>> checkNicknameAvailability(
             @Parameter(description = "중복 확인할 닉네임", required = true, example = "테스트사용자")
             @RequestParam String nickname) {
         boolean isAvailable = signupService.isNicknameAvailable(nickname);
-        return ResponseEntity.ok(isAvailable);
+        NicknameCheckResponse response = new NicknameCheckResponse(!isAvailable);
+        return ResponseEntity.ok(CommonApiResponse.success(response));
     }
 
     @Operation(summary = "회원가입 완료", description = "카카오 로그인 후 닉네임을 설정하여 회원가입을 완료합니다.")

@@ -1,0 +1,73 @@
+.searchPage {
+  background: white;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.subTabNav {
+  display: flex;
+  align-items: center;
+  padding: 15px 40px 10px 40px;
+}
+
+.subTabContainer {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.subTab {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: bold;
+  color: #afafaf;
+  transition: color 0.2s;
+}
+
+.subTab.active {
+  color: #454545;
+}
+
+.subTab:hover {
+  color: #6b7280;
+}
+
+.timestamp {
+  padding-left: 20px;
+  font-size: 16px;
+  font-family: 'Sen', 'Noto Sans KR', sans-serif;
+  font-weight: 600;
+  color: #c1c1c1;
+}
+
+.mainContent {
+  display: flex;
+  width: 100%;
+  height: calc(100vh - 80px);
+  overflow: hidden;
+}
+
+.tableArea {
+  flex: 7;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.newsArea {
+  flex: 3;
+  background: white;
+  overflow-y: auto;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  font-size: 18px;
+  color: #6b7280;
+  background: white;
+}

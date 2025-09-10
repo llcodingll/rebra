@@ -1,12 +1,12 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { lazy } from 'react';
 import App from '../App';
-import Layout from '../widget/common/Layout';
-import LandingPage from '../pages/LandingPage';
+import Layout from '../widgets/common/Layout';
+import LandingPage from '../pages/landing/LandingPage';
 import SignupPage from '../pages/signup';
-import LoginPage from '../pages/LoginPage';
+import LoginPage from '../pages/login/LoginPage';
 const DashboardPage = lazy(() => import('../pages/dashboard/DashboardPage'));
-const SearchPage = lazy(() => import('../pages/SearchPage'));
+const SearchPage = lazy(() => import('../pages/search/SearchPage'));
 const BacktestPage = lazy(() => import('../pages/backtest/BacktestPage'));
 const BacktestCreationPage = lazy(() => import('../pages/backtest/BacktestCreationPage'));
 const BacktestResultsPage = lazy(() => import('../pages/backtest/BacktestResultsPage'));

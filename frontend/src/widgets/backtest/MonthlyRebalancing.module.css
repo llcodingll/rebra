@@ -1,0 +1,99 @@
+/* 리밸런싱 카드 */
+.rebalanceCard {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.rebalanceTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 20px 0;
+}
+
+/* 바 차트 */
+.barChart {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 160px;
+  gap: 6px;
+  padding: 20px 12px 30px 12px;
+  margin-bottom: 16px;
+  position: relative;
+  background: linear-gradient(to top, #f8f9fa 0px, #f8f9fa 1px, transparent 1px);
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.barContainer {
+  flex: 1;
+  min-width: 0; /* flex 아이템이 축소될 수 있도록 */
+  max-width: calc((100% - 11 * 6px) / 12); /* 12개 바 + 11개 gap */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 130px;
+  justify-content: flex-end;
+  position: relative;
+  z-index: 5;
+}
+
+.barValue {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 8px;
+  order: -1;
+  background: #ffffff;
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid #dbeafe;
+  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.1);
+  min-width: 20px;
+  text-align: center;
+}
+
+.bar {
+  width: 100%;
+  max-width: 18px;
+  background: linear-gradient(180deg, #60a5fa, #3b82f6, #2563eb);
+  border-radius: 3px 3px 0 0;
+  min-height: 4px;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+}
+
+.bar:hover {
+  background: linear-gradient(180deg, #3b82f6, #2563eb, #1d4ed8);
+  transform: scaleX(1.1);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
+}
+
+.barLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-top: 8px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.barChartFooter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.infoIcon {
+  width: 14px;
+  height: 14px;
+}

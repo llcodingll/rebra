@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Calendar, TrendingUp } from 'lucide-react';
-import styles from '../../pages/backtest/BacktestResultsPage.module.css';
+import { Calendar, TrendingUp, Edit2, Check, X } from 'lucide-react';
+import styles from './ResultsHeader.module.css';
 
 interface SummaryCardData {
   label: string;
@@ -14,6 +15,7 @@ interface ResultsHeaderProps {
   period?: string;
   totalReturn?: string;
   summaryCards?: SummaryCardData[];
+  onTitleChange?: (newTitle: string) => void;
 }
 
 export default function ResultsHeader({
@@ -22,16 +24,79 @@ export default function ResultsHeader({
   totalReturn = '+35.2%',
   summaryCards = [
     { label: '초기 자본', value: '10,000,000원' },
-    { label: '최종 자본', value: '13,540,000원', highlight: true },
+    { label: '최종 평가액', value: '13,540,000원', highlight: true },
     { label: '전략 수익률', value: '+35.2%', subtext: '월간 리밸런싱', highlight: true },
     { label: '총 거래횟수', value: '36회' }
-  ]
+  ],
+  onTitleChange
 }: ResultsHeaderProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(title);
+
+  const handleSave = () => {
+    if (onTitleChange && editedTitle.trim()) {
+      onTitleChange(editedTitle.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditedTitle(title);
+    setIsEditing(false);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave();
+    } else if (e.key === 'Escape') {
+      handleCancel();
+    }
+  };
   return (
     <>
       <div className={styles.header}>
         <div className={styles.titleSection}>
-          <h1 className={styles.title}>{title}</h1>
+          <div className={styles.titleContainer}>
+            {isEditing ? (
+              <div className={styles.titleEditWrapper}>
+                <input
+                  type="text"
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  className={styles.titleInput}
+                  autoFocus
+                />
+                <div className={styles.titleEditButtons}>
+                  <button 
+                    onClick={handleSave}
+                    className={styles.saveButton}
+                    title="저장"
+                  >
+                    <Check size={16} />
+                  </button>
+                  <button 
+                    onClick={handleCancel}
+                    className={styles.cancelButton}
+                    title="취소"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className={styles.titleWrapper}>
+                <h1 className={styles.title}>{title}</h1>
+                <button 
+                  onClick={() => setIsEditing(true)}
+                  className={styles.editButton}
+                  title="제목 편집"
+                >
+                  <Edit2 size={20} />
+                </button>
+              </div>
+            )}
+          </div>
           <div className={styles.headerMeta}>
             <div className={styles.periodInfo}>
               <Calendar className={styles.periodIcon} />

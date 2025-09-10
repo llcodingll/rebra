@@ -1,0 +1,272 @@
+.orderBookSection {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  width: 100%;
+  max-width: 600px;
+  position: relative;
+}
+
+.orderBookHeader {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  background: white;
+}
+
+.orderBookHeader h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.orderBookContent {
+  background: white;
+  position: relative;
+  height: 480px;
+}
+
+/* 메인 호가 테이블 (스크롤 가능) */
+.orderBookTable {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  position: relative;
+
+  /* 스크롤바 커스터마이징 */
+  scrollbar-width: thin;
+  scrollbar-color: #e5e7eb #f9fafb;
+}
+
+.orderBookTable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.orderBookTable::-webkit-scrollbar-track {
+  background: #f9fafb;
+}
+
+.orderBookTable::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 3px;
+}
+
+.orderBookTable::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
+/* 호가 행 */
+.orderRow {
+  display: grid;
+  grid-template-columns: 80px 1fr 80px;
+  align-items: center;
+  height: 40px;
+  padding: 0 16px;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.orderRow:hover {
+  background-color: #f8f9fa;
+}
+
+/* 현재가 행 */
+.currentPriceRow {
+  display: grid;
+  grid-template-columns: 80px 1fr 80px;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  background: #ff4d4f;
+  color: white;
+  position: sticky;
+  top: 50%;
+  z-index: 2;
+}
+
+/* 셀 스타일 */
+.askQuantityCell {
+  text-align: right;
+  color: #1890ff;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.bidQuantityCell {
+  text-align: left;
+  color: #ff4d4f;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.emptyCell {
+  width: 100%;
+}
+
+/* 가격 셀 */
+.priceCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+.price {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ff4d4f;
+  line-height: 1.2;
+}
+
+.changeRate {
+  font-size: 11px;
+  color: #ff4d4f;
+  margin-top: 2px;
+}
+
+/* 현재가 셀 */
+.currentPriceCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.currentIcon {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.currentPrice {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.currentVolumeCell {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* 우측 상단 거래정보 박스 */
+.tradeInfoBox {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  background: white;
+  z-index: 3;
+  border-left: 1px solid #f8f9fa;
+}
+
+.tradeInfoItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 40px;
+  padding: 0 16px;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.infoLabel {
+  font-size: 11px;
+  color: #666;
+  font-weight: 500;
+}
+
+.infoValue {
+  font-size: 12px;
+  color: #333;
+  font-weight: 600;
+}
+
+/* 좌측 하단 체결강도 박스 */
+.strengthBox {
+  position: absolute;
+  bottom: 100px;
+  left: 0;
+  width: 80px;
+  height: 44px;
+  background: #ff4d4f;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  border-right: 1px solid #ff4d4f;
+}
+
+.strengthLabel {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 2px;
+}
+
+.strengthValue {
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .orderBookSection {
+    max-width: 100%;
+  }
+
+  .orderBookContent {
+    height: 400px;
+  }
+
+  .orderRow {
+    grid-template-columns: 70px 1fr 70px;
+    height: 36px;
+    padding: 0 12px;
+  }
+
+  .currentPriceRow {
+    height: 40px;
+    padding: 0 12px;
+  }
+
+  .tradeInfoBox {
+    width: 100px;
+  }
+
+  .tradeInfoItem {
+    height: 36px;
+    padding: 0 12px;
+  }
+
+  .strengthBox {
+    width: 70px;
+    height: 40px;
+  }
+
+  .price {
+    font-size: 14px;
+  }
+
+  .changeRate {
+    font-size: 10px;
+  }
+
+  .currentPrice {
+    font-size: 15px;
+  }
+
+  .askQuantityCell,
+  .bidQuantityCell {
+    font-size: 12px;
+  }
+
+  .infoLabel {
+    font-size: 10px;
+  }
+
+  .infoValue {
+    font-size: 11px;
+  }
+}
