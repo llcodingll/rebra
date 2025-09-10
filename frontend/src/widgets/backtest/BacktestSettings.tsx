@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Play } from 'lucide-react';
-import styles from '../../pages/backtest/BacktestCreationPage.module.css';
+import styles from './BacktestSettings.module.css';
 
 interface BacktestSettingsProps {
   backtestName: string;
