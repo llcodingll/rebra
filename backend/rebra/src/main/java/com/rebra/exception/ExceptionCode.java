@@ -22,7 +22,15 @@ public enum ExceptionCode {
     INVALID_TEMP_TOKEN(8001, "유효하지 않은 임시 토큰입니다.", HttpStatus.UNAUTHORIZED),
     EXPIRED_TEMP_TOKEN(8002, "만료된 임시 토큰입니다.", HttpStatus.UNAUTHORIZED),
     INVALID_TOKEN_TYPE(8003, "잘못된 토큰 타입입니다.", HttpStatus.BAD_REQUEST),
-    TEMP_TOKEN_PARSING_FAILED(8004, "임시 토큰 파싱에 실패했습니다.", HttpStatus.UNAUTHORIZED);
+    TEMP_TOKEN_PARSING_FAILED(8004, "임시 토큰 파싱에 실패했습니다.", HttpStatus.UNAUTHORIZED),
+
+    // ==== Backtest 관련 ====
+    BACKTEST_NOT_FOUND(9001, "백테스트를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    BACKTEST_ACCESS_DENIED(9002, "백테스트 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    BACKTEST_INVALID_REQUEST(9003, "잘못된 백테스트 요청입니다.", HttpStatus.BAD_REQUEST),
+    BACKTEST_PROCESSING(9004, "백테스트가 아직 처리 중입니다.", HttpStatus.ACCEPTED),
+    BACKTEST_FAILED(9005, "백테스트 처리에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    BACKTEST_DELETE_NOT_ALLOWED(9006, "진행 중인 백테스트는 삭제할 수 없습니다.", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;

@@ -40,3 +40,6 @@ out/
 application-secret.yml
 application.yml
 application-test.yml
+
+### Claude Code
+CLAUDE.md

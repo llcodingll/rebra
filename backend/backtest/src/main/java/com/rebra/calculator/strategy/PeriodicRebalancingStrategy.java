@@ -54,12 +54,8 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
     @Override
     public boolean shouldRebalance(LocalDate currentDate, Portfolio portfolio, List<Stock> stocks,
                                  Map<String, Double> currentPrices, LocalDate lastRebalancingDate) {
-        if (currentDate == null) {
-            return false;
-        }
-
-        // 주기별 리밸런싱은 메인 서버에서 이미 리밸런싱 날짜만 필터링해서 보내므로
-        // 계산 서버에서는 항상 리밸런싱을 실행해야 함
+        // 주기적 리밸런싱: 메인 서버에서 이미 설정된 주기에 맞는 날짜만 필터링해서 전송
+        // 따라서 계산 서버는 받은 모든 날짜에 대해 무조건 리밸런싱 실행
         log.debug("주기적 리밸런싱 실행: {} (주기: {})", 
                 currentDate, rebalancingPeriod.getDisplayName());
         
@@ -69,10 +65,6 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
     @Override
     public String getRebalancingReason(LocalDate currentDate, Portfolio portfolio, List<Stock> stocks,
                                      Map<String, Double> currentPrices, LocalDate lastRebalancingDate) {
-        if (currentDate == null) {
-            return "NO_REBALANCING_NEEDED";
-        }
-
         try {
             String periodName = rebalancingPeriod.name().toLowerCase();
             return String.format("PERIODIC_REBALANCING_%s", periodName.toUpperCase());
@@ -87,10 +79,6 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
     public String getRebalancingReasonKorean(LocalDate currentDate, Portfolio portfolio, List<Stock> stocks,
                                            Map<String, Double> currentPrices, LocalDate lastRebalancingDate) {
         String englishReason = getRebalancingReason(currentDate, portfolio, stocks, currentPrices, lastRebalancingDate);
-        
-        if (englishReason.equals("NO_REBALANCING_NEEDED")) {
-            return "리밸런싱 불필요";
-        }
         
         if (englishReason.equals("PERIODIC_REBALANCING_ERROR")) {
             return "주기적 리밸런싱 오류";
@@ -147,6 +135,8 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
 
     @Override
     public LocalDate getNextRebalancingDate(LocalDate currentDate, LocalDate lastRebalancingDate) {
+        // 주기적 전략에서는 메인 서버에서 이미 적절한 날짜를 필터링하여 전송하므로
+        // 이 메서드는 주로 예측/분석 목적으로만 사용
         if (currentDate == null) {
             return null;
         }
