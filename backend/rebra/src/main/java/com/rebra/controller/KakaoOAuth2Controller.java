@@ -97,7 +97,7 @@ public class KakaoOAuth2Controller {
         
         log.info("기존 회원 로그인 성공: nickname={}", loginResponse.getNickname());
         return ResponseEntity.status(HttpStatus.FOUND)
-                .header("Location", frontendUrl + "/main")
+                .header("Location", frontendUrl + "/dashboard")
                 .build();
     }
 
