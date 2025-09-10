@@ -37,7 +37,6 @@ interface SurveyData {
 }
 
 export default function SignupPage() {
-  const navigate = useNavigate();
   const [surveyData, setSurveyData] = useState<SurveyData>({
     nickname: '',
     age: '',
@@ -73,14 +72,14 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isFormValid() || isSubmitting) return;
 
     setIsSubmitting(true);
 
     // 점수 계산
     const scores = ScoreCalculator.calculateScores(surveyData);
-    
+
     // API 요청 데이터 생성
     const signupData = {
       nickname: surveyData.nickname,
@@ -95,9 +94,9 @@ export default function SignupPage() {
 
     // 회원가입 API 호출
     const result = await authApi.signup(signupData);
-    
+
     if (isOk(result)) {
-      console.log('회원가입 성공:', result.data);
+      console.debug('회원가입 성공:', result.data);
       // 히스토리를 완전히 초기화하고 대시보드를 새로운 시작점으로 설정
       window.location.replace('/dashboard');
     } else {
@@ -223,11 +222,7 @@ export default function SignupPage() {
           </SurveySection>
 
           <div className={styles.submitSection}>
-            <button 
-              type='submit' 
-              className={styles.submitButton} 
-              disabled={!isFormValid() || isSubmitting}
-            >
+            <button type='submit' className={styles.submitButton} disabled={!isFormValid() || isSubmitting}>
               {isSubmitting ? '제출 중...' : '제출하기'}
             </button>
           </div>

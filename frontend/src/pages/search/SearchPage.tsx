@@ -4,7 +4,7 @@ import HoldingsTableWidget from '../../widgets/search/HoldingsTableWidget';
 import RankingTableWidget from '../../widgets/search/RankingTableWidget';
 import SearchTableWidget from '../../widgets/search/SearchTableWidget';
 import WatchlistTableWidget from '../../widgets/search/WatchlistTableWidget';
-import NewsWidget from '../../widgets/common/NewsWidget';
+import NewsWidget from '../../widgets/search/NewsWidget';
 
 export default function SearchPage() {
   const [activeSubTab, setActiveSubTab] = useState<'ranking' | 'search' | 'watchlist' | 'holdings'>('holdings');
@@ -67,9 +67,7 @@ export default function SearchPage() {
       {/* 메인 컨텐츠 - 7:3 레이아웃 */}
       <div className={styles.mainContent}>
         {/* 좌측 테이블 영역 (70%) */}
-        <div className={styles.tableArea}>
-          {renderContent()}
-        </div>
+        <div className={styles.tableArea}>{renderContent()}</div>
 
         {/* 우측 뉴스 영역 (30%) */}
         <div className={styles.newsArea}>
