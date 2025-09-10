@@ -2,7 +2,7 @@ package com.rebra.dto.response;
 
 import com.rebra.entity.BacktestDetail;
 import com.rebra.entity.BacktestRecord;
-import com.rebra.entity.BacktestResult;
+import com.rebra.entity.BacktestStock;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -31,6 +31,9 @@ public class BacktestResultResponse {
     // 기간별 상세 결과
     private List<BacktestDetailResponse> details;
 
+    // 포트폴리오 구성 종목
+    private List<BacktestStockResponse> portfolioStocks;
+
     @Getter
     @Builder
     public static class BacktestSummaryResponse {
@@ -57,28 +60,28 @@ public class BacktestResultResponse {
         private BigDecimal maxDrawdownPercentage;
         private BigDecimal volatilityPercentage;
 
-        public static BacktestSummaryResponse from(BacktestResult result) {
+        public static BacktestSummaryResponse from(BacktestRecord record) {
             return BacktestSummaryResponse.builder()
-                    .finalValue(result.getFinalValue())
-                    .totalReturn(result.getTotalReturn())
-                    .buyHoldReturn(result.getBuyHoldReturn())
-                    .excessReturn(result.getExcessReturn())
-                    .periodGrowthRate(result.getPeriodGrowthRate())
-                    .rebalancingCount(result.getRebalancingCount())
-                    .totalFee(result.getTotalFee())
-                    .totalBorrowingCost(result.getTotalBorrowingCost())
-                    .maxBorrowingAmount(result.getMaxBorrowingAmount())
-                    .minCashBalance(result.getMinCashBalance())
-                    .maxDrawdown(result.getMaxDrawdown())
-                    .volatility(result.getVolatility())
-                    .sharpeRatio(result.getSharpeRatio())
-                    .timeWeightedReturn(result.getTimeWeightedReturn())
-                    .totalReturnPercentage(result.getTotalReturnPercentage())
-                    .buyHoldReturnPercentage(result.getBuyHoldReturnPercentage())
-                    .excessReturnPercentage(result.getExcessReturnPercentage())
-                    .annualizedReturnPercentage(result.getAnnualizedReturnPercentage())
-                    .maxDrawdownPercentage(result.getMaxDrawdownPercentage())
-                    .volatilityPercentage(result.getVolatilityPercentage())
+                    .finalValue(record.getFinalValue())
+                    .totalReturn(record.getTotalReturn())
+                    .buyHoldReturn(record.getBuyHoldReturn())
+                    .excessReturn(record.getExcessReturn())
+                    .periodGrowthRate(record.getPeriodGrowthRate())
+                    .rebalancingCount(record.getRebalancingCount())
+                    .totalFee(record.getTotalFee())
+                    .totalBorrowingCost(record.getTotalBorrowingCost())
+                    .maxBorrowingAmount(record.getMaxBorrowingAmount())
+                    .minCashBalance(record.getMinCashBalance())
+                    .maxDrawdown(record.getMaxDrawdown())
+                    .volatility(record.getVolatility())
+                    .sharpeRatio(record.getSharpeRatio())
+                    .timeWeightedReturn(record.getTimeWeightedReturn())
+                    .totalReturnPercentage(record.getTotalReturnPercentage())
+                    .buyHoldReturnPercentage(record.getBuyHoldReturnPercentage())
+                    .excessReturnPercentage(record.getExcessReturnPercentage())
+                    .annualizedReturnPercentage(record.getAnnualizedReturnPercentage())
+                    .maxDrawdownPercentage(record.getMaxDrawdownPercentage())
+                    .volatilityPercentage(record.getVolatilityPercentage())
                     .build();
         }
     }
@@ -121,7 +124,31 @@ public class BacktestResultResponse {
         }
     }
 
-    public static BacktestResultResponse from(BacktestRecord record, BacktestResult result, List<BacktestDetail> details) {
+    @Getter
+    @Builder
+    public static class BacktestStockResponse {
+        private String stockCode;
+        private String stockName;
+        private String stockType;
+        private BigDecimal targetWeight;
+        private BigDecimal thresholdPercentage;
+        private Integer finalShares;
+        private Boolean isActive;
+
+        public static BacktestStockResponse from(BacktestStock backtestStock) {
+            return BacktestStockResponse.builder()
+                    .stockCode(backtestStock.getStockCode())
+                    .stockName(backtestStock.getStockName())
+                    .stockType(backtestStock.getStockType())
+                    .targetWeight(backtestStock.getTargetWeight())
+                    .thresholdPercentage(backtestStock.getThresholdPercentage())
+                    .finalShares(backtestStock.getShares())
+                    .isActive(backtestStock.getStock().getIsActive())
+                    .build();
+        }
+    }
+
+    public static BacktestResultResponse from(BacktestRecord record, List<BacktestDetail> details, List<BacktestStock> portfolioStocks) {
         return BacktestResultResponse.builder()
                 .id(record.getId())
                 .testName(record.getTestName())
@@ -132,9 +159,12 @@ public class BacktestResultResponse {
                 .status(record.getStatus())
                 .createdAt(record.getCreatedAt())
                 .errorMessage(record.getErrorMessage())
-                .summary(result != null ? BacktestSummaryResponse.from(result) : null)
+                .summary(record.hasResults() ? BacktestSummaryResponse.from(record) : null)
                 .details(details != null ? details.stream()
                         .map(BacktestDetailResponse::from)
+                        .toList() : null)
+                .portfolioStocks(portfolioStocks != null ? portfolioStocks.stream()
+                        .map(BacktestStockResponse::from)
                         .toList() : null)
                 .build();
     }
@@ -147,6 +177,25 @@ public class BacktestResultResponse {
     // 기간 정보
     public long getPeriodDays() {
         return startDate.until(endDate).getDays() + 1;
+    }
+
+    // 포트폴리오 종목 수
+    public int getPortfolioStockCount() {
+        return portfolioStocks != null ? portfolioStocks.size() : 0;
+    }
+
+    // 포트폴리오 요약 정보
+    public String getPortfolioSummary() {
+        if (portfolioStocks == null || portfolioStocks.isEmpty()) {
+            return "포트폴리오 구성 정보 없음";
+        }
+        
+        return portfolioStocks.stream()
+                .map(stock -> String.format("%s(%.1f%%)", 
+                        stock.getStockCode(), 
+                        stock.getTargetWeight()))
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("정보 없음");
     }
 
 }

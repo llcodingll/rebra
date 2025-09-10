@@ -5,6 +5,7 @@ import com.rebra.common.CommonApiResponse;
 import com.rebra.dto.request.BacktestCreateRequest;
 import com.rebra.dto.response.BacktestListResponse;
 import com.rebra.dto.response.BacktestResultResponse;
+import com.rebra.dto.response.BacktestValidationResponse;
 import com.rebra.entity.User;
 import com.rebra.service.BacktestService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,6 +34,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class BacktestController {
 
     private final BacktestService backtestService;
+
+    @PostMapping("/validate")
+    @Operation(summary = "백테스트 실행 가능성 검증", description = "백테스트 요청이 실행 가능한지 사전 검증합니다.")
+    public ResponseEntity<CommonApiResponse<BacktestValidationResponse>> validateBacktest(
+            @Parameter(hidden = true) @LoginUser User user,
+            @Valid @RequestBody BacktestCreateRequest request) {
+
+        BacktestValidationResponse validation = backtestService.validateBacktestRequest(user, request);
+        return ResponseEntity.ok(CommonApiResponse.success(validation));
+    }
 
     @PostMapping
     @Operation(summary = "백테스트 생성", description = "새로운 백테스트를 생성하고 계산을 요청합니다.")

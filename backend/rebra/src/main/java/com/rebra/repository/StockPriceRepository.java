@@ -59,8 +59,8 @@ public interface StockPriceRepository extends JpaRepository<StockPrice, Long> {
      * 백테스트 가능한 공통 기간 조회 (모든 종목이 데이터를 가지고 있는 기간)
      */
     @Query("SELECT MAX(earliest.minDate) as commonStart, MIN(latest.maxDate) as commonEnd " +
-           "FROM (SELECT sp.ticker, MIN(sp.date) as minDate FROM StockPrice sp WHERE sp.ticker IN :tickers GROUP BY sp.ticker) earliest, " +
-           "     (SELECT sp.ticker, MAX(sp.date) as maxDate FROM StockPrice sp WHERE sp.ticker IN :tickers GROUP BY sp.ticker) latest")
+           "FROM (SELECT sp.ticker as ticker, MIN(sp.date) as minDate FROM StockPrice sp WHERE sp.ticker IN :tickers GROUP BY sp.ticker) earliest, " +
+           "     (SELECT sp.ticker as ticker, MAX(sp.date) as maxDate FROM StockPrice sp WHERE sp.ticker IN :tickers GROUP BY sp.ticker) latest")
     List<Object[]> findCommonDateRange(@Param("tickers") List<String> tickers);
 
     /**
@@ -75,5 +75,46 @@ public interface StockPriceRepository extends JpaRepository<StockPrice, Long> {
      */
     @Query("SELECT sp.ticker, COUNT(sp) FROM StockPrice sp WHERE sp.ticker IN :tickers GROUP BY sp.ticker")
     List<Object[]> countByTickers(@Param("tickers") List<String> tickers);
+
+    /**
+     * 특정 월의 마지막 거래일 조회
+     */
+    @Query("SELECT MAX(sp.date) FROM StockPrice sp " +
+           "WHERE YEAR(sp.date) = :year AND MONTH(sp.date) = :month")
+    Optional<LocalDate> findLastTradingDayOfMonth(@Param("year") int year, @Param("month") int month);
+
+    /**
+     * 기간 내 모든 월말 거래일 목록 조회
+     */
+    @Query("SELECT DISTINCT " +
+           "(SELECT MAX(sp2.date) FROM StockPrice sp2 " +
+           " WHERE YEAR(sp2.date) = YEAR(sp.date) AND MONTH(sp2.date) = MONTH(sp.date)) " +
+           "FROM StockPrice sp " +
+           "WHERE sp.date BETWEEN :startDate AND :endDate " +
+           "ORDER BY 1 ASC")
+    List<LocalDate> findMonthEndTradingDates(@Param("startDate") LocalDate startDate, 
+                                           @Param("endDate") LocalDate endDate);
+
+    /**
+     * 기간 내 분기말 거래일 목록 조회 (3,6,9,12월)
+     */
+    @Query("SELECT DISTINCT " +
+           "(SELECT MAX(sp2.date) FROM StockPrice sp2 " +
+           " WHERE YEAR(sp2.date) = YEAR(sp.date) AND MONTH(sp2.date) = MONTH(sp.date)) " +
+           "FROM StockPrice sp " +
+           "WHERE sp.date BETWEEN :startDate AND :endDate " +
+           "AND MONTH(sp.date) IN (3, 6, 9, 12) " +
+           "ORDER BY 1 ASC")
+    List<LocalDate> findQuarterEndTradingDates(@Param("startDate") LocalDate startDate, 
+                                             @Param("endDate") LocalDate endDate);
+
+    /**
+     * 종목별 데이터 존재 기간과 건수 조회 (데이터 가용성 확인용)
+     */
+    @Query("SELECT sp.ticker, MIN(sp.date), MAX(sp.date), COUNT(sp) " +
+           "FROM StockPrice sp " +
+           "WHERE sp.ticker IN :tickers " +
+           "GROUP BY sp.ticker")
+    List<Object[]> findDataAvailabilityByTickers(@Param("tickers") List<String> tickers);
 
 }

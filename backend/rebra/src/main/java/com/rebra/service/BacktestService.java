@@ -3,11 +3,17 @@ package com.rebra.service;
 import com.rebra.dto.request.BacktestCreateRequest;
 import com.rebra.dto.response.BacktestListResponse;
 import com.rebra.dto.response.BacktestResultResponse;
+import com.rebra.dto.response.BacktestValidationResponse;
 import com.rebra.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface BacktestService {
+
+    /**
+     * 백테스트 실행 가능성 검증
+     */
+    BacktestValidationResponse validateBacktestRequest(User user, BacktestCreateRequest request);
 
     /**
      * 백테스트 생성 및 요청
