@@ -5,32 +5,41 @@
 
 .sortButtons {
   display: flex;
-  gap: 8px;
+  position: relative;
+  gap: 24px;
+  align-items: center;
 }
 
 .sortButton {
-  background: white;
-  border: 1px solid #e9e9e9;
-  border-radius: 20px;
-  padding: 8px 16px;
-  font-size: 14px;
+  background: none;
+  border: none;
+  padding: 12px 0;
+  font-size: 15px;
   font-family: 'Content', 'Noto Sans KR', sans-serif;
   font-weight: 500;
-  color: #6b7280;
+  color: #9ca3af;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.2s ease;
+  position: relative;
 }
 
 .sortButton:hover {
-  background: #f8f9fa;
-  border-color: #d1d5db;
+  color: #6b7280;
 }
 
 .sortButton.active {
-  background: #454545;
-  border-color: #454545;
-  color: white;
+  color: #454545;
   font-weight: bold;
+}
+
+.underline {
+  position: absolute;
+  bottom: 2px;
+  height: 2.5px;
+  background: #454545;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 1px;
+  z-index: 2;
 }
 
 .stockTable {
@@ -48,39 +57,43 @@
 
 .tableHeader {
   display: grid;
-  grid-template-columns: 60px 1fr 120px 100px 140px;
+  grid-template-columns: 3fr 2fr 2fr 2fr;
   gap: 20px;
   padding: 5px 20px 5px 20px;
   align-items: center;
 }
 
-.headerRank,
 .headerStock,
 .headerPrice,
 .headerChange,
 .headerVolume {
   font-size: 16px;
   font-family: 'Content', 'Noto Sans KR', sans-serif;
-  font-weight: bold;
+  font-weight: 500;
   color: #afafaf;
 }
 
+.headerPrice,
+.headerChange,
 .headerVolume {
   text-align: right;
+}
+
+.headerVolume {
   color: #454545;
 }
 
 .stockRow {
   display: grid;
-  grid-template-columns: 60px 1fr 120px 100px 140px;
+  grid-template-columns: 3fr 2fr 2fr 2fr;
   gap: 20px;
-  padding: 6px 40px;
+  padding: 0px 20px;
   margin-bottom: 2px;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
   align-items: center;
-  min-height: 40px;
+  min-height: 38px;
 }
 
 .stockRow:hover {
@@ -96,22 +109,23 @@
 }
 
 .rank {
-  font-size: 18px;
-  font-family: 'Concert One', sans-serif;
+  font-size: 14px;
+  font-family: 'Content', 'Noto Sans KR', sans-serif;
   color: #454545;
+  font-weight: 500;
+  min-width: 24px;
   text-align: center;
-  font-weight: bold;
 }
 
 .stockInfo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .favoriteIcon {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -119,26 +133,26 @@
 }
 
 .stockName {
-  font-size: 16px;
+  font-size: 14px;
   font-family: 'Content', 'Noto Sans KR', sans-serif;
-  font-weight: bold;
+  font-weight: 500;
   color: black;
 }
 
 .price {
-  font-size: 16px;
-  font-family: 'Consolas', sans-serif;
+  font-size: 14px;
+  font-family: 'Content', 'Noto Sans KR', sans-serif;
   color: black;
-  text-align: left;
+  text-align: right;
   width: 100%;
 }
 
 .change {
-  font-size: 16px;
-  font-family: 'Consolas', sans-serif;
-  text-align: left;
+  font-size: 14px;
+  font-family: 'Content', 'Noto Sans KR', sans-serif;
+  text-align: right;
   width: 100%;
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .change.positive {
@@ -150,8 +164,8 @@
 }
 
 .volume {
-  font-size: 16px;
-  font-family: 'Consolas', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-family: 'Content', 'Noto Sans KR', sans-serif;
   color: black;
   text-align: right;
   width: 100%;

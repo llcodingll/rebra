@@ -7,7 +7,7 @@ import WatchlistTableWidget from '../../widgets/search/WatchlistTableWidget';
 import NewsWidget from '../../widgets/search/NewsWidget';
 
 export default function SearchPage() {
-  const [activeSubTab, setActiveSubTab] = useState<'ranking' | 'search' | 'watchlist' | 'holdings'>('holdings');
+  const [activeSubTab, setActiveSubTab] = useState<'ranking' | 'search' | 'watchlist' | 'holdings'>('ranking');
 
   const handleStockSelect = (stockCode: string) => {
     // TODO: Navigate to StockDetailPage (separate page)
