@@ -126,7 +126,7 @@ class KakaoOAuth2ControllerTest {
             mockMvc.perform(get("/oauth2/authorization/kakao/callback")
                     .param("code", code))
                     .andExpect(status().isFound())
-                    .andExpect(header().string("Location", "http://localhost:3000/main"))
+                    .andExpect(header().string("Location", "http://localhost:3000/dashboard"))
                     .andExpect(cookie().value("refreshToken", "refresh-token-value"))
                     .andExpect(cookie().value("accessToken", "access-token-value"));
         }
