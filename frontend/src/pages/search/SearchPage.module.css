@@ -7,7 +7,7 @@
 .subTabNav {
   display: flex;
   align-items: center;
-  padding: 15px 40px 10px 40px;
+  padding: 15px 40px 10px 30px;
 }
 
 .subTabContainer {
@@ -51,6 +51,7 @@
 
 .tableArea {
   flex: 7;
+  padding: 0px 40px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
