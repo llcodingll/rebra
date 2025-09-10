@@ -316,12 +316,9 @@ public class BacktestServiceImpl implements BacktestService {
                 new BigDecimal(summaryMap.get("sharpe_ratio").toString()) : null;
         BigDecimal timeWeightedReturn = summaryMap.get("time_weighted_return") != null ?
                 new BigDecimal(summaryMap.get("time_weighted_return").toString()) : null;
-        BigDecimal winRate = summaryMap.get("win_rate") != null ?
-                new BigDecimal(summaryMap.get("win_rate").toString()) : null;
-
         record.updateResults(finalValue, totalReturn, buyHoldReturn, excessReturn, periodGrowthRate,
                 rebalancingCount, totalFee, totalBorrowingCost, maxBorrowingAmount, minCashBalance,
-                maxDrawdown, volatility, sharpeRatio, timeWeightedReturn, winRate);
+                maxDrawdown, volatility, sharpeRatio, timeWeightedReturn);
 
         // BacktestDetail 저장
         List<BacktestDetail> details = detailsList.stream()
