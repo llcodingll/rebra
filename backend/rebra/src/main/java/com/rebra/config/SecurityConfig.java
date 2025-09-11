@@ -3,7 +3,7 @@ package com.rebra.config;
 
 import com.rebra.jwt.JwtAuthenticationFilter;
 import com.rebra.jwt.TokenProvider;
-import com.rebra.service.KakaoOAuth2Service;
+import com.rebra.service.TokenService;
 import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     private final TokenProvider tokenProvider;
-    private final KakaoOAuth2Service kakaoOAuth2Service;
+    private final TokenService tokenService;
 
      @Value("${app.cors.allowed-origins}")
      private String allowedOriginsString;
@@ -83,7 +83,7 @@ public class SecurityConfig {
                                         ReferrerPolicy.ORIGIN_WHEN_CROSS_ORIGIN))
                 )
 
-                .addFilterBefore(new JwtAuthenticationFilter(tokenProvider, kakaoOAuth2Service),
+                .addFilterBefore(new JwtAuthenticationFilter(tokenProvider, tokenService),
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

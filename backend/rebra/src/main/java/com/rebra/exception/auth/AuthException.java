@@ -17,19 +17,23 @@ public class AuthException extends CustomRuntimeException {
         return new AuthException(ExceptionCode.INVALID_ID_TOKEN);
     }
 
-    public static AuthException invalidTempToken(){
-        return new AuthException(ExceptionCode.INVALID_TEMP_TOKEN);
+    public static AuthException kakaoTokenFetchFailed(){
+        return new AuthException(ExceptionCode.KAKAO_TOKEN_FETCH_FAILED);
     }
 
-    public static AuthException invalidTokenType(){
-        return new AuthException(ExceptionCode.INVALID_TOKEN_TYPE);
+    public static AuthException kakaoJwksFetchFailed(){
+        return new AuthException(ExceptionCode.KAKAO_JWKS_FETCH_FAILED);
     }
 
-    public static AuthException expiredTempToken(){
-        return new AuthException(ExceptionCode.EXPIRED_TEMP_TOKEN);
+    public static AuthException idTokenSubExtractionFailed(){
+        return new AuthException(ExceptionCode.ID_TOKEN_SUB_EXTRACTION_FAILED);
     }
 
-    public static AuthException tempTokenParsingFailed(){
-        return new AuthException(ExceptionCode.TEMP_TOKEN_PARSING_FAILED);
+    public static AuthException idTokenSignatureInvalid(){
+        return new AuthException(ExceptionCode.ID_TOKEN_SIGNATURE_INVALID);
+    }
+
+    public static AuthException idTokenProcessingFailed(){
+        return new AuthException(ExceptionCode.ID_TOKEN_PROCESSING_FAILED);
     }
 }

@@ -5,6 +5,9 @@ import com.rebra.dto.common.ValidationErrorDetail;
 import com.rebra.dto.common.ValidationErrorResponse;
 import com.rebra.exception.auth.AuthException;
 import com.rebra.exception.backtest.BacktestException;
+import com.rebra.exception.signup.SignupException;
+import com.rebra.exception.token.TokenException;
+import com.rebra.exception.stock.StockException;
 import com.rebra.exception.user.UserException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -66,6 +69,27 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BacktestException.class)
     public ResponseEntity<CommonApiResponse<Void>> handleBacktestException(BacktestException e) {
         log.warn("Backtest exception: {}", e.getMessage());
+        return ResponseEntity.status(e.getStatus())
+                .body(CommonApiResponse.error(e));
+    }
+
+    @ExceptionHandler(TokenException.class)
+    public ResponseEntity<CommonApiResponse<Void>> handleTokenException(TokenException e) {
+        log.warn("Token exception: {}", e.getMessage());
+        return ResponseEntity.status(e.getStatus())
+                .body(CommonApiResponse.error(e));
+    }
+
+    @ExceptionHandler(SignupException.class)
+    public ResponseEntity<CommonApiResponse<Void>> handleSignupException(SignupException e) {
+        log.warn("Signup exception: {}", e.getMessage());
+        return ResponseEntity.status(e.getStatus())
+                .body(CommonApiResponse.error(e));
+    }
+
+    @ExceptionHandler(StockException.class)
+    public ResponseEntity<CommonApiResponse<Void>> handleStockException(StockException e) {
+        log.warn("Stock exception: {}", e.getMessage());
         return ResponseEntity.status(e.getStatus())
                 .body(CommonApiResponse.error(e));
     }

@@ -5,11 +5,12 @@ import com.rebra.dto.TempToken;
 import com.rebra.dto.request.SignupRequest;
 import com.rebra.dto.response.NicknameCheckResponse;
 import com.rebra.dto.response.SignupResponse;
-import com.rebra.entity.User;
+import com.rebra.dto.response.TokenRefreshResponse;
 import com.rebra.jwt.Token;
 import com.rebra.jwt.TokenProvider;
-import com.rebra.service.KakaoOAuth2ServiceImpl;
 import com.rebra.service.SignupService;
+import com.rebra.service.TokenService;
+import com.rebra.service.UserService;
 import com.rebra.util.CookieUtil;
 import static com.rebra.util.CookieUtil.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,7 +39,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class SignupController {
     private final SignupService signupService;
     private final TokenProvider tokenProvider;
-    private final KakaoOAuth2ServiceImpl kakaoOAuth2Service;
+    private final TokenService tokenService;
+    private final UserService userService;
 
     @Operation(summary = "닉네임 중복 확인", description = "입력한 닉네임의 중복 여부를 확인합니다.")
     @ApiResponses(value = {
@@ -51,6 +53,7 @@ public class SignupController {
             @RequestParam String nickname) {
         boolean isAvailable = signupService.isNicknameAvailable(nickname);
         NicknameCheckResponse response = new NicknameCheckResponse(!isAvailable);
+
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
 
@@ -70,27 +73,21 @@ public class SignupController {
         // 임시 토큰에서 kakaoSub 추출
         TempToken tempTokenData = tokenProvider.getTempTokenData(tempToken);
         
-        // 닉네임 중복 확인
-        if (!signupService.isNicknameAvailable(signupRequest.getNickname())) {
-            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
-        }
+        // 실제 사용자 생성 (닉네임 중복 확인 포함)
+        Long userId = userService.createUser(tempTokenData.getSub(), signupRequest);
         
-        // 실제 사용자 생성
-        User user = kakaoOAuth2Service.createUserWithKakaoSub(tempTokenData.getSub(), signupRequest);
-        
-        // Access Token + Refresh Token
-        Token refreshToken = tokenProvider.generateRefreshToken(user);
-        kakaoOAuth2Service.saveRefreshTokenForUser(user, refreshToken);
-        Token accessToken = kakaoOAuth2Service.issueAccessToken(refreshToken.getToken());
+        // 새 토큰 발급
+        TokenRefreshResponse tokenResponse = tokenService.issueNewTokensForUser(userId);
         
         // 쿠키 설정
-        CookieUtil.addRefreshTokenCookie(response, refreshToken.getToken());
-        CookieUtil.addAccessTokenCookie(response, accessToken.getToken());
+        CookieUtil.addRefreshTokenCookie(response, tokenResponse.getRefreshToken().getToken());
+        CookieUtil.addAccessTokenCookie(response, tokenResponse.getAccessToken().getToken());
         CookieUtil.deleteTempTokenCookie(response); // 임시 토큰 삭제
         
-        log.info("회원가입 완료: userId={}, nickname={}", user.getId(), user.getNickname());
+        String nickname = userService.getUserNickname(userId);
+        log.info("회원가입 완료: userId={}, nickname={}", userId, nickname);
         
-        SignupResponse signupResponse = new SignupResponse(user.getId(), user.getNickname(), "회원가입이 완료되었습니다.");
+        SignupResponse signupResponse = new SignupResponse(userId, nickname, "회원가입이 완료되었습니다.");
         return ResponseEntity.ok(CommonApiResponse.success(signupResponse));
     }
 

@@ -46,17 +46,19 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
 
         Object principal = authentication.getPrincipal();
 
+        // CustomUserDetails에서 userId 추출
         if (principal instanceof CustomUserDetails userDetails) {
             return userDetails.getUserId();
         }
 
+        // fallback: 직접 Long 타입인 경우 (이전 호환성)
         if (principal instanceof Long userId) {
             return userId;
         }
 
         // 인증 정보는 있지만 userId를 추출할 수 없는 경우
         if (required) {
-            throw new IllegalStateException("인증 정보에 userId(Long)가 없습니다.");
+            throw new IllegalStateException("인증 정보에서 userId를 추출할 수 없습니다. Principal 타입: " + principal.getClass().getName());
         } else {
             return null; // 선택적 로그인인 경우 null 반환
         }

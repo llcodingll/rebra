@@ -6,6 +6,7 @@ import com.rebra.dto.request.BacktestCreateRequest;
 import com.rebra.dto.response.BacktestListResponse;
 import com.rebra.dto.response.BacktestResultResponse;
 import com.rebra.dto.response.BacktestValidationResponse;
+import com.rebra.dto.response.PageResponse;
 import com.rebra.entity.User;
 import com.rebra.service.BacktestService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,7 +15,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
@@ -57,11 +57,11 @@ public class BacktestController {
 
     @GetMapping
     @Operation(summary = "백테스트 목록 조회", description = "사용자의 백테스트 목록을 조회합니다.")
-    public ResponseEntity<CommonApiResponse<Page<BacktestListResponse>>> getBacktestList(
+    public ResponseEntity<CommonApiResponse<PageResponse<BacktestListResponse>>> getBacktestList(
             @Parameter(hidden = true) @LoginUser User user,
             @PageableDefault(size = 10) Pageable pageable) {
 
-        Page<BacktestListResponse> backtests = backtestService.getBacktestList(user, pageable);
+        PageResponse<BacktestListResponse> backtests = backtestService.getBacktestList(user, pageable);
         return ResponseEntity.ok(CommonApiResponse.success(backtests));
     }
 

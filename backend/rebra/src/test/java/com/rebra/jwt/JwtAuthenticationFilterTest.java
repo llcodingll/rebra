@@ -3,6 +3,7 @@ package com.rebra.jwt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -10,7 +11,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.core.context.SecurityContextHolder.getContext;
 
-import com.rebra.service.KakaoOAuth2Service;
+import com.rebra.dto.response.TokenRefreshResponse;
+import com.rebra.security.CustomUserDetails;
+import com.rebra.service.TokenService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.SignatureException;
 import jakarta.servlet.FilterChain;
@@ -37,7 +40,7 @@ class JwtAuthenticationFilterTest {
     private static final String VALID_REFRESH_TOKEN = "valid.refresh.token";
 
     private TokenProvider tokenProvider;
-    private KakaoOAuth2Service kakaoOAuth2Service;
+    private TokenService tokenService;
     private JwtAuthenticationFilter filter;
     private MockHttpServletRequest request;
     private MockHttpServletResponse response;
@@ -48,8 +51,8 @@ class JwtAuthenticationFilterTest {
         SecurityContextHolder.clearContext();
 
         tokenProvider = mock(TokenProvider.class);
-        kakaoOAuth2Service = mock(KakaoOAuth2Service.class);
-        filter = new JwtAuthenticationFilter(tokenProvider, kakaoOAuth2Service);
+        tokenService = mock(TokenService.class);
+        filter = new JwtAuthenticationFilter(tokenProvider, tokenService);
 
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
@@ -101,12 +104,16 @@ class JwtAuthenticationFilterTest {
         
         Token newAccessToken = new Token("new.access.token");
         Token newRefreshToken = new Token("new.refresh.token");
-        Token[] tokens = {newAccessToken, newRefreshToken};
+        TokenRefreshResponse tokenResponse = TokenRefreshResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .build();
 
         when(tokenProvider.validateToken(EXPIRED_ACCESS_TOKEN))
                 .thenThrow(new ExpiredJwtException(null, null, "Token expired"));
-        when(kakaoOAuth2Service.refreshTokensWithRotation(VALID_REFRESH_TOKEN)).thenReturn(tokens);
+        when(tokenService.refreshTokensWithRotation(VALID_REFRESH_TOKEN)).thenReturn(tokenResponse);
         when(tokenProvider.getUserIdFromToken("new.access.token")).thenReturn(3L);
+        when(tokenProvider.getUsernameFromToken("new.access.token")).thenReturn("testuser");
 
         filter.doFilterInternal(request, response, filterChain);
 
@@ -123,7 +130,7 @@ class JwtAuthenticationFilterTest {
 
         when(tokenProvider.validateToken(EXPIRED_ACCESS_TOKEN))
                 .thenThrow(new ExpiredJwtException(null, null, "Token expired"));
-        when(kakaoOAuth2Service.refreshTokensWithRotation(anyString()))
+        when(tokenService.refreshTokensWithRotation(anyString()))
                 .thenThrow(new RuntimeException("Refresh token expired"));
 
         filter.doFilterInternal(request, response, filterChain);
@@ -229,13 +236,17 @@ class JwtAuthenticationFilterTest {
 
         Token newAccessToken = new Token("new.access.token");
         Token newRefreshToken = new Token("new.refresh.token");
-        Token[] tokens = {newAccessToken, newRefreshToken};
+        TokenRefreshResponse tokenResponse = TokenRefreshResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .build();
 
         when(tokenProvider.validateToken(EXPIRED_ACCESS_TOKEN))
                 .thenThrow(new ExpiredJwtException(null, null, "Token expired"));
-        when(kakaoOAuth2Service.refreshTokensWithRotation(VALID_REFRESH_TOKEN)).thenReturn(tokens);
+        when(tokenService.refreshTokensWithRotation(VALID_REFRESH_TOKEN)).thenReturn(tokenResponse);
         when(tokenProvider.getUserIdFromToken("new.access.token"))
                 .thenThrow(new RuntimeException("Cannot extract user ID"));
+        when(tokenProvider.getUsernameFromToken("new.access.token")).thenReturn("testuser");
 
         filter.doFilterInternal(request, response, filterChain);
 
@@ -268,11 +279,19 @@ class JwtAuthenticationFilterTest {
     private void mockValidToken(String token, Long userId) {
         when(tokenProvider.validateToken(token)).thenReturn(true);
         when(tokenProvider.getUserIdFromToken(token)).thenReturn(userId);
+        when(tokenProvider.getUsernameFromToken(token)).thenReturn("testuser");
     }
 
     private void assertAuthenticationSet(Long expectedUserId) {
         assertNotNull(getContext().getAuthentication(), "Authentication should be set");
-        assertEquals(expectedUserId, getContext().getAuthentication().getPrincipal());
+        Object principal = getContext().getAuthentication().getPrincipal();
+        assertNotNull(principal, "Principal should not be null");
+        
+        if (principal instanceof CustomUserDetails userDetails) {
+            assertEquals(expectedUserId, userDetails.getUserId());
+        } else {
+            fail("Principal should be an instance of CustomUserDetails, but was: " + principal.getClass().getName());
+        }
     }
 
     private void assertAuthenticationNotSet() {

@@ -1,18 +1,17 @@
 .searchPage {
   background: white;
   width: 100%;
-  min-height: 100vh;
 }
 
 .subTabNav {
   display: flex;
   align-items: center;
-  padding: 15px 40px 10px 40px;
+  padding: 15px 40px 10px 30px;
 }
 
 .subTabContainer {
   display: flex;
-  gap: 24px;
+  gap: 12px;
   align-items: center;
 }
 
@@ -20,7 +19,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
   color: #afafaf;
   transition: color 0.2s;
@@ -35,8 +34,9 @@
 }
 
 .timestamp {
-  padding-left: 20px;
-  font-size: 16px;
+  padding-left: 6px;
+  padding-top: 6px;
+  font-size: 12px;
   font-family: 'Sen', 'Noto Sans KR', sans-serif;
   font-weight: 600;
   color: #c1c1c1;
@@ -44,13 +44,15 @@
 
 .mainContent {
   display: flex;
-  width: 100%;
-  height: calc(100vh - 80px);
+  width: 90%;
+  /* height: calc(100vh - 80px); */
   overflow: hidden;
+  margin: 0 auto;
 }
 
 .tableArea {
   flex: 7;
+  padding: 0px 40px;
   display: flex;
   flex-direction: column;
   overflow: hidden;

@@ -2,12 +2,13 @@ package com.rebra.controller;
 
 import com.rebra.dto.response.KakaoTokenResponse;
 import com.rebra.dto.response.LoginResponse;
+import com.rebra.dto.response.TokenRefreshResponse;
 import com.rebra.jwt.Token;
 import com.rebra.service.KakaoOAuth2Service;
+import com.rebra.service.TokenService;
+import com.rebra.service.UserService;
 import com.rebra.util.CookieUtil;
 import com.rebra.util.IdTokenValidator;
-import static com.rebra.exception.ExceptionCode.*;
-import com.rebra.exception.auth.AuthException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -40,6 +41,8 @@ public class KakaoOAuth2Controller {
     private String clientId;
 
     private final KakaoOAuth2Service kakaoOAuth2Service;
+    private final TokenService tokenService;
+    private final UserService userService;
 
     @Operation(summary = "카카오 로그인 시작", description = "카카오 OAuth2 인증 페이지로 리다이렉트합니다.")
     @ApiResponses(value = {
@@ -48,6 +51,7 @@ public class KakaoOAuth2Controller {
     @GetMapping
     public ResponseEntity<Void> getKakaoAuthorizationUrl(HttpSession session) {
         String authorizationUrl = kakaoOAuth2Service.buildKakaoAuthorizeUrlAndSaveNonceInSession(session);
+
         return ResponseEntity.status(HttpStatus.FOUND)
                 .header("Location", authorizationUrl)
                 .build();
@@ -56,31 +60,22 @@ public class KakaoOAuth2Controller {
     @GetMapping("/callback")
     public ResponseEntity<Void> handleKakaoCallback(
             @RequestParam(AUTHORIZATION_CODE_PARAM) String code, HttpSession session, HttpServletResponse response) {
-
         log.info("Kakao OAuth2 callback received. authorization code: {}", code);
 
-        if (code == null || code.trim().isEmpty()) {
-            log.warn("인가코드가 빈 값으로 들어옴");
-            throw AuthException.missingAuthorizationCode();
-        }
-        
-        // 카카오 토큰 요청 (한 번만)
+        // 카카오 토큰 요청 (내부에서 코드 검증)
         KakaoTokenResponse kakaoTokenResponse = kakaoOAuth2Service.fetchKakaoTokenByAuthorizationCode(code);
         
-        // ID토큰 검증
-        boolean valid = IdTokenValidator.validateIdTokenClaims(kakaoTokenResponse.getIdToken(), session, clientId);
-        if (!valid) {
-            throw AuthException.invalidIdToken();
-        }
+        // ID토큰 검증 (실패 시 자동으로 예외 발생)
+        IdTokenValidator.validateIdTokenClaims(kakaoTokenResponse.getIdToken(), session, clientId);
         
         // sub 추출
         String kakaoSub = IdTokenValidator.getSub(kakaoTokenResponse.getIdToken());
 
         // 로그인 처리
-        LoginResponse loginResponse = kakaoOAuth2Service.processLogin(kakaoTokenResponse, session);
+        Long userId = kakaoOAuth2Service.processUserLogin(kakaoSub);
 
         // 신규 회원 - 임시 토큰 생성 후 회원가입 페이지로
-        if (loginResponse == null) {
+        if (userId == null) {
             Token tempToken = kakaoOAuth2Service.generateTempTokenForSignup(kakaoSub);
             CookieUtil.addTempTokenCookie(response, tempToken.getToken());
             
@@ -90,14 +85,18 @@ public class KakaoOAuth2Controller {
                     .build();
         }
         
-        // 기존 회원 - Access Token 발급 후 메인 페이지로
-        Token accessToken = kakaoOAuth2Service.issueAccessToken(loginResponse.getRefreshToken().getToken());
-        CookieUtil.addRefreshTokenCookie(response, loginResponse.getRefreshToken().getToken());
-        CookieUtil.addAccessTokenCookie(response, accessToken.getToken());
+        // 기존 회원 - 새 토큰 발급 (기존 토큰 삭제 포함)
+        TokenRefreshResponse tokenResponse = tokenService.issueNewTokensForUser(userId);
         
-        log.info("기존 회원 로그인 성공: nickname={}", loginResponse.getNickname());
+        CookieUtil.addRefreshTokenCookie(response, tokenResponse.getRefreshToken().getToken());
+        CookieUtil.addAccessTokenCookie(response, tokenResponse.getAccessToken().getToken());
+
+        // 로깅용
+        String nickname = userService.getUserNickname(userId);
+        log.info("기존 회원 로그인 성공: nickname={}", nickname);
+
         return ResponseEntity.status(HttpStatus.FOUND)
-                .header("Location", frontendUrl + "/main")
+                .header("Location", frontendUrl + "/dashboard")
                 .build();
     }
 

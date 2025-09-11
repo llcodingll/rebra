@@ -5,6 +5,7 @@ import com.rebra.dto.request.BacktestCreateRequest;
 import com.rebra.dto.response.BacktestListResponse;
 import com.rebra.dto.response.BacktestResultResponse;
 import com.rebra.dto.response.BacktestValidationResponse;
+import com.rebra.dto.response.PageResponse;
 import com.rebra.entity.BacktestDetail;
 import com.rebra.entity.BacktestRecord;
 import com.rebra.entity.BacktestStock;
@@ -171,9 +172,10 @@ public class BacktestServiceImpl implements BacktestService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<BacktestListResponse> getBacktestList(User user, Pageable pageable) {
+    public PageResponse<BacktestListResponse> getBacktestList(User user, Pageable pageable) {
         Page<BacktestRecord> records = backtestRecordRepository.findByUserOrderByCreatedAtDesc(user, pageable);
-        return records.map(BacktestListResponse::from);
+        Page<BacktestListResponse> dtoPage = records.map(BacktestListResponse::from);
+        return PageResponse.from(dtoPage);
     }
 
     @Override
@@ -316,12 +318,9 @@ public class BacktestServiceImpl implements BacktestService {
                 new BigDecimal(summaryMap.get("sharpe_ratio").toString()) : null;
         BigDecimal timeWeightedReturn = summaryMap.get("time_weighted_return") != null ?
                 new BigDecimal(summaryMap.get("time_weighted_return").toString()) : null;
-        BigDecimal winRate = summaryMap.get("win_rate") != null ?
-                new BigDecimal(summaryMap.get("win_rate").toString()) : null;
-
         record.updateResults(finalValue, totalReturn, buyHoldReturn, excessReturn, periodGrowthRate,
                 rebalancingCount, totalFee, totalBorrowingCost, maxBorrowingAmount, minCashBalance,
-                maxDrawdown, volatility, sharpeRatio, timeWeightedReturn, winRate);
+                maxDrawdown, volatility, sharpeRatio, timeWeightedReturn);
 
         // BacktestDetail 저장
         List<BacktestDetail> details = detailsList.stream()

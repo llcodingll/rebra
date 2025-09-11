@@ -1,0 +1,30 @@
+.tableLayoutContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.controlsArea {
+  padding-top: 10px;
+  display: flex;
+  align-items: center;
+  background: white;
+  border-bottom: none;
+  height: 50px;
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background: #e5e7eb;
+  flex-shrink: 0;
+}
+
+.tableArea {
+  flex: 1;
+  overflow: hidden;
+  background: white;
+}
