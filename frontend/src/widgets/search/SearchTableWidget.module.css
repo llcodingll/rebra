@@ -51,7 +51,8 @@
 }
 
 .searchInput::placeholder {
-  color: #9ca3af;
+  color: #bebebe;
+  font-weight: 500;
 }
 
 .searchIcon {

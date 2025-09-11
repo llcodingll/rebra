@@ -1,18 +1,18 @@
 import { useState, useMemo } from 'react';
-import styles from './HoldingsTableWidget.module.css';
+import styles from './HoldingsTableWidget_v2.module.css';
 import { stockListData } from './stockListData';
-import HoldingsPagination from './components/HoldingsPagination';
+import HoldingsPagination_v2 from './components/HoldingsPagination_v2';
 import TableLayoutContainer from './components/TableLayoutContainer';
 
 interface HoldingsTableWidgetProps {
   onStockSelect: (stockCode: string) => void;
 }
 
-export default function HoldingsTableWidget({ onStockSelect }: HoldingsTableWidgetProps) {
+export default function HoldingsTableWidget_v2({ onStockSelect }: HoldingsTableWidgetProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null);
 
-  const itemsPerPage = 10;
+  const itemsPerPage = 5; // 10개에서 5개로 변경
   const totalPages = Math.ceil(stockListData.length / itemsPerPage);
   
   const currentPageData = useMemo(() => {
@@ -31,7 +31,7 @@ export default function HoldingsTableWidget({ onStockSelect }: HoldingsTableWidg
 
   const controls = (
     <div className={styles.paginationContainer}>
-      <HoldingsPagination
+      <HoldingsPagination_v2
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
