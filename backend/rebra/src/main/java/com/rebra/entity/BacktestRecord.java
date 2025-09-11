@@ -120,8 +120,6 @@ public class BacktestRecord extends BaseEntity {
     @Column(precision = 10, scale = 6)
     private BigDecimal timeWeightedReturn;
 
-    @Column(precision = 10, scale = 6)
-    private BigDecimal winRate;
 
     public enum BacktestStatus {
         PENDING,    // 요청됨
@@ -199,7 +197,7 @@ public class BacktestRecord extends BaseEntity {
                             BigDecimal excessReturn, BigDecimal periodGrowthRate, Integer rebalancingCount,
                             BigDecimal totalFee, BigDecimal totalBorrowingCost, BigDecimal maxBorrowingAmount,
                             BigDecimal minCashBalance, BigDecimal maxDrawdown, BigDecimal volatility,
-                            BigDecimal sharpeRatio, BigDecimal timeWeightedReturn, BigDecimal winRate) {
+                            BigDecimal sharpeRatio, BigDecimal timeWeightedReturn) {
         this.finalValue = finalValue;
         this.totalReturn = totalReturn;
         this.buyHoldReturn = buyHoldReturn;
@@ -214,7 +212,6 @@ public class BacktestRecord extends BaseEntity {
         this.volatility = volatility;
         this.sharpeRatio = sharpeRatio;
         this.timeWeightedReturn = timeWeightedReturn;
-        this.winRate = winRate;
     }
 
     // 결과 존재 여부 확인

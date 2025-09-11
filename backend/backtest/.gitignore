@@ -35,3 +35,10 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Claude Code
+CLAUDE.md
+.claude-code/
+claude-code-*.log
+.claudemd
+.claude_history

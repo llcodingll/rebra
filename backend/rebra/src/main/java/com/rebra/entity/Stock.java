@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -15,7 +16,11 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "stock")
+@Table(name = "stock",
+    indexes = {
+        @Index(name = "idx_stock_name", columnList = "stock_name"),
+        @Index(name = "idx_stock_code", columnList = "stock_code")
+    })
 public class Stock extends BaseEntity {
 
     @Id

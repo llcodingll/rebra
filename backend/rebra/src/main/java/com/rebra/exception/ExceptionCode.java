@@ -39,7 +39,12 @@ public enum ExceptionCode {
     BACKTEST_INVALID_REQUEST(9003, "잘못된 백테스트 요청입니다.", HttpStatus.BAD_REQUEST),
     BACKTEST_PROCESSING(9004, "백테스트가 아직 처리 중입니다.", HttpStatus.ACCEPTED),
     BACKTEST_FAILED(9005, "백테스트 처리에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
-    BACKTEST_DELETE_NOT_ALLOWED(9006, "진행 중인 백테스트는 삭제할 수 없습니다.", HttpStatus.BAD_REQUEST);
+    BACKTEST_DELETE_NOT_ALLOWED(9006, "진행 중인 백테스트는 삭제할 수 없습니다.", HttpStatus.BAD_REQUEST),
+
+    // ==== Stock 관련 ====
+    STOCK_NOT_FOUND(10001, "주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    STOCK_CODE_NOT_FOUND(10002, "해당 종목 코드로 주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    STOCK_NAME_NOT_FOUND(10003, "해당 종목명으로 주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
 
     private final int code;
     private final String message;
