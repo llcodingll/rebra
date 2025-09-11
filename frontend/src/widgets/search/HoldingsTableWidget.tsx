@@ -62,7 +62,7 @@ export default function HoldingsTableWidget({ onStockSelect }: HoldingsTableWidg
 
             <div className={`${styles.change} ${stock.changePercent ? styles.positive : styles.negative}`}>
               {stock.changePercent ? '+' : ''}
-              {stock.change}%
+              {stock.change.toFixed(1)}%
             </div>
 
             <div className={styles.volume}>{stock.volume}</div>

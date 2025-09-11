@@ -88,7 +88,6 @@
   grid-template-columns: 3fr 2fr 2fr 2fr;
   gap: 20px;
   padding: 0px 20px;
-  margin-bottom: 2px;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;

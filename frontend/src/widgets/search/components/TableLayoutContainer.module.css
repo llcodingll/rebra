@@ -8,7 +8,7 @@
 }
 
 .controlsArea {
-  padding: 10px 24px 0px 0px;
+  padding-top: 10px;
   display: flex;
   align-items: center;
   background: white;

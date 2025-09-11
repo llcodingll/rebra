@@ -1,32 +1,53 @@
-
 .controlContainer {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  width: 100%;
+}
+
+.leftSection {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.rightSection {
+  flex: 1;
   display: flex;
   justify-content: flex-start;
 }
 
-
+.sectionTitle {
+  font-size: 16px;
+  font-family: 'Content', 'Noto Sans KR', sans-serif;
+  font-weight: bold;
+  color: #454545;
+  white-space: nowrap;
+}
 
 .searchInputContainer {
   position: relative;
-  width: 300px;
+  width: 80%;
+  padding: 3px 0px;
 }
 
 .searchInput {
   width: 100%;
-  padding: 8px 16px;
-  border: 1px solid #e9e9e9;
+  padding: 8px 40px 8px 16px;
+  border: 1px solid #d4d4d4;
   border-radius: 8px;
   font-size: 14px;
   font-family: 'Content', 'Noto Sans KR', sans-serif;
   background: white;
   transition: border-color 0.2s;
-  height: 36px;
+  height: 30px;
   box-sizing: border-box;
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #454545;
+  border-color: #a1a1a1;
 }
 
 .searchInput::placeholder {
@@ -35,12 +56,25 @@
 
 .searchIcon {
   position: absolute;
-  right: 12px;
-  top: 50%;
+  right: 10px;
+  top: 55%;
   transform: translateY(-50%);
   pointer-events: none;
 }
 
+.splitTableContainer {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.leftTable,
+.rightTable {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 
 .stockTable {
   width: 100%;
@@ -48,12 +82,17 @@
   overflow-y: auto;
 }
 
+.rightTable {
+  border-left: 2px solid transparent;
+  border-image: linear-gradient(to bottom, #e9e9e9, rgba(233, 233, 233, 0.255)) 1;
+}
+
 .emptyState {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 300px;
+  height: 100%;
   gap: 16px;
 }
 
@@ -75,40 +114,14 @@
   overflow: hidden;
 }
 
-.tableHeader {
-  display: grid;
-  grid-template-columns: 1fr 120px 100px 140px;
-  gap: 20px;
-  padding: 0 40px 10px 40px;
-  align-items: center;
-}
-
-.headerStock,
-.headerPrice,
-.headerChange,
-.headerVolume {
-  font-size: 16px;
-  font-family: 'Content', 'Noto Sans KR', sans-serif;
-  font-weight: bold;
-  color: #afafaf;
-}
-
-.headerVolume {
-  text-align: right;
-  color: #454545;
-}
-
 .stockRow {
-  display: grid;
-  grid-template-columns: 1fr 120px 100px 140px;
-  gap: 20px;
-  padding: 6px 40px;
-  margin-bottom: 2px;
+  display: flex;
+  padding: 0px 20px;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
   align-items: center;
-  min-height: 40px;
+  min-height: 38px;
 }
 
 .stockRow:hover {
@@ -126,12 +139,13 @@
 .stockInfo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  flex: 1;
 }
 
 .favoriteIcon {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -139,41 +153,8 @@
 }
 
 .stockName {
-  font-size: 16px;
+  font-size: 14px;
   font-family: 'Content', 'Noto Sans KR', sans-serif;
-  font-weight: bold;
+  font-weight: 500;
   color: black;
-}
-
-
-.price {
-  font-size: 16px;
-  font-family: 'Consolas', sans-serif;
-  color: black;
-  text-align: left;
-  width: 100%;
-}
-
-.change {
-  font-size: 16px;
-  font-family: 'Consolas', sans-serif;
-  text-align: left;
-  width: 100%;
-  font-weight: bold;
-}
-
-.change.positive {
-  color: #ef1515;
-}
-
-.change.negative {
-  color: #1570ef;
-}
-
-.volume {
-  font-size: 16px;
-  font-family: 'Consolas', 'Noto Sans KR', sans-serif;
-  color: black;
-  text-align: right;
-  width: 100%;
 }
