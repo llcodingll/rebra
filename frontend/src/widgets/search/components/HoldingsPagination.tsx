@@ -79,8 +79,8 @@ export default function HoldingsPagination({ currentPage, totalPages, onPageChan
       }
 
       pages.push(
-        <button 
-          key={`page-last-${totalPages}`} 
+        <button
+          key={`page-last-${totalPages}`}
           className={styles.pageNumber}
           data-pagination-hovered={hoveredPage === totalPages ? '' : undefined}
           onClick={() => handlePageClick(totalPages)}
@@ -93,8 +93,8 @@ export default function HoldingsPagination({ currentPage, totalPages, onPageChan
     } else if (currentPage >= totalPages - 2) {
       // 현재 페이지가 끝부분에 가까움: 1 ... (totalPages-4) (totalPages-3) (totalPages-2) (totalPages-1) totalPages
       pages.push(
-        <button 
-          key={`page-first-1`} 
+        <button
+          key={`page-first-1`}
           className={styles.pageNumber}
           data-pagination-hovered={hoveredPage === 1 ? '' : undefined}
           onClick={() => handlePageClick(1)}
@@ -133,8 +133,8 @@ export default function HoldingsPagination({ currentPage, totalPages, onPageChan
     } else {
       // 중간 부분: 1 ... (currentPage-1) currentPage (currentPage+1) ... totalPages
       pages.push(
-        <button 
-          key={`page-first-1`} 
+        <button
+          key={`page-first-1`}
           className={styles.pageNumber}
           data-pagination-hovered={hoveredPage === 1 ? '' : undefined}
           onClick={() => handlePageClick(1)}
@@ -174,8 +174,8 @@ export default function HoldingsPagination({ currentPage, totalPages, onPageChan
       );
 
       pages.push(
-        <button 
-          key={`page-last-${totalPages}`} 
+        <button
+          key={`page-last-${totalPages}`}
           className={styles.pageNumber}
           data-pagination-hovered={hoveredPage === totalPages ? '' : undefined}
           onClick={() => handlePageClick(totalPages)}

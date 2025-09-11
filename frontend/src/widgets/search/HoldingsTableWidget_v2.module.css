@@ -73,11 +73,11 @@
 .dataRow.hovered,
 .singleDataValue:hover,
 .singleDataValue.hovered {
-  background: #f8f9fa;
+  background: #eaecee;
 }
 
 .evenRow.hovered {
-  background: #f0f0f0;
+  background: #eaecee;
 }
 
 .dataValue {
@@ -109,7 +109,7 @@
 }
 
 .singleDataValue:hover {
-  background: #f8f9fa;
+  background: #eaecee;
 }
 
 .profitValue {
@@ -125,7 +125,7 @@
 }
 
 .evenRow:hover {
-  background: #f0f0f0;
+  background: #eaecee;
 }
 
 @media (max-width: 768px) {

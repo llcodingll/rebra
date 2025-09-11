@@ -491,7 +491,7 @@ export const stockListData: StockListItem[] = [
     availableQuantity: 20,
     fee: 500,
     tax: 600,
-  }
+  },
 ];
 
 // 106개까지 더미 데이터 확장
@@ -500,7 +500,7 @@ for (let i = 23; i <= 106; i++) {
   const changeDirection = Math.random() > 0.5;
   const changeValue = (Math.random() * 10 - 5).toFixed(2);
   const price = Math.floor(Math.random() * 500000) + 10000;
-  
+
   stockListData.push({
     rank: i,
     name: `종목${i}`,
@@ -526,23 +526,23 @@ for (let i = 23; i <= 106; i++) {
 
 export const simpleNewsData: SimpleNewsItem[] = [
   {
-    title: '이곳은 뜨끈한 뉴스가 들어갈 곳 제목이 들어간다. 최대 두 줄...',
+    title: '이곳은 뜨끈한 뉴스가 들어갈 곳 제목이 들어간다. 글자수 최대 몇글자??',
     time: '1분 전',
   },
   {
-    title: '이곳은 뜨끈한 뉴스가 들어갈 곳 제목이 들어간다. 최대 두 줄...',
+    title: '밝음만이 행복에 직접적으로 작용한다.',
     time: '2분 전',
   },
   {
-    title: '이곳은 뜨끈한 뉴스가 들어갈 곳 제목이 들어간다. 최대 두 줄...',
+    title: '삶이 괴로울 땐 일단 쉬어라.',
     time: '2분 전',
   },
   {
-    title: '이곳은 뜨끈한 뉴스가 들어갈 곳 제목이 들어간다. 최대 두 줄...',
+    title: '인간은 인간다워지기 위해 사유해야 한다.',
     time: '2분 전',
   },
   {
-    title: '이곳은 뜨끈한 뉴스가 들어갈 곳 제목이 들어간다. 최대 두 줄...',
+    title: '의지가 없는 배움에는 자아도 없다.',
     time: '2분 전',
   },
 ];

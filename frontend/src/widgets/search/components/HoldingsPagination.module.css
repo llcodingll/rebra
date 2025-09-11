@@ -30,8 +30,8 @@
 }
 
 .pageNumber[data-pagination-selected] {
-  background: #d0d0d0;
-  color: white;
+  background: #e0e0e0;
+  color: #454545;
 }
 
 .ellipsis {
