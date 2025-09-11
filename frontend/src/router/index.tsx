@@ -10,7 +10,6 @@ import BacktestPage from '../pages/backtest/BacktestPage';
 import BacktestCreationPage from '../pages/backtest/BacktestCreationPage';
 import BacktestResultsPage from '../pages/backtest/BacktestResultsPage';
 import StockDetailPage from '../pages/stock-detail/StockDetailPage';
-import ProfitStatusPage from '../pages/dashboard/ProfitStatusPage';
 
 export const router = createBrowserRouter([
   {
@@ -60,10 +59,6 @@ export const router = createBrowserRouter([
           {
             path: 'stocks/:symbol',
             element: <StockDetailPage />,
-          },
-          {
-            path: 'profit-status',
-            element: <ProfitStatusPage />,
           },
         ],
       },

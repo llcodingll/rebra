@@ -1,0 +1,423 @@
+/* 컨테이너 */
+.chartContainer {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.chartCard {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ececf0;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerIcon {
+  width: 24px;
+  height: 24px;
+  color: #f59e0b;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #030213;
+  margin: 0;
+}
+
+.headerBadge {
+  background: #fef3f2;
+  color: #b91c1c;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #fecaca;
+}
+
+/* 메인 컨텐츠 */
+.content {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  grid-template-rows: auto auto;
+  gap: 40px;
+  align-items: start;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 왼쪽 패널 */
+.leftPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* 총 수익률 섹션 */
+.totalValueSection {
+  background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.totalValueHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.totalValueHeader h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #475569;
+  margin: 0;
+}
+
+.returnIcon {
+  padding: 6px;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.iconPositive {
+  width: 16px;
+  height: 16px;
+  color: #10b981;
+}
+
+.iconNegative {
+  width: 16px;
+  height: 16px;
+  color: #ef4444;
+}
+
+.amount {
+  font-size: 32px;
+  font-weight: 700;
+  color: #030213;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.returnInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.returnAmount {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.returnPercent {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.returnInfo.positive {
+  color: #10b981;
+}
+
+.returnInfo.negative {
+  color: #ef4444;
+}
+
+/* 차트 영역 */
+.chartWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  justify-content: stretch; /* 일부 브라우저 한정 */
+  width: 100%;
+}
+
+.chartInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+}
+
+/* 차트 플레이스홀더 */
+.chartPlaceholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  text-align: center;
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+}
+
+.chartPlaceholder h4 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.chartPlaceholder p {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* 히스토리 컨테이너 */
+.historyContainer {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  grid-column: 1 / -1;
+}
+
+.historyHeader h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #030213;
+}
+
+.historyTable {
+  width: 100%;
+}
+
+.historyTableHead {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr 1.2fr 1fr;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 12px;
+}
+
+.historyColumnHeader {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-align: left;
+}
+
+.historyTableBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.historyRow {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr 1.2fr 1fr;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.historyRow:hover {
+  background-color: #f8fafc;
+}
+
+.historyCell {
+  font-size: 13px;
+  color: #030213;
+  display: flex;
+  align-items: center;
+}
+
+.typeBadge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.auto {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.manual {
+  background: #fef3f2;
+  color: #dc2626;
+}
+
+.buyAmount {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.sellAmount {
+  color: #059669;
+  font-weight: 500;
+}
+
+.statusBadge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+/* 거래 내역 스타일 */
+.recentTrades {
+  background: white;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 18px;
+  padding: 24px;
+}
+
+.tradesTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #475569;
+  margin: 0 0 16px 0;
+}
+
+.tradeItem {
+  background: #fafbfc;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.tradeItem:last-child {
+  margin-bottom: 0;
+}
+
+.tradeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.stockName {
+  font-size: 16px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  color: black;
+  font-weight: 500;
+}
+
+.tradeResult {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.profit {
+  font-size: 14px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  color: #155dfc;
+}
+
+.loss {
+  font-size: 14px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  color: #e7000b;
+}
+
+.profitRate {
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  color: #155dfc;
+}
+
+.lossRate {
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  color: #e7000b;
+}
+
+.tradeDetail {
+  font-size: 12px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  color: #4a5565;
+}
+
+.noTrades {
+  padding: 20px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* 공통 스타일 */
+.positive {
+  color: #10b981;
+}
+
+.negative {
+  color: #ef4444;
+}
+
+/* 반응형 */
+@media (max-width: 1200px) {
+  .content {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  
+  .chartWrapper {
+    order: -1;
+  }
+  
+  .leftPanel {
+    order: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .chartContainer {
+    padding: 16px;
+  }
+  
+  .chartCard {
+    padding: 0px;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .chartInner {
+    width: 100%;
+    height: 280px;
+  }
+}
