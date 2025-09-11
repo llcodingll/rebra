@@ -1,10 +1,11 @@
 package com.rebra.repository;
 
 import com.rebra.entity.Stock;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -36,12 +37,12 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     Optional<Stock> findByStockNameAndIsActiveTrue(String stockName);
 
     /**
-     * 종목명에 특정 문자열이 포함된 주식 목록 조회 (활성 상태만)
+     * 종목명에 특정 문자열이 포함된 주식 목록 조회 (활성 상태만, 페이지네이션)
      */
-    List<Stock> findByStockNameContainingIgnoreCaseAndIsActiveTrue(String stockName);
+    Page<Stock> findByStockNameContainingIgnoreCaseAndIsActiveTrue(String stockName, Pageable pageable);
 
     /**
-     * 종목명에 특정 문자열이 포함된 주식 목록 조회 (모든 상태)
+     * 종목명에 특정 문자열이 포함된 주식 목록 조회 (모든 상태, 페이지네이션)
      */
-    List<Stock> findByStockNameContainingIgnoreCase(String stockName);
+    Page<Stock> findByStockNameContainingIgnoreCase(String stockName, Pageable pageable);
 }

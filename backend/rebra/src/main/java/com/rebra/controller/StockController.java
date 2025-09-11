@@ -1,6 +1,7 @@
 package com.rebra.controller;
 
 import com.rebra.common.CommonApiResponse;
+import com.rebra.dto.response.PageResponse;
 import com.rebra.dto.response.StockSearchResponse;
 import com.rebra.service.StockService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,13 +11,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -29,11 +30,12 @@ public class StockController {
 
     @Operation(summary = "종목명으로 주식 검색", description = "종목명에 포함된 문자열로 주식을 검색합니다. (활성 상태인 주식만)")
     @GetMapping("/search")
-    public ResponseEntity<CommonApiResponse<List<StockSearchResponse>>> searchStocks(
+    public ResponseEntity<CommonApiResponse<PageResponse<StockSearchResponse>>> searchStocks(
         @Parameter(description = "검색할 종목명", example = "삼성") 
-        @RequestParam String stockName) {
+        @RequestParam String stockName,
+        @PageableDefault(size = 20, sort = "stockName") Pageable pageable) {
         
-        List<StockSearchResponse> responses = stockService.searchActiveStocksByName(stockName);
+        PageResponse<StockSearchResponse> responses = stockService.searchStocks(stockName, pageable);
         
         return ResponseEntity.ok(CommonApiResponse.success(responses));
     }

@@ -1,8 +1,8 @@
 package com.rebra.service;
 
+import com.rebra.dto.response.PageResponse;
 import com.rebra.dto.response.StockSearchResponse;
-
-import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 public interface StockService {
 
@@ -17,12 +17,7 @@ public interface StockService {
     StockSearchResponse findByStockName(String stockName);
 
     /**
-     * 종목명으로 주식 검색 (부분 일치, 대소문자 무시)
+     * 주식 검색 (종목명 부분 일치, 활성 상태만)
      */
-    List<StockSearchResponse> searchByStockName(String stockName);
-
-    /**
-     * 활성 상태인 주식만 종목명으로 검색 (부분 일치, 대소문자 무시)
-     */
-    List<StockSearchResponse> searchActiveStocksByName(String stockName);
+    PageResponse<StockSearchResponse> searchStocks(String stockName, Pageable pageable);
 }

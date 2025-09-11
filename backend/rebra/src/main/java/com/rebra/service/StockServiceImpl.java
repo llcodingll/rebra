@@ -1,15 +1,16 @@
 package com.rebra.service;
 
+import com.rebra.dto.response.PageResponse;
 import com.rebra.dto.response.StockSearchResponse;
 import com.rebra.entity.Stock;
 import com.rebra.exception.stock.StockException;
 import com.rebra.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Slf4j
 @Service
@@ -34,18 +35,9 @@ public class StockServiceImpl implements StockService {
     }
 
     @Override
-    public List<StockSearchResponse> searchByStockName(String stockName) {
-        return stockRepository.findByStockNameContainingIgnoreCase(stockName)
-            .stream()
-            .map(StockSearchResponse::from)
-            .toList();
-    }
-
-    @Override
-    public List<StockSearchResponse> searchActiveStocksByName(String stockName) {
-        return stockRepository.findByStockNameContainingIgnoreCaseAndIsActiveTrue(stockName)
-            .stream()
-            .map(StockSearchResponse::from)
-            .toList();
+    public PageResponse<StockSearchResponse> searchStocks(String stockName, Pageable pageable) {
+        Page<Stock> stockPage = stockRepository.findByStockNameContainingIgnoreCaseAndIsActiveTrue(stockName, pageable);
+        Page<StockSearchResponse> dtoPage = stockPage.map(StockSearchResponse::from);
+        return PageResponse.from(dtoPage);
     }
 }
