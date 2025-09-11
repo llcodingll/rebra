@@ -1,6 +1,7 @@
 package com.rebra.controller;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -10,9 +11,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import com.rebra.annotation.LoginUser;
 import com.rebra.config.TestSecurityConfig;
+import com.rebra.dto.response.UserProfileResponse;
 import com.rebra.entity.User;
 import com.rebra.jwt.Token;
-import com.rebra.service.KakaoOAuth2ServiceImpl;
+import com.rebra.service.TokenService;
 import com.rebra.service.UserService;
 import com.rebra.exception.GlobalExceptionHandler;
 import jakarta.servlet.http.Cookie;
@@ -46,7 +48,7 @@ class UserControllerTest {
     private UserService userService;
 
     @Mock
-    private KakaoOAuth2ServiceImpl kakaoOAuth2Service;
+    private TokenService tokenService;
 
     @InjectMocks
     private UserController userController;
@@ -58,7 +60,7 @@ class UserControllerTest {
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
-    
+
     private static class TestLoginUserArgumentResolver implements HandlerMethodArgumentResolver {
         @Override
         public boolean supportsParameter(MethodParameter parameter) {
@@ -83,16 +85,16 @@ class UserControllerTest {
         ReflectionTestUtils.setField(user, "id", id);
         return user;
     }
-    
+
 
     @Test
     @DisplayName("내 정보 조회 성공")
     @WithMockUser
     void getUserInfo_Success() throws Exception {
         Long userId = 1L;
-        User user = createTestUser(userId, "sub123", "테스트사용자");
+        UserProfileResponse userProfile = new UserProfileResponse(userId, "테스트사용자");
 
-        given(userService.findById(userId)).willReturn(user);
+        given(userService.findById(userId)).willReturn(userProfile);
 
         mockMvc.perform(get("/api/users/me")
                 .requestAttr("userId", userId))
@@ -110,10 +112,8 @@ class UserControllerTest {
     @WithMockUser
     void logout_Success() throws Exception {
         Long userId = 1L;
-        User user = createTestUser(userId, "sub123", "테스트사용자");
 
-        given(userService.findById(userId)).willReturn(user);
-        doNothing().when(kakaoOAuth2Service).deleteAllRefreshTokensByUser(user);
+        doNothing().when(tokenService).deleteAllUserRefreshTokens(userId);
 
         mockMvc.perform(post("/api/users/logout")
                 .requestAttr("userId", userId))
@@ -121,59 +121,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.status").value(200));
 
-        verify(userService).findById(userId);
-        verify(kakaoOAuth2Service).deleteAllRefreshTokensByUser(user);
-    }
-
-    @Test
-    @DisplayName("토큰 갱신 성공")
-    void refreshAccessToken_Success() throws Exception {
-        String refreshTokenValue = "valid-refresh-token";
-        Token newAccessToken = new Token("new-access-token");
-        Token newRefreshToken = new Token("new-refresh-token");
-        Token[] tokens = {newAccessToken, newRefreshToken};
-
-        given(kakaoOAuth2Service.refreshTokensWithRotation(refreshTokenValue)).willReturn(tokens);
-
-        mockMvc.perform(post("/api/users/token/refresh")
-                .cookie(new Cookie("refreshToken", refreshTokenValue)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data.token").value("new-access-token"))
-                .andExpect(cookie().value("accessToken", "new-access-token"))
-                .andExpect(cookie().value("refreshToken", "new-refresh-token"))
-                .andExpect(cookie().httpOnly("accessToken", true))
-                .andExpect(cookie().secure("accessToken", true))
-                .andExpect(cookie().httpOnly("refreshToken", true))
-                .andExpect(cookie().secure("refreshToken", true))
-                .andExpect(cookie().path("accessToken", "/"))
-                .andExpect(cookie().path("refreshToken", "/"));
-
-        verify(kakaoOAuth2Service).refreshTokensWithRotation(refreshTokenValue);
-    }
-
-    @Test
-    @DisplayName("토큰 갱신 실패 - 리프레시 토큰 없음")
-    void refreshAccessToken_MissingRefreshToken_Fails() throws Exception {
-        given(kakaoOAuth2Service.refreshTokensWithRotation(null))
-                .willThrow(new RuntimeException("Refresh token이 존재하지 않습니다."));
-                
-        mockMvc.perform(post("/api/users/token/refresh"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("토큰 갱신 실패 - 유효하지 않은 토큰")
-    void refreshAccessToken_InvalidToken_Fails() throws Exception {
-        String invalidTokenValue = "invalid-refresh-token";
-
-        given(kakaoOAuth2Service.refreshTokensWithRotation(invalidTokenValue))
-                .willThrow(new RuntimeException("Refresh token이 존재하지 않습니다."));
-
-        mockMvc.perform(post("/api/users/token/refresh")
-                .cookie(new Cookie("refreshToken", invalidTokenValue)))
-                .andExpect(status().isUnauthorized());
+        verify(tokenService).deleteAllUserRefreshTokens(userId);
     }
 
     @Test
@@ -182,12 +130,13 @@ class UserControllerTest {
     void logout_UserNotFound_Fails() throws Exception {
         Long userId = 999L;
 
-        given(userService.findById(userId)).willThrow(new RuntimeException("사용자를 찾을 수 없습니다."));
+        willThrow(new RuntimeException("사용자를 찾을 수 없습니다."))
+                .given(tokenService).deleteAllUserRefreshTokens(userId);
 
         mockMvc.perform(post("/api/users/logout")
                 .requestAttr("userId", userId))
                 .andExpect(status().isInternalServerError());
 
-        verify(userService).findById(userId);
+        verify(tokenService).deleteAllUserRefreshTokens(userId);
     }
 }

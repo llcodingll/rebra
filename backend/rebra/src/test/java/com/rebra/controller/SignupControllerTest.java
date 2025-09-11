@@ -12,12 +12,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rebra.dto.TempToken;
 import com.rebra.dto.request.SignupRequest;
+import com.rebra.dto.response.TokenRefreshResponse;
 import com.rebra.entity.SurveyResult;
 import com.rebra.entity.User;
+import com.rebra.exception.signup.SignupException;
 import com.rebra.jwt.Token;
 import com.rebra.jwt.TokenProvider;
-import com.rebra.service.KakaoOAuth2ServiceImpl;
+import com.rebra.service.KakaoOAuth2Service;
 import com.rebra.service.SignupService;
+import com.rebra.service.TokenService;
+import com.rebra.service.UserService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,7 +52,13 @@ class SignupControllerTest {
     private TokenProvider tokenProvider;
 
     @MockBean
-    private KakaoOAuth2ServiceImpl kakaoOAuth2Service;
+    private KakaoOAuth2Service kakaoOAuth2Service;
+    
+    @MockBean
+    private TokenService tokenService;
+    
+    @MockBean
+    private UserService userService;
 
     private User createTestUser(Long id, String sub, String nickname) {
         SurveyResult surveyResult = SurveyResult.builder()
@@ -109,16 +119,18 @@ class SignupControllerTest {
         SignupRequest request = new SignupRequest(nickname, 30, "급여소득", 25, 26, 25);
         
         TempToken tempTokenData = new TempToken(kakaoSub);
-        User createdUser = createTestUser(1L, kakaoSub, nickname);
+        Long userId = 1L;
         Token refreshToken = new Token("refresh-token");
         Token accessToken = new Token("access-token");
+        TokenRefreshResponse tokens = TokenRefreshResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
 
         given(tokenProvider.getTempTokenData(tempTokenValue)).willReturn(tempTokenData);
-        given(signupService.isNicknameAvailable(nickname)).willReturn(true);
-        given(kakaoOAuth2Service.createUserWithKakaoSub(kakaoSub, request)).willReturn(createdUser);
-        given(tokenProvider.generateRefreshToken(createdUser)).willReturn(refreshToken);
-        given(kakaoOAuth2Service.issueAccessToken("refresh-token")).willReturn(accessToken);
-        // saveRefreshTokenForUser는 void 메서드이므로 아무것도 하지 않음
+        given(userService.createUser(kakaoSub, request)).willReturn(userId);
+        given(tokenService.issueNewTokensForUser(userId)).willReturn(tokens);
+        given(userService.getUserNickname(userId)).willReturn(nickname);
 
         mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -165,13 +177,13 @@ class SignupControllerTest {
         TempToken tempTokenData = new TempToken(kakaoSub);
 
         given(tokenProvider.getTempTokenData(tempTokenValue)).willReturn(tempTokenData);
-        given(signupService.isNicknameAvailable(nickname)).willReturn(false);
+        given(userService.createUser(kakaoSub, request)).willThrow(SignupException.nicknameAlreadyExists());
 
         mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
                 .cookie(new Cookie("tempToken", tempTokenValue)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isConflict());
     }
 
     @Test
