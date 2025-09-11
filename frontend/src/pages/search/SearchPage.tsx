@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import styles from './SearchPage.module.css';
 import HoldingsTableWidget from '../../widgets/search/HoldingsTableWidget';
+import HoldingsTableWidget_v2 from '../../widgets/search/HoldingsTableWidget_v2';
 import RankingTableWidget from '../../widgets/search/RankingTableWidget';
 import SearchTableWidget from '../../widgets/search/SearchTableWidget';
 import NewsWidget from '../../widgets/search/NewsWidget';
 
 export default function SearchPage() {
-  const [activeSubTab, setActiveSubTab] = useState<'ranking' | 'search' | 'holdings'>('ranking');
+  const [activeSubTab, setActiveSubTab] = useState<'ranking' | 'search' | 'holdings' | 'holdings-v2'>('ranking');
 
   const handleStockSelect = (stockCode: string) => {
     // TODO: Navigate to StockDetailPage (separate page)
@@ -17,12 +18,14 @@ export default function SearchPage() {
     switch (activeSubTab) {
       case 'holdings':
         return <HoldingsTableWidget onStockSelect={handleStockSelect} />;
+      case 'holdings-v2':
+        return <HoldingsTableWidget_v2 onStockSelect={handleStockSelect} />;
       case 'ranking':
         return <RankingTableWidget onStockSelect={handleStockSelect} />;
       case 'search':
         return <SearchTableWidget onStockSelect={handleStockSelect} />;
       default:
-        return <HoldingsTableWidget onStockSelect={handleStockSelect} />;
+        return <RankingTableWidget onStockSelect={handleStockSelect} />;
     }
   };
 
@@ -48,6 +51,12 @@ export default function SearchPage() {
             onClick={() => setActiveSubTab('holdings')}
           >
             보유 종목
+          </button>
+          <button
+            className={`${styles.subTab} ${activeSubTab === 'holdings-v2' ? styles.active : ''}`}
+            onClick={() => setActiveSubTab('holdings-v2')}
+          >
+            보유종목v2
           </button>
         </div>
         <div className={styles.timestamp}>
