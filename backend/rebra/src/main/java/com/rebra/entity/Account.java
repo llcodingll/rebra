@@ -33,10 +33,11 @@ public class Account extends BaseEntity {
 
     @Column(name = "broker_name", nullable = false)
     private String brokerName;
-    @Column(name = "account_number", nullable = false, columnDefinition = "TEXT")
+
+    @Column(name = "account_number", nullable = false, columnDefinition = "TEXT", updatable = false)
     private String accountNumber;  // 암호화된 계좌번호
 
-    @Column(name = "account_number_hash", nullable = false, unique = true, length = 64)
+    @Column(name = "account_number_hash", nullable = false, unique = true, length = 64, updatable = false)
     private String accountNumberHash;  // 중복 확인용 해시
 
     @Column(name = "app_key", nullable = false, columnDefinition = "TEXT")
