@@ -3,9 +3,12 @@ package com.rebra.entity;
 import com.rebra.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -22,8 +25,9 @@ public class Account extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(name = "account_number", nullable = false)
     private String accountNumber;
@@ -41,9 +45,9 @@ public class Account extends BaseEntity {
     private Boolean isActive;
 
     @Builder
-    public Account(Long userId, String accountNumber, String brokerName, 
+    public Account(User user, String accountNumber, String brokerName, 
                    String appKey, String appSecret, Boolean isActive) {
-        this.userId = userId;
+        this.user = user;
         this.accountNumber = accountNumber;
         this.brokerName = brokerName;
         this.appKey = appKey;
