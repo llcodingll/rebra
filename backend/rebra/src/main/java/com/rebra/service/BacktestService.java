@@ -4,8 +4,8 @@ import com.rebra.dto.request.BacktestCreateRequest;
 import com.rebra.dto.response.BacktestListResponse;
 import com.rebra.dto.response.BacktestResultResponse;
 import com.rebra.dto.response.BacktestValidationResponse;
+import com.rebra.dto.response.PageResponse;
 import com.rebra.entity.User;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface BacktestService {
@@ -23,7 +23,7 @@ public interface BacktestService {
     /**
      * 사용자의 백테스트 목록 조회
      */
-    Page<BacktestListResponse> getBacktestList(User user, Pageable pageable);
+    PageResponse<BacktestListResponse> getBacktestList(User user, Pageable pageable);
 
     /**
      * 백테스트 상세 결과 조회
