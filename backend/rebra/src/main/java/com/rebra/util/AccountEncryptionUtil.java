@@ -20,12 +20,8 @@ import java.util.Base64;
 @Component
 public class AccountEncryptionUtil {
 
-    private static String hashPepper;
-    
     @Value("${security.encryption.account.hash-pepper}")
-    public void setHashPepper(String hashPepper) {
-        AccountEncryptionUtil.hashPepper = hashPepper;
-    }
+    private static String hashPepper;
 
     private static final String ALGORITHM = "AES";
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";
