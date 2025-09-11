@@ -126,12 +126,12 @@
 }
 
 .deleteButton {
-  background: white;
-  border: 1px solid #ececf0;
-  cursor: pointer;
-  padding: 8px;
+  background: #f8f9fb;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 8px;
-  display: inline-flex;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
@@ -146,16 +146,14 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
 }
 
-.deleteButton img,
-.deleteButton svg {
+.deleteIcon {
   width: 16px;
   height: 16px;
   color: #6b7280;
   transition: color 0.2s ease;
 }
 
-.deleteButton:hover img,
-.deleteButton:hover svg {
+.deleteButton:hover .deleteIcon {
   color: #dc2626;
 }
 
@@ -196,8 +194,7 @@
     height: 32px;
   }
   
-  .deleteButton img,
-  .deleteButton svg {
+  .deleteIcon {
     width: 14px;
     height: 14px;
   }
