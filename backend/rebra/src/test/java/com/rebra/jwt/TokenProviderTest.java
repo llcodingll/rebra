@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.rebra.dto.TempToken;
 import com.rebra.entity.User;
-import com.rebra.exception.auth.AuthException;
+import com.rebra.exception.token.TokenException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
@@ -94,7 +94,7 @@ class TokenProviderTest {
 
         Token token = tokenProvider.generateTempToken(expiredTempToken);
 
-        assertThrows(AuthException.class,
+        assertThrows(TokenException.class,
             () -> tokenProvider.getTempTokenData(token.getToken()));
     }
 
@@ -104,7 +104,7 @@ class TokenProviderTest {
         User user = createUser(1L, SUB, NICKNAME);
         Token accessToken = tokenProvider.generateAccessToken(user);
 
-        assertThrows(AuthException.class,
+        assertThrows(TokenException.class,
             () -> tokenProvider.getTempTokenData(accessToken.getToken()));
     }
 
@@ -246,7 +246,7 @@ class TokenProviderTest {
         TempToken expiredTempToken = new TempToken(SUB, LocalDateTime.now().minusHours(1));
         Token expiredToken = tokenProvider.generateTempToken(expiredTempToken);
         
-        assertThrows(AuthException.class,
+        assertThrows(TokenException.class,
             () -> tokenProvider.getTempTokenData(expiredToken.getToken()));
     }
 

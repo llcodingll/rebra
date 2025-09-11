@@ -1,6 +1,8 @@
 package com.rebra.jwt;
 
-import com.rebra.service.KakaoOAuth2Service;
+import com.rebra.dto.response.TokenRefreshResponse;
+import com.rebra.security.CustomUserDetails;
+import com.rebra.service.TokenService;
 import com.rebra.util.CookieUtil;
 import static com.rebra.util.CookieUtil.*;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -22,7 +24,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenProvider tokenProvider;
-    private final KakaoOAuth2Service kakaoOAuth2Service;
+    private final TokenService tokenService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -66,8 +68,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private void setAuthentication(String token) {
         Long userId = tokenProvider.getUserIdFromToken(token);
+        String username = tokenProvider.getUsernameFromToken(token); // 토큰에서 username 추출
+        
+        CustomUserDetails userDetails = new CustomUserDetails(userId, username, Collections.emptyList());
         UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
@@ -116,21 +121,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             // RTR 적용: 액세스 토큰과 리프레시 토큰 모두 갱신
-            Token[] tokens = kakaoOAuth2Service.refreshTokensWithRotation(refreshToken);
-            if (tokens == null || tokens.length != 2) {
+            TokenRefreshResponse tokenResponse = tokenService.refreshTokensWithRotation(refreshToken);
+            if (tokenResponse == null) {
                 log.debug("RTR 토큰 갱신 실패");
                 return null;
             }
 
-            Token newAccessToken = tokens[0];
-            Token newRefreshToken = tokens[1];
-
             // 새로운 토큰들을 쿠키에 설정
-            CookieUtil.addAccessTokenCookie(response, newAccessToken.getToken());
-            CookieUtil.addRefreshTokenCookie(response, newRefreshToken.getToken());
+            CookieUtil.addAccessTokenCookie(response, tokenResponse.getAccessToken().getToken());
+            CookieUtil.addRefreshTokenCookie(response, tokenResponse.getRefreshToken().getToken());
 
             log.info("RTR 자동 갱신 완료");
-            return newAccessToken.getToken(); // 토큰 문자열만 반환
+            return tokenResponse.getAccessToken().getToken(); // 토큰 문자열만 반환
 
         } catch (Exception e) {
             log.error("토큰 자동 갱신 중 오류: {}", e.getMessage());

@@ -2,7 +2,7 @@ package com.rebra.jwt;
 
 import com.rebra.dto.TempToken;
 import com.rebra.entity.User;
-import com.rebra.exception.auth.AuthException;
+import com.rebra.exception.token.TokenException;
 import static com.rebra.exception.ExceptionCode.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -82,7 +82,17 @@ public class TokenProvider {
             return claims.get("userId", Long.class);
         } catch (Exception e) {
             log.error("JWT에서 userId 추출 실패: {}", e.getMessage(), e);
-            throw AuthException.invalidTempToken();
+            throw TokenException.invalidTempToken();
+        }
+    }
+    
+    public String getUsernameFromToken(String token) {
+        try {
+            Claims claims = Jwts.parser().setSigningKey(jwtSecretKey).parseClaimsJws(token).getBody();
+            return claims.get("nickName", String.class);
+        } catch (Exception e) {
+            log.error("JWT에서 username 추출 실패: {}", e.getMessage(), e);
+            throw TokenException.invalidTempToken();
         }
     }
     
@@ -107,7 +117,7 @@ public class TokenProvider {
             return new Token(token);
         } catch (JsonProcessingException e) {
             log.error("임시 토큰 생성 실패: {}", e.getMessage(), e);
-            throw new RuntimeException("임시 토큰 생성 실패", e);
+            throw TokenException.tokenGenerationFailed();
         }
     }
     
@@ -118,29 +128,29 @@ public class TokenProvider {
             String type = claims.get("type", String.class);
             
             if (!"TEMP".equals(type)) {
-                throw AuthException.invalidTokenType();
+                throw TokenException.invalidTokenType();
             }
             
             String tempTokenJson = claims.get("tempToken", String.class);
             TempToken tempToken = objectMapper.readValue(tempTokenJson, TempToken.class);
             
             if (tempToken.isExpired()) {
-                throw AuthException.expiredTempToken();
+                throw TokenException.expiredTempToken();
             }
             
             return tempToken;
         } catch (JsonProcessingException e) {
             log.error("임시 토큰 파싱 실패: {}", e.getMessage(), e);
-            throw AuthException.tempTokenParsingFailed();
+            throw TokenException.tempTokenParsingFailed();
         } catch (ExpiredJwtException e) {
             log.info("만료된 임시 토큰: {}", e.getMessage());
-            throw AuthException.expiredTempToken();
-        } catch (AuthException e) {
-            // AuthException은 그대로 재전파
+            throw TokenException.expiredTempToken();
+        } catch (TokenException e) {
+            // TokenException은 그대로 재전파
             throw e;
         } catch (Exception e) {
             log.error("임시 토큰 검증 실패: {}", e.getMessage(), e);
-            throw AuthException.invalidTempToken();
+            throw TokenException.invalidTempToken();
         }
     }
 

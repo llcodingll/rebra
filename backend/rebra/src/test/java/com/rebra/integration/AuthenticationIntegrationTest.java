@@ -15,7 +15,7 @@ import com.rebra.entity.User;
 import com.rebra.jwt.Token;
 import com.rebra.jwt.TokenProvider;
 import com.rebra.repository.UserRepository;
-import com.rebra.service.KakaoOAuth2ServiceImpl;
+import com.rebra.service.TokenService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -55,7 +55,7 @@ class AuthenticationIntegrationTest {
     private TokenProvider tokenProvider;
 
     @Autowired
-    private KakaoOAuth2ServiceImpl kakaoOAuth2Service;
+    private TokenService tokenService;
 
     private User testUser;
     private Token accessToken;
@@ -75,7 +75,7 @@ class AuthenticationIntegrationTest {
         refreshToken = tokenProvider.generateRefreshToken(testUser);
         
         // RefreshToken을 실제 DB에 저장
-        kakaoOAuth2Service.saveRefreshTokenForUser(testUser, refreshToken);
+        tokenService.saveRefreshTokenForUser(testUser.getId(), refreshToken);
     }
 
     @Test

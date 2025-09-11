@@ -13,18 +13,17 @@ public class CustomUserDetails implements UserDetails {
 
     private final Long userId;
     private final String username;
-    private final String password;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public CustomUserDetails(Long userId, String username, Collection<? extends GrantedAuthority> authorities) {
         this.userId = userId;
         this.username = username;
-        this.password = "";
         this.authorities = authorities;
     }
 
     public static CustomUserDetails fromEntity(User user) {
 
+        //임시 하드 코딩..
         List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
 
         return new CustomUserDetails(
@@ -41,7 +40,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getPassword() {
-        return password;
+        return null;
     }
 
     @Override
