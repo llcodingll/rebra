@@ -3,11 +3,10 @@ import styles from './SearchPage.module.css';
 import HoldingsTableWidget from '../../widgets/search/HoldingsTableWidget';
 import RankingTableWidget from '../../widgets/search/RankingTableWidget';
 import SearchTableWidget from '../../widgets/search/SearchTableWidget';
-import WatchlistTableWidget from '../../widgets/search/WatchlistTableWidget';
 import NewsWidget from '../../widgets/search/NewsWidget';
 
 export default function SearchPage() {
-  const [activeSubTab, setActiveSubTab] = useState<'ranking' | 'search' | 'watchlist' | 'holdings'>('ranking');
+  const [activeSubTab, setActiveSubTab] = useState<'ranking' | 'search' | 'holdings'>('ranking');
 
   const handleStockSelect = (stockCode: string) => {
     // TODO: Navigate to StockDetailPage (separate page)
@@ -22,8 +21,6 @@ export default function SearchPage() {
         return <RankingTableWidget onStockSelect={handleStockSelect} />;
       case 'search':
         return <SearchTableWidget onStockSelect={handleStockSelect} />;
-      case 'watchlist':
-        return <WatchlistTableWidget onStockSelect={handleStockSelect} />;
       default:
         return <HoldingsTableWidget onStockSelect={handleStockSelect} />;
     }
@@ -45,12 +42,6 @@ export default function SearchPage() {
             onClick={() => setActiveSubTab('search')}
           >
             종목 검색
-          </button>
-          <button
-            className={`${styles.subTab} ${activeSubTab === 'watchlist' ? styles.active : ''}`}
-            onClick={() => setActiveSubTab('watchlist')}
-          >
-            관심 종목
           </button>
           <button
             className={`${styles.subTab} ${activeSubTab === 'holdings' ? styles.active : ''}`}
