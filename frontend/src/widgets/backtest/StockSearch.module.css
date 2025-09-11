@@ -1,4 +1,3 @@
-/* Stock Search Card */
 .stockSearchCard {
   background: white;
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -131,18 +130,6 @@
   font-size: 16px;
 }
 
-.change {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.change.positive {
-  color: #059669;
-}
-
-.change.negative {
-  color: #dc2626;
-}
 
 .stockDetails {
   color: #717182;

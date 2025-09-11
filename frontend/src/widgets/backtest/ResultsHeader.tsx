@@ -33,11 +33,21 @@ export default function ResultsHeader({
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
 
-  const handleSave = () => {
-    if (onTitleChange && editedTitle.trim()) {
-      onTitleChange(editedTitle.trim());
+  const handleEdit = () => {
+    const confirmEdit = window.confirm('제목을 수정하시겠습니까?');
+    if (confirmEdit) {
+      setIsEditing(true);
     }
-    setIsEditing(false);
+  };
+
+  const handleSave = () => {
+    const confirmSave = window.confirm('변경사항을 저장하시겠습니까?');
+    if (confirmSave && onTitleChange && editedTitle.trim()) {
+      onTitleChange(editedTitle.trim());
+      setIsEditing(false);
+    } else if (confirmSave) {
+      setIsEditing(false);
+    }
   };
 
   const handleCancel = () => {
@@ -88,7 +98,7 @@ export default function ResultsHeader({
               <div className={styles.titleWrapper}>
                 <h1 className={styles.title}>{title}</h1>
                 <button 
-                  onClick={() => setIsEditing(true)}
+                  onClick={handleEdit}
                   className={styles.editButton}
                   title="제목 편집"
                 >

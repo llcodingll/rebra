@@ -76,9 +76,6 @@ export default function StockSearch({
               </div>
               <div className={styles.stockPrice}>
                 <span className={styles.price}>{stock.price}</span>
-                <span className={`${styles.change} ${styles[stock.changeType]}`}>
-                  {stock.change}
-                </span>
               </div>
               <div className={styles.stockDetails}>
                 <span>거래량: {stock.volume}</span>
