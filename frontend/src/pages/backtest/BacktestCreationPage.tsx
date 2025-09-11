@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useBlocker } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { TrendingUp } from 'lucide-react';
 import styles from './BacktestCreationPage.module.css';
@@ -148,6 +149,13 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
   const totalValue = portfolioItems.reduce((sum, item) => {
     return sum + calculateValue(item.buyPrice, item.quantity);
   }, 0);
+
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      currentLocation.pathname.includes('/backtest/create') &&
+      currentLocation.pathname !== nextLocation.pathname &&
+      !window.confirm('변경사항이 저장되지 않습니다. 정말로 페이지를 떠나시겠습니까?')
+  );
 
   return (
     <div className={styles.page}>
