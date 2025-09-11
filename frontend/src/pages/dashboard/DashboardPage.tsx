@@ -5,6 +5,8 @@ import AssetPortfolioChart from '../../widgets/dashboard/AssetPortfolioChart';
 import AssetTable from '../../widgets/dashboard/AssetTable';
 import ProfitPortfolioChart from '../../widgets/dashboard/ProfitPortfolioChart';
 import PortfolioSelectionModal from '../../widgets/portfolio/PortfolioSelectionModal';
+import NoPortfolioState from '../../widgets/dashboard/NoPortfolioState';
+import PortfolioCreateModal from '../../widgets/portfolio/PortfolioCreateModal';
 
 interface Portfolio {
   id: string;
@@ -32,10 +34,23 @@ interface Stock {
   type: 'registered' | 'unregistered';
 }
 
+interface PortfolioCreateData {
+  name: string;
+  purpose: string;
+  accountNumber: string;
+}
+
 export default function DashboardPage() {
   const [activeSubTab, setActiveSubTab] = useState<'assets' | 'profit'>('assets');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio>({
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  
+  // 포트폴리오 상태 테스트용 - 아래 두 줄 중 하나만 주석 해제하여 테스트
+  const [hasPortfolio, setHasPortfolio] = useState(false); // 포트폴리오 없음 상태 테스트
+  // const [hasPortfolio, setHasPortfolio] = useState(true); // 포트폴리오 있음 상태 테스트
+  
+  // 기본 포트폴리오 데이터 (hasPortfolio가 true일 때 사용)
+  const defaultPortfolio: Portfolio = {
     id: 'portfolio-1',
     name: '삼성전자 + SK하이닉스 포트폴리오',
     return: '+24.5%',
@@ -43,7 +58,12 @@ export default function DashboardPage() {
     createdDate: '2024-01-15',
     returnPositive: true,
     description: '반도체 대장주 중심'
-  });
+  };
+  
+  // 포트폴리오 있음 상태일 때 기본값 설정
+  const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(
+    hasPortfolio ? defaultPortfolio : null
+  );
 
   const [stockData] = useState<Stock[]>([
     {
@@ -142,6 +162,23 @@ export default function DashboardPage() {
     setIsModalOpen(true);
   };
 
+  const handleCreatePortfolio = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCreateModalClose = () => {
+    setIsCreateModalOpen(false);
+  };
+
+  const handlePortfolioCreate = (portfolioData: PortfolioCreateData) => {
+    console.log('새 포트폴리오 생성:', portfolioData);
+    // 실제 API 호출 및 포트폴리오 생성 로직 구현 예정
+    
+    // 생성 후 상태 업데이트
+    setHasPortfolio(true);
+    // 추후 실제 포트폴리오 데이터로 selectedPortfolio 설정
+  };
+
   const handleModalClose = () => {
     setIsModalOpen(false);
   };
@@ -207,6 +244,7 @@ export default function DashboardPage() {
     const selected = portfolios.find(p => p.id === portfolioId);
     if (selected) {
       setSelectedPortfolio(selected);
+      setHasPortfolio(true);
     }
   };
 
@@ -221,46 +259,65 @@ export default function DashboardPage() {
     }
   };
 
+  // 포트폴리오가 없으면 NoPortfolioState 컴포넌트 렌더링
+  if (!hasPortfolio) {
+    return (
+      <div className={styles.dashboard}>
+        <NoPortfolioState onCreatePortfolio={handleCreatePortfolio} />
+        <PortfolioSelectionModal 
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          onSelect={handlePortfolioSelect}
+          portfolios={portfolios}
+        />
+        <PortfolioCreateModal
+          isOpen={isCreateModalOpen}
+          onClose={handleCreateModalClose}
+          onCreatePortfolio={handlePortfolioCreate}
+        />
+      </div>
+    );
+  }
+
   return (
     <div>
-
-    <div className={styles.dashboard}>
-      <div className={styles.container}>
-        {/* 포트폴리오 선택 섹션 */}
-        <div className={styles.portfolioHeader}>
-          <div className={styles.portfolioTitle}>
-            <h2>{selectedPortfolio.name}</h2>
-            <span className={styles.portfolioDesc}>{selectedPortfolio.description}</span>
+      <div className={styles.dashboard}>
+        <div className={styles.container}>
+          {/* 포트폴리오 선택 섹션 */}
+          <div className={styles.portfolioHeader}>
+            <div className={styles.portfolioTitle}>
+              <h2>{selectedPortfolio?.name}</h2>
+              <span className={styles.portfolioDesc}>{selectedPortfolio?.description}</span>
+            </div>
+            <div className={styles.portfolioInfo}>
+              <button className={styles.portfolioLink} onClick={handlePortfolioLinkClick}>
+                다른 포트폴리오 보기
+              </button>
+            </div>
           </div>
-          <div className={styles.portfolioInfo}>
-            <button className={styles.portfolioLink} onClick={handlePortfolioLinkClick}>
-              다른 포트폴리오 보기
+
+          <DashBoardSettingsTab />
+
+          {/* 탭 헤더 */}
+          <div className={styles.tabHeader}>
+            <button 
+              className={`${styles.tab} ${activeSubTab === 'assets' ? styles.active : ''}`}
+              onClick={() => setActiveSubTab('assets')}
+            >
+              자산 현황
+            </button>
+            <button 
+              className={`${styles.tab} ${activeSubTab === 'profit' ? styles.active : ''}`}
+              onClick={() => setActiveSubTab('profit')}
+            >
+              수익률 현황
             </button>
           </div>
+
+          {renderContent()}
         </div>
 
-        <DashBoardSettingsTab />
-
-        {/* 탭 헤더 */}
-        <div className={styles.tabHeader}>
-          <button 
-            className={`${styles.tab} ${activeSubTab === 'assets' ? styles.active : ''}`}
-            onClick={() => setActiveSubTab('assets')}
-          >
-            자산 현황
-          </button>
-          <button 
-            className={`${styles.tab} ${activeSubTab === 'profit' ? styles.active : ''}`}
-            onClick={() => setActiveSubTab('profit')}
-          >
-            수익률 현황
-          </button>
-        </div>
-
-        {renderContent()}
-      </div>
-
-              {/* 자산 테이블들 */}
+        {/* 자산 테이블들 */}
         <div className={styles.tablesContainer}>
           <AssetTable 
             title="등록 주식" 
@@ -274,13 +331,18 @@ export default function DashboardPage() {
           />
         </div>
 
-      <PortfolioSelectionModal 
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        onSelect={handlePortfolioSelect}
-        portfolios={portfolios}
-      />
-    </div>
+        <PortfolioSelectionModal 
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          onSelect={handlePortfolioSelect}
+          portfolios={portfolios}
+        />
+        <PortfolioCreateModal
+          isOpen={isCreateModalOpen}
+          onClose={handleCreateModalClose}
+          onCreatePortfolio={handlePortfolioCreate}
+        />
+      </div>
     </div>
   );
 }
