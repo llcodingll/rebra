@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import styles from './DashboardPage.module.css';
 import DashBoardSettingsTab from './DashBoardSettingsTab';
-import AssetPortfolioChart from '../../widget/dashboard/AssetPortfolioChart';
-import AssetTable from '../../widget/dashboard/AssetTable';
-import ProfitPortfolioChart from '../../widget/dashboard/ProfitPortfolioChart';
-import PortfolioSelectionModal from '../../widget/portfolio/PortfolioSelectionModal';
+import AssetPortfolioChart from '../../widgets/dashboard/AssetPortfolioChart';
+import AssetTable from '../../widgets/dashboard/AssetTable';
+import ProfitPortfolioChart from '../../widgets/dashboard/ProfitPortfolioChart';
+import PortfolioSelectionModal from '../../widgets/portfolio/PortfolioSelectionModal';
 
 interface Portfolio {
   id: string;

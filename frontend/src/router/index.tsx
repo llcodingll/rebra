@@ -10,8 +10,7 @@ const SearchPage = lazy(() => import('../pages/search/SearchPage'));
 const BacktestPage = lazy(() => import('../pages/backtest/BacktestPage'));
 const BacktestCreationPage = lazy(() => import('../pages/backtest/BacktestCreationPage'));
 const BacktestResultsPage = lazy(() => import('../pages/backtest/BacktestResultsPage'));
-const StockDetailPage = lazy(() => import('../pages/StockDetailPage'));
-const ProfitStatusPage = lazy(() => import('../widget/dashboard/ProfitPortfolioChart'));
+const StockDetailPage = lazy(() => import('../pages/stock-detail/StockDetailPage'));
 
 export const router = createBrowserRouter([
   {
@@ -61,10 +60,6 @@ export const router = createBrowserRouter([
           {
             path: 'stocks/:symbol',
             element: <StockDetailPage />,
-          },
-          {
-            path: 'profit-status',
-            element: <ProfitStatusPage />,
           },
         ],
       },
