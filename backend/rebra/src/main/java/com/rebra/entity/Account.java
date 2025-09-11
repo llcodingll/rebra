@@ -3,6 +3,8 @@ package com.rebra.entity;
 import com.rebra.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -29,29 +31,67 @@ public class Account extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "account_number", nullable = false)
-    private String accountNumber;
-
     @Column(name = "broker_name", nullable = false)
     private String brokerName;
+    @Column(name = "account_number", nullable = false, columnDefinition = "TEXT")
+    private String accountNumber;  // 암호화된 계좌번호
 
-    @Column(name = "app_key", nullable = false)
-    private String appKey;
+    @Column(name = "account_number_hash", nullable = false, unique = true, length = 64)
+    private String accountNumberHash;  // 중복 확인용 해시
 
-    @Column(name = "app_secret", nullable = false)
-    private String appSecret;
+    @Column(name = "app_key", nullable = false, columnDefinition = "TEXT")
+    private String appKey;  // 암호화된 앱키
 
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive;
+    @Column(name = "app_secret", nullable = false, columnDefinition = "TEXT")
+    private String appSecret;  // 암호화된 앱시크릿
+
+    @Column(name = "account_alias")
+    private String accountAlias;  // 계좌 별명
+
+    @Column(name = "account_type")
+    private String accountType;  // 계좌 타입 (모의투자/실계좌)
+
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;  // 사용자가 계좌 삭제했는지 여부
+
+    @Column(name = "connection_status")
+    @Enumerated(EnumType.STRING)
+    private ConnectionStatus connectionStatus = ConnectionStatus.CONNECTED;
 
     @Builder
-    public Account(User user, String accountNumber, String brokerName, 
-                   String appKey, String appSecret, Boolean isActive) {
+    public Account(User user, String accountNumber, String accountNumberHash,
+                   String appKey, String appSecret, String brokerName, String accountAlias, String accountType,
+                   Boolean isDeleted, ConnectionStatus connectionStatus) {
         this.user = user;
         this.accountNumber = accountNumber;
-        this.brokerName = brokerName;
+        this.accountNumberHash = accountNumberHash;
         this.appKey = appKey;
         this.appSecret = appSecret;
-        this.isActive = isActive;
+        this.brokerName = brokerName;
+        this.accountAlias = accountAlias;
+        this.accountType = accountType;
+        this.isDeleted = isDeleted != null ? isDeleted : false;
+        this.connectionStatus = connectionStatus != null ? connectionStatus : ConnectionStatus.CONNECTED;
+    }
+
+    /**
+     * 계좌 삭제 (비활성화)
+     */
+    public void delete() {
+        this.isDeleted = true;
+    }
+
+    /**
+     * 연결 상태 업데이트
+     */
+    public void updateConnectionStatus(ConnectionStatus connectionStatus) {
+        this.connectionStatus = connectionStatus;
+    }
+
+    /**
+     * 계좌 별명 업데이트
+     */
+    public void updateAlias(String newAlias) {
+        this.accountAlias = newAlias;
     }
 }
