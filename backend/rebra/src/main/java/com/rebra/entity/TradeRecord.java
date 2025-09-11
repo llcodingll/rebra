@@ -3,9 +3,12 @@ package com.rebra.entity;
 import com.rebra.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,8 +27,9 @@ public class TradeRecord extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "rebalancing_order_id", nullable = false)
-    private Long rebalancingOrderId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rebalancing_order_id", nullable = false)
+    private RebalancingOrder rebalancingOrder;
 
     @Column(name = "stock_code", nullable = false)
     private String stockCode;
@@ -58,11 +62,11 @@ public class TradeRecord extends BaseEntity {
     private String orderNumber;
 
     @Builder
-    public TradeRecord(Long rebalancingOrderId, String stockCode, String stockName,
+    public TradeRecord(RebalancingOrder rebalancingOrder, String stockCode, String stockName,
                        String tradeType, LocalDateTime tradeDate, Integer executedShares,
                        BigDecimal executedPrice, BigDecimal totalAmount, BigDecimal fee,
                        String status, String orderNumber) {
-        this.rebalancingOrderId = rebalancingOrderId;
+        this.rebalancingOrder = rebalancingOrder;
         this.stockCode = stockCode;
         this.stockName = stockName;
         this.tradeType = tradeType;

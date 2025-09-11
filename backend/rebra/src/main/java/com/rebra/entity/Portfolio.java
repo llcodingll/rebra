@@ -3,9 +3,12 @@ package com.rebra.entity;
 import com.rebra.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,11 +27,13 @@ public class Portfolio extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(name = "account_id", nullable = false)
-    private Long accountId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id", nullable = false)
+    private Account account;
 
     @Column(nullable = false)
     private String name;
@@ -57,13 +62,13 @@ public class Portfolio extends BaseEntity {
     private LocalDate nextRebalanceDate;
 
     @Builder
-    public Portfolio(Long userId, Long accountId, String name, String description,
+    public Portfolio(User user, Account account, String name, String description,
                      BigDecimal safeAssetRatio, BigDecimal riskyAssetRatio,
                      String rebalancingStrategy, String rebalancingPeriod,
                      BigDecimal thresholdPercentage, LocalDate lastRebalanceDate,
                      LocalDate nextRebalanceDate) {
-        this.userId = userId;
-        this.accountId = accountId;
+        this.user = user;
+        this.account = account;
         this.name = name;
         this.description = description;
         this.safeAssetRatio = safeAssetRatio;

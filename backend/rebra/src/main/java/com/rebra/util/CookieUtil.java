@@ -1,5 +1,7 @@
 package com.rebra.util;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import org.springframework.http.ResponseCookie;
@@ -64,5 +66,32 @@ public class CookieUtil {
                 .build();
 
         response.addHeader("Set-Cookie", cookie.toString());
+    }
+
+    // 쿠키 읽기 메서드들
+    public static String getRefreshTokenFromCookie(HttpServletRequest request) {
+        return getCookieValue(request, REFRESH_TOKEN_COOKIE_NAME);
+    }
+
+    public static String getAccessTokenFromCookie(HttpServletRequest request) {
+        return getCookieValue(request, ACCESS_TOKEN_COOKIE_NAME);
+    }
+
+    public static String getTempTokenFromCookie(HttpServletRequest request) {
+        return getCookieValue(request, TEMP_TOKEN_COOKIE_NAME);
+    }
+
+    // 범용 쿠키 값 읽기 메서드
+    public static String getCookieValue(HttpServletRequest request, String cookieName) {
+        if (request.getCookies() == null) {
+            return null;
+        }
+
+        for (Cookie cookie : request.getCookies()) {
+            if (cookieName.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 }

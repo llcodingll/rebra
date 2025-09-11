@@ -3,9 +3,12 @@ package com.rebra.entity;
 import com.rebra.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import lombok.AccessLevel;
@@ -23,11 +26,13 @@ public class PortfolioStock extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "portfolio_id", nullable = false)
-    private Long portfolioId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "portfolio_id", nullable = false)
+    private Portfolio portfolio;
 
-    @Column(name = "stock_id", nullable = false)
-    private Long stockId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stock_id", nullable = false)
+    private Stock stock;
 
     @Column(name = "target_weight", nullable = false)
     private BigDecimal targetWeight;
@@ -45,11 +50,11 @@ public class PortfolioStock extends BaseEntity {
     private String status;
 
     @Builder
-    public PortfolioStock(Long portfolioId, Long stockId, BigDecimal targetWeight,
+    public PortfolioStock(Portfolio portfolio, Stock stock, BigDecimal targetWeight,
                           BigDecimal thresholdPercentage, BigDecimal minWeight,
                           BigDecimal maxWeight, String status) {
-        this.portfolioId = portfolioId;
-        this.stockId = stockId;
+        this.portfolio = portfolio;
+        this.stock = stock;
         this.targetWeight = targetWeight;
         this.thresholdPercentage = thresholdPercentage;
         this.minWeight = minWeight;

@@ -16,6 +16,4 @@ public class SignupServiceImpl implements SignupService {
     public boolean isNicknameAvailable(String nickname) {
         return !userRepository.existsByNickname(nickname);
     }
-
-
 }

@@ -3,9 +3,12 @@ package com.rebra.entity;
 import com.rebra.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,8 +27,9 @@ public class RebalancingOrder extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "portfolio_id", nullable = false)
-    private Long portfolioId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "portfolio_id", nullable = false)
+    private Portfolio portfolio;
 
     @Column(name = "total_buy_amount", nullable = false)
     private BigDecimal totalBuyAmount;
@@ -43,9 +47,9 @@ public class RebalancingOrder extends BaseEntity {
     private String status;
 
     @Builder
-    public RebalancingOrder(Long portfolioId, BigDecimal totalBuyAmount, BigDecimal totalSellAmount,
+    public RebalancingOrder(Portfolio portfolio, BigDecimal totalBuyAmount, BigDecimal totalSellAmount,
                             String executionStatus, LocalDateTime rebalancingDate, String status) {
-        this.portfolioId = portfolioId;
+        this.portfolio = portfolio;
         this.totalBuyAmount = totalBuyAmount;
         this.totalSellAmount = totalSellAmount;
         this.executionStatus = executionStatus;

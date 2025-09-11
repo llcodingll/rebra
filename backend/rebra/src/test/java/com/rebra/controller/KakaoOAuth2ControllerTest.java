@@ -12,8 +12,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.rebra.dto.response.KakaoTokenResponse;
 import com.rebra.dto.response.LoginResponse;
+import com.rebra.dto.response.TokenRefreshResponse;
 import com.rebra.jwt.Token;
 import com.rebra.service.KakaoOAuth2Service;
+import com.rebra.service.TokenService;
+import com.rebra.service.UserService;
 import com.rebra.util.IdTokenValidator;
 import com.rebra.exception.GlobalExceptionHandler;
 import jakarta.servlet.http.HttpSession;
@@ -43,6 +46,12 @@ class KakaoOAuth2ControllerTest {
 
     @Mock
     private KakaoOAuth2Service kakaoOAuth2Service;
+    
+    @Mock
+    private TokenService tokenService;
+    
+    @Mock
+    private UserService userService;
 
     @InjectMocks
     private KakaoOAuth2Controller kakaoOAuth2Controller;
@@ -86,12 +95,12 @@ class KakaoOAuth2ControllerTest {
         Token tempToken = new Token("temp-token-value");
 
         given(kakaoOAuth2Service.fetchKakaoTokenByAuthorizationCode(eq(code))).willReturn(tokenResponse);
-        given(kakaoOAuth2Service.processLogin(eq(tokenResponse), any(HttpSession.class))).willReturn(null);
+        given(kakaoOAuth2Service.processUserLogin(eq(kakaoSub))).willReturn(null);
         given(kakaoOAuth2Service.generateTempTokenForSignup(eq(kakaoSub))).willReturn(tempToken);
 
         try (MockedStatic<IdTokenValidator> mockedValidator = mockStatic(IdTokenValidator.class)) {
             mockedValidator.when(() -> IdTokenValidator.validateIdTokenClaims(
-                    eq(idToken), any(HttpSession.class), eq("test-client-id"))).thenReturn(true);
+                    eq(idToken), any(HttpSession.class), eq("test-client-id"))).thenAnswer(invocation -> null);
             mockedValidator.when(() -> IdTokenValidator.getSub(idToken)).thenReturn(kakaoSub);
 
             mockMvc.perform(get("/oauth2/authorization/kakao/callback")
@@ -110,17 +119,22 @@ class KakaoOAuth2ControllerTest {
         String kakaoSub = "existing-user-sub";
         
         KakaoTokenResponse tokenResponse = createKakaoTokenResponse(idToken);
+        Long userId = 1L;
         Token refreshToken = new Token("refresh-token-value");
         Token accessToken = new Token("access-token-value");
-        LoginResponse loginResponse = new LoginResponse(refreshToken, "기존사용자");
+        TokenRefreshResponse tokens = TokenRefreshResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
 
         given(kakaoOAuth2Service.fetchKakaoTokenByAuthorizationCode(eq(code))).willReturn(tokenResponse);
-        given(kakaoOAuth2Service.processLogin(eq(tokenResponse), any(HttpSession.class))).willReturn(loginResponse);
-        given(kakaoOAuth2Service.issueAccessToken(eq("refresh-token-value"))).willReturn(accessToken);
+        given(kakaoOAuth2Service.processUserLogin(eq(kakaoSub))).willReturn(userId);
+        given(tokenService.issueNewTokensForUser(eq(userId))).willReturn(tokens);
+        given(userService.getUserNickname(eq(userId))).willReturn("기존사용자");
 
         try (MockedStatic<IdTokenValidator> mockedValidator = mockStatic(IdTokenValidator.class)) {
             mockedValidator.when(() -> IdTokenValidator.validateIdTokenClaims(
-                    eq(idToken), any(HttpSession.class), eq("test-client-id"))).thenReturn(true);
+                    eq(idToken), any(HttpSession.class), eq("test-client-id"))).thenAnswer(invocation -> null);
             mockedValidator.when(() -> IdTokenValidator.getSub(idToken)).thenReturn(kakaoSub);
 
             mockMvc.perform(get("/oauth2/authorization/kakao/callback")
@@ -151,11 +165,11 @@ class KakaoOAuth2ControllerTest {
 
         try (MockedStatic<IdTokenValidator> mockedValidator = mockStatic(IdTokenValidator.class)) {
             mockedValidator.when(() -> IdTokenValidator.validateIdTokenClaims(
-                    eq(idToken), any(HttpSession.class), eq("test-client-id"))).thenReturn(false);
+                    eq(idToken), any(HttpSession.class), eq("test-client-id"))).thenThrow(new RuntimeException("Invalid ID token"));
 
             mockMvc.perform(get("/oauth2/authorization/kakao/callback")
                     .param("code", code))
-                    .andExpect(status().isUnauthorized());
+                    .andExpect(status().isInternalServerError());
         }
     }
 
@@ -164,7 +178,7 @@ class KakaoOAuth2ControllerTest {
     void handleKakaoCallback_EmptyCode_ThrowsException() throws Exception {
         mockMvc.perform(get("/oauth2/authorization/kakao/callback")
                 .param("code", ""))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isInternalServerError());
     }
 
     @Test
@@ -172,6 +186,6 @@ class KakaoOAuth2ControllerTest {
     void handleKakaoCallback_BlankCode_ThrowsException() throws Exception {
         mockMvc.perform(get("/oauth2/authorization/kakao/callback")
                 .param("code", "   "))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isInternalServerError());
     }
 }

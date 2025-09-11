@@ -2,7 +2,7 @@ package com.rebra.config;
 
 import com.rebra.jwt.JwtAuthenticationFilter;
 import com.rebra.jwt.TokenProvider;
-import com.rebra.service.KakaoOAuth2Service;
+import com.rebra.service.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -23,7 +23,7 @@ public class TestSecurityConfig {
     @Primary
     public SecurityFilterChain testFilterChain(HttpSecurity http, 
                                                @Autowired(required = false) TokenProvider tokenProvider,
-                                               @Autowired(required = false) KakaoOAuth2Service kakaoOAuth2Service) throws Exception {
+                                               @Autowired(required = false) TokenService tokenService) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
@@ -31,9 +31,9 @@ public class TestSecurityConfig {
                         .anyRequest().authenticated()
                 );
 
-        // TokenProvider와 KakaoOAuth2Service가 있을 때만 JWT 필터 추가
-        if (tokenProvider != null && kakaoOAuth2Service != null) {
-            http.addFilterBefore(new JwtAuthenticationFilter(tokenProvider, kakaoOAuth2Service),
+        // TokenProvider와 TokenService가 있을 때만 JWT 필터 추가
+        if (tokenProvider != null && tokenService != null) {
+            http.addFilterBefore(new JwtAuthenticationFilter(tokenProvider, tokenService),
                     UsernamePasswordAuthenticationFilter.class);
         }
 

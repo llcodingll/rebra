@@ -3,9 +3,12 @@ package com.rebra.entity;
 import com.rebra.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -22,18 +25,20 @@ public class Watchlist extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(name = "stock_id", nullable = false)
-    private Long stockId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stock_id", nullable = false)
+    private Stock stock;
 
     private String memo;
 
     @Builder
-    public Watchlist(Long userId, Long stockId, String memo) {
-        this.userId = userId;
-        this.stockId = stockId;
+    public Watchlist(User user, Stock stock, String memo) {
+        this.user = user;
+        this.stock = stock;
         this.memo = memo;
     }
 }
