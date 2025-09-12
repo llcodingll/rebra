@@ -38,20 +38,20 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
   useEffect(() => {
     const moveUnderline = () => {
       if (!buttonsContainerRef.current || !underlineRef.current) return;
-      
+
       const activeButton = buttonsContainerRef.current.querySelector(`.${styles.active}`) as HTMLElement;
       if (!activeButton) return;
-      
+
       const containerRect = buttonsContainerRef.current.getBoundingClientRect();
       const buttonRect = activeButton.getBoundingClientRect();
-      
+
       const left = buttonRect.left - containerRect.left;
       const width = buttonRect.width;
-      
+
       underlineRef.current.style.transform = `translateX(${left}px)`;
       underlineRef.current.style.width = `${width}px`;
     };
-    
+
     moveUnderline();
   }, [sortType]);
 
