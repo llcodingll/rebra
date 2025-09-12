@@ -34,6 +34,7 @@ public class Account extends BaseEntity {
     @Column(name = "broker_name", nullable = false)
     private String brokerName;
 
+
     @Column(name = "account_number", nullable = false, columnDefinition = "TEXT", updatable = false)
     private String accountNumber;  // 암호화된 계좌번호
 
@@ -46,11 +47,9 @@ public class Account extends BaseEntity {
     @Column(name = "app_secret", nullable = false, columnDefinition = "TEXT")
     private String appSecret;  // 암호화된 앱시크릿
 
-    @Column(name = "account_alias")
-    private String accountAlias;  // 계좌 별명
-
     @Column(name = "account_type")
-    private String accountType;  // 계좌 타입 (모의투자/실계좌)
+    @Enumerated(EnumType.STRING)
+    private AccountType accountType;
 
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;  // 사용자가 계좌 삭제했는지 여부
@@ -61,7 +60,7 @@ public class Account extends BaseEntity {
 
     @Builder
     public Account(User user, String accountNumber, String accountNumberHash,
-                   String appKey, String appSecret, String brokerName, String accountAlias, String accountType,
+                   String appKey, String appSecret, String brokerName, AccountType accountType,
                    Boolean isDeleted, ConnectionStatus connectionStatus) {
         this.user = user;
         this.accountNumber = accountNumber;
@@ -69,7 +68,6 @@ public class Account extends BaseEntity {
         this.appKey = appKey;
         this.appSecret = appSecret;
         this.brokerName = brokerName;
-        this.accountAlias = accountAlias;
         this.accountType = accountType;
         this.isDeleted = isDeleted != null ? isDeleted : false;
         this.connectionStatus = connectionStatus != null ? connectionStatus : ConnectionStatus.CONNECTED;
@@ -82,6 +80,10 @@ public class Account extends BaseEntity {
         this.isDeleted = true;
     }
 
+    public void create() {
+        this.isDeleted = false;
+    }
+
     /**
      * 연결 상태 업데이트
      */
@@ -89,10 +91,4 @@ public class Account extends BaseEntity {
         this.connectionStatus = connectionStatus;
     }
 
-    /**
-     * 계좌 별명 업데이트
-     */
-    public void updateAlias(String newAlias) {
-        this.accountAlias = newAlias;
-    }
 }
