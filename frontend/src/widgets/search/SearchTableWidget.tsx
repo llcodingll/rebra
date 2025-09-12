@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import styles from './SearchTableWidget.module.css';
 import { stockListData } from './stockListData';
 import TableLayoutContainer from './components/TableLayoutContainer';
