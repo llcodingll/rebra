@@ -28,6 +28,42 @@ interface ProfitPortfolioChartProps {
 export default function ProfitPortfolioChart({ data }: ProfitPortfolioChartProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
+  // 등록된 주식이 없는 경우 빈 상태 표시
+  if (data.length === 0) {
+    return (
+      <div className={styles.chartContainer}>
+        <motion.div 
+          initial={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className={styles.chartCard}
+        >
+          <div className={styles.header}>
+            <div className={styles.headerLeft}>
+              <DollarSign className={styles.headerIcon} />
+              <h2 className={styles.title}>수익률 분석</h2>
+            </div>
+          </div>
+          
+          <div className={styles.emptyState}>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className={styles.emptyStateContent}
+            >
+              <TrendingUp className={styles.emptyStateIcon} />
+              <h3 className={styles.emptyStateTitle}>포트폴리오에 주식을 등록해보세요!</h3>
+              <p className={styles.emptyStateDescription}>
+                주식을 등록하면 수익률과 리밸런싱 분석을 확인할 수 있습니다.
+              </p>
+            </motion.div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   // 총 평가액 계산
   const totalValue = data.reduce((sum, stock) => {
     const value = parseInt(stock.value.replace(/[^0-9]/g, ''));

@@ -8,6 +8,7 @@ interface PortfolioSelectionModalProps {
   onClose: () => void;
   onSelect: (portfolioId: string) => void;
   portfolios: Portfolio[];
+  onCreatePortfolio?: () => void;
 }
 
 interface Portfolio {
@@ -20,7 +21,7 @@ interface Portfolio {
   description?: string;
 }
 
-export default function PortfolioSelectionModal({ isOpen, onClose, onSelect, portfolios }: PortfolioSelectionModalProps) {
+export default function PortfolioSelectionModal({ isOpen, onClose, onSelect, portfolios, onCreatePortfolio }: PortfolioSelectionModalProps) {
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(null);
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -156,21 +157,36 @@ export default function PortfolioSelectionModal({ isOpen, onClose, onSelect, por
 
             {/* Footer */}
             <div className={styles.footer}>
-              <button 
-                className={styles.cancelButton}
-                onClick={onClose}
-              >
-                취소
-              </button>
-              <button 
-                className={`${styles.selectButton} ${
-                  !selectedPortfolioId ? styles.disabled : ''
-                }`}
-                onClick={handleSelectComplete}
-                disabled={!selectedPortfolioId}
-              >
-                선택 완료
-              </button>
+              <div className={styles.footerLeft}>
+                {onCreatePortfolio && (
+                  <button 
+                    className={styles.createButton}
+                    onClick={() => {
+                      onCreatePortfolio();
+                      onClose();
+                    }}
+                  >
+                    + 포트폴리오 추가하기
+                  </button>
+                )}
+              </div>
+              <div className={styles.footerRight}>
+                <button 
+                  className={styles.cancelButton}
+                  onClick={onClose}
+                >
+                  취소
+                </button>
+                <button 
+                  className={`${styles.selectButton} ${
+                    !selectedPortfolioId ? styles.disabled : ''
+                  }`}
+                  onClick={handleSelectComplete}
+                  disabled={!selectedPortfolioId}
+                >
+                  선택 완료
+                </button>
+              </div>
             </div>
           </motion.div>
         </motion.div>
