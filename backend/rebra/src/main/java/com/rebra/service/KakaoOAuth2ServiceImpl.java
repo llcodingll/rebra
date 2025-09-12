@@ -29,7 +29,6 @@ public class KakaoOAuth2ServiceImpl implements KakaoOAuth2Service {
     private static final String KAKAO_AUTHORIZE_BASE_URL = "https://kauth.kakao.com/oauth/authorize";
     private static final String RESPONSE_TYPE_CODE = "code";
     private static final String QUERY_PARAM_GRANT_TYPE = "authorization_code";
-    private static final String ERROR_TOKEN_ISSUE_FAIL = "카카오 토큰 발급 실패";
 
     @Value("${kakao.client-id}")
     private String clientId;
