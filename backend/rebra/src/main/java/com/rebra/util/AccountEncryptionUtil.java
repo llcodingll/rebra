@@ -1,5 +1,8 @@
 package com.rebra.util;
 
+import com.rebra.dto.DecryptedAccountCredentials;
+import com.rebra.entity.Account;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -21,7 +24,14 @@ import java.util.Base64;
 public class AccountEncryptionUtil {
 
     @Value("${security.encryption.account.hash-pepper}")
+    private String hashPepperValue;
+    
     private static String hashPepper;
+
+    @PostConstruct
+    public void init() {
+        hashPepper = hashPepperValue;
+    }
 
     private static final String ALGORITHM = "AES";
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";
@@ -236,4 +246,25 @@ public class AccountEncryptionUtil {
     public static String maskAppSecret(String appSecret) {
         return "****";
     }
+
+    /**
+     * 계좌 정보 복호화 (Account 엔티티 기반)
+     */
+    public static DecryptedAccountCredentials decryptAccountCredentials(Account account, Long userId) {
+        try {
+            String decryptedAccountNumber = decryptAccountNumber(account.getAccountNumber(), userId);
+            String decryptedAppKey = decryptAppKey(account.getAppKey(), userId);
+            String decryptedAppSecret = decryptAppSecret(account.getAppSecret(), userId);
+
+            return new DecryptedAccountCredentials(
+                decryptedAccountNumber,
+                decryptedAppKey,
+                decryptedAppSecret
+            );
+        } catch (Exception e) {
+            log.error("계좌 인증 정보 복호화 실패 - 사용자ID: {}, 계좌ID: {}", userId, account.getId(), e);
+            throw new RuntimeException("계좌 인증 정보 복호화 실패", e);
+        }
+    }
+
 }
