@@ -22,6 +22,15 @@ interface AccountRegisterData {
   secretKey: string;
 }
 
+interface Account {
+  accountId: number;
+  accountNumber: string;
+  accountType: 'REAL' | 'MOCK';
+  brokerName: string;
+  connectionStatus: 'CONNECTED' | 'DISCONNECTED';
+  registeredAt: string;
+}
+
 export default function PortfolioCreateModal({ 
   isOpen, 
   onClose, 
@@ -31,6 +40,43 @@ export default function PortfolioCreateModal({
   const [portfolioPurpose, setPortfolioPurpose] = useState('');
   const [selectedAccount, setSelectedAccount] = useState('');
   const [isAccountRegisterModalOpen, setIsAccountRegisterModalOpen] = useState(false);
+  const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
+  
+  // 목데이터 - 실제로는 API에서 받아올 데이터
+  const mockAccounts: Account[] = [
+    {
+      accountId: 1,
+      accountNumber: "1234-56-7890**",
+      accountType: "REAL",
+      brokerName: "한국투자증권",
+      connectionStatus: "CONNECTED",
+      registeredAt: "2024-08-15T10:30:00Z"
+    },
+    {
+      accountId: 2,
+      accountNumber: "9876-54-3210**",
+      accountType: "MOCK",
+      brokerName: "한국투자증권",
+      connectionStatus: "CONNECTED",
+      registeredAt: "2024-08-20T14:15:00Z"
+    },
+    {
+      accountId: 3,
+      accountNumber: "5555-11-2233**",
+      accountType: "REAL",
+      brokerName: "키움증권",
+      connectionStatus: "CONNECTED",
+      registeredAt: "2024-07-10T09:00:00Z"
+    },
+    {
+      accountId: 4,
+      accountNumber: "7777-88-9999**",
+      accountType: "MOCK",
+      brokerName: "미래에셋증권",
+      connectionStatus: "DISCONNECTED",
+      registeredAt: "2024-06-25T16:45:00Z"
+    }
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,8 +100,12 @@ export default function PortfolioCreateModal({
   };
 
   const handleAccountSelect = () => {
-    console.log('계좌 선택 모달 열기');
-    // 추후 계좌 선택 모달 연결
+    setIsAccountDropdownOpen(!isAccountDropdownOpen);
+  };
+
+  const handleAccountChoice = (account: Account) => {
+    setSelectedAccount(account.accountNumber);
+    setIsAccountDropdownOpen(false);
   };
 
   const handleNewAccountRegister = () => {
@@ -169,6 +219,37 @@ export default function PortfolioCreateModal({
                     계좌 선택하기
                     <ChevronDown className={styles.chevronIcon} />
                   </button>
+                  
+                  {/* 계좌 드롭다운 */}
+                  {isAccountDropdownOpen && (
+                    <div className={styles.accountDropdown}>
+                      {mockAccounts.filter(account => account.connectionStatus === 'CONNECTED').map((account) => (
+                        <button
+                          key={account.accountId}
+                          type="button"
+                          onClick={() => handleAccountChoice(account)}
+                          className={styles.accountItem}
+                        >
+                          <div className={styles.accountItemLeft}>
+                            <CreditCard className={styles.accountItemIcon} />
+                            <div className={styles.accountItemInfo}>
+                              <span className={styles.accountItemNumber}>{account.accountNumber}</span>
+                              <span className={styles.accountItemBroker}>{account.brokerName}</span>
+                            </div>
+                          </div>
+                          <span className={`${styles.accountItemType} ${account.accountType === 'REAL' ? styles.real : styles.mock}`}>
+                            {account.accountType === 'REAL' ? '실제' : '모의'}
+                          </span>
+                        </button>
+                      ))}
+                      
+                      {mockAccounts.filter(account => account.connectionStatus === 'CONNECTED').length === 0 && (
+                        <div className={styles.noAccounts}>
+                          연결된 계좌가 없습니다
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

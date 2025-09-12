@@ -235,11 +235,39 @@
   border-top: 1px solid rgba(0, 0, 0, 0.1);
   background: rgba(236, 236, 240, 0.3);
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footerLeft {
+  display: flex;
+}
+
+.footerRight {
+  display: flex;
   gap: 12px;
-  justify-content: flex-end;
 }
 
 /* Buttons */
+.createButton {
+  background: #f0f9ff;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #2563eb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1.5;
+}
+
+.createButton:hover {
+  background: #dbeafe;
+  border-color: #1d4ed8;
+  color: #1d4ed8;
+}
+
 .cancelButton {
   background: white;
   border: 1px solid rgba(0, 0, 0, 0.1);

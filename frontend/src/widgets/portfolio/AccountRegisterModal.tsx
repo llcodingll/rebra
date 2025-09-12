@@ -25,6 +25,7 @@ export default function AccountRegisterModal({
   const [secretKey, setSecretKey] = useState('');
   const [showAppKey, setShowAppKey] = useState(false);
   const [showSecretKey, setShowSecretKey] = useState(false);
+  const [accountType, setAccountType] = useState<'real' | 'mock'>('real');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +116,29 @@ export default function AccountRegisterModal({
             </div>
           </div>
 
+          {/* 계좌 타입 선택 */}
+          <div className={styles.formGroup}>
+            <label className={styles.label}>
+              계좌 타입 <span className={styles.required}>*</span>
+            </label>
+            <div className={styles.accountTypeContainer}>
+              <button
+                type="button"
+                onClick={() => setAccountType('real')}
+                className={`${styles.accountTypeButton} ${accountType === 'real' ? styles.active : ''}`}
+              >
+                실제 계좌
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccountType('mock')}
+                className={`${styles.accountTypeButton} ${accountType === 'mock' ? styles.active : ''}`}
+              >
+                모의 계좌
+              </button>
+            </div>
+          </div>
+
           {/* 계좌번호 */}
           <div className={styles.formGroup}>
             <label className={styles.label}>
@@ -124,12 +148,12 @@ export default function AccountRegisterModal({
               type="text"
               value={accountNumber}
               onChange={handleAccountNumberChange}
-              placeholder="123-456789-01"
+              placeholder={accountType === 'real' ? "123-456789-01" : "50123456-01"}
               className={styles.input}
               maxLength={13}
             />
             <div className={styles.inputHelper}>
-              하이픈(-)을 포함하여 입력해주세요
+              {accountType === 'real' ? '하이픈(-)을 포함하여 입력해주세요' : '모의투자 계좌번호를 입력해주세요'}
             </div>
           </div>
 

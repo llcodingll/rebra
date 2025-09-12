@@ -1,4 +1,4 @@
-import styles from './DashboardPage.module.css';
+import styles from './DashBoardSettingsTab.module.css';
 
 export default function DashBoardSettingsTab() {
     return (

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './DashboardPage.module.css';
-import DashBoardSettingsTab from './DashBoardSettingsTab';
+import DashBoardSettingsTab from '../../widgets/dashboard/DashBoardSettingsTab';
 import AssetPortfolioChart from '../../widgets/dashboard/AssetPortfolioChart';
 import AssetTable from '../../widgets/dashboard/AssetTable';
 import ProfitPortfolioChart from '../../widgets/dashboard/ProfitPortfolioChart';
@@ -41,29 +42,88 @@ interface PortfolioCreateData {
 }
 
 export default function DashboardPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeSubTab, setActiveSubTab] = useState<'assets' | 'profit'>('assets');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
+  const isCreateModalOpen = location.pathname === '/dashboard/create-portfolio';
+  
+  const portfolios: Portfolio[] = [
+    {
+      id: 'portfolio-1',
+      name: '삼성전자 + SK하이닉스 포트폴리오',
+      return: '+24.5%',
+      stockCount: 3,
+      createdDate: '2024-01-15',
+      returnPositive: true,
+      description: '반도체 대장주 중심'
+    },
+    {
+      id: 'portfolio-2',
+      name: '배당 중심 포트폴리오',
+      return: '+18.2%',
+      stockCount: 5,
+      createdDate: '2024-02-10',
+      returnPositive: true,
+      description: '안정적인 배당 수익'
+    },
+    {
+      id: 'portfolio-3',
+      name: '성장주 포트폴리오',
+      return: '+32.8%',
+      stockCount: 8,
+      createdDate: '2024-03-05',
+      returnPositive: true,
+      description: '고성장 기업 투자'
+    },
+    {
+      id: 'portfolio-4',
+      name: '안전자산 포트폴리오',
+      return: '+12.1%',
+      stockCount: 4,
+      createdDate: '2024-01-20',
+      returnPositive: true,
+      description: '리스크 최소화'
+    },
+    {
+      id: 'portfolio-5',
+      name: '테크주 포트폴리오',
+      return: '+28.9%',
+      stockCount: 6,
+      createdDate: '2024-02-28',
+      returnPositive: true,
+      description: '기술 혁신 기업'
+    },
+    {
+      id: 'portfolio-6',
+      name: '글로벌 포트폴리오',
+      return: '-5.2%',
+      stockCount: 12,
+      createdDate: '2024-03-15',
+      returnPositive: false,
+      description: '해외 주식 분산투자'
+    }
+  ];
+
   // 포트폴리오 상태 테스트용 - 아래 두 줄 중 하나만 주석 해제하여 테스트
-  const [hasPortfolio, setHasPortfolio] = useState(false); // 포트폴리오 없음 상태 테스트
+  const [hasPortfolio, setHasPortfolio] = useState(true); // 포트폴리오 없음 상태 테스트
   // const [hasPortfolio, setHasPortfolio] = useState(true); // 포트폴리오 있음 상태 테스트
   
-  // 기본 포트폴리오 데이터 (hasPortfolio가 true일 때 사용)
-  const defaultPortfolio: Portfolio = {
-    id: 'portfolio-1',
-    name: '삼성전자 + SK하이닉스 포트폴리오',
-    return: '+24.5%',
-    stockCount: 3,
-    createdDate: '2024-01-15',
-    returnPositive: true,
-    description: '반도체 대장주 중심'
-  };
-  
-  // 포트폴리오 있음 상태일 때 기본값 설정
+  // 포트폴리오 있음 상태일 때 기본값 설정 (portfolios 배열의 첫 번째 항목)
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(
-    hasPortfolio ? defaultPortfolio : null
+    portfolios[0]
   );
+  
+  // 개발용 포트폴리오 상태 토글 함수
+  const togglePortfolioState = () => {
+    setHasPortfolio(prev => !prev);
+    if (!hasPortfolio) {
+      setSelectedPortfolio(portfolios[0]);
+    } else {
+      setSelectedPortfolio(null);
+    }
+  };
 
   const [stockData] = useState<Stock[]>([
     {
@@ -163,11 +223,11 @@ export default function DashboardPage() {
   };
 
   const handleCreatePortfolio = () => {
-    setIsCreateModalOpen(true);
+    navigate('/dashboard/create-portfolio');
   };
 
   const handleCreateModalClose = () => {
-    setIsCreateModalOpen(false);
+    navigate('/dashboard');
   };
 
   const handlePortfolioCreate = (portfolioData: PortfolioCreateData) => {
@@ -177,68 +237,14 @@ export default function DashboardPage() {
     // 생성 후 상태 업데이트
     setHasPortfolio(true);
     // 추후 실제 포트폴리오 데이터로 selectedPortfolio 설정
+    
+    // 모달 닫기
+    navigate('/dashboard');
   };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
   };
-
-  const portfolios: Portfolio[] = [
-    {
-      id: 'portfolio-1',
-      name: '삼성전자 + SK하이닉스 포트폴리오',
-      return: '+24.5%',
-      stockCount: 3,
-      createdDate: '2024-01-15',
-      returnPositive: true,
-      description: '반도체 대장주 중심'
-    },
-    {
-      id: 'portfolio-2',
-      name: '배당 중심 포트폴리오',
-      return: '+18.2%',
-      stockCount: 5,
-      createdDate: '2024-02-10',
-      returnPositive: true,
-      description: '안정적인 배당 수익'
-    },
-    {
-      id: 'portfolio-3',
-      name: '성장주 포트폴리오',
-      return: '+32.8%',
-      stockCount: 8,
-      createdDate: '2024-03-05',
-      returnPositive: true,
-      description: '고성장 기업 투자'
-    },
-    {
-      id: 'portfolio-4',
-      name: '안전자산 포트폴리오',
-      return: '+12.1%',
-      stockCount: 4,
-      createdDate: '2024-01-20',
-      returnPositive: true,
-      description: '리스크 최소화'
-    },
-    {
-      id: 'portfolio-5',
-      name: '테크주 포트폴리오',
-      return: '+28.9%',
-      stockCount: 6,
-      createdDate: '2024-02-28',
-      returnPositive: true,
-      description: '기술 혁신 기업'
-    },
-    {
-      id: 'portfolio-6',
-      name: '글로벌 포트폴리오',
-      return: '-5.2%',
-      stockCount: 12,
-      createdDate: '2024-03-15',
-      returnPositive: false,
-      description: '해외 주식 분산투자'
-    }
-  ];
 
   const handlePortfolioSelect = (portfolioId: string) => {
     const selected = portfolios.find(p => p.id === portfolioId);
@@ -248,12 +254,18 @@ export default function DashboardPage() {
     }
   };
 
+  // 등록된 주식 데이터 메모이제이션
+  const registeredStocks = useMemo(() => 
+    stockData.filter(stock => stock.type === 'registered'), 
+    [stockData]
+  );
+
   const renderContent = () => {
     switch (activeSubTab) {
       case 'assets':
-        return <AssetPortfolioChart data={stockData.filter(stock => stock.type === 'registered')} />;
+        return <AssetPortfolioChart data={registeredStocks} />;
       case 'profit':
-        return <ProfitPortfolioChart data={stockData.filter(stock => stock.type === 'registered')} />;
+        return <ProfitPortfolioChart data={registeredStocks} />;
       default:
         return null;
     }
@@ -263,12 +275,33 @@ export default function DashboardPage() {
   if (!hasPortfolio) {
     return (
       <div className={styles.dashboard}>
+        {/* 개발용 토글 버튼 */}
+        <button 
+          onClick={togglePortfolioState}
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            zIndex: 9999,
+            padding: '4px 8px',
+            fontSize: '10px',
+            backgroundColor: '#2563eb',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          {hasPortfolio ? '포트폴리오 있음' : '포트폴리오 없음'}
+        </button>
+        
         <NoPortfolioState onCreatePortfolio={handleCreatePortfolio} />
         <PortfolioSelectionModal 
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onSelect={handlePortfolioSelect}
           portfolios={portfolios}
+          onCreatePortfolio={handleCreatePortfolio}
         />
         <PortfolioCreateModal
           isOpen={isCreateModalOpen}
@@ -282,6 +315,26 @@ export default function DashboardPage() {
   return (
     <div>
       <div className={styles.dashboard}>
+        {/* 개발용 토글 버튼 */}
+        <button 
+          onClick={togglePortfolioState}
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            zIndex: 9999,
+            padding: '4px 8px',
+            fontSize: '10px',
+            backgroundColor: '#2563eb',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          {hasPortfolio ? '포트폴리오 있음' : '포트폴리오 없음'}
+        </button>
+        
         <div className={styles.container}>
           {/* 포트폴리오 선택 섹션 */}
           <div className={styles.portfolioHeader}>
@@ -336,6 +389,7 @@ export default function DashboardPage() {
           onClose={handleModalClose}
           onSelect={handlePortfolioSelect}
           portfolios={portfolios}
+          onCreatePortfolio={handleCreatePortfolio}
         />
         <PortfolioCreateModal
           isOpen={isCreateModalOpen}

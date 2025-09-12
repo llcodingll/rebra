@@ -537,6 +537,45 @@
   }
 }
 
+/* 빈 상태 스타일 */
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 60px 40px;
+}
+
+.emptyStateContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 400px;
+}
+
+.emptyStateIcon {
+  width: 80px;
+  height: 80px;
+  color: #e2e8f0;
+  margin-bottom: 24px;
+}
+
+.emptyStateTitle {
+  font-size: 24px;
+  font-weight: 600;
+  color: #030213;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.emptyStateDescription {
+  font-size: 16px;
+  color: #717182;
+  margin: 0;
+  line-height: 1.6;
+}
+
 /* 애니메이션 클래스 */
 .positive {
   color: #10b981;
