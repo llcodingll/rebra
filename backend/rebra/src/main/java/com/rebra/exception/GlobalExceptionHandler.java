@@ -3,6 +3,7 @@ package com.rebra.exception;
 import com.rebra.common.CommonApiResponse;
 import com.rebra.dto.common.ValidationErrorDetail;
 import com.rebra.dto.common.ValidationErrorResponse;
+import com.rebra.exception.account.AccountException;
 import com.rebra.exception.auth.AuthException;
 import com.rebra.exception.backtest.BacktestException;
 import com.rebra.exception.signup.SignupException;
@@ -90,6 +91,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(StockException.class)
     public ResponseEntity<CommonApiResponse<Void>> handleStockException(StockException e) {
         log.warn("Stock exception: {}", e.getMessage());
+        return ResponseEntity.status(e.getStatus())
+                .body(CommonApiResponse.error(e));
+    }
+
+    @ExceptionHandler(AccountException.class)
+    public ResponseEntity<CommonApiResponse<Void>> handleAccountException(AccountException e) {
+        log.warn("Account exception: {}", e.getMessage());
         return ResponseEntity.status(e.getStatus())
                 .body(CommonApiResponse.error(e));
     }
