@@ -6,15 +6,12 @@
 .holdingTable {
   flex: 1;
   background: #f9fafb;
-  /* border-radius: 8px;
-  border: 1px solid #d1d5db; */
   overflow: hidden;
 }
 
 .tableContent {
   display: flex;
   background: white;
-  /* border-bottom: 2px solid #e5e7eb; */
 }
 
 .tableColumn {
@@ -28,7 +25,7 @@
 }
 
 .singleColumn .columnHeader {
-  min-height: 38px;
+  min-height: 38px; /* 기존 크기로 복원 */
   /* border-right: 1px solid #e5e7eb;
   border-bottom: 1px solid #e5e7eb; */
 }
@@ -39,7 +36,7 @@
   color: #9a9a9a;
   text-align: center;
   /* border-bottom: 1px solid #f3f4f6; */
-  height: 19px;
+  min-height: 19px; /* 기존 크기로 복원 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -51,7 +48,7 @@
   color: #9a9a9a;
   text-align: center;
   /* border-bottom: 1px solid #e5e7eb; */
-  height: 19px;
+  min-height: 19px; /* 기존 크기로 복원 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,15 +63,15 @@
 .dataRow {
   display: flex;
   flex-direction: column;
-  min-height: 38px;
+  min-height: 76px; /* 기존 38px에서 76px로 2배 */
   cursor: pointer;
   transition: background-color 0.2s;
-  padding: 2px 8px;
+  padding: 4px 8px; /* 더 큰 패딩 */
 }
 
 .dataRow:hover,
 .dataRow.hovered,
-.singleWxDataValue:hover,
+.singleDataValue:hover,
 .singleDataValue.hovered {
   background: #eaecee;
 }
@@ -84,8 +81,9 @@
 }
 
 .dataValue {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 14px; /* RankingTableWidget과 동일 */
+  font-family: 'Content', 'Noto Sans KR', sans-serif; /* RankingTableWidget과 동일 */
+  font-weight: 500; /* RankingTableWidget과 동일 */
   color: black;
   text-align: center;
   flex: 1;
@@ -95,17 +93,19 @@
 }
 
 .singleDataValue {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 16px; /* 종목명은 더 크게 */
+  font-family: 'Content', 'Noto Sans KR', sans-serif;
+  font-weight: 600; /* 종목명은 더 굵게 */
   color: black;
   text-align: center;
-  min-height: 38px;
+  min-height: 76px; /* 기존 38px에서 76px로 2배 */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: background-color 0.2s;
-  padding: 2px 8px;
+  border-bottom: 1px solid #f3f4f6;
+  padding: 4px 8px; /* 더 큰 패딩 */
 }
 
 .singleDataValue:hover {

@@ -51,7 +51,8 @@
 }
 
 .searchInput::placeholder {
-  color: #9ca3af;
+  color: #bebebe;
+  font-weight: 500;
 }
 
 .searchIcon {
@@ -84,7 +85,7 @@
 
 .rightTable {
   border-left: 2px solid transparent;
-  border-image: linear-gradient(to bottom, #e9e9e9, rgba(233, 233, 233, 0.255)) 1;
+  border-image: linear-gradient(to bottom, #e9e9e9, rgba(233, 233, 233, 0.056)) 1;
 }
 
 .emptyState {
@@ -117,7 +118,6 @@
 .stockRow {
   display: flex;
   padding: 0px 20px;
-  border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
   align-items: center;
@@ -125,7 +125,7 @@
 }
 
 .stockRow:hover {
-  background: #f8f9fa;
+  background: #eaecee;
 }
 
 .evenRow {
@@ -133,7 +133,7 @@
 }
 
 .evenRow:hover {
-  background: #f0f0f0;
+  background: #eaecee;
 }
 
 .stockInfo {

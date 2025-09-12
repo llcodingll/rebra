@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './BacktestRow.module.css';
-import { imgFrame3 } from '../../assets/imports/svg-uh39g';
+import { Trash2 } from 'lucide-react';
 
 interface BacktestRowProps {
   name: string;
@@ -52,8 +52,8 @@ export default function BacktestRow({
         </span>
       </td>
       <td className={styles.actionCell} onClick={(e) => e.stopPropagation()}>
-        <button className={styles.deleteButton}>
-          <img src={imgFrame3} alt="삭제" />
+        <button className={styles.deleteButton} title="삭제">
+          <Trash2 className={styles.deleteIcon} />
         </button>
       </td>
     </tr>

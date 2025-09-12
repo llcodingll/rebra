@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Trash2, TrendingUp } from 'lucide-react';
 import styles from './MyPortfolio.module.css';
 
@@ -61,14 +61,23 @@ export default function MyPortfolio({
               <div className={styles.headerCell}>삭제</div>
             </div>
 
-            {portfolioItems.map((item, index) => (
-              <motion.div
-                key={item.code}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className={styles.tableRow}
-              >
+            <AnimatePresence initial={false}>
+              {portfolioItems.map((item, index) => (
+                <motion.div
+                  key={item.code}
+                  initial={{ opacity: 0, scaleY: 0 }}
+                  animate={{ opacity: 1, scaleY: 1 }}
+                  exit={{ opacity: 0, scaleY: 0 }}
+                  transition={{ 
+                    duration: 0.3,
+                    ease: [0.25, 0.46, 0.45, 0.94]
+                  }}
+                  className={styles.tableRow}
+                  style={{ 
+                    transformOrigin: "top",
+                    overflow: "hidden"
+                  }}
+                >
                 <div className={styles.tableCell}>
                   <div className={styles.stockInfo}>
                     <span className={styles.stockName}>{item.name}</span>
@@ -137,12 +146,12 @@ export default function MyPortfolio({
                   </button>
                 </div>
               </motion.div>
-            ))}
+              ))}
+            </AnimatePresence>
           </div>
 
           <div className={styles.portfolioSummary}>
             <div className={styles.summaryItem}>
-              <TrendingUp className={styles.summaryIcon} />
               <span>총 평가금액:</span>
               <span className={styles.summaryValue}>
                 {totalValue.toLocaleString()}원
