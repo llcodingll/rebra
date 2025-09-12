@@ -80,6 +80,7 @@ services:
       - KAKAO_TOKEN_URL=https://kauth.kakao.com/oauth/token
       - GMS_API_KEY=temp-gms-api-key
       - GMS_GPT_URL=https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions
+      - SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER=${SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER}
       - DDL_AUTO=create
     depends_on:
       - postgres

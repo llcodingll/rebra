@@ -32,6 +32,8 @@ environment {
         KAKAO_REDIRECT_URL = "https://rebra.site/oauth2/authorization/kakao/callback"
         KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token"
 
+        SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER = credentials('security-encryption-account-hash-pepper')
+
         // 배포 환경 설정
         SPRING_PROFILES_ACTIVE = "prod"
         DDL_AUTO = "create"  // 첫 배포: create, 이후: update 또는 validate
