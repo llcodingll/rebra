@@ -1,5 +1,6 @@
 package com.rebra.calculator.strategy;
 
+import com.rebra.calculator.context.BacktestContext;
 import com.rebra.calculator.domain.Portfolio;
 import com.rebra.calculator.domain.Stock;
 import com.rebra.calculator.util.PriceDataUtils;
@@ -30,13 +31,21 @@ import static com.rebra.calculator.constant.BacktestConstants.Rebalancing.WEIGHT
 public class ThresholdRebalancingStrategy implements RebalancingStrategy {
 
     @Override
-    public boolean shouldRebalance(LocalDate currentDate, Portfolio portfolio, List<Stock> stocks,
-                                 Map<String, Double> currentPrices, LocalDate lastRebalancingDate) {
-        if (portfolio == null || stocks == null || stocks.isEmpty() || currentPrices == null) {
+    public boolean shouldRebalance(BacktestContext context, LocalDate currentDate, Portfolio portfolio,
+                                 LocalDate lastRebalancingDate) {
+        if (portfolio == null || context == null) {
             return false;
         }
 
         try {
+            // 컨텍스트에서 현재 가격과 종목 정보 가져오기
+            Map<String, Double> currentPrices = context.getPricesForDate(currentDate);
+            List<Stock> stocks = context.getStocks();
+            
+            if (stocks == null || stocks.isEmpty() || currentPrices == null) {
+                return false;
+            }
+            
             // 유효한 가격 데이터만 필터링
             Map<String, Double> validPrices = PriceDataUtils.filterValidPrices(currentPrices);
             if (validPrices.isEmpty()) {
@@ -66,19 +75,12 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
                 
                 double currentWeight = currentWeights.getOrDefault(stockCode, 0.0);
                 
-                // 전체 원본 가중치 합계 계산
-                int totalOriginalWeight = stocks.stream()
-                        .mapToInt(Stock::getOriginalWeight)
-                        .sum();
-                
-                double targetWeight = totalOriginalWeight > 0 ? 
-                    (double) stock.getOriginalWeight() / totalOriginalWeight : 0.0;
-                
-                if (stock.exceedsThreshold(currentWeight, targetWeight)) {
+                // Stock의 targetWeight 필드 사용 (Portfolio에서 이미 업데이트됨)
+                if (stock.exceedsThreshold(currentWeight)) {
                     log.debug("종목 {} 임계값 초과 - 현재비중: {:.2f}%, 목표비중: {:.2f}%, 임계값: {:.2f}%", 
                             stockCode, 
                             currentWeight * 100, 
-                            targetWeight * 100, 
+                            stock.getTargetWeight() * 100, 
                             stock.getThresholdPercentage() * 100);
                     return true;
                 }
@@ -93,13 +95,21 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
     }
 
     @Override
-    public String getRebalancingReason(LocalDate currentDate, Portfolio portfolio, List<Stock> stocks,
-                                     Map<String, Double> currentPrices, LocalDate lastRebalancingDate) {
-        if (!shouldRebalance(currentDate, portfolio, stocks, currentPrices, lastRebalancingDate)) {
+    public String getRebalancingReason(BacktestContext context, LocalDate currentDate, Portfolio portfolio,
+                                     LocalDate lastRebalancingDate) {
+        if (!shouldRebalance(context, currentDate, portfolio, lastRebalancingDate)) {
             return "NO_REBALANCING_NEEDED";
         }
 
         try {
+            // 컨텍스트에서 현재 가격과 종목 정보 가져오기
+            Map<String, Double> currentPrices = context.getPricesForDate(currentDate);
+            List<Stock> stocks = context.getStocks();
+            
+            if (stocks == null || currentPrices == null) {
+                return "DATA_NOT_AVAILABLE";
+            }
+            
             // 유효한 가격 데이터만 사용
             Map<String, Double> validPrices = PriceDataUtils.filterValidPrices(currentPrices);
             Map<String, Double> currentWeights = portfolio.getCurrentWeights(validPrices);
@@ -115,16 +125,9 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
                 
                 double currentWeight = currentWeights.getOrDefault(stockCode, 0.0);
                 
-                // 전체 원본 가중치 합계 계산
-                int totalOriginalWeight = stocks.stream()
-                        .mapToInt(Stock::getOriginalWeight)
-                        .sum();
-                
-                double targetWeight = totalOriginalWeight > 0 ? 
-                    (double) stock.getOriginalWeight() / totalOriginalWeight : 0.0;
-                
-                if (stock.exceedsThreshold(currentWeight, targetWeight)) {
-                    double deviation = Math.abs(currentWeight - targetWeight);
+                // Stock의 targetWeight 필드 사용 (Portfolio에서 이미 업데이트됨)
+                if (stock.exceedsThreshold(currentWeight)) {
+                    double deviation = Math.abs(currentWeight - stock.getTargetWeight());
                     exceededStocks.add(String.format("%s(%.1f%%편차)", stockCode, deviation * 100));
                 }
             }
@@ -142,9 +145,9 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
     }
 
     @Override
-    public String getRebalancingReasonKorean(LocalDate currentDate, Portfolio portfolio, List<Stock> stocks,
-                                           Map<String, Double> currentPrices, LocalDate lastRebalancingDate) {
-        String englishReason = getRebalancingReason(currentDate, portfolio, stocks, currentPrices, lastRebalancingDate);
+    public String getRebalancingReasonKorean(BacktestContext context, LocalDate currentDate, Portfolio portfolio,
+                                           LocalDate lastRebalancingDate) {
+        String englishReason = getRebalancingReason(context, currentDate, portfolio, lastRebalancingDate);
         
         if (englishReason.equals("NO_REBALANCING_NEEDED")) {
             return "리밸런싱 불필요";
@@ -178,13 +181,21 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
     }
 
     @Override
-    public List<Stock> getStocksNeedingRebalancing(Portfolio portfolio, List<Stock> stocks,
-                                                 Map<String, Double> currentPrices) {
-        if (portfolio == null || stocks == null || currentPrices == null) {
+    public List<Stock> getStocksNeedingRebalancing(BacktestContext context, Portfolio portfolio) {
+        if (portfolio == null || context == null) {
             return new ArrayList<>();
         }
 
         try {
+            // 컨텍스트에서 종목 정보와 현재 가격 가져오기 (최신 날짜 기준)
+            List<Stock> stocks = context.getStocks();
+            LocalDate currentDate = context.getLastDate();
+            Map<String, Double> currentPrices = context.getPricesForDate(currentDate);
+            
+            if (stocks == null || currentPrices == null) {
+                return new ArrayList<>();
+            }
+            
             // 유효한 가격 데이터만 사용
             Map<String, Double> validPrices = PriceDataUtils.filterValidPrices(currentPrices);
             Map<String, Double> currentWeights = portfolio.getCurrentWeights(validPrices);
@@ -199,15 +210,9 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
                         }
                         
                         double currentWeight = currentWeights.getOrDefault(stockCode, 0.0);
-                        // 전체 원본 가중치 합계 계산
-                        int totalOriginalWeight = stocks.stream()
-                                .mapToInt(Stock::getOriginalWeight)
-                                .sum();
                         
-                        double targetWeight = totalOriginalWeight > 0 ? 
-                            (double) stock.getOriginalWeight() / totalOriginalWeight : 0.0;
-                        
-                        return stock.exceedsThreshold(currentWeight, targetWeight);
+                        // Stock의 targetWeight 필드 사용 (Portfolio에서 이미 업데이트됨)
+                        return stock.exceedsThreshold(currentWeight);
                     })
                     .collect(Collectors.toList());
 
@@ -375,19 +380,31 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
     }
 
     /**
-     * 임계값 초과 정도를 계산한다
+     * 임계값 초과 정도를 계산한다 (Stock의 targetWeight 필드 사용)
      * 
      * @param stock 대상 종목
      * @param currentWeight 현재 비중
      * @return 초과 정도 (0 이상, 클수록 초과 정도가 큼)
      */
-    public double calculateExcessAmount(Stock stock, double currentWeight, int totalOriginalWeight) {
-        double targetWeight = totalOriginalWeight > 0 ? 
-            (double) stock.getOriginalWeight() / totalOriginalWeight : 0.0;
-        double deviation = Math.abs(currentWeight - targetWeight);
+    public double calculateExcessAmount(Stock stock, double currentWeight) {
+        double deviation = Math.abs(currentWeight - stock.getTargetWeight());
         double threshold = stock.getThresholdPercentage();
         
         return Math.max(0, deviation - threshold);
+    }
+    
+    /**
+     * 임계값 초과 정도를 계산한다 (기존 호환성 유지)
+     * 
+     * @param stock 대상 종목
+     * @param currentWeight 현재 비중
+     * @param totalOriginalWeight 전체 원본 가중치 합계 (사용되지 않음)
+     * @return 초과 정도 (0 이상, 클수록 초과 정도가 큼)
+     * @deprecated Stock의 targetWeight 필드를 사용하는 메서드를 사용하세요
+     */
+    @Deprecated
+    public double calculateExcessAmount(Stock stock, double currentWeight, int totalOriginalWeight) {
+        return calculateExcessAmount(stock, currentWeight);
     }
 
     /**
@@ -411,26 +428,17 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
                     }
                     
                     double currentWeight = currentWeights.getOrDefault(stockCode, 0.0);
-                    // 전체 원본 가중치 합계 계산
-                    int totalOriginalWeight = stocks.stream()
-                            .mapToInt(Stock::getOriginalWeight)
-                            .sum();
                     
-                    double targetWeight = totalOriginalWeight > 0 ? 
-                        (double) stock.getOriginalWeight() / totalOriginalWeight : 0.0;
-                    
-                    return stock.exceedsThreshold(currentWeight, targetWeight);
+                    // Stock의 targetWeight 필드 사용 (Portfolio에서 이미 업데이트됨)
+                    return stock.exceedsThreshold(currentWeight);
                 })
                 .sorted((a, b) -> {
                     double weightA = currentWeights.getOrDefault(a.getStockCode(), 0.0);
                     double weightB = currentWeights.getOrDefault(b.getStockCode(), 0.0);
                     
-                    int totalOriginalWeight = stocks.stream()
-                            .mapToInt(Stock::getOriginalWeight)
-                            .sum();
-                    
-                    double excessA = calculateExcessAmount(a, weightA, totalOriginalWeight);
-                    double excessB = calculateExcessAmount(b, weightB, totalOriginalWeight);
+                    // Stock의 targetWeight 필드를 사용하여 초과량 계산
+                    double excessA = calculateExcessAmount(a, weightA);
+                    double excessB = calculateExcessAmount(b, weightB);
                     
                     return Double.compare(excessB, excessA); // 내림차순 정렬
                 })

@@ -1,6 +1,6 @@
 package com.rebra.calculator.domain;
 
-import com.rebra.calculator.enums.MissingPricePolicy;
+import com.rebra.calculator.context.BacktestContext;
 import com.rebra.calculator.strategy.RebalancingStrategy;
 import com.rebra.calculator.util.PriceDataUtils;
 import lombok.Getter;
@@ -79,17 +79,6 @@ public class Portfolio {
      */
     private double initialValue;
     
-    /**
-     * 마지막으로 알려진 종목별 가격 캐시
-     * null 가격 처리 시 이전 가격을 찾기 위해 사용
-     */
-    private final Map<String, Double> lastKnownPrices;
-    
-    /**
-     * 가격 누락 시 처리 정책
-     * 기본값: SKIP_STOCK (해당 종목 제외)
-     */
-    private MissingPricePolicy missingPricePolicy;
 
     /**
      * Portfolio 생성자
@@ -105,8 +94,6 @@ public class Portfolio {
         this.maxBorrowingAmount = 0.0;
         this.minCashBalance = 0.0;
         this.initialValue = 0.0; // 초기 구성 완료 후 설정
-        this.lastKnownPrices = new HashMap<>();
-        this.missingPricePolicy = MissingPricePolicy.SKIP_STOCK; // 기본값
         
         log.info("포트폴리오 생성 - 초기 현금: 0원");
     }
@@ -281,8 +268,6 @@ public class Portfolio {
             return cash; // 주식 가격 정보가 없으면 현금만 반환
         }
         
-        // 유효한 가격 캐시 업데이트
-        updateLastKnownPrices(currentPrices);
         
         double stockValue = 0.0;
         
@@ -290,7 +275,7 @@ public class Portfolio {
             String stockCode = entry.getKey();
             int quantity = entry.getValue();
             
-            Double price = getEffectivePrice(stockCode, currentPrices);
+            Double price = currentPrices.get(stockCode);
             if (price != null && price > 0) {
                 stockValue += quantity * price;
                 log.trace("종목 {} 가치 계산: {}주 × {:.0f}원 = {:.0f}원", 
@@ -326,7 +311,7 @@ public class Portfolio {
             String stockCode = entry.getKey();
             int quantity = entry.getValue();
             
-            Double price = getEffectivePrice(stockCode, currentPrices);
+            Double price = currentPrices.get(stockCode);
             if (price != null && price > 0) {
                 double stockValue = quantity * price;
                 double weight = stockValue / totalValue;
@@ -367,28 +352,6 @@ public class Portfolio {
         return cash < 0 ? Math.abs(cash) : 0.0;
     }
 
-    /**
-     * 가격 누락 시 처리 정책을 설정한다
-     * 
-     * @param policy 새로운 처리 정책
-     */
-    public void setMissingPricePolicy(MissingPricePolicy policy) {
-        if (policy == null) {
-            throw new IllegalArgumentException("가격 누락 처리 정책은 null일 수 없습니다");
-        }
-        
-        this.missingPricePolicy = policy;
-        log.debug("가격 누락 처리 정책 변경: {}", policy.getDescription());
-    }
-
-    /**
-     * 현재 설정된 가격 누락 처리 정책을 반환한다
-     * 
-     * @return 현재 처리 정책
-     */
-    public MissingPricePolicy getMissingPricePolicy() {
-        return missingPricePolicy;
-    }
 
     /**
      * 목표 종목을 추가한다 (기존 호환성 메서드)
@@ -642,52 +605,110 @@ public class Portfolio {
     }
 
     /**
-     * 리밸런싱이 필요한지 판단한다
-     * 내부 목표 종목 정보와 현재 비중을 비교하여 리밸런싱 전략에 따라 판단
+     * 목표 종목들의 목표 비중을 업데이트한다
+     * 유효한 가격을 가진 종목들만으로 비중을 재계산하여 정규화
      * 
+     * @param validPrices 유효한 가격 정보 (null이나 음수 가격 제외)
+     */
+    public void updateTargetWeights(Map<String, Double> validPrices) {
+        if (targetStocks.isEmpty() || validPrices == null || validPrices.isEmpty()) {
+            log.debug("목표 종목이 없거나 유효한 가격 정보가 없어 목표 비중 업데이트를 건너뜁니다");
+            return;
+        }
+        
+        // 유효한 가격을 가진 종목들만 필터링
+        List<Stock> validStocks = targetStocks.values().stream()
+                .filter(stock -> validPrices.containsKey(stock.getStockCode()))
+                .toList();
+        
+        if (validStocks.isEmpty()) {
+            log.warn("유효한 가격을 가진 목표 종목이 없습니다");
+            // 모든 종목의 목표 비중을 0으로 설정
+            targetStocks.values().forEach(stock -> stock.setTargetWeight(0.0));
+            return;
+        }
+        
+        // 유효한 종목들의 원본 가중치 합계 계산 (한 번만)
+        int totalValidWeight = validStocks.stream()
+                .mapToInt(Stock::getOriginalWeight)
+                .sum();
+        
+        if (totalValidWeight <= 0) {
+            log.warn("유효한 종목들의 원본 가중치 합계가 0 이하입니다: {}", totalValidWeight);
+            targetStocks.values().forEach(stock -> stock.setTargetWeight(0.0));
+            return;
+        }
+        
+        // 각 종목의 목표 비중 업데이트
+        for (Stock stock : targetStocks.values()) {
+            if (validPrices.containsKey(stock.getStockCode())) {
+                // 유효한 종목: 정규화된 목표 비중 계산
+                double normalizedWeight = (double) stock.getOriginalWeight() / totalValidWeight;
+                stock.setTargetWeight(normalizedWeight);
+                log.trace("종목 {} 목표 비중 업데이트: {:.2f}%", 
+                        stock.getStockCode(), normalizedWeight * 100);
+            } else {
+                // 유효하지 않은 종목: 목표 비중 0
+                stock.setTargetWeight(0.0);
+                log.trace("종목 {} 목표 비중 업데이트: 0.0% (가격 정보 없음)", stock.getStockCode());
+            }
+        }
+        
+        log.info("목표 비중 업데이트 완료 - 유효 종목: {}개, 전체 종목: {}개", 
+                validStocks.size(), targetStocks.size());
+    }
+
+    /**
+     * 리밸런싱이 필요한지 판단한다
+     * 백테스트 컨텍스트의 정보를 활용하여 리밸런싱 전략에 따라 판단
+     * 
+     * @param context 백테스트 컨텍스트
      * @param currentDate 현재 날짜
-     * @param currentPrices 현재 주가 정보
-     * @param rebalancingStrategy 리밸런싱 전략
      * @param lastRebalancingDate 마지막 리밸런싱 날짜
      * @return 리밸런싱이 필요하면 true
      */
-    public boolean shouldRebalance(LocalDate currentDate, Map<String, Double> currentPrices,
-                                 RebalancingStrategy rebalancingStrategy, LocalDate lastRebalancingDate) {
+    public boolean shouldRebalance(BacktestContext context, LocalDate currentDate, LocalDate lastRebalancingDate) {
         if (targetStocks.isEmpty()) {
             log.debug("목표 종목이 설정되지 않아 리밸런싱을 건너뜁니다");
             return false;
         }
         
+        RebalancingStrategy rebalancingStrategy = context.getRebalancingStrategy();
         if (rebalancingStrategy == null) {
             log.warn("리밸런싱 전략이 설정되지 않았습니다");
             return false;
         }
         
-        // 목표 종목 리스트를 생성 (Strategy 인터페이스 호환을 위해)
-        List<Stock> stocks = new ArrayList<>(targetStocks.values());
+        // 현재 날짜의 가격 정보 가져오기
+        Map<String, Double> currentPrices = context.getPricesForDate(currentDate);
+        if (currentPrices == null) {
+            log.warn("날짜 {}의 가격 정보를 찾을 수 없습니다", currentDate);
+            return false;
+        }
         
-        return rebalancingStrategy.shouldRebalance(currentDate, this, stocks, currentPrices, lastRebalancingDate);
+        // 유효한 가격 정보로 목표 비중 업데이트
+        Map<String, Double> validPrices = PriceDataUtils.filterValidPrices(currentPrices);
+        updateTargetWeights(validPrices);
+        
+        return rebalancingStrategy.shouldRebalance(context, currentDate, this, lastRebalancingDate);
     }
 
     /**
      * 리밸런싱이 필요한 목표 종목들을 반환한다
      * 
-     * @param currentPrices 현재 주가 정보
-     * @param rebalancingStrategy 리밸런싱 전략
+     * @param context 백테스트 컨텍스트
      * @return 리밸런싱이 필요한 종목 리스트
      */
-    public List<Stock> getStocksNeedingRebalancing(Map<String, Double> currentPrices,
-                                                 RebalancingStrategy rebalancingStrategy) {
+    public List<Stock> getStocksNeedingRebalancing(BacktestContext context) {
         if (targetStocks.isEmpty()) {
             return new ArrayList<>();
         }
         
+        RebalancingStrategy rebalancingStrategy = context.getRebalancingStrategy();
         if (rebalancingStrategy == null) {
             return new ArrayList<>();
         }
-        
-        List<Stock> stocks = new ArrayList<>(targetStocks.values());
-        return rebalancingStrategy.getStocksNeedingRebalancing(this, stocks, currentPrices);
+        return rebalancingStrategy.getStocksNeedingRebalancing(context, this);
     }
 
     /**
@@ -755,149 +776,11 @@ public class Portfolio {
         return targetStocks.containsKey(stockCode.trim().toUpperCase());
     }
 
-    /**
-     * 특정 종목에 대해 유효한 가격을 찾는다
-     * null 가격인 경우 처리 정책에 따라 이전 가격 사용 또는 null 반환
-     * 
-     * @param stockCode 종목 코드
-     * @param currentPrices 현재 가격 데이터
-     * @return 유효한 가격 (없으면 null)
-     */
-    private Double getEffectivePrice(String stockCode, Map<String, Double> currentPrices) {
-        // 현재 가격이 유효한 경우
-        Double currentPrice = currentPrices.get(stockCode);
-        if (currentPrice != null && currentPrice > 0) {
-            return currentPrice;
-        }
-        
-        // 현재 가격이 null이거나 0 이하인 경우 정책에 따라 처리
-        switch (missingPricePolicy) {
-            case USE_PREVIOUS:
-                // 이전 가격 사용
-                Double previousPrice = lastKnownPrices.get(stockCode);
-                if (previousPrice != null && previousPrice > 0) {
-                    log.trace("종목 {} 이전 가격 {} 사용", stockCode, previousPrice);
-                    return previousPrice;
-                }
-                break;
-                
-            case SKIP_STOCK:
-            case HALT_REBALANCING:
-            default:
-                // 종목 제외 또는 기타 정책
-                break;
-        }
-        
-        return null; // 유효한 가격을 찾을 수 없음
-    }
 
-    /**
-     * 유효한 가격 정보로 이전 가격 캐시를 업데이트한다
-     * 
-     * @param currentPrices 현재 가격 데이터
-     */
-    private void updateLastKnownPrices(Map<String, Double> currentPrices) {
-        if (currentPrices == null) {
-            return;
-        }
-        
-        // 유효한 가격만 캐시에 업데이트
-        for (Map.Entry<String, Double> entry : currentPrices.entrySet()) {
-            String stockCode = entry.getKey();
-            Double price = entry.getValue();
-            
-            if (price != null && price > 0) {
-                lastKnownPrices.put(stockCode, price);
-            }
-        }
-    }
 
-    /**
-     * 유효한 가격을 가진 종목들만 필터링하여 반환한다
-     * 
-     * @param targetStockCodes 대상 종목 코드 목록
-     * @param currentPrices 현재 가격 데이터
-     * @return 유효한 가격을 가진 종목 코드 집합
-     */
-    public Set<String> getValidPriceStockCodes(List<String> targetStockCodes, Map<String, Double> currentPrices) {
-        if (targetStockCodes == null || currentPrices == null) {
-            return Set.of();
-        }
-        
-        Set<String> validStocks = new HashSet<>();
-        
-        for (String stockCode : targetStockCodes) {
-            Double effectivePrice = getEffectivePrice(stockCode, currentPrices);
-            if (effectivePrice != null && effectivePrice > 0) {
-                validStocks.add(stockCode);
-            }
-        }
-        
-        return validStocks;
-    }
 
-    /**
-     * 가격 누락으로 인해 리밸런싱을 중단해야 하는지 확인한다
-     * 
-     * @param targetStockCodes 대상 종목 코드 목록
-     * @param currentPrices 현재 가격 데이터
-     * @return 리밸런싱 중단 여부
-     */
-    public boolean shouldHaltRebalancing(List<String> targetStockCodes, Map<String, Double> currentPrices) {
-        if (missingPricePolicy != MissingPricePolicy.HALT_REBALANCING) {
-            return false;
-        }
-        
-        if (targetStockCodes == null || currentPrices == null) {
-            return true;
-        }
-        
-        // 하나라도 유효한 가격이 없으면 중단
-        for (String stockCode : targetStockCodes) {
-            Double effectivePrice = getEffectivePrice(stockCode, currentPrices);
-            if (effectivePrice == null || effectivePrice <= 0) {
-                log.info("종목 {} 가격 누락으로 리밸런싱 중단", stockCode);
-                return true;
-            }
-        }
-        
-        return false;
-    }
 
-    /**
-     * 현재 보유 중인 종목 중 유효한 가격을 가진 종목들의 가치 합계를 계산한다
-     * 
-     * @param currentPrices 현재 가격 데이터
-     * @return 유효한 종목들의 총 가치
-     */
-    public double getValidStockValue(Map<String, Double> currentPrices) {
-        if (currentPrices == null || holdings.isEmpty()) {
-            return 0.0;
-        }
-        
-        double validStockValue = 0.0;
-        
-        for (Map.Entry<String, Integer> entry : holdings.entrySet()) {
-            String stockCode = entry.getKey();
-            int quantity = entry.getValue();
-            
-            Double effectivePrice = getEffectivePrice(stockCode, currentPrices);
-            if (effectivePrice != null && effectivePrice > 0) {
-                validStockValue += quantity * effectivePrice;
-            }
-        }
-        
-        return roundAmount(validStockValue);
-    }
 
-    /**
-     * 마지막으로 알려진 가격 정보를 반환한다 (복사본)
-     * 
-     * @return 이전 가격 캐시의 복사본
-     */
-    public Map<String, Double> getLastKnownPricesCopy() {
-        return new HashMap<>(lastKnownPrices);
-    }
 
     /**
      * 초기 포트폴리오 가치를 설정한다
@@ -1027,9 +910,6 @@ public class Portfolio {
         copy.maxBorrowingAmount = this.maxBorrowingAmount;
         copy.minCashBalance = this.minCashBalance;
         copy.initialValue = this.initialValue;
-        copy.lastKnownPrices.clear();
-        copy.lastKnownPrices.putAll(this.lastKnownPrices);
-        copy.missingPricePolicy = this.missingPricePolicy;
         
         return copy;
     }

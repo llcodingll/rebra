@@ -1,5 +1,6 @@
 package com.rebra.calculator.strategy;
 
+import com.rebra.calculator.context.BacktestContext;
 import com.rebra.calculator.domain.Portfolio;
 import com.rebra.calculator.domain.Stock;
 import com.rebra.calculator.enums.RebalancingPeriod;
@@ -53,11 +54,17 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
     }
 
     @Override
-    public boolean shouldRebalance(LocalDate currentDate, Portfolio portfolio, List<Stock> stocks,
-                                 Map<String, Double> currentPrices, LocalDate lastRebalancingDate) {
+    public boolean shouldRebalance(BacktestContext context, LocalDate currentDate, Portfolio portfolio,
+                                 LocalDate lastRebalancingDate) {
         // 주기적 리밸런싱: 메인 서버에서 이미 설정된 주기에 맞는 날짜만 필터링해서 전송
         // 따라서 계산 서버는 받은 모든 날짜에 대해 무조건 리밸런싱 실행
         // 단, 유효한 가격이 없는 경우는 제외
+        
+        Map<String, Double> currentPrices = context.getPricesForDate(currentDate);
+        if (currentPrices == null) {
+            log.warn("날짜 {}의 가격 정보를 찾을 수 없습니다", currentDate);
+            return false;
+        }
         
         Map<String, Double> validPrices = PriceDataUtils.filterValidPrices(currentPrices);
         if (validPrices.isEmpty()) {
@@ -72,8 +79,8 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
     }
 
     @Override
-    public String getRebalancingReason(LocalDate currentDate, Portfolio portfolio, List<Stock> stocks,
-                                     Map<String, Double> currentPrices, LocalDate lastRebalancingDate) {
+    public String getRebalancingReason(BacktestContext context, LocalDate currentDate, Portfolio portfolio,
+                                     LocalDate lastRebalancingDate) {
         try {
             String periodName = rebalancingPeriod.name().toLowerCase();
             return String.format("PERIODIC_REBALANCING_%s", periodName.toUpperCase());
@@ -85,9 +92,9 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
     }
 
     @Override
-    public String getRebalancingReasonKorean(LocalDate currentDate, Portfolio portfolio, List<Stock> stocks,
-                                           Map<String, Double> currentPrices, LocalDate lastRebalancingDate) {
-        String englishReason = getRebalancingReason(currentDate, portfolio, stocks, currentPrices, lastRebalancingDate);
+    public String getRebalancingReasonKorean(BacktestContext context, LocalDate currentDate, Portfolio portfolio,
+                                           LocalDate lastRebalancingDate) {
+        String englishReason = getRebalancingReason(context, currentDate, portfolio, lastRebalancingDate);
         
         if (englishReason.equals("PERIODIC_REBALANCING_ERROR")) {
             return "주기적 리밸런싱 오류";
@@ -114,13 +121,21 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
     }
 
     @Override
-    public List<Stock> getStocksNeedingRebalancing(Portfolio portfolio, List<Stock> stocks,
-                                                 Map<String, Double> currentPrices) {
-        if (portfolio == null || stocks == null || currentPrices == null) {
+    public List<Stock> getStocksNeedingRebalancing(BacktestContext context, Portfolio portfolio) {
+        if (portfolio == null || context == null) {
             return new ArrayList<>();
         }
 
         try {
+            // 컨텍스트에서 종목 정보와 현재 가격 가져오기 (최신 날짜 기준)
+            List<Stock> stocks = context.getStocks();
+            LocalDate currentDate = context.getLastDate();
+            Map<String, Double> currentPrices = context.getPricesForDate(currentDate);
+            
+            if (stocks == null || currentPrices == null) {
+                return new ArrayList<>();
+            }
+            
             // 주기적 전략에서는 모든 종목이 리밸런싱 대상
             // 단, 현재 비중과 목표 비중이 크게 다르지 않은 종목은 제외
             // 유효한 가격을 가진 종목들만 고려
@@ -139,13 +154,8 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
                         
                         double currentWeight = currentWeights.getOrDefault(stockCode, 0.0);
                         
-                        // 전체 원본 가중치 합계 계산
-                        int totalOriginalWeight = stocks.stream()
-                                .mapToInt(Stock::getOriginalWeight)
-                                .sum();
-                        
-                        double targetWeight = totalOriginalWeight > 0 ? 
-                            (double) stock.getOriginalWeight() / totalOriginalWeight : 0.0;
+                        // Stock의 targetWeight 필드 사용 (Portfolio에서 이미 업데이트됨)
+                        double targetWeight = stock.getTargetWeight();
                         double deviation = Math.abs(currentWeight - targetWeight);
                         
                         // 0.1% 이상 차이가 나는 종목만 리밸런싱 대상으로 포함

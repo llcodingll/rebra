@@ -46,6 +46,13 @@ public class Stock {
      * 백테스트 시작 시점에서의 보유 주식 수량
      */
     private int initialQuantity;
+    
+    /**
+     * 목표 비중 (0.0 ~ 1.0)
+     * 리밸런싱 시 달성하고자 하는 목표 비중
+     * 유효한 종목들로만 재계산된 정규화된 비중
+     */
+    private double targetWeight;
 
     
     /**
@@ -72,6 +79,7 @@ public class Stock {
         this.originalWeight = originalWeight;
         this.thresholdPercentage = normalizeWeight(thresholdPercentage);
         this.initialQuantity = initialQuantity;
+        this.targetWeight = 0.0; // 초기값, 리밸런싱 시 재계산됨
     }
     
     /**
@@ -117,6 +125,18 @@ public class Stock {
         return BigDecimal.valueOf(weight)
                 .setScale(WEIGHT_PRECISION, RoundingMode.HALF_UP)
                 .doubleValue();
+    }
+
+    /**
+     * 현재 비중이 목표 비중에서 임계값을 초과했는지 확인 (내부 targetWeight 사용)
+     * 리밸런싱 필요 여부를 판단하는 데 사용
+     * 
+     * @param currentWeight 현재 비중 (0.0 ~ 1.0)
+     * @return 임계값을 초과했으면 true
+     * @throws IllegalArgumentException 현재 비중이 유효하지 않은 경우
+     */
+    public boolean exceedsThreshold(double currentWeight) {
+        return exceedsThreshold(currentWeight, this.targetWeight);
     }
 
     /**
@@ -296,6 +316,29 @@ public class Stock {
      */
     public boolean hasOriginalWeight() {
         return originalWeight > 0;
+    }
+
+    /**
+     * 목표 비중을 반환한다
+     * 
+     * @return 목표 비중 (0.0 ~ 1.0)
+     */
+    public double getTargetWeight() {
+        return targetWeight;
+    }
+
+    /**
+     * 목표 비중을 설정한다
+     * 
+     * @param targetWeight 새로운 목표 비중 (0.0 ~ 1.0)
+     * @throws IllegalArgumentException 목표 비중이 유효하지 않은 경우
+     */
+    public void setTargetWeight(double targetWeight) {
+        if (targetWeight < 0.0 || targetWeight > 1.0) {
+            throw new IllegalArgumentException("목표 비중은 0.0과 1.0 사이여야 합니다: " + targetWeight);
+        }
+        
+        this.targetWeight = normalizeWeight(targetWeight);
     }
 
 

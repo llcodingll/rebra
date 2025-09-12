@@ -1,11 +1,12 @@
 package com.rebra.calculator.service;
 
+import com.rebra.calculator.context.BacktestContext;
 import com.rebra.calculator.domain.Portfolio;
 import com.rebra.calculator.domain.Stock;
 import com.rebra.calculator.domain.Trade;
 import com.rebra.calculator.dto.BacktestRequest;
 import com.rebra.calculator.dto.BacktestStockDto;
-import com.rebra.calculator.enums.MissingPricePolicy;
+import com.rebra.calculator.dto.RebalancingAction;
 import com.rebra.calculator.util.PriceDataUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -110,27 +111,32 @@ public class PortfolioManagerService {
 
     /**
      * 포트폴리오 리밸런싱을 실행한다
-     * Portfolio 내부 목표 종목 정보를 사용하여 리밸런싱 수행
+     * BacktestContext의 정보를 활용하여 리밸런싱 수행
      * null 가격 처리 정책에 따라 유효한 종목들로만 리밸런싱 수행
      * 
      * @param portfolio 현재 포트폴리오 (목표 종목 정보 포함)
-     * @param currentPrices 현재 주가 정보 (null 값 포함 가능)
+     * @param context 백테스트 컨텍스트 (종목, 가격 정보 등)
      * @param rebalancingDate 리밸런싱 실행일
      * @return 리밸런싱으로 발생한 거래 목록
      * @throws IllegalArgumentException 잘못된 매개변수
      */
-    public List<Trade> executeRebalancing(Portfolio portfolio, 
-                                        Map<String, Double> currentPrices, LocalDate rebalancingDate) {
+    public List<Trade> executeRebalancing(Portfolio portfolio, BacktestContext context, LocalDate rebalancingDate) {
         if (portfolio == null) {
             throw new IllegalArgumentException("포트폴리오가 null입니다");
         }
         
-        if (currentPrices == null || currentPrices.isEmpty()) {
-            throw new IllegalArgumentException("현재 가격 정보가 없습니다");
+        if (context == null) {
+            throw new IllegalArgumentException("백테스트 컨텍스트가 null입니다");
         }
         
         if (rebalancingDate == null) {
             throw new IllegalArgumentException("리밸런싱 날짜가 null입니다");
+        }
+        
+        // 컨텍스트에서 현재 가격 정보와 종목 정보 가져오기
+        Map<String, Double> currentPrices = context.getPricesForDate(rebalancingDate);
+        if (currentPrices == null || currentPrices.isEmpty()) {
+            throw new IllegalArgumentException("현재 가격 정보가 없습니다");
         }
         
         // Portfolio에서 목표 종목 정보 가져오기
@@ -146,34 +152,23 @@ public class PortfolioManagerService {
         
         List<Trade> rebalancingTrades = new ArrayList<>();
         
-        // 가격 누락 정책에 따른 중단 확인
-        List<String> targetStockCodes = stocks.stream()
-                .map(Stock::getStockCode)
-                .toList();
-        
-        if (portfolio.shouldHaltRebalancing(targetStockCodes, currentPrices)) {
-            log.info("가격 누락으로 인한 리밸런싱 중단 - 날짜: {}", rebalancingDate);
-            return rebalancingTrades;
-        }
-        
-        // 유효한 가격을 가진 종목들만 필터링
+        // 유효한 가격 필터링 (Portfolio.updateTargetWeights에서 사용)
         Map<String, Double> validPrices = PriceDataUtils.filterValidPrices(currentPrices);
         if (validPrices.isEmpty()) {
             log.warn("유효한 가격 정보가 없어 리밸런싱을 건너뜁니다 - 날짜: {}", rebalancingDate);
             return rebalancingTrades;
         }
         
-        // 유효한 종목들로만 목표 비중 재분배
+        // Portfolio에서 이미 updateTargetWeights가 호출되어 유효한 종목들의 targetWeight가 설정됨
+        // 목표 비중이 0보다 큰 종목들만 리밸런싱 대상
         List<Stock> validStocks = stocks.stream()
-                .filter(stock -> validPrices.containsKey(stock.getStockCode()))
+                .filter(stock -> stock.getTargetWeight() > 0.0)
                 .toList();
         
         if (validStocks.isEmpty()) {
-            log.warn("유효한 종목이 없어 리밸런싱을 건너뜁니다 - 날짜: {}", rebalancingDate);
+            log.warn("목표 비중이 설정된 종목이 없어 리밸런싱을 건너뜁니다 - 날짜: {}", rebalancingDate);
             return rebalancingTrades;
         }
-        
-        Map<String, Double> redistributedWeights = redistributeTargetWeights(validStocks);
         
         double totalValue = portfolio.getTotalValue(validPrices);
         
@@ -185,10 +180,10 @@ public class PortfolioManagerService {
         log.info("유효한 종목 {}개로 리밸런싱 수행 (전체 {}개 중)", 
                 validStocks.size(), stocks.size());
         
-        // 1단계: 현재 비중과 목표 비중 계산 (유효한 종목들만)
+        // 1단계: 현재 비중 계산 및 리밸런싱 계획 수립 (Stock의 targetWeight 필드 사용)
         Map<String, Double> currentWeights = portfolio.getCurrentWeights(validPrices);
         Map<String, RebalancingAction> rebalancingPlan = createRebalancingPlan(
-                validStocks, currentWeights, totalValue, validPrices, redistributedWeights);
+                validStocks, currentWeights, totalValue, validPrices);
         
         // 2단계: 매도 거래 먼저 실행 (현금 확보)
         List<Trade> sellTrades = executeSellTrades(portfolio, rebalancingPlan, validPrices, rebalancingDate);
@@ -354,7 +349,9 @@ public class PortfolioManagerService {
      * 
      * @param validStocks 유효한 가격을 가진 종목 목록
      * @return 재분배된 목표 비중 맵 (종목코드 -> 정규화된 비중)
+     * @deprecated Portfolio.updateTargetWeights와 Stock.targetWeight 필드 사용을 권장합니다
      */
+    @Deprecated
     private Map<String, Double> redistributeTargetWeights(List<Stock> validStocks) {
         if (validStocks == null || validStocks.isEmpty()) {
             return Map.of();
@@ -384,24 +381,18 @@ public class PortfolioManagerService {
     }
 
     /**
-     * 리밸런싱 계획을 수립한다 (유효한 종목들만)
+     * 리밸런싱 계획을 수립한다 (Stock의 targetWeight 필드 사용)
      */
     private Map<String, RebalancingAction> createRebalancingPlan(List<Stock> stocks, 
                                                                Map<String, Double> currentWeights, 
                                                                double totalValue,
-                                                               Map<String, Double> validPrices,
-                                                               Map<String, Double> redistributedWeights) {
+                                                               Map<String, Double> validPrices) {
         Map<String, RebalancingAction> plan = new HashMap<>();
         
         for (Stock stock : stocks) {
             String stockCode = stock.getStockCode();
             double currentWeight = currentWeights.getOrDefault(stockCode, 0.0);
-            Double targetWeightObj = redistributedWeights.get(stockCode);
-            if (targetWeightObj == null) {
-                log.warn("종목 {}의 재분배된 목표 비중을 찾을 수 없습니다", stockCode);
-                continue;
-            }
-            double targetWeight = targetWeightObj;
+            double targetWeight = stock.getTargetWeight(); // Stock 필드에서 직접 사용
             double targetAmount = totalValue * targetWeight;
             double currentAmount = totalValue * currentWeight;
             double difference = targetAmount - currentAmount;
@@ -417,24 +408,26 @@ public class PortfolioManagerService {
             }
             
             RebalancingAction action = new RebalancingAction();
-            action.stockCode = stockCode;
-            action.currentWeight = currentWeight;
-            action.targetWeight = targetWeight;
-            action.price = price;
+            action.setStockCode(stockCode);
+            action.setCurrentWeight(currentWeight);
+            action.setTargetWeight(targetWeight);
+            action.setPrice(price);
             
             if (difference > 0) {
                 // 매수 필요
-                action.actionType = "BUY";
-                action.quantity = (int) Math.floor(difference / price);
-                action.amount = action.quantity * price;
+                action.setActionType("BUY");
+                int quantity = (int) Math.floor(difference / price);
+                action.setQuantity(quantity);
+                action.setAmount(quantity * price);
             } else {
                 // 매도 필요
-                action.actionType = "SELL";
-                action.quantity = (int) Math.floor(Math.abs(difference) / price);
-                action.amount = action.quantity * price;
+                action.setActionType("SELL");
+                int quantity = (int) Math.floor(Math.abs(difference) / price);
+                action.setQuantity(quantity);
+                action.setAmount(quantity * price);
             }
             
-            if (action.quantity >= MINIMUM_TRADING_UNIT) {
+            if (action.getQuantity() >= MINIMUM_TRADING_UNIT) {
                 plan.put(stockCode, action);
             }
         }
@@ -450,22 +443,22 @@ public class PortfolioManagerService {
         List<Trade> sellTrades = new ArrayList<>();
         
         for (RebalancingAction action : plan.values()) {
-            if (!"SELL".equals(action.actionType)) {
+            if (!"SELL".equals(action.getActionType())) {
                 continue;
             }
             
-            if (action.quantity < MINIMUM_TRADING_UNIT) {
+            if (action.getQuantity() < MINIMUM_TRADING_UNIT) {
                 continue;
             }
             
             try {
-                double fee = feeCalculatorService.calculateSellFee(action.amount);
-                double tax = feeCalculatorService.calculateSecuritiesTransactionTax(action.amount);
+                double fee = feeCalculatorService.calculateSellFee(action.getAmount());
+                double tax = feeCalculatorService.calculateSecuritiesTransactionTax(action.getAmount());
                 
                 Trade trade = portfolio.sellStock(
-                    action.stockCode,
-                    action.quantity,
-                    action.price,
+                    action.getStockCode(),
+                    action.getQuantity(),
+                    action.getPrice(),
                     fee,
                     tax,
                     date
@@ -473,13 +466,13 @@ public class PortfolioManagerService {
                 
                 sellTrades.add(trade);
                 
-                log.debug("매도 실행 - {}: {}주 @{:.0f}원", action.stockCode, action.quantity, action.price);
+                log.debug("매도 실행 - {}: {}주 @{:.0f}원", action.getStockCode(), action.getQuantity(), action.getPrice());
                 
             } catch (IllegalArgumentException e) {
                 log.warn("매도 실행 실패 - 종목: {}, 수량: {}, 사유: {}", 
-                        action.stockCode, action.quantity, e.getMessage());
+                        action.getStockCode(), action.getQuantity(), e.getMessage());
             } catch (Exception e) {
-                log.error("매도 실행 중 오류 발생: {}", action.stockCode, e);
+                log.error("매도 실행 중 오류 발생: {}", action.getStockCode(), e);
             }
         }
         
@@ -494,31 +487,31 @@ public class PortfolioManagerService {
         List<Trade> buyTrades = new ArrayList<>();
         
         for (RebalancingAction action : plan.values()) {
-            if (!"BUY".equals(action.actionType)) {
+            if (!"BUY".equals(action.getActionType())) {
                 continue;
             }
             
-            if (action.quantity < MINIMUM_TRADING_UNIT) {
+            if (action.getQuantity() < MINIMUM_TRADING_UNIT) {
                 continue;
             }
             
             try {
-                double fee = feeCalculatorService.calculateBuyFee(action.amount);
+                double fee = feeCalculatorService.calculateBuyFee(action.getAmount());
                 
                 Trade trade = portfolio.buyStock(
-                    action.stockCode,
-                    action.quantity,
-                    action.price,
+                    action.getStockCode(),
+                    action.getQuantity(),
+                    action.getPrice(),
                     fee,
                     date
                 );
                 
                 buyTrades.add(trade);
                 
-                log.debug("매수 실행 - {}: {}주 @{:.0f}원", action.stockCode, action.quantity, action.price);
+                log.debug("매수 실행 - {}: {}주 @{:.0f}원", action.getStockCode(), action.getQuantity(), action.getPrice());
                 
             } catch (Exception e) {
-                log.error("매수 실행 중 오류 발생: {}", action.stockCode, e);
+                log.error("매수 실행 중 오류 발생: {}", action.getStockCode(), e);
             }
         }
         
@@ -588,16 +581,4 @@ public class PortfolioManagerService {
         }
     }
 
-    /**
-     * 리밸런싱 액션을 나타내는 내부 클래스
-     */
-    private static class RebalancingAction {
-        String stockCode;
-        String actionType; // "BUY" or "SELL"
-        int quantity;
-        double price;
-        double amount;
-        double currentWeight;
-        double targetWeight;
-    }
 }
