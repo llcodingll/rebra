@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useBlocker } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { TrendingUp } from 'lucide-react';
@@ -107,8 +107,8 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
   const [selectedPortfolio, setSelectedPortfolio] = useState('');
   const [backtestName, setBacktestName] = useState('');
   const [rebalancingPeriod] = useState('월간');
-  const [startDate, setStartDate] = useState('2023-01');
-  const [endDate, setEndDate] = useState('2024-12');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(mockPortfolio);
 
@@ -179,6 +179,8 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
             filteredStocks={filteredStocks}
             portfolioItems={portfolioItems}
             onAddToPortfolio={handleAddToPortfolio}
+            startDate={startDate}
+            endDate={endDate}
           />
 
           <MyPortfolio

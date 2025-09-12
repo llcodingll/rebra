@@ -52,19 +52,60 @@ export interface LegacyBacktest {
   totalReturn: string;
   maxDrawdown: string;
   sharpeRatio: string;
+  annualReturn: string;
+  volatility: string;
+  winRate: string;
   status: string;
 }
 
-export const legacyBacktestData: LegacyBacktest[] = Array(50).fill(null).map((_, index) => ({
-  id: index + 1,
-  name: '삼성전자 + SK하이닉스 포트폴리오',
-  date: '2024-01-15',
-  period: '2023.01 ~ 2024.01',
-  totalReturn: '+24.5%',
-  maxDrawdown: '-8.2%',
-  sharpeRatio: '1.45',
-  status: '완료'
-}));
+const sampleNames = [
+  'Large Cap Momentum Strategy',
+  'Value Growth Hybrid',
+  'Mid Cap Blend Strategy', 
+  'Technical RSI Oscillator',
+  'Bollinger Band Mean Reversion',
+  'Sector Rotation Strategy',
+  'Small Cap Growth Focus',
+  'Dividend Aristocrats Plus',
+  'MACD Signal Strategy',
+  'Moving Average Crossover'
+];
+
+const samplePeriods = [
+  '2020.01 - 2024.03',
+  '2019.06 - 2024.03', 
+  '2021.08 - 2024.03',
+  '2020.04 - 2023.12',
+  '2018.11 - 2024.02',
+  '2022.01 - 2024.03',
+  '2019.03 - 2024.01',
+  '2020.07 - 2024.03'
+];
+
+export const legacyBacktestData: LegacyBacktest[] = Array(50).fill(null).map((_, index) => {
+  const isPositive = Math.random() > 0.2; // 80% positive returns
+  const totalReturn = isPositive 
+    ? `+${(Math.random() * 180 + 20).toFixed(1)}%`
+    : `-${(Math.random() * 30 + 5).toFixed(1)}%`;
+  
+  const annualReturn = isPositive
+    ? `+${(Math.random() * 35 + 8).toFixed(1)}%`
+    : `-${(Math.random() * 15 + 2).toFixed(1)}%`;
+
+  return {
+    id: index + 1,
+    name: sampleNames[index % sampleNames.length],
+    date: `2024.03.${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
+    period: samplePeriods[index % samplePeriods.length],
+    totalReturn,
+    maxDrawdown: `-${(Math.random() * 25 + 8).toFixed(1)}%`,
+    sharpeRatio: (Math.random() * 1.5 + 0.8).toFixed(2),
+    annualReturn,
+    volatility: `${(Math.random() * 15 + 10).toFixed(1)}%`,
+    winRate: `${(Math.random() * 35 + 45).toFixed(1)}%`,
+    status: Math.random() > 0.1 ? '완료' : '진행중'
+  };
+});
 
 export const rebalancingHistory: RebalancingHistory[] = [
   {

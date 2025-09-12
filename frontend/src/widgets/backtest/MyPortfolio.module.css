@@ -6,6 +6,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   height: fit-content;
   min-width: 0;
+  overflow: visible;
 }
 
 .portfolioCard .cardHeader {
@@ -36,7 +37,7 @@
 
 .portfolioTable {
   padding: 0 24px;
-  overflow: hidden;
+  overflow: visible;
   width: 100%;
 }
 
@@ -143,6 +144,63 @@
   margin-left: 2px;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.thresholdContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: visible;
+}
+
+.warningTooltip {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  animation: fadeInUp 0.2s ease-out;
+  font-size: 11px;
+  color: #dc2626;
+  font-weight: 500;
+  min-width: 200px;
+  pointer-events: none;
+}
+
+.warningTooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #fecaca;
+}
+
+.warningIcon {
+  width: 12px;
+  height: 12px;
+  color: #dc2626;
+  flex-shrink: 0;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 .deleteButton {
