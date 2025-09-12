@@ -61,6 +61,12 @@ gms:
   whisper-url: ${GMS_WHISPER_URL:https://gms.ssafy.io/gmsapi/api.openai.com/v1/audio/transcriptions}
   gpt-url: ${GMS_GPT_URL:https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions}
 
+# 계좌 암호화 설정
+security:
+  encryption:
+    account:
+      hash-pepper: ${SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER}
+
 # Actuator 설정
 management:
   endpoints:

@@ -1,0 +1,124 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+}
+
+.content {
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+.iconContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.mainIcon {
+  width: 4rem;
+  height: 4rem;
+  color: #6b7280;
+  stroke-width: 1.5;
+}
+
+.messageContainer {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+}
+
+.description {
+  font-size: 1rem;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.featureList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  padding: 0 1rem;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.featureIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #2563eb;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+
+.createButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.createButton:hover {
+  background: #1d4ed8;
+}
+
+.createButton:active {
+  transform: translateY(1px);
+}
+
+.buttonIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke-width: 2;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 640px) {
+  .container {
+    padding: 1rem;
+    min-height: 50vh;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .description {
+    font-size: 0.9rem;
+  }
+
+  .featureList {
+    padding: 0;
+  }
+
+  .createButton {
+    width: 100%;
+    justify-content: center;
+  }
+}

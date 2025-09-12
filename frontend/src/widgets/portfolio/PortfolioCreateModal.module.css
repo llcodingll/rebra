@@ -1,0 +1,399 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  max-width: 750px;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2.25rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: none;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.closeIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.form {
+  padding: 2.25rem;
+  max-height: calc(90vh - 180px);
+  overflow-y: auto;
+}
+
+.formGroup {
+  margin-bottom: 2.25rem;
+}
+
+.formGroup:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  display: block;
+  font-size: 1.3125rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.75rem;
+}
+
+.required {
+  color: #dc2626;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 1.125rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 1.3125rem;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 4.5rem;
+}
+
+.inputHelper {
+  font-size: 1.125rem;
+  color: #6b7280;
+  text-align: right;
+  margin-top: 0.375rem;
+}
+
+.accountSection {
+  margin-bottom: 0.75rem;
+}
+
+.selectedAccount {
+  display: flex;
+  align-items: center;
+  gap: 1.125rem;
+  padding: 1.125rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: #f9fafb;
+}
+
+.accountIcon {
+  width: 1.875rem;
+  height: 1.875rem;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.accountInfo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.accountNumber {
+  font-size: 1.3125rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.accountType {
+  font-size: 1.125rem;
+  color: #6b7280;
+}
+
+.changeButton {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: background 0.2s ease;
+}
+
+.changeButton:hover {
+  background: #eff6ff;
+}
+
+.accountSelector {
+  width: 100%;
+  position: relative;
+}
+
+.selectAccountButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1.125rem;
+  border: 1px dashed #d1d5db;
+  border-radius: 0.5rem;
+  background: #fafafa;
+  color: #6b7280;
+  font-size: 1.3125rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.selectAccountButton:hover {
+  border-color: #2563eb;
+  background: #f0f9ff;
+  color: #2563eb;
+}
+
+.buttonIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.chevronIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: auto;
+}
+
+.newAccountButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1.125rem;
+  background: #f0f9ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.5rem;
+  color: #2563eb;
+  font-size: 1.3125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.newAccountButton:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.formActions {
+  display: flex;
+  gap: 1.125rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.cancelButton {
+  flex: 1;
+  padding: 1.125rem 1.5rem;
+  background: #f9fafb;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  color: #374151;
+  font-size: 1.3125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelButton:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.submitButton {
+  flex: 1;
+  padding: 1.125rem 1.5rem;
+  background: #2563eb;
+  border: 1px solid #2563eb;
+  border-radius: 0.5rem;
+  color: white;
+  font-size: 1.3125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submitButton:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.submitButton:disabled {
+  background: #9ca3af;
+  border-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.accountDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 0.25rem;
+}
+
+.accountItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1.125rem;
+  border: none;
+  background: white;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.accountItem:hover {
+  background: #f9fafb;
+}
+
+.accountItem:last-child {
+  border-bottom: none;
+}
+
+.accountItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.accountItemIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.accountItemInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.accountItemNumber {
+  font-size: 1.3125rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.accountItemBroker {
+  font-size: 1.125rem;
+  color: #6b7280;
+}
+
+.accountItemType {
+  font-size: 1.125rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid;
+}
+
+.accountItemType.real {
+  color: #059669;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.accountItemType.mock {
+  color: #dc2626;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.noAccounts {
+  padding: 1.125rem;
+  text-align: center;
+  color: #6b7280;
+  font-size: 1.3125rem;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 640px) {
+  .overlay {
+    padding: 0.5rem;
+  }
+  
+  .modal {
+    max-width: 100%;
+    border-radius: 0.5rem;
+  }
+  
+  .header,
+  .form {
+    padding: 1rem;
+  }
+  
+  .formActions {
+    flex-direction: column;
+  }
+  
+  .cancelButton,
+  .submitButton {
+    padding: 0.875rem;
+  }
+}

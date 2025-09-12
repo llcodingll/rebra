@@ -44,7 +44,21 @@ public enum ExceptionCode {
     // ==== Stock 관련 ====
     STOCK_NOT_FOUND(10001, "주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     STOCK_CODE_NOT_FOUND(10002, "해당 종목 코드로 주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-    STOCK_NAME_NOT_FOUND(10003, "해당 종목명으로 주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+    STOCK_NAME_NOT_FOUND(10003, "해당 종목명으로 주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+    // ==== Account 관련 ====
+    ACCOUNT_NOT_FOUND(11001, "계좌를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    ACCOUNT_ACCESS_DENIED(11002, "계좌 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    DUPLICATE_ACCOUNT(11003, "이미 등록된 계좌입니다.", HttpStatus.CONFLICT),
+    ACCOUNT_REGISTRATION_FAILED(11004, "계좌 등록에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    ACCOUNT_LIMIT_EXCEEDED(11005, "계좌 등록 한도를 초과했습니다.", HttpStatus.BAD_REQUEST),
+    ACCOUNT_VERIFICATION_FAILED(11006, "계좌 인증에 실패했습니다.", HttpStatus.BAD_REQUEST),
+    INVALID_ACCOUNT_CREDENTIALS(11007, "잘못된 계좌 인증 정보입니다.", HttpStatus.BAD_REQUEST),
+    KIS_CONNECTION_FAILED(11008, "KIS API 연결에 실패했습니다.", HttpStatus.BAD_GATEWAY),
+    ACCOUNT_ENCRYPTION_FAILED(11009, "계좌 정보 암호화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    ACCOUNT_DECRYPTION_FAILED(11010, "계좌 정보 복호화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    ACCOUNT_DELETION_FAILED(11011, "계좌 삭제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    ACCOUNT_ALREADY_INACTIVE(11012, "이미 비활성화된 계좌입니다.", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;
