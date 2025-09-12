@@ -1,5 +1,8 @@
 package com.rebra.calculator.domain;
 
+import com.rebra.calculator.enums.MissingPricePolicy;
+import com.rebra.calculator.strategy.RebalancingStrategy;
+import com.rebra.calculator.util.PriceDataUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,6 +33,18 @@ public class Portfolio {
      * Key: 종목코드, Value: 보유 수량
      */
     private final Map<String, Integer> holdings;
+    
+    /**
+     * 목표 종목 정보
+     * Key: 종목코드, Value: 종목 정보 (목표 비중, 임계값 포함)
+     */
+    private final Map<String, Stock> targetStocks;
+    
+    /**
+     * 자동 비중 재조정 활성화 여부
+     * 종목이 제거될 때 나머지 종목들의 비중을 자동으로 재조정할지 결정
+     */
+    private boolean autoRebalance;
     
     
     /**
@@ -63,6 +78,18 @@ public class Portfolio {
      * 백테스트 시작 시점의 포트폴리오 총 가치
      */
     private double initialValue;
+    
+    /**
+     * 마지막으로 알려진 종목별 가격 캐시
+     * null 가격 처리 시 이전 가격을 찾기 위해 사용
+     */
+    private final Map<String, Double> lastKnownPrices;
+    
+    /**
+     * 가격 누락 시 처리 정책
+     * 기본값: SKIP_STOCK (해당 종목 제외)
+     */
+    private MissingPricePolicy missingPricePolicy;
 
     /**
      * Portfolio 생성자
@@ -71,11 +98,15 @@ public class Portfolio {
     public Portfolio() {
         this.cash = 0.0;
         this.holdings = new HashMap<>();
+        this.targetStocks = new HashMap<>();
+        this.autoRebalance = true; // 기본값: 자동 비중 재조정 활성화
         this.totalTradingCost = 0.0;
         this.totalBorrowingCost = 0.0;
         this.maxBorrowingAmount = 0.0;
         this.minCashBalance = 0.0;
         this.initialValue = 0.0; // 초기 구성 완료 후 설정
+        this.lastKnownPrices = new HashMap<>();
+        this.missingPricePolicy = MissingPricePolicy.SKIP_STOCK; // 기본값
         
         log.info("포트폴리오 생성 - 초기 현금: 0원");
     }
@@ -240,8 +271,9 @@ public class Portfolio {
 
     /**
      * 현재 포트폴리오의 총 가치를 계산한다
+     * null 가격 처리 정책에 따라 이전 가격 사용 또는 제외
      * 
-     * @param currentPrices 현재 주가 정보 (종목코드 -> 주가)
+     * @param currentPrices 현재 주가 정보 (종목코드 -> 주가, null 값 포함 가능)
      * @return 총 포트폴리오 가치 (현금 + 주식 평가액)
      */
     public double getTotalValue(Map<String, Double> currentPrices) {
@@ -249,17 +281,22 @@ public class Portfolio {
             return cash; // 주식 가격 정보가 없으면 현금만 반환
         }
         
+        // 유효한 가격 캐시 업데이트
+        updateLastKnownPrices(currentPrices);
+        
         double stockValue = 0.0;
         
         for (Map.Entry<String, Integer> entry : holdings.entrySet()) {
             String stockCode = entry.getKey();
             int quantity = entry.getValue();
             
-            Double price = currentPrices.get(stockCode);
+            Double price = getEffectivePrice(stockCode, currentPrices);
             if (price != null && price > 0) {
                 stockValue += quantity * price;
+                log.trace("종목 {} 가치 계산: {}주 × {:.0f}원 = {:.0f}원", 
+                        stockCode, quantity, price, quantity * price);
             } else {
-                log.warn("종목 {}의 가격 정보가 없거나 유효하지 않습니다: {}", stockCode, price);
+                log.debug("종목 {}의 유효한 가격을 찾을 수 없어 가치 계산에서 제외", stockCode);
             }
         }
         
@@ -268,6 +305,7 @@ public class Portfolio {
 
     /**
      * 각 종목별 현재 비중을 계산한다
+     * null 가격 처리 정책에 따라 이전 가격 사용 또는 0으로 처리
      * 
      * @param currentPrices 현재 주가 정보
      * @return 종목별 비중 맵 (종목코드 -> 비중)
@@ -288,13 +326,14 @@ public class Portfolio {
             String stockCode = entry.getKey();
             int quantity = entry.getValue();
             
-            Double price = currentPrices.get(stockCode);
+            Double price = getEffectivePrice(stockCode, currentPrices);
             if (price != null && price > 0) {
                 double stockValue = quantity * price;
                 double weight = stockValue / totalValue;
                 weights.put(stockCode, roundWeight(weight));
             } else {
                 weights.put(stockCode, 0.0);
+                log.debug("종목 {}의 유효한 가격이 없어 비중을 0으로 설정", stockCode);
             }
         }
         
@@ -326,6 +365,538 @@ public class Portfolio {
      */
     public double getCurrentBorrowingAmount() {
         return cash < 0 ? Math.abs(cash) : 0.0;
+    }
+
+    /**
+     * 가격 누락 시 처리 정책을 설정한다
+     * 
+     * @param policy 새로운 처리 정책
+     */
+    public void setMissingPricePolicy(MissingPricePolicy policy) {
+        if (policy == null) {
+            throw new IllegalArgumentException("가격 누락 처리 정책은 null일 수 없습니다");
+        }
+        
+        this.missingPricePolicy = policy;
+        log.debug("가격 누락 처리 정책 변경: {}", policy.getDescription());
+    }
+
+    /**
+     * 현재 설정된 가격 누락 처리 정책을 반환한다
+     * 
+     * @return 현재 처리 정책
+     */
+    public MissingPricePolicy getMissingPricePolicy() {
+        return missingPricePolicy;
+    }
+
+    /**
+     * 목표 종목을 추가한다 (기존 호환성 메서드)
+     * 
+     * @param stock 추가할 종목 정보 (목표 비중, 임계값 포함)
+     * @throws IllegalArgumentException 종목이 null이거나 이미 존재하는 경우
+     */
+    public void addTargetStock(Stock stock) {
+        if (stock == null) {
+            throw new IllegalArgumentException("종목 정보는 null일 수 없습니다");
+        }
+        
+        String stockCode = stock.getStockCode();
+        if (targetStocks.containsKey(stockCode)) {
+            throw new IllegalArgumentException("이미 존재하는 종목입니다: " + stockCode);
+        }
+        
+        targetStocks.put(stockCode, stock.copy());
+        
+        // 자동 재조정이 활성화되어 있으면 비중 재계산
+        if (autoRebalance) {
+            adjustWeights();
+        }
+        
+        // 현재 전체 가중치로 목표 비중 계산
+        int totalWeight = getTotalOriginalWeight();
+        
+        log.debug("목표 종목 추가: {} (원본가중치: {}, 목표비중: {:.2f}%, 임계값: {:.2f}%)", 
+                stockCode, stock.getOriginalWeight(), 
+                totalWeight > 0 ? stock.getTargetWeightPercentage(totalWeight) : 0.0, 
+                stock.getThresholdPercentage());
+    }
+
+    /**
+     * BacktestStockDto를 사용하여 목표 종목을 추가한다
+     * 
+     * @param stockDto 백테스트 종목 DTO (원본 가중치와 임계값 포함)
+     * @throws IllegalArgumentException 종목이 null이거나 이미 존재하는 경우
+     */
+    public void addTargetStock(com.rebra.calculator.dto.BacktestStockDto stockDto) {
+        if (stockDto == null) {
+            throw new IllegalArgumentException("종목 DTO는 null일 수 없습니다");
+        }
+        
+        String stockCode = stockDto.getStockCode();
+        if (targetStocks.containsKey(stockCode)) {
+            throw new IllegalArgumentException("이미 존재하는 종목입니다: " + stockCode);
+        }
+        
+        // Stock 객체 생성 (원본 가중치와 임계값)
+        Stock stock = new Stock(stockCode, stockDto.getWeight(), stockDto.getThresholdPercentageValue());
+        
+        targetStocks.put(stockCode, stock);
+        
+        // 자동 재조정이 활성화되어 있으면 원본 가중치 기반 재계산
+        if (autoRebalance) {
+            adjustWeights();
+        }
+        
+        // 현재 전체 가중치로 목표 비중 계산
+        int totalWeight = getTotalOriginalWeight();
+        
+        log.debug("목표 종목 추가 (DTO 기반): {} (원본가중치: {}, 목표비중: {:.2f}%, 임계값: {:.2f}%)", 
+                stockCode, stockDto.getWeight(), 
+                totalWeight > 0 ? stock.getTargetWeightPercentage(totalWeight) : 0.0,
+                stockDto.getThresholdPercentageValue());
+    }
+
+    /**
+     * 목표 종목을 제거한다
+     * 자동 재조정이 활성화된 경우 나머지 종목들의 비중을 재조정한다
+     * 
+     * @param stockCode 제거할 종목 코드
+     * @return 제거된 종목 정보 (제거되지 않았으면 null)
+     */
+    public Stock removeTargetStock(String stockCode) {
+        if (stockCode == null || stockCode.trim().isEmpty()) {
+            throw new IllegalArgumentException("종목 코드는 필수입니다");
+        }
+        
+        Stock removedStock = targetStocks.remove(stockCode.trim().toUpperCase());
+        if (removedStock == null) {
+            return null;
+        }
+        
+        // 제거 전 전체 가중치 계산 (제거될 종목 포함)
+        int totalWeightBefore = getTotalOriginalWeight() + removedStock.getOriginalWeight();
+        
+        log.info("목표 종목 제거: {} (원본가중치: {}, 제거전비중: {:.2f}%)", 
+                stockCode, removedStock.getOriginalWeight(),
+                totalWeightBefore > 0 ? ((double) removedStock.getOriginalWeight() / totalWeightBefore) * 100 : 0.0);
+        
+        // 자동 재조정이 활성화되어 있고 제거할 종목이 있으면 비중 재조정
+        if (autoRebalance && !targetStocks.isEmpty()) {
+            // 원본 가중치 기반으로는 별도 조정이 필요하지 않음 (자동으로 정규화됨)
+            log.info("원본 가중치 기반 비중은 자동으로 재정규화됩니다");
+        }
+        
+        return removedStock;
+    }
+
+    /**
+     * 종목 제거 후 나머지 종목들의 비중을 재조정한다
+     * 원본 가중치가 있으면 원본 기준으로, 없으면 현재 비중을 비례 배분
+     * 
+     * @param removedWeight 제거된 종목의 비중 (참고용)
+     */
+    private void adjustWeightsAfterRemoval(double removedWeight) {
+        if (targetStocks.isEmpty()) {
+            return;
+        }
+        
+        log.info("종목 제거 후 비중 재조정 시작 - 제거된 비중: {:.2f}%, 남은 종목수: {}", 
+                removedWeight * 100, targetStocks.size());
+        
+        // 원본 가중치가 있으면 원본 기준으로 재정규화
+        boolean hasOriginalWeights = targetStocks.values().stream()
+                .anyMatch(Stock::hasOriginalWeight);
+        
+        if (hasOriginalWeights) {
+            // 원본 가중치 기반에서는 별도 조정 불필요 (자동 정규화)
+            log.info("원본 가중치 기반으로 비중이 자동 재정규화됩니다");
+        } else {
+            // 원본 가중치가 없으면 기존 로직 사용 (비례 배분)
+            adjustWeightsByProportionalDistribution(removedWeight);
+        }
+    }
+    
+    /**
+     * 제거된 비중을 나머지 종목들에게 비례적으로 분배 (레거시 메서드)
+     * 원본 가중치 기반 시스템에서는 더 이상 사용하지 않음
+     * 
+     * @param removedWeight 제거된 종목의 비중 (사용되지 않음)
+     */
+    private void adjustWeightsByProportionalDistribution(double removedWeight) {
+        // 원본 가중치 기반 시스템에서는 자동으로 재정규화되므로 별도 작업 불필요
+        log.debug("원본 가중치 기반에서는 비례 배분이 자동으로 처리됩니다");
+    }
+
+    /**
+     * 목표 종목들의 원본 가중치 유효성을 검증한다
+     * 원본 가중치 기반 시스템에서는 별도 조정이 필요하지 않음
+     */
+    public void adjustWeights() {
+        if (targetStocks.isEmpty()) {
+            return;
+        }
+        
+        // 원본 가중치 유효성 검증
+        boolean allHaveOriginalWeights = validateOriginalWeights();
+        
+        if (!allHaveOriginalWeights) {
+            log.warn("일부 종목에 원본 가중치가 없습니다. 이는 예상되지 않은 상황입니다.");
+            targetStocks.values().forEach(stock -> {
+                if (!stock.hasOriginalWeight()) {
+                    log.warn("원본 가중치 누락 종목: {}", stock.getStockCode());
+                }
+            });
+        }
+        
+        int totalWeight = getTotalOriginalWeight();
+        log.debug("현재 전체 원본 가중치: {}, 종목수: {}", totalWeight, targetStocks.size());
+    }
+    
+    /**
+     * 원본 가중치의 유효성을 검증한다
+     * 모든 종목에 원본 가중치가 설정되어 있는지 확인
+     * 
+     * @return 모든 종목이 유효한 원본 가중치를 가지고 있으면 true
+     */
+    private boolean validateOriginalWeights() {
+        return targetStocks.values().stream()
+                .allMatch(Stock::hasOriginalWeight);
+    }
+    
+    /**
+     * 현재 목표 비중 기준으로 정규화 (원본 가중치가 없는 경우)
+     */
+    private void normalizeByCurrentWeights() {
+        // 원본 가중치 기반 시스템에서는 자동으로 정규화되므로 별도 작업 불필요
+        log.debug("원본 가중치 기반에서는 정규화가 자동으로 처리됩니다");
+        return;
+        
+        // 나머지 코드는 더 이상 필요하지 않음
+        /*
+        if (totalWeight <= 0) {
+            log.warn("총 비중이 0입니다. 비중 재조정을 건너뜁니다.");
+            return;
+        }
+        
+        log.info("현재 비중 기반 정규화 시작 - 현재 총 비중: {:.2f}%", totalWeight * 100);
+        
+        // 각 종목의 비중을 정규화
+        for (Stock stock : targetStocks.values()) {
+            double currentWeight = stock.getTargetWeight();
+            double normalizedWeight = currentWeight / totalWeight;
+            
+            stock.setTargetWeight(normalizedWeight);
+            
+            log.debug("종목 {} 비중 정규화: {:.2f}% → {:.2f}%", 
+                    stock.getStockCode(), currentWeight * 100, normalizedWeight * 100);
+        }
+        
+        log.info("현재 비중 기반 정규화 완료 - 종목수: {}", targetStocks.size());
+        */
+    }
+
+    /**
+     * 목표 종목 목록을 반환한다 (복사본)
+     * 
+     * @return 목표 종목 목록의 복사본
+     */
+    public Map<String, Stock> getTargetStocks() {
+        Map<String, Stock> copy = new HashMap<>();
+        targetStocks.forEach((code, stock) -> copy.put(code, stock.copy()));
+        return copy;
+    }
+
+    /**
+     * 특정 종목의 목표 종목 정보를 반환한다
+     * 
+     * @param stockCode 종목 코드
+     * @return 목표 종목 정보 (없으면 null)
+     */
+    public Stock getTargetStock(String stockCode) {
+        if (stockCode == null) {
+            return null;
+        }
+        
+        Stock stock = targetStocks.get(stockCode.trim().toUpperCase());
+        return stock != null ? stock.copy() : null;
+    }
+
+    /**
+     * 자동 비중 재조정 활성화 여부를 설정한다
+     * 
+     * @param autoRebalance 자동 재조정 활성화 여부
+     */
+    public void setAutoRebalance(boolean autoRebalance) {
+        this.autoRebalance = autoRebalance;
+        log.debug("자동 비중 재조정 설정 변경: {}", autoRebalance ? "활성화" : "비활성화");
+    }
+
+    /**
+     * 자동 비중 재조정 활성화 여부를 반환한다
+     * 
+     * @return 자동 재조정 활성화 여부
+     */
+    public boolean isAutoRebalance() {
+        return autoRebalance;
+    }
+
+    /**
+     * 리밸런싱이 필요한지 판단한다
+     * 내부 목표 종목 정보와 현재 비중을 비교하여 리밸런싱 전략에 따라 판단
+     * 
+     * @param currentDate 현재 날짜
+     * @param currentPrices 현재 주가 정보
+     * @param rebalancingStrategy 리밸런싱 전략
+     * @param lastRebalancingDate 마지막 리밸런싱 날짜
+     * @return 리밸런싱이 필요하면 true
+     */
+    public boolean shouldRebalance(LocalDate currentDate, Map<String, Double> currentPrices,
+                                 RebalancingStrategy rebalancingStrategy, LocalDate lastRebalancingDate) {
+        if (targetStocks.isEmpty()) {
+            log.debug("목표 종목이 설정되지 않아 리밸런싱을 건너뜁니다");
+            return false;
+        }
+        
+        if (rebalancingStrategy == null) {
+            log.warn("리밸런싱 전략이 설정되지 않았습니다");
+            return false;
+        }
+        
+        // 목표 종목 리스트를 생성 (Strategy 인터페이스 호환을 위해)
+        List<Stock> stocks = new ArrayList<>(targetStocks.values());
+        
+        return rebalancingStrategy.shouldRebalance(currentDate, this, stocks, currentPrices, lastRebalancingDate);
+    }
+
+    /**
+     * 리밸런싱이 필요한 목표 종목들을 반환한다
+     * 
+     * @param currentPrices 현재 주가 정보
+     * @param rebalancingStrategy 리밸런싱 전략
+     * @return 리밸런싱이 필요한 종목 리스트
+     */
+    public List<Stock> getStocksNeedingRebalancing(Map<String, Double> currentPrices,
+                                                 RebalancingStrategy rebalancingStrategy) {
+        if (targetStocks.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        if (rebalancingStrategy == null) {
+            return new ArrayList<>();
+        }
+        
+        List<Stock> stocks = new ArrayList<>(targetStocks.values());
+        return rebalancingStrategy.getStocksNeedingRebalancing(this, stocks, currentPrices);
+    }
+
+    /**
+     * 목표 종목들의 원본 가중치를 검증한다
+     * 모든 종목이 유효한 원본 가중치를 가지고 있는지 확인
+     * 
+     * @return 모든 종목이 유효한 원본 가중치를 가지고 있으면 true
+     */
+    public boolean validateTargetWeights() {
+        if (targetStocks.isEmpty()) {
+            return true;
+        }
+        
+        // 모든 종목이 유효한 원본 가중치를 가지고 있는지 확인
+        boolean allHaveOriginalWeights = validateOriginalWeights();
+        int totalOriginalWeight = getTotalOriginalWeight();
+        
+        boolean isValid = allHaveOriginalWeights && totalOriginalWeight > 0;
+        
+        if (!isValid) {
+            if (!allHaveOriginalWeights) {
+                log.warn("일부 종목에 원본 가중치가 누락되었습니다");
+            }
+            if (totalOriginalWeight <= 0) {
+                log.warn("전체 원본 가중치가 0 이하입니다: {}", totalOriginalWeight);
+            }
+        } else {
+            log.debug("원본 가중치 검증 완료 - 전체 가중치: {}, 종목수: {}", 
+                    totalOriginalWeight, targetStocks.size());
+        }
+        
+        return isValid;
+    }
+
+    /**
+     * 목표 종목 개수를 반환한다
+     * 
+     * @return 설정된 목표 종목 개수
+     */
+    public int getTargetStockCount() {
+        return targetStocks.size();
+    }
+
+    /**
+     * 모든 목표 종목의 원본 가중치 합을 계산한다
+     * 
+     * @return 전체 원본 가중치 합
+     */
+    public int getTotalOriginalWeight() {
+        return targetStocks.values().stream()
+                .mapToInt(Stock::getOriginalWeight)
+                .sum();
+    }
+
+    /**
+     * 특정 종목이 목표 종목으로 설정되어 있는지 확인한다
+     * 
+     * @param stockCode 종목 코드
+     * @return 목표 종목이면 true
+     */
+    public boolean isTargetStock(String stockCode) {
+        if (stockCode == null) {
+            return false;
+        }
+        return targetStocks.containsKey(stockCode.trim().toUpperCase());
+    }
+
+    /**
+     * 특정 종목에 대해 유효한 가격을 찾는다
+     * null 가격인 경우 처리 정책에 따라 이전 가격 사용 또는 null 반환
+     * 
+     * @param stockCode 종목 코드
+     * @param currentPrices 현재 가격 데이터
+     * @return 유효한 가격 (없으면 null)
+     */
+    private Double getEffectivePrice(String stockCode, Map<String, Double> currentPrices) {
+        // 현재 가격이 유효한 경우
+        Double currentPrice = currentPrices.get(stockCode);
+        if (currentPrice != null && currentPrice > 0) {
+            return currentPrice;
+        }
+        
+        // 현재 가격이 null이거나 0 이하인 경우 정책에 따라 처리
+        switch (missingPricePolicy) {
+            case USE_PREVIOUS:
+                // 이전 가격 사용
+                Double previousPrice = lastKnownPrices.get(stockCode);
+                if (previousPrice != null && previousPrice > 0) {
+                    log.trace("종목 {} 이전 가격 {} 사용", stockCode, previousPrice);
+                    return previousPrice;
+                }
+                break;
+                
+            case SKIP_STOCK:
+            case HALT_REBALANCING:
+            default:
+                // 종목 제외 또는 기타 정책
+                break;
+        }
+        
+        return null; // 유효한 가격을 찾을 수 없음
+    }
+
+    /**
+     * 유효한 가격 정보로 이전 가격 캐시를 업데이트한다
+     * 
+     * @param currentPrices 현재 가격 데이터
+     */
+    private void updateLastKnownPrices(Map<String, Double> currentPrices) {
+        if (currentPrices == null) {
+            return;
+        }
+        
+        // 유효한 가격만 캐시에 업데이트
+        for (Map.Entry<String, Double> entry : currentPrices.entrySet()) {
+            String stockCode = entry.getKey();
+            Double price = entry.getValue();
+            
+            if (price != null && price > 0) {
+                lastKnownPrices.put(stockCode, price);
+            }
+        }
+    }
+
+    /**
+     * 유효한 가격을 가진 종목들만 필터링하여 반환한다
+     * 
+     * @param targetStockCodes 대상 종목 코드 목록
+     * @param currentPrices 현재 가격 데이터
+     * @return 유효한 가격을 가진 종목 코드 집합
+     */
+    public Set<String> getValidPriceStockCodes(List<String> targetStockCodes, Map<String, Double> currentPrices) {
+        if (targetStockCodes == null || currentPrices == null) {
+            return Set.of();
+        }
+        
+        Set<String> validStocks = new HashSet<>();
+        
+        for (String stockCode : targetStockCodes) {
+            Double effectivePrice = getEffectivePrice(stockCode, currentPrices);
+            if (effectivePrice != null && effectivePrice > 0) {
+                validStocks.add(stockCode);
+            }
+        }
+        
+        return validStocks;
+    }
+
+    /**
+     * 가격 누락으로 인해 리밸런싱을 중단해야 하는지 확인한다
+     * 
+     * @param targetStockCodes 대상 종목 코드 목록
+     * @param currentPrices 현재 가격 데이터
+     * @return 리밸런싱 중단 여부
+     */
+    public boolean shouldHaltRebalancing(List<String> targetStockCodes, Map<String, Double> currentPrices) {
+        if (missingPricePolicy != MissingPricePolicy.HALT_REBALANCING) {
+            return false;
+        }
+        
+        if (targetStockCodes == null || currentPrices == null) {
+            return true;
+        }
+        
+        // 하나라도 유효한 가격이 없으면 중단
+        for (String stockCode : targetStockCodes) {
+            Double effectivePrice = getEffectivePrice(stockCode, currentPrices);
+            if (effectivePrice == null || effectivePrice <= 0) {
+                log.info("종목 {} 가격 누락으로 리밸런싱 중단", stockCode);
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * 현재 보유 중인 종목 중 유효한 가격을 가진 종목들의 가치 합계를 계산한다
+     * 
+     * @param currentPrices 현재 가격 데이터
+     * @return 유효한 종목들의 총 가치
+     */
+    public double getValidStockValue(Map<String, Double> currentPrices) {
+        if (currentPrices == null || holdings.isEmpty()) {
+            return 0.0;
+        }
+        
+        double validStockValue = 0.0;
+        
+        for (Map.Entry<String, Integer> entry : holdings.entrySet()) {
+            String stockCode = entry.getKey();
+            int quantity = entry.getValue();
+            
+            Double effectivePrice = getEffectivePrice(stockCode, currentPrices);
+            if (effectivePrice != null && effectivePrice > 0) {
+                validStockValue += quantity * effectivePrice;
+            }
+        }
+        
+        return roundAmount(validStockValue);
+    }
+
+    /**
+     * 마지막으로 알려진 가격 정보를 반환한다 (복사본)
+     * 
+     * @return 이전 가격 캐시의 복사본
+     */
+    public Map<String, Double> getLastKnownPricesCopy() {
+        return new HashMap<>(lastKnownPrices);
     }
 
     /**
@@ -447,13 +1018,18 @@ public class Portfolio {
         copy.cash = this.cash;
         copy.holdings.clear();
         copy.holdings.putAll(this.holdings);
+        copy.targetStocks.clear();
+        // Stock 객체도 깊은 복사
+        this.targetStocks.forEach((code, stock) -> copy.targetStocks.put(code, stock.copy()));
+        copy.autoRebalance = this.autoRebalance;
         copy.totalTradingCost = this.totalTradingCost;
         copy.totalBorrowingCost = this.totalBorrowingCost;
         copy.maxBorrowingAmount = this.maxBorrowingAmount;
         copy.minCashBalance = this.minCashBalance;
         copy.initialValue = this.initialValue;
-        
-        
+        copy.lastKnownPrices.clear();
+        copy.lastKnownPrices.putAll(this.lastKnownPrices);
+        copy.missingPricePolicy = this.missingPricePolicy;
         
         return copy;
     }

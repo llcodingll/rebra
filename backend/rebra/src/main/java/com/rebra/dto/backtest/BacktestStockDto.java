@@ -1,7 +1,6 @@
-package com.rebra.calculator.dto;
+package com.rebra.dto.backtest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.rebra.calculator.domain.Stock;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -198,20 +197,6 @@ public class BacktestStockDto {
      */
     public int getSafeShares() {
         return shares != null ? shares : 0;
-    }
-
-    /**
-     * 종목 정보를 Domain 객체로 변환 (원본 가중치 기반)
-     * 
-     * @return Stock 도메인 객체
-     */
-    public Stock toDomain() {
-        return new Stock(
-            getNormalizedStockCode(),
-            weight,  // 원본 가중치
-            thresholdPercentage != null ? thresholdPercentage : 0.0,
-            getSafeShares()  // 초기 보유 수량
-        );
     }
 
     /**

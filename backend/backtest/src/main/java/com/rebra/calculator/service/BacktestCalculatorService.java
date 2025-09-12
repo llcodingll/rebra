@@ -9,6 +9,7 @@ import com.rebra.calculator.enums.RebalancingType;
 import com.rebra.calculator.strategy.PeriodicRebalancingStrategy;
 import com.rebra.calculator.strategy.RebalancingStrategy;
 import com.rebra.calculator.strategy.ThresholdRebalancingStrategy;
+import com.rebra.calculator.util.PriceDataUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,9 +18,12 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.rebra.calculator.constant.BacktestConstants.Calculation.*;
 
 /**
  * 백테스트 계산의 메인 서비스 클래스
@@ -42,9 +46,8 @@ public class BacktestCalculatorService {
     private final ThresholdRebalancingStrategy thresholdStrategy;
     private final PeriodicRebalancingStrategy periodicStrategy;
     
-    // 수익률 계산 관련 상수
-    private static final int TRADING_DAYS_PER_YEAR = 252;
-    private static final double RISK_FREE_RATE = 0.03; // 3% 무위험 수익률
+    // BacktestConstants에서 import된 상수 사용
+    // TRADING_DAYS_PER_YEAR, RISK_FREE_RATE
 
     /**
      * 백테스트를 실행하고 결과를 반환한다
@@ -122,53 +125,45 @@ public class BacktestCalculatorService {
 
     /**
      * 백테스트 실행을 위한 컨텍스트를 준비한다
+     * BacktestRequest에서 필요한 데이터만 추출하여 도메인 객체로 변환
      */
     private BacktestContext prepareBacktestContext(BacktestRequest request) {
-        BacktestContext context = new BacktestContext();
-        
-        // 기본 정보 설정
-        context.request = request;
-        context.startDate = request.getStartDate();
-        context.endDate = request.getEndDate();
-        
-        // 종목 정보 변환 (가중치 정규화 적용)
-        Map<String, Double> normalizedWeights = request.getNormalizedWeights();
-        context.stocks = request.getStocks().stream()
-                .map(stock -> stock.toDomain(normalizedWeights.get(stock.getStockCode())))
+        // 종목 정보 변환 (원본 가중치 기반)
+        List<Stock> stocks = request.getStocks().stream()
+                .map(BacktestStockDto::toDomain)
                 .collect(Collectors.toList());
         
-        // 거래일 목록 생성
-        context.tradingDates = request.getTradingDates();
-        
-        // 가격 데이터 맵 생성
-        context.priceDataMap = buildPriceDataMap(request.getOhlcvData());
+        // 일별 가격 데이터를 LocalDate 키로 파싱하여 LinkedHashMap에 저장
+        LinkedHashMap<LocalDate, Map<String, Double>> dailyPrices = request.getDailyPrices().entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> LocalDate.parse(entry.getKey()),
+                        Map.Entry::getValue,
+                        (existing, replacement) -> existing,
+                        LinkedHashMap::new
+                ));
         
         // 리밸런싱 전략 선택
-        context.rebalancingStrategy = selectRebalancingStrategy(request);
+        RebalancingStrategy rebalancingStrategy = selectRebalancingStrategy(request);
+        
+        // Context 생성 (request 참조 없이)
+        BacktestContext context = new BacktestContext(
+                request.getBacktestId(),
+                request.getStartDate(),
+                request.getEndDate(),
+                stocks,
+                dailyPrices,
+                rebalancingStrategy,
+                request.getRebalancingType(),
+                request.getRebalancingPeriod(),
+                new ArrayList<>(request.getStocks()) // 초기 보유 정보 복사
+        );
         
         log.debug("백테스트 컨텍스트 준비 완료 - 거래일: {}일, 전략: {}", 
-                context.tradingDates.size(), context.rebalancingStrategy.getStrategyName());
+                dailyPrices.size(), rebalancingStrategy.getStrategyName());
         
         return context;
     }
 
-    /**
-     * 가격 데이터를 빠른 조회를 위한 맵으로 변환한다
-     */
-    private Map<LocalDate, Map<String, Double>> buildPriceDataMap(List<OhlcvDataDto> ohlcvData) {
-        Map<LocalDate, Map<String, Double>> priceMap = new HashMap<>();
-        
-        for (OhlcvDataDto data : ohlcvData) {
-            LocalDate date = data.getTradeDate();
-            String stockCode = data.getStockCode();
-            double price = data.getClosePrice();
-            
-            priceMap.computeIfAbsent(date, k -> new HashMap<>()).put(stockCode, price);
-        }
-        
-        log.debug("가격 데이터 맵 생성 완료 - {}일치 데이터", priceMap.size());
-        return priceMap;
-    }
 
     /**
      * 요청에 따른 적절한 리밸런싱 전략을 선택한다
@@ -193,17 +188,16 @@ public class BacktestCalculatorService {
      * 초기 포트폴리오를 구성한다
      */
     private Portfolio createInitialPortfolio(BacktestContext context) {
-        Map<String, Double> initialPrices = context.priceDataMap.get(context.startDate);
+        Map<String, Double> initialPrices = context.getPricesForDate(context.getStartDate());
         
         if (initialPrices == null || initialPrices.isEmpty()) {
-            throw new RuntimeException("시작일의 가격 정보가 없습니다: " + context.startDate);
+            throw new RuntimeException("시작일의 가격 정보가 없습니다: " + context.getStartDate());
         }
 
         Portfolio portfolio = portfolioManagerService.createInitialPortfolio(
-            context.request.getStocks(), 
-            context.stocks, 
+            context.getStocks(), 
             initialPrices, 
-            context.startDate
+            context.getStartDate()
         );
 
         log.info("초기 포트폴리오 구성 완료 - 현금잔액: {:.0f}원, 보유종목수: {}, 초기가치: {:.0f}원", 
@@ -229,9 +223,8 @@ public class BacktestCalculatorService {
         log.info("백테스트 실행 시작 - 초기 구성: 보유주식 기반, 첫 리밸런싱: 목표 비중 달성을 위한 거래");
         
         // 각 거래일별로 처리
-        for (int i = 0; i < context.tradingDates.size(); i++) {
-            LocalDate currentDate = context.tradingDates.get(i);
-            Map<String, Double> currentPrices = context.priceDataMap.get(currentDate);
+        for (LocalDate currentDate : context.getDailyPrices().keySet()) {
+            Map<String, Double> currentPrices = context.getPricesForDate(currentDate);
             
             if (currentPrices == null || currentPrices.isEmpty()) {
                 log.warn("날짜 {}의 가격 정보가 없습니다", currentDate);
@@ -247,15 +240,15 @@ public class BacktestCalculatorService {
             // 차입 이자 계산 (실제 경과 기간 적용)
             portfolio.calculateAndDeductBorrowingCost(currentDate, daysPassed);
             
-            // 리밸런싱 필요 여부 확인
-            boolean shouldRebalance = context.rebalancingStrategy.shouldRebalance(
-                currentDate, portfolio, context.stocks, currentPrices, lastRebalancingDate);
+            // 리밸런싱 필요 여부 확인 (Portfolio 자체에서 판단)
+            boolean shouldRebalance = portfolio.shouldRebalance(
+                currentDate, currentPrices, context.getRebalancingStrategy(), lastRebalancingDate);
             
             // 리밸런싱 실행
             List<Trade> rebalancingTrades = null;
             if (shouldRebalance) {
                 rebalancingTrades = portfolioManagerService.executeRebalancing(
-                    portfolio, context.stocks, currentPrices, currentDate);
+                    portfolio, currentPrices, currentDate);
                 
                 if (!rebalancingTrades.isEmpty()) {
                     rebalancingCount++;
@@ -349,16 +342,20 @@ public class BacktestCalculatorService {
                                      BacktestContext context, int rebalancingCount) {
         // 기본 정보
         double initialValue = portfolio.getInitialValue();
-        double finalValue = portfolio.getTotalValue(
-            context.priceDataMap.get(context.tradingDates.get(context.tradingDates.size() - 1)));
+        
+        // 마지막 거래일의 가격 데이터 가져오기
+        LocalDate lastDate = context.getLastDate();
+        Map<String, Double> finalPrices = context.getPricesForDate(lastDate);
+        double finalValue = portfolio.getTotalValue(finalPrices);
         double totalReturn = (finalValue - initialValue) / initialValue;
         
         // 바이앤홀드 수익률 계산
-        Map<String, Double> initialPrices = context.priceDataMap.get(context.startDate);
-        Map<String, Double> finalPrices = context.priceDataMap.get(
-            context.tradingDates.get(context.tradingDates.size() - 1));
+        Map<String, Double> initialPrices = context.getPricesForDate(context.getStartDate());
+        
         double buyHoldValue = portfolioManagerService.calculateBuyAndHoldValue(
-            context.request.getStocks(), initialPrices, finalPrices);
+            context.getInitialQuantities(), 
+            PriceDataUtils.filterValidPrices(initialPrices), 
+            PriceDataUtils.filterValidPrices(finalPrices));
         double buyHoldReturn = (buyHoldValue - initialValue) / initialValue;
         
         // 성과 지표 계산
@@ -374,7 +371,7 @@ public class BacktestCalculatorService {
         // 추가 수익률 지표 계산
         double periodGrowthRate = calculatePeriodGrowthRate(periodReturns);
         double volatility = calculateVolatility(periodReturns, periodGrowthRate);
-        double annualizedReturn = calculateAnnualizedReturn(totalReturn, context.startDate, context.endDate);
+        double annualizedReturn = calculateAnnualizedReturn(totalReturn, context.getStartDate(), context.getEndDate());
         double sharpeRatio = calculateSharpeRatio(annualizedReturn, volatility);
         double timeWeightedReturn = calculateTimeWeightedReturn(periodReturns);
         
@@ -532,15 +529,80 @@ public class BacktestCalculatorService {
 
     /**
      * 백테스트 실행 컨텍스트
+     * 도메인 로직에 필요한 데이터만 포함하며, BacktestRequest 참조를 제거하여 완전 분리
      */
     private static class BacktestContext {
-        BacktestRequest request;
-        List<Stock> stocks;
-        List<LocalDate> tradingDates;
-        Map<LocalDate, Map<String, Double>> priceDataMap;
-        RebalancingStrategy rebalancingStrategy;
-        LocalDate startDate;
-        LocalDate endDate;
+        // 기본 정보
+        private final Long backtestId;
+        private final LocalDate startDate;
+        private final LocalDate endDate;
+        
+        // 도메인 객체
+        private final List<Stock> stocks;
+        private final LinkedHashMap<LocalDate, Map<String, Double>> dailyPrices;
+        private final RebalancingStrategy rebalancingStrategy;
+        
+        // 비즈니스 로직에 필요한 추가 정보
+        private final RebalancingType rebalancingType;
+        private final RebalancingPeriod rebalancingPeriod;
+        
+        // stocks 필드만 사용하여 모든 정보 관리 (초기 수량, 가중치, 임계값 등)
+        
+        /**
+         * BacktestContext 생성자
+         */
+        public BacktestContext(Long backtestId, LocalDate startDate, LocalDate endDate,
+                              List<Stock> stocks, LinkedHashMap<LocalDate, Map<String, Double>> dailyPrices,
+                              RebalancingStrategy rebalancingStrategy, RebalancingType rebalancingType,
+                              RebalancingPeriod rebalancingPeriod, List<BacktestStockDto> initialHoldings) {
+            this.backtestId = backtestId;
+            this.startDate = startDate;
+            this.endDate = endDate;
+            this.stocks = stocks;
+            this.dailyPrices = dailyPrices;
+            this.rebalancingStrategy = rebalancingStrategy;
+            this.rebalancingType = rebalancingType;
+            this.rebalancingPeriod = rebalancingPeriod;
+            
+            // Stock 객체가 모든 정보를 포함하므로 추가 저장 불필요
+        }
+        
+        // Getter 메서드들
+        public Long getBacktestId() { return backtestId; }
+        public LocalDate getStartDate() { return startDate; }
+        public LocalDate getEndDate() { return endDate; }
+        public List<Stock> getStocks() { return stocks; }
+        public LinkedHashMap<LocalDate, Map<String, Double>> getDailyPrices() { return dailyPrices; }
+        public RebalancingStrategy getRebalancingStrategy() { return rebalancingStrategy; }
+        public RebalancingType getRebalancingType() { return rebalancingType; }
+        public RebalancingPeriod getRebalancingPeriod() { return rebalancingPeriod; }
+        // 초기 수량을 Stock 리스트에서 추출하는 헬퍼 메서드
+        public Map<String, Integer> getInitialQuantities() {
+            return stocks.stream()
+                    .collect(Collectors.toMap(
+                            Stock::getStockCode,
+                            Stock::getInitialQuantity
+                    ));
+        }
+        
+        // 헬퍼 메서드들
+        public Map<String, Double> getPricesForDate(LocalDate date) {
+            return dailyPrices.get(date);
+        }
+        
+        public boolean isValidDate(LocalDate date) {
+            return date != null && !date.isBefore(startDate) && !date.isAfter(endDate);
+        }
+        
+        public long getBacktestPeriodDays() {
+            return ChronoUnit.DAYS.between(startDate, endDate) + 1;
+        }
+        
+        public LocalDate getLastDate() {
+            return dailyPrices.keySet().stream()
+                    .max(LocalDate::compareTo)
+                    .orElseThrow(() -> new RuntimeException("가격 데이터가 없습니다"));
+        }
     }
 
     /**

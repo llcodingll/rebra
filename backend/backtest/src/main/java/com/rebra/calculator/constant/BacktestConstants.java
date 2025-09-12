@@ -152,9 +152,16 @@ public final class BacktestConstants {
         
         /**
          * 영업일 기준 연간 거래일 수
-         * 한국 증권시장 기준 평균 영업일 수
+         * 미국 증권시장 기준 평균 영업일 수
          */
-        public static final int TRADING_DAYS_PER_YEAR = 250;
+        public static final int TRADING_DAYS_PER_YEAR = 252;
+        
+        /**
+         * 무위험 수익률 (3%)
+         * 샤프 비율 계산에 사용되는 기준 수익률
+         * 일반적으로 국고채 수익률을 기준으로 설정
+         */
+        public static final double RISK_FREE_RATE = 0.03;
         
         private Calculation() {
             // 인스턴스화 방지

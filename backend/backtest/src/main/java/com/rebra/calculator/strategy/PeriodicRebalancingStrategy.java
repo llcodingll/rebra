@@ -3,6 +3,7 @@ package com.rebra.calculator.strategy;
 import com.rebra.calculator.domain.Portfolio;
 import com.rebra.calculator.domain.Stock;
 import com.rebra.calculator.enums.RebalancingPeriod;
+import com.rebra.calculator.util.PriceDataUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -56,8 +57,16 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
                                  Map<String, Double> currentPrices, LocalDate lastRebalancingDate) {
         // 주기적 리밸런싱: 메인 서버에서 이미 설정된 주기에 맞는 날짜만 필터링해서 전송
         // 따라서 계산 서버는 받은 모든 날짜에 대해 무조건 리밸런싱 실행
-        log.debug("주기적 리밸런싱 실행: {} (주기: {})", 
-                currentDate, rebalancingPeriod.getDisplayName());
+        // 단, 유효한 가격이 없는 경우는 제외
+        
+        Map<String, Double> validPrices = PriceDataUtils.filterValidPrices(currentPrices);
+        if (validPrices.isEmpty()) {
+            log.warn("유효한 가격 정보가 없어 주기적 리밸런싱을 건너뜁니다 - 날짜: {}", currentDate);
+            return false;
+        }
+        
+        log.debug("주기적 리밸런싱 실행: {} (주기: {}, 유효 가격: {}개)", 
+                currentDate, rebalancingPeriod.getDisplayName(), validPrices.size());
         
         return true;
     }
@@ -114,12 +123,29 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
         try {
             // 주기적 전략에서는 모든 종목이 리밸런싱 대상
             // 단, 현재 비중과 목표 비중이 크게 다르지 않은 종목은 제외
-            Map<String, Double> currentWeights = portfolio.getCurrentWeights(currentPrices);
+            // 유효한 가격을 가진 종목들만 고려
+            
+            Map<String, Double> validPrices = PriceDataUtils.filterValidPrices(currentPrices);
+            Map<String, Double> currentWeights = portfolio.getCurrentWeights(validPrices);
 
             return stocks.stream()
                     .filter(stock -> {
-                        double currentWeight = currentWeights.getOrDefault(stock.getStockCode(), 0.0);
-                        double targetWeight = stock.getTargetWeight();
+                        String stockCode = stock.getStockCode();
+                        
+                        // 유효한 가격이 없는 종목은 제외
+                        if (!validPrices.containsKey(stockCode)) {
+                            return false;
+                        }
+                        
+                        double currentWeight = currentWeights.getOrDefault(stockCode, 0.0);
+                        
+                        // 전체 원본 가중치 합계 계산
+                        int totalOriginalWeight = stocks.stream()
+                                .mapToInt(Stock::getOriginalWeight)
+                                .sum();
+                        
+                        double targetWeight = totalOriginalWeight > 0 ? 
+                            (double) stock.getOriginalWeight() / totalOriginalWeight : 0.0;
                         double deviation = Math.abs(currentWeight - targetWeight);
                         
                         // 0.1% 이상 차이가 나는 종목만 리밸런싱 대상으로 포함
@@ -180,21 +206,21 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
         }
 
         try {
-            // 목표 비중 합계 검증
-            double totalWeight = stocks.stream()
-                    .mapToDouble(Stock::getTargetWeight)
+            // 원본 가중치 합계 검증
+            int totalOriginalWeight = stocks.stream()
+                    .mapToInt(Stock::getOriginalWeight)
                     .sum();
 
-            if (Math.abs(totalWeight - 1.0) > WEIGHT_TOLERANCE) {
-                log.error("목표 비중 합계가 100%가 아닙니다: {:.2f}%", totalWeight * 100);
+            if (totalOriginalWeight <= 0) {
+                log.error("원본 가중치 합계가 0 이하입니다: {}", totalOriginalWeight);
                 return false;
             }
 
             // 각 종목의 설정 검증
             for (Stock stock : stocks) {
-                if (stock.getTargetWeight() <= 0 || stock.getTargetWeight() > 1.0) {
-                    log.error("종목 {}의 목표 비중이 잘못되었습니다: {:.2f}%", 
-                            stock.getStockCode(), stock.getTargetWeight() * 100);
+                if (stock.getOriginalWeight() <= 0) {
+                    log.error("종목 {}의 원본 가중치가 잘못되었습니다: {}", 
+                            stock.getStockCode(), stock.getOriginalWeight());
                     return false;
                 }
             }

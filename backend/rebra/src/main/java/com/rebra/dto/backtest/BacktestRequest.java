@@ -1,9 +1,9 @@
-package com.rebra.calculator.dto;
+package com.rebra.dto.backtest;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.rebra.calculator.enums.RebalancingPeriod;
-import com.rebra.calculator.enums.RebalancingType;
+import com.rebra.enums.RebalancingPeriod;
+import com.rebra.enums.RebalancingType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -278,116 +278,5 @@ public class BacktestRequest {
      */
     public double getNormalizedWeight(String stockCode) {
         return getNormalizedWeights().getOrDefault(stockCode, 0.0);
-    }
-
-    /**
-     * 디버그용 상세 정보를 반환한다
-     * 
-     * @return 상세 정보 문자열
-     */
-    public String getDetailedInfo() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getSummary()).append("\n");
-        
-        if (stocks != null) {
-            sb.append("종목 목록:\n");
-            java.util.Map<String, Double> normalizedWeights = getNormalizedWeights();
-            stocks.forEach(stock -> 
-                sb.append(String.format("  - %s: 가중치 %d → 목표비중 %.1f%%, 임계값 %.1f%%\n",
-                    stock.getStockCode(),
-                    stock.getWeight(),
-                    normalizedWeights.getOrDefault(stock.getStockCode(), 0.0) * 100, 
-                    stock.getThresholdPercentageValue()))
-            );
-        }
-        
-        if (dailyPrices != null) {
-            int totalDataPoints = dailyPrices.values().stream()
-                    .mapToInt(dayPrices -> (int) dayPrices.values().stream().filter(java.util.Objects::nonNull).count())
-                    .sum();
-            sb.append(String.format("일별 가격 데이터: %d일, 총 %d개 데이터포인트\n", 
-                    dailyPrices.size(), totalDataPoints));
-        }
-        
-        return sb.toString();
-    }
-
-    /**
-     * 날짜 순서를 보장하는 정렬된 날짜 키 목록을 반환한다
-     * 
-     * @return 정렬된 날짜 문자열 리스트
-     */
-    public List<String> getSortedDateKeys() {
-        if (dailyPrices == null) {
-            return List.of();
-        }
-        
-        return dailyPrices.keySet().stream()
-                .sorted()
-                .toList();
-    }
-
-    /**
-     * 특정 날짜에 유효한 가격이 있는 종목들만 필터링하여 반환한다
-     * 
-     * @param date 조회할 날짜
-     * @return 유효한 가격을 가진 종목코드 -> 가격 맵
-     */
-    public Map<String, Double> getValidPricesForDate(LocalDate date) {
-        if (dailyPrices == null || date == null) {
-            return Map.of();
-        }
-        
-        String dateStr = date.toString();
-        Map<String, Double> dayPrices = dailyPrices.get(dateStr);
-        
-        if (dayPrices == null) {
-            return Map.of();
-        }
-        
-        return dayPrices.entrySet().stream()
-                .filter(entry -> entry.getValue() != null && entry.getValue() > 0)
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (existing, replacement) -> existing
-                ));
-    }
-
-    /**
-     * 전체 기간에서 특정 종목이 거래된 일수를 계산한다
-     * 
-     * @param stockCode 종목 코드
-     * @return 거래된 일수
-     */
-    public long getTradingDaysForStock(String stockCode) {
-        if (dailyPrices == null || stockCode == null) {
-            return 0;
-        }
-        
-        return dailyPrices.values().stream()
-                .filter(dayPrices -> dayPrices.containsKey(stockCode))
-                .filter(dayPrices -> dayPrices.get(stockCode) != null && dayPrices.get(stockCode) > 0)
-                .count();
-    }
-
-    /**
-     * 각 날짜별로 유효한 가격을 가진 종목 개수를 반환한다
-     * 
-     * @return 날짜별 유효 종목 개수 맵
-     */
-    public Map<LocalDate, Integer> getValidStockCountByDate() {
-        if (dailyPrices == null) {
-            return Map.of();
-        }
-        
-        return dailyPrices.entrySet().stream()
-                .collect(Collectors.toMap(
-                        entry -> LocalDate.parse(entry.getKey()),
-                        entry -> (int) entry.getValue().values().stream()
-                                .filter(price -> price != null && price > 0)
-                                .count(),
-                        (existing, replacement) -> existing
-                ));
     }
 }

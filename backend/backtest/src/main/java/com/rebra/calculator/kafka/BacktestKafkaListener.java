@@ -181,8 +181,8 @@ public class BacktestKafkaListener {
             return false;
         }
 
-        if (request.getOhlcvData() == null || request.getOhlcvData().isEmpty()) {
-            log.error("OHLCV 데이터가 비어있습니다");
+        if (request.getDailyPrices() == null || request.getDailyPrices().isEmpty()) {
+            log.error("일별 가격 데이터가 비어있습니다");
             return false;
         }
 

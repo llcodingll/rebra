@@ -1,6 +1,8 @@
 package com.rebra.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rebra.dto.backtest.BacktestRequest;
+import com.rebra.dto.backtest.BacktestStockDto;
 import com.rebra.dto.request.BacktestCreateRequest;
 import com.rebra.dto.response.BacktestListResponse;
 import com.rebra.dto.response.BacktestResultResponse;
@@ -32,10 +34,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -89,9 +95,20 @@ public class BacktestServiceImpl implements BacktestService {
                     request.getRebalancingType(), request.getRebalancingPeriod(),
                     request.getStartDate(), request.getEndDate());
 
-            if (tradingDates.isEmpty()) {
+            // THRESHOLD가 아닌 경우에만 빈 리스트 검증
+            if (tradingDates.isEmpty() && request.getRebalancingType() != BacktestRecord.RebalancingType.THRESHOLD) {
                 errors.add("지정된 기간에 거래일이 없습니다");
                 return BacktestValidationResponse.failure(errors, stockValidations);
+            }
+
+            // THRESHOLD 타입의 경우 실제 거래일 조회하여 검증 요약 생성
+            if (request.getRebalancingType() == BacktestRecord.RebalancingType.THRESHOLD) {
+                tradingDates = stockPriceRepository.findTradingDatesBetween(
+                        request.getStartDate(), request.getEndDate());
+                if (tradingDates.isEmpty()) {
+                    errors.add("지정된 기간에 거래일이 없습니다");
+                    return BacktestValidationResponse.failure(errors, stockValidations);
+                }
             }
 
             // 6. 검증 요약 정보 생성
@@ -130,7 +147,8 @@ public class BacktestServiceImpl implements BacktestService {
                 request.getRebalancingType(), request.getRebalancingPeriod(),
                 request.getStartDate(), request.getEndDate());
 
-        if (tradingDates.isEmpty()) {
+        // THRESHOLD가 아닌 경우에만 빈 리스트 검증
+        if (tradingDates.isEmpty() && request.getRebalancingType() != BacktestRecord.RebalancingType.THRESHOLD) {
             throw BacktestException.invalidRequest();
         }
 
@@ -152,7 +170,7 @@ public class BacktestServiceImpl implements BacktestService {
 
         // 6. Kafka로 백테스트 요청 전송
         try {
-            Map<String, Object> backtestRequest = createBacktestRequest(backtestRecord, request, tickers, tradingDates);
+            BacktestRequest backtestRequest = createBacktestRequest(backtestRecord, request, tickers, tradingDates);
             kafkaTemplate.send("backtest-request", backtestRecord.getId().toString(), backtestRequest);
             log.info("백테스트 요청 전송 완료: backtestId={}", backtestRecord.getId());
 
@@ -251,45 +269,83 @@ public class BacktestServiceImpl implements BacktestService {
         }
     }
 
-    private Map<String, Object> createBacktestRequest(BacktestRecord record, BacktestCreateRequest request, 
+    private BacktestRequest createBacktestRequest(BacktestRecord record, BacktestCreateRequest request, 
                                                      List<String> tickers, List<LocalDate> tradingDates) {
-        // 특정 거래일의 주식 데이터만 조회
-        List<StockPrice> stockPrices = getStockPricesForDates(tickers, tradingDates);
+        // 리밸런싱 타입에 따른 주식 데이터 조회 최적화
+        List<StockPrice> stockPrices;
+        List<LocalDate> actualDates;
+        
+        if (request.getRebalancingType() == BacktestRecord.RebalancingType.THRESHOLD) {
+            // THRESHOLD: 전체 기간 데이터 직접 조회 (tradingDates 무시)
+            stockPrices = stockPriceRepository.findByTickersAndDateRange(
+                    tickers, request.getStartDate(), request.getEndDate());
+            // 실제 거래일 추출 (중복 제거 및 정렬)
+            actualDates = stockPrices.stream()
+                    .map(StockPrice::getDate)
+                    .distinct()
+                    .sorted()
+                    .toList();
+            log.info("THRESHOLD 리밸런싱 - 전체 기간 데이터 직접 조회: {}건 ({}일, {}종목)", 
+                    stockPrices.size(), actualDates.size(), tickers.size());
+        } else {
+            // PERIODIC: 기존 방식으로 특정 날짜만 조회
+            stockPrices = getStockPricesForDates(tickers, tradingDates, request.getRebalancingType());
+            actualDates = tradingDates;
+        }
 
         // 백테스트 요청 객체 생성
-        Map<String, Object> backtestRequest = new HashMap<>();
-        backtestRequest.put("backtest_id", record.getId());
-        backtestRequest.put("start_date", request.getStartDate().toString());
-        backtestRequest.put("end_date", request.getEndDate().toString());
-        backtestRequest.put("rebalancing_type", request.getRebalancingType().toString());
-        backtestRequest.put("rebalancing_period", request.getRebalancingPeriod() != null ? 
-                request.getRebalancingPeriod().toString() : null);
+        BacktestRequest backtestRequest = new BacktestRequest();
+        backtestRequest.setBacktestId(record.getId());
+        backtestRequest.setStartDate(request.getStartDate());
+        backtestRequest.setEndDate(request.getEndDate());
+        
+        // enum 매핑: 메인 서버의 enum을 백테스트 서버의 enum으로 변환
+        backtestRequest.setRebalancingType(convertToBacktestRebalancingType(request.getRebalancingType()));
+        backtestRequest.setRebalancingPeriod(convertToBacktestRebalancingPeriod(request.getRebalancingPeriod()));
 
         // 종목 정보
-        List<Map<String, Object>> stocks = request.getStocks().stream()
-                .map(stock -> {
-                    Map<String, Object> stockMap = new HashMap<>();
-                    stockMap.put("stock_code", stock.getTicker());
-                    stockMap.put("weight", stock.getWeight());
-                    stockMap.put("threshold_percentage", stock.getThresholdPercentage());
-                    return stockMap;
-                })
+        List<BacktestStockDto> stocks = request.getStocks().stream()
+                .map(stock -> new BacktestStockDto(
+                        stock.getTicker(),
+                        stock.getWeight(),
+                        stock.getThresholdPercentage()
+                ))
                 .toList();
-        backtestRequest.put("stocks", stocks);
+        backtestRequest.setStocks(stocks);
 
-        // OHLCV 데이터 (종가만 전송)
-        List<Map<String, Object>> ohlcvData = stockPrices.stream()
-                .map(price -> {
-                    Map<String, Object> priceMap = new HashMap<>();
-                    priceMap.put("stock_code", price.getTicker());
-                    priceMap.put("trade_date", price.getDate().toString());
-                    priceMap.put("close_price", price.getClosePrice().doubleValue());
-                    return priceMap;
-                })
-                .toList();
-        backtestRequest.put("ohlcv_data", ohlcvData);
+        // 날짜별 가격 데이터 (맵 기반 구조)
+        Map<String, Map<String, Double>> dailyPrices = createDailyPricesMap(tickers, actualDates, stockPrices);
+        backtestRequest.setDailyPrices(dailyPrices);
 
         return backtestRequest;
+    }
+
+    /**
+     * 메인 서버의 RebalancingType을 백테스트 서버의 RebalancingType으로 변환
+     */
+    private com.rebra.enums.RebalancingType convertToBacktestRebalancingType(BacktestRecord.RebalancingType mainType) {
+        if (mainType == null) {
+            return null;
+        }
+        
+        return switch (mainType) {
+            case THRESHOLD -> com.rebra.enums.RebalancingType.THRESHOLD;
+            case PERIODIC -> com.rebra.enums.RebalancingType.PERIODIC;
+        };
+    }
+
+    /**
+     * 메인 서버의 RebalancingPeriod를 백테스트 서버의 RebalancingPeriod로 변환
+     */
+    private com.rebra.enums.RebalancingPeriod convertToBacktestRebalancingPeriod(BacktestRecord.RebalancingPeriod mainPeriod) {
+        if (mainPeriod == null) {
+            return null;
+        }
+        
+        return switch (mainPeriod) {
+            case MONTHLY -> com.rebra.enums.RebalancingPeriod.MONTHLY;
+            case QUARTERLY -> com.rebra.enums.RebalancingPeriod.QUARTERLY;
+        };
     }
 
     private void updateBacktestResults(BacktestRecord record, Map<String, Object> responseMap) {
@@ -400,9 +456,9 @@ public class BacktestServiceImpl implements BacktestService {
                                                         LocalDate startDate, LocalDate endDate) {
         switch (rebalancingType) {
             case THRESHOLD:
-                // 임계값 기반은 모든 거래일 필요
-                return stockPriceRepository.findTradingDatesBetween(startDate, endDate);
-                
+                // 임계값 기반은 createBacktestRequest에서 직접 처리하므로 빈 리스트 반환
+                return Collections.emptyList();
+
             case PERIODIC:
                 // 주기적 리밸런싱은 주기에 맞는 날짜만
                 if (rebalancingPeriod == BacktestRecord.RebalancingPeriod.MONTHLY) {
@@ -417,24 +473,73 @@ public class BacktestServiceImpl implements BacktestService {
     }
 
     /**
-     * 특정 날짜들의 주식 가격 데이터를 조회한다
+     * 특정 날짜들의 주식 가격 데이터를 조회한다 (최적화된 단일 쿼리)
      */
-    private List<StockPrice> getStockPricesForDates(List<String> tickers, List<LocalDate> dates) {
-        List<StockPrice> allPrices = new ArrayList<>();
-        
-        for (LocalDate date : dates) {
-            List<StockPrice> dailyPrices = stockPriceRepository.findByDateOrderByTickerAsc(date);
-            // 요청된 종목만 필터링
-            List<StockPrice> filteredPrices = dailyPrices.stream()
-                    .filter(price -> tickers.contains(price.getTicker()))
-                    .toList();
-            allPrices.addAll(filteredPrices);
+    private List<StockPrice> getStockPricesForDates(List<String> tickers, List<LocalDate> dates, 
+                                                   BacktestRecord.RebalancingType rebalancingType) {
+        if (dates.isEmpty()) {
+            return new ArrayList<>();
         }
         
-        log.info("주식 가격 데이터 조회 완료 - 총 {}건 ({}일, {}종목)", 
-                allPrices.size(), dates.size(), tickers.size());
+        LocalDate startDate = dates.get(0);
+        LocalDate endDate = dates.get(dates.size() - 1);
         
-        return allPrices;
+        // 한 번의 쿼리로 전체 기간의 데이터 조회
+        List<StockPrice> allPrices = stockPriceRepository.findByTickersAndDateRange(
+                tickers, startDate, endDate);
+        
+        // THRESHOLD는 모든 거래일 데이터 필요 (매일 임계값 체크)
+        // PERIODIC은 월말/분기말 거래일만 필요 (리밸런싱 날짜)
+        if (rebalancingType == BacktestRecord.RebalancingType.THRESHOLD) {
+            log.info("THRESHOLD 리밸런싱 - 전체 거래일 데이터: {}건 ({}일, {}종목)", 
+                    allPrices.size(), dates.size(), tickers.size());
+            return allPrices;
+        } else {
+            // PERIODIC: 월말/분기말 거래일만 필터링
+            Set<LocalDate> tradingDateSet = new HashSet<>(dates);
+            List<StockPrice> filteredPrices = allPrices.stream()
+                    .filter(price -> tradingDateSet.contains(price.getDate()))
+                    .toList();
+            log.info("PERIODIC 리밸런싱 - {}개 리밸런싱 날짜 필터링: {}건 → {}건 ({}종목)", 
+                    dates.size(), allPrices.size(), filteredPrices.size(), tickers.size());
+            return filteredPrices;
+        }
+    }
+
+    /**
+     * 날짜별 종목 가격 맵을 생성한다
+     */
+    private Map<String, Map<String, Double>> createDailyPricesMap(
+            List<String> tickers, 
+            List<LocalDate> tradingDates,
+            List<StockPrice> stockPrices) {
+        
+        Map<String, Map<String, Double>> dailyPricesMap = new LinkedHashMap<>();
+        
+        // 모든 거래일 초기화 (모든 종목을 null로 초기화)
+        for (LocalDate date : tradingDates) {
+            Map<String, Double> dayPrices = new HashMap<>();
+            for (String ticker : tickers) {
+                dayPrices.put(ticker, null);
+            }
+            dailyPricesMap.put(date.toString(), dayPrices);
+        }
+        
+        // 실제 가격 데이터로 업데이트
+        for (StockPrice price : stockPrices) {
+            String dateKey = price.getDate().toString();
+            if (dailyPricesMap.containsKey(dateKey)) {
+                dailyPricesMap.get(dateKey).put(
+                        price.getTicker(), 
+                        price.getClosePrice().doubleValue()
+                );
+            }
+        }
+        
+        log.info("일별 가격 맵 생성 완료 - {}일 × {}종목 = {}개 데이터포인트", 
+                tradingDates.size(), tickers.size(), tradingDates.size() * tickers.size());
+        
+        return dailyPricesMap;
     }
 
     /**

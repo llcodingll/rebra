@@ -2,6 +2,7 @@ package com.rebra.calculator.strategy;
 
 import com.rebra.calculator.domain.Portfolio;
 import com.rebra.calculator.domain.Stock;
+import com.rebra.calculator.util.PriceDataUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -36,26 +37,48 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
         }
 
         try {
-            // 현재 포트폴리오 가치 계산
-            double totalValue = portfolio.getTotalValue(currentPrices);
+            // 유효한 가격 데이터만 필터링
+            Map<String, Double> validPrices = PriceDataUtils.filterValidPrices(currentPrices);
+            if (validPrices.isEmpty()) {
+                log.debug("유효한 가격 정보가 없어 리밸런싱을 건너뜁니다 - 날짜: {}", currentDate);
+                return false;
+            }
+            
+            // 현재 포트폴리오 가치 계산 (유효한 가격으로만)
+            double totalValue = portfolio.getTotalValue(validPrices);
             if (totalValue <= 0) {
                 log.warn("포트폴리오 총 가치가 0 이하입니다: {}", totalValue);
                 return false;
             }
 
-            // 현재 비중 계산
-            Map<String, Double> currentWeights = portfolio.getCurrentWeights(currentPrices);
+            // 현재 비중 계산 (유효한 가격으로만)
+            Map<String, Double> currentWeights = portfolio.getCurrentWeights(validPrices);
 
-            // 각 종목별로 임계값 초과 여부 확인
+            // 각 종목별로 임계값 초과 여부 확인 (유효한 가격을 가진 종목만)
             for (Stock stock : stocks) {
                 String stockCode = stock.getStockCode();
+                
+                // 유효한 가격이 없는 종목은 건너뛰기
+                if (!validPrices.containsKey(stockCode)) {
+                    log.trace("종목 {} 가격 정보 없음 - 임계값 검사 제외", stockCode);
+                    continue;
+                }
+                
                 double currentWeight = currentWeights.getOrDefault(stockCode, 0.0);
                 
-                if (stock.exceedsThreshold(currentWeight)) {
+                // 전체 원본 가중치 합계 계산
+                int totalOriginalWeight = stocks.stream()
+                        .mapToInt(Stock::getOriginalWeight)
+                        .sum();
+                
+                double targetWeight = totalOriginalWeight > 0 ? 
+                    (double) stock.getOriginalWeight() / totalOriginalWeight : 0.0;
+                
+                if (stock.exceedsThreshold(currentWeight, targetWeight)) {
                     log.debug("종목 {} 임계값 초과 - 현재비중: {:.2f}%, 목표비중: {:.2f}%, 임계값: {:.2f}%", 
                             stockCode, 
                             currentWeight * 100, 
-                            stock.getTargetWeight() * 100, 
+                            targetWeight * 100, 
                             stock.getThresholdPercentage() * 100);
                     return true;
                 }
@@ -77,15 +100,31 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
         }
 
         try {
-            Map<String, Double> currentWeights = portfolio.getCurrentWeights(currentPrices);
+            // 유효한 가격 데이터만 사용
+            Map<String, Double> validPrices = PriceDataUtils.filterValidPrices(currentPrices);
+            Map<String, Double> currentWeights = portfolio.getCurrentWeights(validPrices);
             List<String> exceededStocks = new ArrayList<>();
 
             for (Stock stock : stocks) {
                 String stockCode = stock.getStockCode();
+                
+                // 유효한 가격이 없는 종목은 건너뛰기
+                if (!validPrices.containsKey(stockCode)) {
+                    continue;
+                }
+                
                 double currentWeight = currentWeights.getOrDefault(stockCode, 0.0);
                 
-                if (stock.exceedsThreshold(currentWeight)) {
-                    double deviation = Math.abs(currentWeight - stock.getTargetWeight());
+                // 전체 원본 가중치 합계 계산
+                int totalOriginalWeight = stocks.stream()
+                        .mapToInt(Stock::getOriginalWeight)
+                        .sum();
+                
+                double targetWeight = totalOriginalWeight > 0 ? 
+                    (double) stock.getOriginalWeight() / totalOriginalWeight : 0.0;
+                
+                if (stock.exceedsThreshold(currentWeight, targetWeight)) {
+                    double deviation = Math.abs(currentWeight - targetWeight);
                     exceededStocks.add(String.format("%s(%.1f%%편차)", stockCode, deviation * 100));
                 }
             }
@@ -146,12 +185,29 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
         }
 
         try {
-            Map<String, Double> currentWeights = portfolio.getCurrentWeights(currentPrices);
+            // 유효한 가격 데이터만 사용
+            Map<String, Double> validPrices = PriceDataUtils.filterValidPrices(currentPrices);
+            Map<String, Double> currentWeights = portfolio.getCurrentWeights(validPrices);
 
             return stocks.stream()
                     .filter(stock -> {
-                        double currentWeight = currentWeights.getOrDefault(stock.getStockCode(), 0.0);
-                        return stock.exceedsThreshold(currentWeight);
+                        String stockCode = stock.getStockCode();
+                        
+                        // 유효한 가격이 없는 종목은 제외
+                        if (!validPrices.containsKey(stockCode)) {
+                            return false;
+                        }
+                        
+                        double currentWeight = currentWeights.getOrDefault(stockCode, 0.0);
+                        // 전체 원본 가중치 합계 계산
+                        int totalOriginalWeight = stocks.stream()
+                                .mapToInt(Stock::getOriginalWeight)
+                                .sum();
+                        
+                        double targetWeight = totalOriginalWeight > 0 ? 
+                            (double) stock.getOriginalWeight() / totalOriginalWeight : 0.0;
+                        
+                        return stock.exceedsThreshold(currentWeight, targetWeight);
                     })
                     .collect(Collectors.toList());
 
@@ -181,22 +237,22 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
         }
 
         try {
-            // 목표 비중 합계 검증
-            double totalWeight = stocks.stream()
-                    .mapToDouble(Stock::getTargetWeight)
+            // 원본 가중치 합계 검증
+            int totalOriginalWeight = stocks.stream()
+                    .mapToInt(Stock::getOriginalWeight)
                     .sum();
 
-            if (Math.abs(totalWeight - 1.0) > WEIGHT_TOLERANCE) {
-                log.error("목표 비중 합계가 100%가 아닙니다: {:.2f}%", totalWeight * 100);
+            if (totalOriginalWeight <= 0) {
+                log.error("원본 가중치 합계가 0 이하입니다: {}", totalOriginalWeight);
                 return false;
             }
 
             // 각 종목의 설정 검증
             for (Stock stock : stocks) {
-                // 목표 비중 검증
-                if (stock.getTargetWeight() <= 0 || stock.getTargetWeight() > 1.0) {
-                    log.error("종목 {}의 목표 비중이 잘못되었습니다: {:.2f}%", 
-                            stock.getStockCode(), stock.getTargetWeight() * 100);
+                // 원본 가중치 검증
+                if (stock.getOriginalWeight() <= 0) {
+                    log.error("종목 {}의 원본 가중치가 잘못되었습니다: {}", 
+                            stock.getStockCode(), stock.getOriginalWeight());
                     return false;
                 }
 
@@ -207,12 +263,13 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
                     return false;
                 }
 
-                // 임계값이 목표 비중보다 크면 경고
-                if (stock.getThresholdPercentage() > stock.getTargetWeight()) {
+                // 임계값이 목표 비중(계산된)보다 크면 경고
+                double targetWeight = (double) stock.getOriginalWeight() / totalOriginalWeight;
+                if (stock.getThresholdPercentage() > targetWeight) {
                     log.warn("종목 {}의 임계값({:.2f}%)이 목표비중({:.2f}%)보다 큽니다", 
                             stock.getStockCode(), 
                             stock.getThresholdPercentage() * 100, 
-                            stock.getTargetWeight() * 100);
+                            targetWeight * 100);
                 }
             }
 
@@ -324,8 +381,10 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
      * @param currentWeight 현재 비중
      * @return 초과 정도 (0 이상, 클수록 초과 정도가 큼)
      */
-    public double calculateExcessAmount(Stock stock, double currentWeight) {
-        double deviation = Math.abs(currentWeight - stock.getTargetWeight());
+    public double calculateExcessAmount(Stock stock, double currentWeight, int totalOriginalWeight) {
+        double targetWeight = totalOriginalWeight > 0 ? 
+            (double) stock.getOriginalWeight() / totalOriginalWeight : 0.0;
+        double deviation = Math.abs(currentWeight - targetWeight);
         double threshold = stock.getThresholdPercentage();
         
         return Math.max(0, deviation - threshold);
@@ -339,17 +398,39 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
      * @return 우선순위별로 정렬된 종목 목록
      */
     public List<Stock> getRebalancingPriority(List<Stock> stocks, Map<String, Double> currentWeights) {
+        // 유효한 가격을 가진 종목들만 필터링
+        Map<String, Double> validPrices = PriceDataUtils.filterValidPrices(currentWeights);
+        
         return stocks.stream()
                 .filter(stock -> {
-                    double currentWeight = currentWeights.getOrDefault(stock.getStockCode(), 0.0);
-                    return stock.exceedsThreshold(currentWeight);
+                    String stockCode = stock.getStockCode();
+                    
+                    // 유효한 가격이 없는 종목은 제외
+                    if (!validPrices.containsKey(stockCode)) {
+                        return false;
+                    }
+                    
+                    double currentWeight = currentWeights.getOrDefault(stockCode, 0.0);
+                    // 전체 원본 가중치 합계 계산
+                    int totalOriginalWeight = stocks.stream()
+                            .mapToInt(Stock::getOriginalWeight)
+                            .sum();
+                    
+                    double targetWeight = totalOriginalWeight > 0 ? 
+                        (double) stock.getOriginalWeight() / totalOriginalWeight : 0.0;
+                    
+                    return stock.exceedsThreshold(currentWeight, targetWeight);
                 })
                 .sorted((a, b) -> {
                     double weightA = currentWeights.getOrDefault(a.getStockCode(), 0.0);
                     double weightB = currentWeights.getOrDefault(b.getStockCode(), 0.0);
                     
-                    double excessA = calculateExcessAmount(a, weightA);
-                    double excessB = calculateExcessAmount(b, weightB);
+                    int totalOriginalWeight = stocks.stream()
+                            .mapToInt(Stock::getOriginalWeight)
+                            .sum();
+                    
+                    double excessA = calculateExcessAmount(a, weightA, totalOriginalWeight);
+                    double excessB = calculateExcessAmount(b, weightB, totalOriginalWeight);
                     
                     return Double.compare(excessB, excessA); // 내림차순 정렬
                 })
