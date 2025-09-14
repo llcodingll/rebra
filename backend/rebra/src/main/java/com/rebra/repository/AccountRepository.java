@@ -1,13 +1,10 @@
 package com.rebra.repository;
 
 import com.rebra.entity.Account;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Long> {
@@ -43,8 +40,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     long countByUserIdAndIsDeletedFalse(Long userId);
 
     /**
-     * 계좌번호 중복 확인 (동일 사용자 내에서)
-     * 암호화된 계좌번호로 저장되므로 복호화 후 비교는 서비스 레이어에서 처리
+     * 계좌번호 중복 확인 (동일 사용자 내에서) 암호화된 계좌번호로 저장되므로 복호화 후 비교는 서비스 레이어에서 처리
      */
     List<Account> findByUserIdAndIsDeletedFalse(Long userId);
 
