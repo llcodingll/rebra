@@ -1,6 +1,9 @@
 package com.rebra.calculator.config;
 
 import com.rebra.calculator.dto.BacktestRequest;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -13,10 +16,13 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.support.micrometer.MicrometerConsumerListener;
+import org.springframework.kafka.support.micrometer.MicrometerProducerListener;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +39,10 @@ import java.util.Map;
 @Slf4j
 @Configuration
 @EnableKafka
+@RequiredArgsConstructor
 public class KafkaConfig {
+
+    private final MeterRegistry meterRegistry;
 
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
@@ -43,6 +52,7 @@ public class KafkaConfig {
 
     /**
      * Kafka Consumer 설정을 생성한다
+     * Micrometer 리스너와 Factory 리스너를 포함한다
      * 
      * @return Consumer 설정 맵
      */
@@ -77,7 +87,34 @@ public class KafkaConfig {
         log.info("Kafka Consumer 설정 완료 - BootstrapServers: {}, GroupId: {}", 
                 bootstrapServers, groupId);
         
-        return new DefaultKafkaConsumerFactory<>(configProps);
+        DefaultKafkaConsumerFactory<String, BacktestRequest> factory = 
+                new DefaultKafkaConsumerFactory<>(configProps);
+        
+        // Micrometer 리스너 추가 (메트릭 수집)
+        factory.addListener(new MicrometerConsumerListener<>(
+            meterRegistry,
+            Collections.singletonList(Tag.of("service", "backtest-calculator"))
+        ));
+        
+        // Factory 리스너 추가 (Consumer 생성/제거 이벤트 모니터링)
+        factory.addListener(new ConsumerFactory.Listener<String, BacktestRequest>() {
+            @Override
+            public void consumerAdded(String id, org.apache.kafka.clients.consumer.Consumer<String, BacktestRequest> consumer) {
+                log.info("Kafka Consumer 생성됨 - ID: {}, Client ID: {}", id, 
+                    consumer.metrics().entrySet().stream()
+                        .filter(entry -> "client-id".equals(entry.getKey().name()))
+                        .findFirst()
+                        .map(entry -> entry.getValue().toString())
+                        .orElse("unknown"));
+            }
+            
+            @Override
+            public void consumerRemoved(String id, org.apache.kafka.clients.consumer.Consumer<String, BacktestRequest> consumer) {
+                log.info("Kafka Consumer 제거됨 - ID: {}", id);
+            }
+        });
+        
+        return factory;
     }
 
     /**
@@ -112,7 +149,34 @@ public class KafkaConfig {
         
         log.info("Kafka Producer 설정 완료 - BootstrapServers: {}", bootstrapServers);
         
-        return new DefaultKafkaProducerFactory<>(configProps);
+        DefaultKafkaProducerFactory<String, Object> factory = 
+                new DefaultKafkaProducerFactory<>(configProps);
+        
+        // Micrometer 리스너 추가 (메트릭 수집)
+        factory.addListener(new MicrometerProducerListener<>(
+            meterRegistry,
+            Collections.singletonList(Tag.of("service", "backtest-calculator"))
+        ));
+        
+        // Factory 리스너 추가 (Producer 생성/제거 이벤트 모니터링)
+        factory.addListener(new ProducerFactory.Listener<String, Object>() {
+            @Override
+            public void producerAdded(String id, org.apache.kafka.clients.producer.Producer<String, Object> producer) {
+                log.info("Kafka Producer 생성됨 - ID: {}, Client ID: {}", id,
+                    producer.metrics().entrySet().stream()
+                        .filter(entry -> "client-id".equals(entry.getKey().name()))
+                        .findFirst()
+                        .map(entry -> entry.getValue().toString())
+                        .orElse("unknown"));
+            }
+            
+            @Override
+            public void producerRemoved(String id, org.apache.kafka.clients.producer.Producer<String, Object> producer) {
+                log.info("Kafka Producer 제거됨 - ID: {}", id);
+            }
+        });
+        
+        return factory;
     }
 
     /**
@@ -223,13 +287,4 @@ public class KafkaConfig {
                 requestTopicConfig, resultTopicConfig);
     }
 
-    /**
-     * 애플리케이션 종료 시 Kafka 리소스를 정리한다
-     */
-    @jakarta.annotation.PreDestroy
-    public void cleanup() {
-        log.info("Kafka 설정 리소스 정리 중...");
-        // 필요시 명시적 리소스 정리 코드 추가
-        log.info("Kafka 설정 리소스 정리 완료");
-    }
 }

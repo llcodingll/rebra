@@ -3,7 +3,12 @@
     "allow": [
       "Bash(rm:*)",
       "Bash(./gradlew:*)",
-      "Bash(.gradlew compileJava)"
+      "Bash(.gradlew compileJava)",
+      "mcp__ide__getDiagnostics",
+      "Bash(claude --debug)",
+      "Bash(claude /mcp)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs"
     ],
     "deny": [],
     "ask": [],

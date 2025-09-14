@@ -257,6 +257,7 @@ public class BacktestKafkaListener {
     /**
      * 리스너 종료 시 리소스 정리
      */
+    @jakarta.annotation.PreDestroy
     public void shutdown() {
         log.info("백테스트 Kafka 리스너 종료 중...");
         
