@@ -24,7 +24,7 @@ public interface RebalancingStrategy {
      * @param lastRebalancingDate 마지막 리밸런싱 실행 날짜 (null이면 최초)
      * @return 리밸런싱이 필요하면 true
      */
-    boolean shouldRebalance(BacktestContext context, LocalDate currentDate, Portfolio portfolio,
+    boolean shouldRebalance(Map<String, Double> currentPrices, BacktestContext context, LocalDate currentDate, Portfolio portfolio,
                           LocalDate lastRebalancingDate);
 
     /**

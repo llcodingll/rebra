@@ -82,14 +82,6 @@ public class Stock {
         this.targetWeight = 0.0; // 초기값, 리밸런싱 시 재계산됨
     }
     
-    /**
-     * 기존 호환성을 위한 생성자 (initialQuantity = 0으로 기본값 설정)
-     * @deprecated 새로운 생성자를 사용하세요
-     */
-    @Deprecated
-    public Stock(String stockCode, int originalWeight, double thresholdPercentage) {
-        this(stockCode, originalWeight, thresholdPercentage, 0);
-    }
 
     /**
      * 매개변수 유효성 검증
@@ -231,7 +223,7 @@ public class Stock {
      * @return Stock 객체의 복사본
      */
     public Stock copy() {
-        return new Stock(this.stockCode, this.originalWeight, this.thresholdPercentage);
+        return new Stock(this.stockCode, this.originalWeight, this.thresholdPercentage, this.initialQuantity);
     }
 
     /**

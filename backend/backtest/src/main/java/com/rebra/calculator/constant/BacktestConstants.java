@@ -191,6 +191,40 @@ public final class BacktestConstants {
     }
 
     /**
+     * 백테스트 요청 검증 관련 상수
+     */
+    public static final class Validation {
+        
+        /**
+         * 최소 백테스트 기간 (일)
+         * 의미 있는 백테스트 결과를 위한 최소 기간
+         */
+        public static final int MINIMUM_BACKTEST_PERIOD_DAYS = 30;
+        
+        /**
+         * 최소 종목 수
+         * 포트폴리오 구성을 위한 최소 종목 개수
+         */
+        public static final int MINIMUM_STOCK_COUNT = 2;
+        
+        /**
+         * 최대 백테스트 기간 (일)
+         * 성능상 제한을 위한 최대 기간 (약 10년)
+         */
+        public static final int MAXIMUM_BACKTEST_PERIOD_DAYS = 3650;
+        
+        /**
+         * 최대 종목 수
+         * 실용적 제한을 위한 최대 종목 개수
+         */
+        public static final int MAXIMUM_STOCK_COUNT = 100;
+        
+        private Validation() {
+            // 인스턴스화 방지
+        }
+    }
+
+    /**
      * 에러 메시지 관련 상수
      */
     public static final class ErrorMessages {

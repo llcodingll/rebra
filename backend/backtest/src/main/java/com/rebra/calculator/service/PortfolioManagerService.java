@@ -1,5 +1,6 @@
 package com.rebra.calculator.service;
 
+import com.rebra.calculator.constant.BacktestConstants;
 import com.rebra.calculator.context.BacktestContext;
 import com.rebra.calculator.domain.Portfolio;
 import com.rebra.calculator.domain.Stock;
@@ -120,7 +121,7 @@ public class PortfolioManagerService {
      * @return 리밸런싱으로 발생한 거래 목록
      * @throws IllegalArgumentException 잘못된 매개변수
      */
-    public List<Trade> executeRebalancing(Portfolio portfolio, BacktestContext context, LocalDate rebalancingDate) {
+    public List<Trade> executeRebalancing(Portfolio portfolio, Map<String, Double> currentPrices, BacktestContext context, LocalDate rebalancingDate) {
         if (portfolio == null) {
             throw new IllegalArgumentException("포트폴리오가 null입니다");
         }
@@ -133,8 +134,6 @@ public class PortfolioManagerService {
             throw new IllegalArgumentException("리밸런싱 날짜가 null입니다");
         }
         
-        // 컨텍스트에서 현재 가격 정보와 종목 정보 가져오기
-        Map<String, Double> currentPrices = context.getPricesForDate(rebalancingDate);
         if (currentPrices == null || currentPrices.isEmpty()) {
             throw new IllegalArgumentException("현재 가격 정보가 없습니다");
         }
@@ -343,42 +342,6 @@ public class PortfolioManagerService {
 
     // ===== Private Helper Methods =====
 
-    /**
-     * 유효한 종목들의 목표 비중을 재분배한다
-     * 가격이 없는 종목을 제외하고 나머지 종목들의 원본 가중치를 기반으로 비중을 정규화
-     * 
-     * @param validStocks 유효한 가격을 가진 종목 목록
-     * @return 재분배된 목표 비중 맵 (종목코드 -> 정규화된 비중)
-     * @deprecated Portfolio.updateTargetWeights와 Stock.targetWeight 필드 사용을 권장합니다
-     */
-    @Deprecated
-    private Map<String, Double> redistributeTargetWeights(List<Stock> validStocks) {
-        if (validStocks == null || validStocks.isEmpty()) {
-            return Map.of();
-        }
-        
-        // 유효한 종목들의 원본 가중치 합계 계산
-        int totalOriginalWeight = validStocks.stream()
-                .mapToInt(Stock::getOriginalWeight)
-                .sum();
-        
-        if (totalOriginalWeight <= 0) {
-            log.warn("유효한 종목들의 원본 가중치 합계가 0 이하입니다: {}", totalOriginalWeight);
-            return Map.of();
-        }
-        
-        // 각 종목의 비중을 정규화하여 합계가 1.0이 되도록 조정
-        Map<String, Double> redistributedWeights = new HashMap<>();
-        for (Stock stock : validStocks) {
-            double normalizedWeight = (double) stock.getOriginalWeight() / totalOriginalWeight;
-            redistributedWeights.put(stock.getStockCode(), normalizedWeight);
-        }
-        
-        log.info("목표 비중 재분배 완료 - 유효 종목: {}개, 원본 가중치 합계: {}, 재분배 후: 100.0%", 
-                validStocks.size(), totalOriginalWeight);
-        
-        return redistributedWeights;
-    }
 
     /**
      * 리밸런싱 계획을 수립한다 (Stock의 targetWeight 필드 사용)
@@ -403,7 +366,7 @@ public class PortfolioManagerService {
                 continue;
             }
             
-            if (Math.abs(difference) < 10000) { // 1만원 미만 차이는 무시
+            if (Math.abs(difference) < BacktestConstants.Rebalancing.MINIMUM_REBALANCING_AMOUNT) {
                 continue;
             }
             

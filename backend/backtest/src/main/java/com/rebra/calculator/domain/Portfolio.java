@@ -228,7 +228,10 @@ public class Portfolio {
         }
         
         double borrowingAmount = Math.abs(cash);
-        double periodInterest = roundAmount(borrowingAmount * DAILY_BORROWING_RATE * daysPassed);
+        
+        // 복리 계산: 원금 × ((1 + 일일이자율)^일수 - 1)
+        double compoundInterest = borrowingAmount * (Math.pow(1 + DAILY_BORROWING_RATE, daysPassed) - 1);
+        double periodInterest = roundAmount(compoundInterest);
         
         // 차입 이자 차감
         cash -= periodInterest;
@@ -401,8 +404,9 @@ public class Portfolio {
             throw new IllegalArgumentException("이미 존재하는 종목입니다: " + stockCode);
         }
         
-        // Stock 객체 생성 (원본 가중치와 임계값)
-        Stock stock = new Stock(stockCode, stockDto.getWeight(), stockDto.getThresholdPercentageValue());
+        // Stock 객체 생성 (원본 가중치, 임계값, 초기수량)
+        int initialQuantity = stockDto.getShares() != null ? stockDto.getShares() : 0;
+        Stock stock = new Stock(stockCode, stockDto.getWeight(), stockDto.getThresholdPercentageValue(), initialQuantity);
         
         targetStocks.put(stockCode, stock);
         
@@ -667,7 +671,7 @@ public class Portfolio {
      * @param lastRebalancingDate 마지막 리밸런싱 날짜
      * @return 리밸런싱이 필요하면 true
      */
-    public boolean shouldRebalance(BacktestContext context, LocalDate currentDate, LocalDate lastRebalancingDate) {
+    public boolean shouldRebalance(Map<String, Double> currentPrices, BacktestContext context, LocalDate currentDate, LocalDate lastRebalancingDate) {
         if (targetStocks.isEmpty()) {
             log.debug("목표 종목이 설정되지 않아 리밸런싱을 건너뜁니다");
             return false;
@@ -679,8 +683,6 @@ public class Portfolio {
             return false;
         }
         
-        // 현재 날짜의 가격 정보 가져오기
-        Map<String, Double> currentPrices = context.getPricesForDate(currentDate);
         if (currentPrices == null) {
             log.warn("날짜 {}의 가격 정보를 찾을 수 없습니다", currentDate);
             return false;
@@ -690,7 +692,7 @@ public class Portfolio {
         Map<String, Double> validPrices = PriceDataUtils.filterValidPrices(currentPrices);
         updateTargetWeights(validPrices);
         
-        return rebalancingStrategy.shouldRebalance(context, currentDate, this, lastRebalancingDate);
+        return rebalancingStrategy.shouldRebalance(currentPrices, context, currentDate, this, lastRebalancingDate);
     }
 
     /**

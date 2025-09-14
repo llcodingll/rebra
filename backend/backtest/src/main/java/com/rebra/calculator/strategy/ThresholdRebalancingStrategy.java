@@ -31,18 +31,17 @@ import static com.rebra.calculator.constant.BacktestConstants.Rebalancing.WEIGHT
 public class ThresholdRebalancingStrategy implements RebalancingStrategy {
 
     @Override
-    public boolean shouldRebalance(BacktestContext context, LocalDate currentDate, Portfolio portfolio,
+    public boolean shouldRebalance(Map<String, Double> currentPrices, BacktestContext context, LocalDate currentDate, Portfolio portfolio,
                                  LocalDate lastRebalancingDate) {
-        if (portfolio == null || context == null) {
+        if (portfolio == null || context == null || currentPrices == null) {
             return false;
         }
 
         try {
-            // 컨텍스트에서 현재 가격과 종목 정보 가져오기
-            Map<String, Double> currentPrices = context.getPricesForDate(currentDate);
+            // 컨텍스트에서 종목 정보 가져오기
             List<Stock> stocks = context.getStocks();
             
-            if (stocks == null || stocks.isEmpty() || currentPrices == null) {
+            if (stocks == null || stocks.isEmpty()) {
                 return false;
             }
             
@@ -393,19 +392,6 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
         return Math.max(0, deviation - threshold);
     }
     
-    /**
-     * 임계값 초과 정도를 계산한다 (기존 호환성 유지)
-     * 
-     * @param stock 대상 종목
-     * @param currentWeight 현재 비중
-     * @param totalOriginalWeight 전체 원본 가중치 합계 (사용되지 않음)
-     * @return 초과 정도 (0 이상, 클수록 초과 정도가 큼)
-     * @deprecated Stock의 targetWeight 필드를 사용하는 메서드를 사용하세요
-     */
-    @Deprecated
-    public double calculateExcessAmount(Stock stock, double currentWeight, int totalOriginalWeight) {
-        return calculateExcessAmount(stock, currentWeight);
-    }
 
     /**
      * 종목별 리밸런싱 우선순위를 계산한다

@@ -54,7 +54,7 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
     }
 
     @Override
-    public boolean shouldRebalance(BacktestContext context, LocalDate currentDate, Portfolio portfolio,
+    public boolean shouldRebalance(Map<String, Double> currentPrices, BacktestContext context, LocalDate currentDate, Portfolio portfolio,
                                  LocalDate lastRebalancingDate) {
         // 주기적 리밸런싱: 메인 서버에서 이미 설정된 주기에 맞는 날짜만 필터링해서 전송
         // 따라서 계산 서버는 받은 모든 날짜에 대해 무조건 리밸런싱 실행

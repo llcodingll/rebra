@@ -1,5 +1,6 @@
 package com.rebra.calculator.service;
 
+import com.rebra.calculator.constant.BacktestConstants;
 import com.rebra.calculator.context.BacktestContext;
 import com.rebra.calculator.domain.Portfolio;
 import com.rebra.calculator.domain.Stock;
@@ -112,12 +113,12 @@ public class BacktestCalculatorService {
             throw new IllegalArgumentException("시작일이 종료일보다 늦습니다");
         }
 
-        if (request.getBacktestPeriodDays() < 30) {
-            throw new IllegalArgumentException("백테스트 기간이 너무 짧습니다 (최소 30일)");
+        if (request.getBacktestPeriodDays() < BacktestConstants.Validation.MINIMUM_BACKTEST_PERIOD_DAYS) {
+            throw new IllegalArgumentException("백테스트 기간이 너무 짧습니다 (최소 " + BacktestConstants.Validation.MINIMUM_BACKTEST_PERIOD_DAYS + "일)");
         }
 
-        if (request.getStocks().size() < 2) {
-            throw new IllegalArgumentException("최소 2개 이상의 종목이 필요합니다");
+        if (request.getStocks().size() < BacktestConstants.Validation.MINIMUM_STOCK_COUNT) {
+            throw new IllegalArgumentException("최소 " + BacktestConstants.Validation.MINIMUM_STOCK_COUNT + "개 이상의 종목이 필요합니다");
         }
 
         log.debug("백테스트 요청 검증 완료 - 종목수: {}, 기간: {}일", 
@@ -134,14 +135,9 @@ public class BacktestCalculatorService {
                 .map(BacktestStockDto::toDomain)
                 .collect(Collectors.toList());
         
-        // 일별 가격 데이터를 LocalDate 키로 파싱하여 LinkedHashMap에 저장
-        LinkedHashMap<LocalDate, Map<String, Double>> dailyPrices = request.getDailyPrices().entrySet().stream()
-                .collect(Collectors.toMap(
-                        entry -> LocalDate.parse(entry.getKey()),
-                        Map.Entry::getValue,
-                        (existing, replacement) -> existing,
-                        LinkedHashMap::new
-                ));
+        // 일별 가격 데이터를 LocalDate 키로 변환
+        LinkedHashMap<LocalDate, Map<String, Double>> dailyPrices = 
+                convertDailyPricesToLocalDateMap(request.getDailyPrices());
         
         // 리밸런싱 전략 선택
         RebalancingStrategy rebalancingStrategy = selectRebalancingStrategy(request);
@@ -164,6 +160,22 @@ public class BacktestCalculatorService {
         return context;
     }
 
+    /**
+     * 요청의 일별 가격 데이터를 LocalDate 키를 가진 LinkedHashMap으로 변환한다
+     * 
+     * @param dailyPrices 요청에서 받은 일별 가격 데이터 (String 키)
+     * @return LocalDate 키를 가진 일별 가격 데이터
+     */
+    private LinkedHashMap<LocalDate, Map<String, Double>> convertDailyPricesToLocalDateMap(
+            Map<String, Map<String, Double>> dailyPrices) {
+        return dailyPrices.entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> LocalDate.parse(entry.getKey()),
+                        Map.Entry::getValue,
+                        (existing, replacement) -> existing,
+                        LinkedHashMap::new
+                ));
+    }
 
     /**
      * 요청에 따른 적절한 리밸런싱 전략을 선택한다
@@ -241,13 +253,13 @@ public class BacktestCalculatorService {
             portfolio.calculateAndDeductBorrowingCost(currentDate, daysPassed);
             
             // 리밸런싱 필요 여부 확인 (Portfolio 자체에서 판단)
-            boolean shouldRebalance = portfolio.shouldRebalance(context, currentDate, lastRebalancingDate);
+            boolean shouldRebalance = portfolio.shouldRebalance(currentPrices, context, currentDate, lastRebalancingDate);
             
             // 리밸런싱 실행
             List<Trade> rebalancingTrades = null;
             if (shouldRebalance) {
                 rebalancingTrades = portfolioManagerService.executeRebalancing(
-                    portfolio, context, currentDate);
+                    portfolio, currentPrices, context, currentDate);
                 
                 if (!rebalancingTrades.isEmpty()) {
                     rebalancingCount++;
