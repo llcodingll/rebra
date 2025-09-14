@@ -60,7 +60,6 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
         // 따라서 계산 서버는 받은 모든 날짜에 대해 무조건 리밸런싱 실행
         // 단, 유효한 가격이 없는 경우는 제외
         
-        Map<String, Double> currentPrices = context.getPricesForDate(currentDate);
         if (currentPrices == null) {
             log.warn("날짜 {}의 가격 정보를 찾을 수 없습니다", currentDate);
             return false;

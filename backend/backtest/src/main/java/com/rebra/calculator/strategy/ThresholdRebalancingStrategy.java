@@ -96,13 +96,15 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
     @Override
     public String getRebalancingReason(BacktestContext context, LocalDate currentDate, Portfolio portfolio,
                                      LocalDate lastRebalancingDate) {
-        if (!shouldRebalance(context, currentDate, portfolio, lastRebalancingDate)) {
+        // 컨텍스트에서 현재 가격과 종목 정보 가져오기
+        Map<String, Double> currentPrices = context.getPricesForDate(currentDate);
+        
+        if (!shouldRebalance(currentPrices, context, currentDate, portfolio, lastRebalancingDate)) {
             return "NO_REBALANCING_NEEDED";
         }
 
         try {
-            // 컨텍스트에서 현재 가격과 종목 정보 가져오기
-            Map<String, Double> currentPrices = context.getPricesForDate(currentDate);
+            // 이미 위에서 가져온 가격 정보 사용
             List<Stock> stocks = context.getStocks();
             
             if (stocks == null || currentPrices == null) {
