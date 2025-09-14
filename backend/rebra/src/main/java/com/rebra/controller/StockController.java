@@ -1,8 +1,11 @@
 package com.rebra.controller;
 
+import com.rebra.annotation.LoginUser;
 import com.rebra.common.CommonApiResponse;
 import com.rebra.dto.response.PageResponse;
+import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockSearchResponse;
+import com.rebra.entity.User;
 import com.rebra.service.StockService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -68,5 +72,22 @@ public class StockController {
         StockSearchResponse stock = stockService.findByStockName(stockName);
         
         return ResponseEntity.ok(CommonApiResponse.success(stock));
+    }
+
+    @Operation(summary = "종목 상세 정보 조회", description = "기본 종목 정보와 WebSocket 구독 정보를 조회합니다. 실시간 데이터는 WebSocket을 통해 제공됩니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "404", description = "종목을 찾을 수 없음"),
+        @ApiResponse(responseCode = "401", description = "인증 필요")
+    })
+    @GetMapping("/{stockCode}")
+    public ResponseEntity<CommonApiResponse<StockDetailResponse>> getStockDetail(
+            @Parameter(description = "조회할 종목 코드", example = "005930") 
+            @PathVariable String stockCode,
+            @LoginUser User user) {
+        
+        StockDetailResponse stockDetail = stockService.getStockDetailWithWebSocketInfo(stockCode, user);
+        
+        return ResponseEntity.ok(CommonApiResponse.success(stockDetail));
     }
 }
