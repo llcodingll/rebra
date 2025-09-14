@@ -2,7 +2,6 @@ package com.rebra.calculator.config;
 
 import com.rebra.calculator.dto.BacktestRequest;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -16,13 +15,12 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.ContainerProperties;
-import org.springframework.kafka.support.micrometer.MicrometerConsumerListener;
-import org.springframework.kafka.support.micrometer.MicrometerProducerListener;
+import org.springframework.kafka.core.MicrometerConsumerListener;
+import org.springframework.kafka.core.MicrometerProducerListener;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -91,10 +89,7 @@ public class KafkaConfig {
                 new DefaultKafkaConsumerFactory<>(configProps);
         
         // Micrometer 리스너 추가 (메트릭 수집)
-        factory.addListener(new MicrometerConsumerListener<>(
-            meterRegistry,
-            Collections.singletonList(Tag.of("service", "backtest-calculator"))
-        ));
+        factory.addListener(new MicrometerConsumerListener<String, BacktestRequest>(meterRegistry));
         
         // Factory 리스너 추가 (Consumer 생성/제거 이벤트 모니터링)
         factory.addListener(new ConsumerFactory.Listener<String, BacktestRequest>() {
@@ -153,10 +148,7 @@ public class KafkaConfig {
                 new DefaultKafkaProducerFactory<>(configProps);
         
         // Micrometer 리스너 추가 (메트릭 수집)
-        factory.addListener(new MicrometerProducerListener<>(
-            meterRegistry,
-            Collections.singletonList(Tag.of("service", "backtest-calculator"))
-        ));
+        factory.addListener(new MicrometerProducerListener<String, Object>(meterRegistry));
         
         // Factory 리스너 추가 (Producer 생성/제거 이벤트 모니터링)
         factory.addListener(new ProducerFactory.Listener<String, Object>() {
