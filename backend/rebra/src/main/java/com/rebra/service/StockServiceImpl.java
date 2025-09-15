@@ -69,7 +69,7 @@ public class StockServiceImpl implements StockService {
                     user.getId(), stockCode);
 
             // 사용자 계좌 정보 조회
-            Account account = accountRepository.findTopByUserIdAndIsDeletedFalseOrderByCreatedAtAsc(user.getId())
+            Account account = accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(user.getId(), true)
                     .orElseThrow(() -> new RuntimeException("활성화된 계좌를 찾을 수 없습니다."));
 
             // 즉시 한국투자증권 실시간 데이터 구독 시작
