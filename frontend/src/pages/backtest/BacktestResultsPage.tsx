@@ -1,4 +1,4 @@
-import { useState, useRef, React } from 'react';
+import { useState, useRef, useEffect, React } from 'react';
 import { motion } from 'motion/react';
 import styles from './BacktestResultsPage.module.css';
 import ResultsHeader from '../../widgets/backtest/ResultsHeader';
@@ -23,6 +23,9 @@ interface TooltipData {
 }
 
 export default function BacktestResultsPage() {
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
 
   // 샘플 거래 데이터
   const tradeData: TradeData[] = [

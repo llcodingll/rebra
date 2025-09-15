@@ -91,15 +91,15 @@ export default function BacktestPage() {
   };
 
   const handlePortfolioSelect = (portfolioId: string) => {
-    navigate('/dashboard/backtest/create', { state: { portfolioId } });
+    navigate('/backtest/create', { state: { portfolioId } });
   };
 
   const handleDirectCreation = () => {
-    navigate('/dashboard/backtest/create');
+    navigate('/backtest/create');
   };
 
   const handleBacktestClick = (backtest: any) => {
-    navigate(`/dashboard/backtest/results/${backtest.id}`);
+    navigate(`/backtest/results/${backtest.id}`);
   };
 
   const handleBacktestDelete = (backtest: any, index: number) => {
