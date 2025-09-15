@@ -1,7 +1,6 @@
 package com.rebra.service;
 
 import com.rebra.dto.response.PageResponse;
-import com.rebra.dto.response.RealtimeStockData;
 import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockSearchResponse;
 import com.rebra.entity.Account;
