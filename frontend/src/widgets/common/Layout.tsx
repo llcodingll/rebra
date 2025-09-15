@@ -11,22 +11,38 @@ export default function Layout() {
 
   const activeTab = useMemo(() => {
     const path = location.pathname;
-    if (path.startsWith('/dashboard/search')) return 'search';
-    if (path.startsWith('/dashboard/backtest')) return 'backtest';
+    if (path.startsWith('/search')) return 'search';
+    if (path.startsWith('/backtest')) return 'backtest';
     return 'dashboard';
   }, [location.pathname]);
 
   // 백테스트 페이지에서만 스크롤 맨 위로 이동
   useLayoutEffect(() => {
-    if (location.pathname.startsWith('/dashboard/backtest')) {
-      window.scrollTo(0, 0);
+    if (location.pathname.startsWith('/backtest')) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+
+      const root = document.getElementById('root');
+      if (root) root.scrollTop = 0;
+
+      const main = document.querySelector('main');
+      if (main) main.scrollTop = 0;
     }
   }, [location.pathname]);
 
   useEffect(() => {
-    if (location.pathname.startsWith('/dashboard/backtest')) {
+    if (location.pathname.startsWith('/backtest')) {
       const timer = setTimeout(() => {
-        window.scrollTo(0, 0);
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+
+        const root = document.getElementById('root');
+        if (root) root.scrollTop = 0;
+
+        const main = document.querySelector('main');
+        if (main) main.scrollTop = 0;
       }, 100);
       return () => clearTimeout(timer);
     }
@@ -38,10 +54,10 @@ export default function Layout() {
         navigate('/dashboard');
         break;
       case 'search':
-        navigate('/dashboard/search');
+        navigate('/search');
         break;
       case 'backtest':
-        navigate('/dashboard/backtest');
+        navigate('/backtest');
         break;
     }
   };

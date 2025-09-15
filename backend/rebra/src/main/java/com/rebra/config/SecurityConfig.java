@@ -98,14 +98,24 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // 개발 단계: 모든 origin 허용
-         List<String> allowedOrigins = Arrays.asList(allowedOriginsString.split(","));
-         configuration.setAllowedOrigins(allowedOrigins);
-        configuration.addAllowedOriginPattern("*");
+
+        // allowedOriginsString에서 origin 목록 파싱
+        List<String> allowedOrigins = Arrays.asList(allowedOriginsString.split(","));
+        configuration.setAllowedOrigins(allowedOrigins);
+
+        // 카카오 인증 origin 추가
         configuration.addAllowedOrigin("https://kauth.kakao.com");
+
+        // 개발환경에서만 모든 origin 패턴 허용 (credentials가 false일 때만)
+        if (allowedOrigins.contains("*")) {
+            configuration.setAllowCredentials(false);
+            configuration.addAllowedOriginPattern("*");
+        } else {
+            configuration.setAllowCredentials(true);
+        }
+
         configuration.setAllowedMethods(ALLOWED_METHODS);
         configuration.setAllowedHeaders(ALLOWED_HEADERS);
-        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

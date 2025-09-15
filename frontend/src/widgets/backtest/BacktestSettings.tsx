@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Play } from 'lucide-react';
+import { Play, AlertTriangle } from 'lucide-react';
 import styles from './BacktestSettings.module.css';
 
 interface BacktestSettingsProps {
@@ -27,40 +27,61 @@ export default function BacktestSettings({
 }: BacktestSettingsProps) {
   // 현재 날짜 정보
   const currentDate = new Date();
-  const currentMonth = currentDate.getMonth() + 1; // 0-based이므로 +1
-  const currentYear = currentDate.getFullYear();
-  const currentMonthStr = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
-  
-  // 최소 날짜는 2020년 9월
-  const minDate = "2020-09";
-  
-  // 시작일 최대값 (현재 달 -1)
-  const getPrevMonth = (dateStr: string) => {
-    const [year, month] = dateStr.split('-').map(Number);
-    const prevMonth = month === 1 ? 12 : month - 1;
-    const prevYear = month === 1 ? year - 1 : year;
-    return `${prevYear}-${prevMonth.toString().padStart(2, '0')}`;
+  const currentDateStr = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+
+  // 최소 날짜는 2020년 9월 1일
+  const minDate = "2020-09-01";
+
+  // 어제 날짜 (시작일 최대값)
+  const yesterday = new Date(currentDate);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const maxStartDate = yesterday.toISOString().split('T')[0];
+
+  // 한국 고정 공휴일 목록 (월-일 형식)
+  const koreanFixedHolidays = [
+    '01-01', // 신정
+    '03-01', // 삼일절
+    '05-05', // 어린이날
+    '06-06', // 현충일
+    '08-15', // 광복절
+    '10-03', // 개천절
+    '10-09', // 한글날
+    '12-25', // 성탄절
+  ];
+
+  // 거래일 체크 함수
+  const isWeekend = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const day = date.getDay();
+    return day === 0 || day === 6; // 일요일(0) 또는 토요일(6)
+  };
+
+  const isHoliday = (dateStr: string) => {
+    // dateStr에서 월-일 부분만 추출 (YYYY-MM-DD -> MM-DD)
+    const monthDay = dateStr.substring(5); // "2023-08-15" -> "08-15"
+    return koreanFixedHolidays.includes(monthDay);
+  };
+
+  const isNonTradingDay = (dateStr: string) => {
+    return isWeekend(dateStr) || isHoliday(dateStr);
   };
   
-  const maxStartDate = getPrevMonth(currentMonthStr);
-  
-  // 다음 달 계산 함수
-  const getNextMonth = (dateStr: string) => {
+  // 다음 날 계산 함수
+  const getNextDay = (dateStr: string) => {
     if (!dateStr) return "";
-    const [year, month] = dateStr.split('-').map(Number);
-    const nextMonth = month === 12 ? 1 : month + 1;
-    const nextYear = month === 12 ? year + 1 : year;
-    return `${nextYear}-${nextMonth.toString().padStart(2, '0')}`;
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() + 1);
+    return date.toISOString().split('T')[0];
   };
 
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartDate = e.target.value;
     setStartDate(newStartDate);
-    
-    // 종료일이 시작일과 같거나 빠르면 종료일을 다음 달로 설정
+
+    // 종료일이 시작일과 같거나 빠르면 종료일을 다음 날로 설정
     if (endDate && newStartDate >= endDate) {
-      const nextMonth = getNextMonth(newStartDate);
-      setEndDate(nextMonth);
+      const nextDay = getNextDay(newStartDate);
+      setEndDate(nextDay);
     }
   };
   
@@ -108,28 +129,52 @@ export default function BacktestSettings({
 
         <div className={styles.formGroup}>
           <label htmlFor="start-date">시작 날짜</label>
-          <input
-            id="start-date"
-            type="month"
-            value={startDate}
-            onChange={handleStartDateChange}
-            min={minDate}
-            max={maxStartDate}
-            className={styles.dateInput}
-          />
+          <div className={styles.dateInputContainer}>
+            <input
+              id="start-date"
+              type="date"
+              value={startDate}
+              onChange={handleStartDateChange}
+              min={minDate}
+              max={maxStartDate}
+              className={styles.dateInput}
+            />
+            <div className={styles.warningContainer}>
+              {startDate && isNonTradingDay(startDate) && (
+                <div className={styles.warningMessage}>
+                  <AlertTriangle className={styles.warningIcon} />
+                  <span>
+                    {isWeekend(startDate) ? '주말' : '공휴일'}은 거래일이 아닙니다. 데이터 검색이 제한될 수 있습니다.
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className={styles.formGroup}>
           <label htmlFor="end-date">종료 날짜</label>
-          <input
-            id="end-date"
-            type="month"
-            value={endDate}
-            onChange={handleEndDateChange}
-            min={startDate ? getNextMonth(startDate) : minDate}
-            max={currentMonthStr}
-            className={styles.dateInput}
-          />
+          <div className={styles.dateInputContainer}>
+            <input
+              id="end-date"
+              type="date"
+              value={endDate}
+              onChange={handleEndDateChange}
+              min={startDate ? getNextDay(startDate) : minDate}
+              max={currentDateStr}
+              className={styles.dateInput}
+            />
+            <div className={styles.warningContainer}>
+              {endDate && isNonTradingDay(endDate) && (
+                <div className={styles.warningMessage}>
+                  <AlertTriangle className={styles.warningIcon} />
+                  <span>
+                    {isWeekend(endDate) ? '주말' : '공휴일'}은 거래일이 아닙니다. 데이터 검색이 제한될 수 있습니다.
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

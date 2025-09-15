@@ -68,7 +68,15 @@ public enum ExceptionCode {
     PORTFOLIO_UPDATE_FAILED(12005, "포트폴리오 수정에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     PORTFOLIO_DELETE_FAILED(12006, "포트폴리오 삭제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     PORTFOLIO_LIMIT_EXCEEDED(12007, "포트폴리오 생성 한도를 초과했습니다.", HttpStatus.BAD_REQUEST),
-    PORTFOLIO_INVALID_REQUEST(12008, "잘못된 포트폴리오 요청입니다.", HttpStatus.BAD_REQUEST);
+    PORTFOLIO_INVALID_REQUEST(12008, "잘못된 포트폴리오 요청입니다.", HttpStatus.BAD_REQUEST),
+    
+    // ==== Trading 관련 ====
+    TRADING_ORDER_FAILED(13001, "주식 주문에 실패했습니다.", HttpStatus.BAD_REQUEST),
+    KIS_API_ERROR(13002, "KIS API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
+    INSUFFICIENT_BALANCE(13003, "잔고가 부족합니다.", HttpStatus.BAD_REQUEST),
+    INVALID_ORDER_QUANTITY(13004, "잘못된 주문 수량입니다.", HttpStatus.BAD_REQUEST),
+    INVALID_ORDER_PRICE(13005, "잘못된 주문 가격입니다.", HttpStatus.BAD_REQUEST),
+    TRADING_HOURS_VIOLATION(13006, "거래 시간이 아닙니다.", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;

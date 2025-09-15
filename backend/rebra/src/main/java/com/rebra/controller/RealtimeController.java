@@ -4,6 +4,7 @@ import com.rebra.entity.Account;
 import com.rebra.repository.AccountRepository;
 import com.rebra.service.KisRealtimeService;
 import com.rebra.service.WebSocketReconnectionService;
+import com.rebra.util.WebSocketHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -21,6 +22,7 @@ public class RealtimeController {
     private final KisRealtimeService kisRealtimeService;
     private final AccountRepository accountRepository;
     private final WebSocketReconnectionService reconnectionService;
+    private final WebSocketHelper webSocketHelper;
 
     /**
      * 사용자별 실시간 체결가 구독 요청 처리
@@ -58,6 +60,9 @@ public class RealtimeController {
 
             // 구독 정보 추적
             reconnectionService.addSubscription(sessionId, stockCode, "price");
+
+            // 구독 성공 응답 1회 전송
+            webSocketHelper.sendSubscriptionStarted(userId, stockCode, "price");
 
         } catch (Exception e) {
             log.error("실시간 체결가 구독 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
@@ -99,6 +104,9 @@ public class RealtimeController {
 
             // 구독 정보 추적
             reconnectionService.addSubscription(sessionId, stockCode, "orderbook");
+
+            // 구독 성공 응답 1회 전송
+            webSocketHelper.sendSubscriptionStarted(userId, stockCode, "orderbook");
 
         } catch (Exception e) {
             log.error("실시간 호가 구독 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);

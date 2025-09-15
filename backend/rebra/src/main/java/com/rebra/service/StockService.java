@@ -26,10 +26,10 @@ public interface StockService {
     /**
      * 종목 상세 정보 조회 (실시간 데이터 포함) - 기존 방식
      */
-    StockDetailResponse getStockDetailWithRealtime(String stockCode, User user);
-    
+    StockDetailResponse getStockDetailWithRealtime(String stockCode, Long userId);
+
     /**
      * 종목 상세 정보 조회 (WebSocket 채널 정보 포함) - 하이브리드 방식
      */
-    StockDetailResponse getStockDetailWithWebSocketInfo(String stockCode, User user);
+    StockDetailResponse getStockDetailWithWebSocketInfo(String stockCode, Long userId);
 }

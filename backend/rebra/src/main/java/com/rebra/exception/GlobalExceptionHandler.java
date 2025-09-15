@@ -110,6 +110,13 @@ public class GlobalExceptionHandler {
                 .body(CommonApiResponse.error(e));
     }
 
+    @ExceptionHandler(CustomRuntimeException.class)
+    public ResponseEntity<CommonApiResponse<Void>> handleCustomRuntimeException(CustomRuntimeException e) {
+        log.warn("Custom runtime exception: {} - {}", e.getExceptionCode(), e.getMessage());
+        return ResponseEntity.status(e.getExceptionCode().getStatus())
+                .body(CommonApiResponse.error(e.getExceptionCode().name(), e.getMessage(), e.getExceptionCode().getStatus()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<CommonApiResponse<ValidationErrorResponse>> handleValidationException(MethodArgumentNotValidException ex) {
         List<ValidationErrorDetail> errors = ex.getBindingResult().getFieldErrors().stream()
