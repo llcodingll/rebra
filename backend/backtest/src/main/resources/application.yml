@@ -43,9 +43,6 @@ management:
       show-details: always
   # Micrometer 메트릭 설정
   metrics:
-    export:
-      simple:
-        enabled: true
     tags:
       service: backtest-calculator
       version: '@project.version@'

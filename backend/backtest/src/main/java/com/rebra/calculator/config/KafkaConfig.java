@@ -1,6 +1,7 @@
 package com.rebra.calculator.config;
 
 import com.rebra.calculator.dto.BacktestRequest;
+import com.rebra.calculator.dto.BacktestResponse;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -108,6 +109,38 @@ public class KafkaConfig {
                 log.info("Kafka Consumer 제거됨 - ID: {}", id);
             }
         });
+        
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, BacktestResponse> backtestResponseConsumerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        
+        // 기본 연결 설정
+        configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        configProps.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        
+        // JSON 역직렬화 설정
+        configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
+        configProps.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class.getName());
+        configProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE, BacktestResponse.class.getName());
+        configProps.put(JsonDeserializer.TRUSTED_PACKAGES, "com.rebra.calculator.dto");
+        configProps.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        
+        // 성능 및 안정성 설정
+        configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"); // 처음부터 읽기
+        configProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false); // 수동 커밋
+        
+        log.info("Kafka Consumer<BacktestResponse> 설정 완료 - BootstrapServers: {}, GroupId: {}",
+                bootstrapServers, groupId);
+        
+        DefaultKafkaConsumerFactory<String, BacktestResponse> factory =
+                new DefaultKafkaConsumerFactory<>(configProps);
+        
+        // Micrometer 리스너 추가 (메트릭 수집)
+        factory.addListener(new MicrometerConsumerListener<>(meterRegistry));
         
         return factory;
     }
