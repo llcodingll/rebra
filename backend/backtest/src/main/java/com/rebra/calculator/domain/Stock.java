@@ -223,7 +223,9 @@ public class Stock {
      * @return Stock 객체의 복사본
      */
     public Stock copy() {
-        return new Stock(this.stockCode, this.originalWeight, this.thresholdPercentage, this.initialQuantity);
+        Stock newStock = new Stock(this.stockCode, this.originalWeight, this.thresholdPercentage, this.initialQuantity);
+        newStock.setTargetWeight(this.targetWeight);
+        return newStock;
     }
 
     /**

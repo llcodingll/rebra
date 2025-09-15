@@ -49,7 +49,7 @@ public class PortfolioManagerService {
         // 초기 포트폴리오 가치 계산
         double initialValue = calculateInitialPortfolioValue(stocks, initialPrices);
         
-        log.info("초기 포트폴리오 구성 시작 - 초기가치: {:.0f}원, 종목수: {}", initialValue, stocks.size());
+        log.info(String.format("초기 포트폴리오 구성 시작 - 초기가치: %.0f원, 종목수: %d", initialValue, stocks.size()));
         
         // 초기 현금 0원으로 포트폴리오 생성
         Portfolio portfolio = new Portfolio();
@@ -74,8 +74,8 @@ public class PortfolioManagerService {
                 // 초기 보유 주식을 포트폴리오에 직접 설정 (거래 없이)
                 portfolio.setInitialHolding(stockCode, quantity);
 
-                log.debug("초기 보유 설정 완료 - 종목: {}, 수량: {}주, 가격: {:.0f}원",
-                        stockCode, quantity, currentPrice);
+                log.debug(String.format("초기 보유 설정 완료 - 종목: %s, 수량: %d주, 가격: %.0f원",
+                        stockCode, quantity, currentPrice));
 
             } catch (Exception e) {
                 log.error("종목 {} 초기 보유 설정 실패", stockCode, e);
@@ -91,8 +91,8 @@ public class PortfolioManagerService {
             try {
                 // Stock 객체를 사용하여 원본 가중치와 함께 추가
                 portfolio.addTargetStock(stock);
-                log.debug("목표 종목 설정: {} (원본가중치: {}, 임계값: {:.2f}%)", 
-                        stock.getStockCode(), stock.getOriginalWeight(), stock.getThresholdPercentage() * 100);
+                log.debug(String.format("목표 종목 설정: %s (원본가중치: %d, 임계값: %.2f%%)", 
+                        stock.getStockCode(), stock.getOriginalWeight(), stock.getThresholdPercentage() * 100));
             } catch (Exception e) {
                 log.error("목표 종목 설정 실패: {}", stock.getStockCode(), e);
             }
@@ -104,8 +104,8 @@ public class PortfolioManagerService {
             portfolio.adjustWeights();
         }
         
-        log.info("초기 포트폴리오 구성 완료 - 보유종목: {}개, 목표종목: {}개, 초기가치: {:.0f}원",
-                portfolio.getHoldingStockCodes().size(), portfolio.getTargetStockCount(), portfolio.getInitialValue());
+        log.info(String.format("초기 포트폴리오 구성 완료 - 보유종목: %d개, 목표종목: %d개, 초기가치: %.0f원",
+                portfolio.getHoldingStockCodes().size(), portfolio.getTargetStockCount(), portfolio.getInitialValue()));
         
         return portfolio;
     }
@@ -172,7 +172,7 @@ public class PortfolioManagerService {
         double totalValue = portfolio.getTotalValue(validPrices);
         
         if (totalValue <= 0) {
-            log.warn("포트폴리오 총 가치가 0 이하입니다: {:.0f}원", totalValue);
+            log.warn(String.format("포트폴리오 총 가치가 0 이하입니다: %.0f원", totalValue));
             return rebalancingTrades;
         }
         
@@ -237,11 +237,11 @@ public class PortfolioManagerService {
             double stockValue = quantity * finalPrice;
             totalValue += stockValue;
             
-            log.debug("바이앤홀드 - {}: {}주, 초기가치: {:.0f}원, 최종가치: {:.0f}원", 
-                    stockCode, quantity, quantity * initialPrice, stockValue);
+            log.debug(String.format("바이앤홀드 - %s: %d주, 초기가치: %.0f원, 최종가치: %.0f원", 
+                    stockCode, quantity, quantity * initialPrice, stockValue));
         }
         
-        log.debug("바이앤홀드 가치 계산 완료 - 총가치: {:.0f}원", totalValue);
+        log.debug(String.format("바이앤홀드 가치 계산 완료 - 총가치: %.0f원", totalValue));
         
         return totalValue;
     }
@@ -274,7 +274,7 @@ public class PortfolioManagerService {
             }
         }
         
-        log.debug("최대 낙폭 계산 완료: {:.2f}%", maxDrawdown * 100);
+        log.debug(String.format("최대 낙폭 계산 완료: %.2f%%", maxDrawdown * 100));
         
         return maxDrawdown;
     }
@@ -306,8 +306,8 @@ public class PortfolioManagerService {
         // 표준편차 계산 후 연환산
         double volatility = Math.sqrt(variance) * Math.sqrt(periodsPerYear);
         
-        log.debug("변동성 계산 완료 - 평균수익률: {:.4f}, 표준편차: {:.4f}, 연환산변동성: {:.4f}", 
-                meanReturn, Math.sqrt(variance), volatility);
+        log.debug(String.format("변동성 계산 완료 - 평균수익률: %.4f, 표준편차: %.4f, 연환산변동성: %.4f", 
+                meanReturn, Math.sqrt(variance), volatility));
         
         return volatility;
     }
@@ -327,8 +327,8 @@ public class PortfolioManagerService {
         
         double sharpeRatio = (portfolioReturn - riskFreeRate) / volatility;
         
-        log.debug("샤프 비율 계산 완료 - 포트폴리오수익률: {:.4f}, 변동성: {:.4f}, 무위험수익률: {:.4f}, 샤프비율: {:.4f}", 
-                portfolioReturn, volatility, riskFreeRate, sharpeRatio);
+        log.debug(String.format("샤프 비율 계산 완료 - 포트폴리오수익률: %.4f, 변동성: %.4f, 무위험수익률: %.4f, 샤프비율: %.4f", 
+                portfolioReturn, volatility, riskFreeRate, sharpeRatio));
         
         return sharpeRatio;
     }
@@ -429,7 +429,7 @@ public class PortfolioManagerService {
                 
                 sellTrades.add(trade);
                 
-                log.debug("매도 실행 - {}: {}주 @{:.0f}원", action.getStockCode(), action.getQuantity(), action.getPrice());
+                log.debug(String.format("매도 실행 - %s: %d주 @%.0f원", action.getStockCode(), action.getQuantity(), action.getPrice()));
                 
             } catch (IllegalArgumentException e) {
                 log.warn("매도 실행 실패 - 종목: {}, 수량: {}, 사유: {}", 
@@ -471,7 +471,7 @@ public class PortfolioManagerService {
                 
                 buyTrades.add(trade);
                 
-                log.debug("매수 실행 - {}: {}주 @{:.0f}원", action.getStockCode(), action.getQuantity(), action.getPrice());
+                log.debug(String.format("매수 실행 - %s: %d주 @%.0f원", action.getStockCode(), action.getQuantity(), action.getPrice()));
                 
             } catch (Exception e) {
                 log.error("매수 실행 중 오류 발생: {}", action.getStockCode(), e);

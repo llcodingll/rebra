@@ -126,9 +126,9 @@ class BacktestIntegrationTest {
         request.setRebalancingType(RebalancingType.THRESHOLD);
         
         List<BacktestStockDto> stocks = List.of(
-            createBacktestStockWithThreshold("005930", "삼성전자", 40, 100, 0.04),  // 4% 임계값
-            createBacktestStockWithThreshold("000660", "SK하이닉스", 30, 50, 0.04),
-            createBacktestStockWithThreshold("035420", "NAVER", 30, 25, 0.04)
+            createBacktestStockWithThreshold("005930", "삼성전자", 40, 100, 0.50),  // 20% 임계값
+            createBacktestStockWithThreshold("000660", "SK하이닉스", 30, 50, 0.50),
+            createBacktestStockWithThreshold("035420", "NAVER", 30, 25, 0.50)
         );
         request.setStocks(stocks);
         request.setDailyPrices(createDivergentPriceData(request.getStartDate(), request.getEndDate()));

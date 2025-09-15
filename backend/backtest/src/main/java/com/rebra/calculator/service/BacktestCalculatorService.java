@@ -83,8 +83,8 @@ public class BacktestCalculatorService {
             long calculationTime = System.currentTimeMillis() - startTime;
             BacktestResponse response = buildBacktestResponse(request.getBacktestId(), result, calculationTime);
 
-            log.info("백테스트 계산 완료 - ID: {}, 소요시간: {}ms, 총수익률: {:.2f}%",
-                    request.getBacktestId(), calculationTime, result.getSummary().getTotalReturn() * 100);
+            log.info(String.format("백테스트 계산 완료 - ID: %d, 소요시간: %dms, 총수익률: %.2f%%",
+                    request.getBacktestId(), calculationTime, result.getSummary().getTotalReturn() * 100));
 
             return response;
 
@@ -212,8 +212,8 @@ public class BacktestCalculatorService {
             context.getStartDate()
         );
 
-        log.info("초기 포트폴리오 구성 완료 - 현금잔액: {:.0f}원, 보유종목수: {}, 초기가치: {:.0f}원", 
-                portfolio.getCash(), portfolio.getHoldingStockCodes().size(), portfolio.getInitialValue());
+        log.info(String.format("초기 포트폴리오 구성 완료 - 현금잔액: %.0f원, 보유종목수: %d, 초기가치: %.0f원", 
+                portfolio.getCash(), portfolio.getHoldingStockCodes().size(), portfolio.getInitialValue()));
 
         return portfolio;
     }
@@ -391,8 +391,8 @@ public class BacktestCalculatorService {
                                      maxDrawdown, rebalancingCount, portfolio, 
                                      periodGrowthRate, volatility, sharpeRatio, timeWeightedReturn));
         
-        log.info("최종 결과 계산 완료 - 최종가치: {:.0f}원, 총수익률: {:.2f}%, TWR: {:.2f}%, 바이앤홀드: {:.2f}%, 샤프비율: {:.2f}",
-                finalValue, totalReturn * 100, timeWeightedReturn * 100, buyHoldReturn * 100, sharpeRatio);
+        log.info(String.format("최종 결과 계산 완료 - 최종가치: %.0f원, 총수익률: %.2f%%, TWR: %.2f%%, 바이앤홀드: %.2f%%, 샤프비율: %.2f",
+                finalValue, totalReturn * 100, timeWeightedReturn * 100, buyHoldReturn * 100, sharpeRatio));
     }
 
     /**
@@ -531,8 +531,8 @@ public class BacktestCalculatorService {
         
         double timeWeightedReturn = twrProduct - 1.0;
         
-        log.debug("시간 가중 수익률 계산 완료 - 기간수: {}, TWR: {:.4f}", 
-                periodReturns.size(), timeWeightedReturn);
+        log.debug(String.format("시간 가중 수익률 계산 완료 - 기간수: %d, TWR: %.4f", 
+                periodReturns.size(), timeWeightedReturn));
         
         return timeWeightedReturn;
     }

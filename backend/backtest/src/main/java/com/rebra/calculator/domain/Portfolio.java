@@ -154,8 +154,8 @@ public class Portfolio {
         updateCashStatistics();
         
         
-        log.debug("매수 실행 - {}: {}주 @{:.0f}원, 현금잔액: {:.0f}원", 
-                stockCode, quantity, price, cash);
+        log.debug(String.format("매수 실행 - %s: %d주 @%.0f원, 현금잔액: %.0f원", 
+                stockCode, quantity, price, cash));
         
         return trade;
     }
@@ -204,8 +204,8 @@ public class Portfolio {
         updateCashStatistics();
         
         
-        log.debug("매도 실행 - {}: {}주 @{:.0f}원, 현금잔액: {:.0f}원", 
-                stockCode, quantity, price, cash);
+        log.debug(String.format("매도 실행 - %s: %d주 @%.0f원, 현금잔액: %.0f원", 
+                stockCode, quantity, price, cash));
         
         return trade;
     }
@@ -243,8 +243,8 @@ public class Portfolio {
         updateCashStatistics();
         
         
-        log.debug("차입 이자 발생 - 날짜: {}, 차입금: {:.0f}원, 경과일수: {}일, 기간이자: {:.0f}원, 누적이자: {:.0f}원", 
-                currentDate, borrowingAmount, daysPassed, periodInterest, totalBorrowingCost);
+        log.debug(String.format("차입 이자 발생 - 날짜: %s, 차입금: %.0f원, 경과일수: %d일, 기간이자: %.0f원, 누적이자: %.0f원", 
+                currentDate, borrowingAmount, daysPassed, periodInterest, totalBorrowingCost));
         
         return periodInterest;
     }
@@ -281,8 +281,8 @@ public class Portfolio {
             Double price = currentPrices.get(stockCode);
             if (price != null && price > 0) {
                 stockValue += quantity * price;
-                log.trace("종목 {} 가치 계산: {}주 × {:.0f}원 = {:.0f}원", 
-                        stockCode, quantity, price, quantity * price);
+                log.trace(String.format("종목 %s 가치 계산: %d주 × %.0f원 = %.0f원", 
+                        stockCode, quantity, price, quantity * price));
             } else {
                 log.debug("종목 {}의 유효한 가격을 찾을 수 없어 가치 계산에서 제외", stockCode);
             }
@@ -382,10 +382,10 @@ public class Portfolio {
         // 현재 전체 가중치로 목표 비중 계산
         int totalWeight = getTotalOriginalWeight();
         
-        log.debug("목표 종목 추가: {} (원본가중치: {}, 목표비중: {:.2f}%, 임계값: {:.2f}%)", 
+        log.debug(String.format("목표 종목 추가: %s (원본가중치: %d, 목표비중: %.2f%%, 임계값: %.2f%%)", 
                 stockCode, stock.getOriginalWeight(), 
                 totalWeight > 0 ? stock.getTargetWeightPercentage(totalWeight) : 0.0, 
-                stock.getThresholdPercentage());
+                stock.getThresholdPercentage()));
     }
 
     /**
@@ -418,10 +418,10 @@ public class Portfolio {
         // 현재 전체 가중치로 목표 비중 계산
         int totalWeight = getTotalOriginalWeight();
         
-        log.debug("목표 종목 추가 (DTO 기반): {} (원본가중치: {}, 목표비중: {:.2f}%, 임계값: {:.2f}%)", 
+        log.debug(String.format("목표 종목 추가 (DTO 기반): %s (원본가중치: %d, 목표비중: %.2f%%, 임계값: %.2f%%)", 
                 stockCode, stockDto.getWeight(), 
                 totalWeight > 0 ? stock.getTargetWeightPercentage(totalWeight) : 0.0,
-                stockDto.getThresholdPercentageValue());
+                stockDto.getThresholdPercentageValue()));
     }
 
     /**
@@ -444,9 +444,9 @@ public class Portfolio {
         // 제거 전 전체 가중치 계산 (제거될 종목 포함)
         int totalWeightBefore = getTotalOriginalWeight() + removedStock.getOriginalWeight();
         
-        log.info("목표 종목 제거: {} (원본가중치: {}, 제거전비중: {:.2f}%)", 
+        log.info(String.format("목표 종목 제거: %s (원본가중치: %d, 제거전비중: %.2f%%)", 
                 stockCode, removedStock.getOriginalWeight(),
-                totalWeightBefore > 0 ? ((double) removedStock.getOriginalWeight() / totalWeightBefore) * 100 : 0.0);
+                totalWeightBefore > 0 ? ((double) removedStock.getOriginalWeight() / totalWeightBefore) * 100 : 0.0));
         
         // 자동 재조정이 활성화되어 있고 제거할 종목이 있으면 비중 재조정
         if (autoRebalance && !targetStocks.isEmpty()) {
@@ -468,8 +468,8 @@ public class Portfolio {
             return;
         }
         
-        log.info("종목 제거 후 비중 재조정 시작 - 제거된 비중: {:.2f}%, 남은 종목수: {}", 
-                removedWeight * 100, targetStocks.size());
+        log.info(String.format("종목 제거 후 비중 재조정 시작 - 제거된 비중: %.2f%%, 남은 종목수: %d", 
+                removedWeight * 100, targetStocks.size()));
         
         // 원본 가중치가 있으면 원본 기준으로 재정규화
         boolean hasOriginalWeights = targetStocks.values().stream()
@@ -649,8 +649,8 @@ public class Portfolio {
                 // 유효한 종목: 정규화된 목표 비중 계산
                 double normalizedWeight = (double) stock.getOriginalWeight() / totalValidWeight;
                 stock.setTargetWeight(normalizedWeight);
-                log.trace("종목 {} 목표 비중 업데이트: {:.2f}%", 
-                        stock.getStockCode(), normalizedWeight * 100);
+                log.trace(String.format("종목 %s 목표 비중 업데이트: %.2f%%", 
+                        stock.getStockCode(), normalizedWeight * 100));
             } else {
                 // 유효하지 않은 종목: 목표 비중 0
                 stock.setTargetWeight(0.0);
@@ -803,7 +803,7 @@ public class Portfolio {
         
         this.initialValue = roundAmount(initialValue);
         
-        log.info("초기 포트폴리오 가치 설정 - {:.0f}원", this.initialValue);
+        log.info(String.format("초기 포트폴리오 가치 설정 - %.0f원", this.initialValue));
     }
 
     /**
