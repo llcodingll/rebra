@@ -52,7 +52,7 @@ public class StockTradingServiceImpl implements StockTradingService {
                                             String orderDirection) {
         try {
             // 1. 계좌 정보 조회 및 검증
-            Account account = accountRepository.findByIdAndUserIdAndIsDeletedFalse(request.getAccountId(), userId)
+            Account account = accountRepository.findByIdAndUserId(request.getAccountId(), userId)
                     .orElseThrow(() -> new CustomRuntimeException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
             // 2. 계좌 인증 정보 복호화

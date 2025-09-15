@@ -78,8 +78,8 @@ class StockTradingServiceImplTest {
     void buyStock_AccountNotFound_ThrowsException() {
         // Given
         String stockCode = "005930";
-        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
-        given(accountRepository.findByIdAndUserIdAndIsDeletedFalse(1L, 1L))
+//        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+        given(accountRepository.findByIdAndUserId(1L, 1L))
                 .willReturn(Optional.empty());
 
         // When & Then
@@ -93,11 +93,11 @@ class StockTradingServiceImplTest {
     void buyStock_DecryptionFailed_ThrowsException() {
         // Given
         String stockCode = "005930";
-        given(accountRepository.findByIdAndUserIdAndIsDeletedFalse(1L, 1L))
+        given(accountRepository.findByIdAndUserId(1L, 1L))
                 .willReturn(Optional.of(testAccount));
 
         try (MockedStatic<AccountEncryptionUtil> mockedUtil = Mockito.mockStatic(AccountEncryptionUtil.class)) {
-            given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+//            given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
             mockedUtil.when(() -> AccountEncryptionUtil.decryptAccountCredentials(testAccount, 1L))
                     .thenThrow(new RuntimeException("복호화 실패"));
 
@@ -119,8 +119,8 @@ class StockTradingServiceImplTest {
         setField(marketOrderRequest, "price", null); // 시장가는 가격 null
         setField(marketOrderRequest, "accountId", 1L);
 
-        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
-        given(accountRepository.findByIdAndUserIdAndIsDeletedFalse(1L, 1L))
+//        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+        given(accountRepository.findByIdAndUserId(1L, 1L))
                 .willReturn(Optional.empty()); // 계좌 없음으로 KIS API 호출 전에 예외 발생
 
         // When & Then
@@ -140,8 +140,8 @@ class StockTradingServiceImplTest {
                 .build();
         setField(otherUser, "id", 2L);
 
-        given(userRepository.findById(2L)).willReturn(Optional.of(otherUser));
-        given(accountRepository.findByIdAndUserIdAndIsDeletedFalse(1L, 2L))
+//        given(userRepository.findById(2L)).willReturn(Optional.of(otherUser));
+        given(accountRepository.findByIdAndUserId(1L, 2L))
                 .willReturn(Optional.empty());
 
         // When & Then
@@ -155,8 +155,8 @@ class StockTradingServiceImplTest {
     void sellStock_AccountNotFound_ThrowsException() {
         // Given
         String stockCode = "005930";
-        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
-        given(accountRepository.findByIdAndUserIdAndIsDeletedFalse(1L, 1L))
+//        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+        given(accountRepository.findByIdAndUserId(1L, 1L))
                 .willReturn(Optional.empty());
 
         // When & Then
