@@ -173,7 +173,7 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
           endDate={endDate}
           setEndDate={setEndDate}
           onRunBacktest={handleRunBacktest}
-          isRunDisabled={!backtestName || portfolioItems.length === 0}
+          isRunDisabled={!backtestName || !startDate || !endDate || portfolioItems.length === 0}
         />
 
         <div className={styles.contentGrid}>
