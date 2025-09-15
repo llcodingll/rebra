@@ -1,7 +1,6 @@
 package com.rebra.service;
 
 import com.rebra.config.WebSocketSessionDisconnectEvent;
-import com.rebra.dto.response.RealtimeStockData;
 import com.youhogeon.finance.kis_api.api.realtime.H0STASP0Data;
 import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Data;
 import lombok.RequiredArgsConstructor;
@@ -386,27 +385,7 @@ public class WebSocketReconnectionService {
                 return validateH0STCNT0Data(stockCode, priceData);
             }
 
-            // RealtimeStockData.CurrentPriceData 형태인 경우
-            if (data instanceof RealtimeStockData.CurrentPriceData) {
-                RealtimeStockData.CurrentPriceData currentPriceData =
-                    (RealtimeStockData.CurrentPriceData) data;
-
-                // 주식코드 검증
-                if (!stockCode.equals(currentPriceData.getStockCode())) {
-                    log.warn("체결가 데이터 주식코드 불일치 - Expected: {}, Actual: {}",
-                            stockCode, currentPriceData.getStockCode());
-                    return false;
-                }
-
-                // 타임스탬프 검증 (null이면 안됨)
-                if (currentPriceData.getTimestamp() == null || currentPriceData.getTimestamp().isEmpty()) {
-                    log.warn("체결가 데이터 타임스탬프 누락 - StockCode: {}", stockCode);
-                    return false;
-                }
-
-                // 내부 priceData 재귀 검증
-                return validatePriceData(stockCode, currentPriceData.getPriceData());
-            }
+            // RealtimeStockData는 더 이상 사용하지 않음 (KIS 원본 데이터 직접 사용)
 
             // 기타 형태는 일단 통과
             log.debug("알 수 없는 체결가 데이터 형태 - StockCode: {}, DataType: {}",
@@ -460,27 +439,7 @@ public class WebSocketReconnectionService {
                 return validateH0STASP0Data(stockCode, orderbookData);
             }
 
-            // RealtimeStockData.OrderbookData 형태인 경우
-            if (data instanceof RealtimeStockData.OrderbookData) {
-                RealtimeStockData.OrderbookData currentOrderbookData =
-                    (RealtimeStockData.OrderbookData) data;
-
-                // 주식코드 검증
-                if (!stockCode.equals(currentOrderbookData.getStockCode())) {
-                    log.warn("호가 데이터 주식코드 불일치 - Expected: {}, Actual: {}",
-                            stockCode, currentOrderbookData.getStockCode());
-                    return false;
-                }
-
-                // 타임스탬프 검증 (null이면 안됨)
-                if (currentOrderbookData.getTimestamp() == null || currentOrderbookData.getTimestamp().isEmpty()) {
-                    log.warn("호가 데이터 타임스탬프 누락 - StockCode: {}", stockCode);
-                    return false;
-                }
-
-                // 내부 orderbookData 재귀 검증
-                return validateOrderbookData(stockCode, currentOrderbookData.getOrderbookData());
-            }
+            // RealtimeStockData는 더 이상 사용하지 않음 (KIS 원본 데이터 직접 사용)
 
             // 기타 형태는 일단 통과
             log.debug("알 수 없는 호가 데이터 형태 - StockCode: {}, DataType: {}",

@@ -10,66 +10,6 @@
   margin: 0 auto;
 }
 
-.portfolioHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  
-  margin-bottom: 32px;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-.portfolioTitle {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.portfolioInfo {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-}
-
-.portfolioStats {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.stockCount {
-  font-size: 14px;
-  color: #6b7280;
-  font-family: 'Inter', sans-serif;
-}
-
-.portfolioTitle h2 {
-  font-size: 28.75px;
-  font-family: 'Noto Sans KR', sans-serif;
-  color: black;
-  margin: 0;
-  line-height: 1.2;
-}
-
-.portfolioDesc {
-  font-size: 24px;
-  font-family: 'Noto Sans KR', sans-serif;
-  color: black;
-  line-height: 1.2;
-}
-
-.portfolioLink {
-  font-size: 12.578px;
-  font-family: 'Noto Sans KR', sans-serif;
-  color: #1c398e;
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-decoration: underline;
-  text-align: left;
-}
 
 
 .tabHeader {

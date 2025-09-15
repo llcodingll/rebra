@@ -1,0 +1,66 @@
+.content {
+  text-align: center;
+}
+
+.message {
+  margin: 0 0 24px 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.cancelButton,
+.confirmButton {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 80px;
+}
+
+.cancelButton {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.cancelButton:hover {
+  background: #e5e7eb;
+}
+
+.confirmButton {
+  color: white;
+}
+
+.confirmButton.default {
+  background: #3b82f6;
+}
+
+.confirmButton.default:hover {
+  background: #2563eb;
+}
+
+.confirmButton.danger {
+  background: #ef4444;
+}
+
+.confirmButton.danger:hover {
+  background: #dc2626;
+}
+
+.confirmButton.warning {
+  background: #f59e0b;
+}
+
+.confirmButton.warning:hover {
+  background: #d97706;
+}
