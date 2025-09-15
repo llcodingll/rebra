@@ -311,6 +311,15 @@
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+.buyTrade {
+  background: linear-gradient(90deg, #fef2f2 0%, #fafbfc 100%);
+}
+
+.sellTrade {
+  background: linear-gradient(90deg, #f0fdf4 0%, #fafbfc 100%);
 }
 
 .tradeItem:last-child {
@@ -324,11 +333,36 @@
   margin-bottom: 8px;
 }
 
+.stockInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .stockName {
   font-size: 16px;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   color: black;
   font-weight: 500;
+}
+
+.tradeTypeBadge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.buyBadge {
+  background: #dc2626;
+  color: white;
+}
+
+.sellBadge {
+  background: #059669;
+  color: white;
 }
 
 .tradeResult {

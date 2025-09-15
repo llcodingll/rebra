@@ -48,9 +48,9 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
     return (
       <div className={styles.chartContainer}>
         <motion.div 
-          initial={{ opacity: 1, y: 0 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+                        initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
           className={styles.chartCard}
         >
           <div className={styles.header}>
@@ -134,12 +134,7 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
 
   return (
     <div className={styles.chartContainer}>
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className={styles.chartCard}
-      >
+      <div className={styles.chartCard}>
         {/* 헤더 */}
         <div className={styles.header}>
           <div className={styles.headerLeft}>
@@ -351,7 +346,7 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
             </motion.div>
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
