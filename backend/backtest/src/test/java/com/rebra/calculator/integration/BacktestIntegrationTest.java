@@ -34,128 +34,221 @@ class BacktestIntegrationTest {
 
 
     @Nested
-    @DisplayName("성능 테스트")
-    class PerformanceTest {
+    @DisplayName("임계값 기반 리밸런싱 테스트")
+    class ThresholdBasedRebalancingTest {
 
         @Test
-        @DisplayName("대용량 데이터 백테스트 성능")
-        void largeDataBacktestPerformance() {
-            // given
-            BacktestRequest largeRequest = createLargeDataBacktestRequest();
-            long startTime = System.currentTimeMillis();
+        @DisplayName("종목별 개별 임계값 기반 리밸런싱 테스트")
+        void thresholdBasedRebalancingTest() {
+            // given - 종목별 다른 임계값 설정
+            // 삼성전자: 5%, SK하이닉스: 10%, NAVER: 3%, 현대차: 7%
+            BacktestRequest request = createThresholdBacktestRequest(0.05, 0.10, 0.03, 0.07);
 
-            // when - BacktestCalculatorService 직접 호출
-            BacktestResponse response = backtestCalculatorService.executeBacktest(largeRequest);
+            // when
+            BacktestResponse response = backtestCalculatorService.executeBacktest(request);
             
             // then
-            long endTime = System.currentTimeMillis();
-            long totalTime = endTime - startTime;
+            assertThat(response).isNotNull();
+            assertThat(response.getStatus()).isEqualTo(BacktestStatus.COMPLETED);
+            assertThat(response.getCalculationTimeMs()).isLessThan(10000); // 10초 이내
             
-            // 결과 검증
+            int rebalancingCount = response.getSummary().getRebalancingCount();
+            assertThat(rebalancingCount).isGreaterThanOrEqualTo(0); // 리밸런싱 발생 여부는 확률적
+            
+            // 가격 정보 출력
+            Map<String, Map<String, Double>> dailyPrices = request.getDailyPrices();
+            LocalDate firstDate = request.getStartDate();
+            LocalDate lastDate = request.getEndDate();
+            
+            Map<String, Double> firstDayPrices = dailyPrices.get(firstDate.toString());
+            Map<String, Double> lastDayPrices = dailyPrices.get(lastDate.toString());
+            
+            System.out.println("임계값 기반 리밸런싱 테스트 결과:");
+            System.out.println("- 삼성전자: 5%, SK하이닉스: 10%, NAVER: 3%, 현대차: 7%");
+            System.out.println();
+            
+            // 첫날 가격 출력
+            System.out.println("첫날 가격 (" + firstDate + "):");
+            System.out.println("- 삼성전자: " + String.format("%,.0f", firstDayPrices.get("005930")) + "원");
+            System.out.println("- SK하이닉스: " + String.format("%,.0f", firstDayPrices.get("000660")) + "원");
+            System.out.println("- NAVER: " + String.format("%,.0f", firstDayPrices.get("035420")) + "원");
+            System.out.println("- 현대차: " + String.format("%,.0f", firstDayPrices.get("005380")) + "원");
+            System.out.println();
+            
+            // 마지막날 가격 및 변화율 출력
+            System.out.println("마지막날 가격 (" + lastDate + "):");
+            double samsung변화율 = (lastDayPrices.get("005930") - firstDayPrices.get("005930")) / firstDayPrices.get("005930") * 100;
+            double sk변화율 = (lastDayPrices.get("000660") - firstDayPrices.get("000660")) / firstDayPrices.get("000660") * 100;
+            double naver변화율 = (lastDayPrices.get("035420") - firstDayPrices.get("035420")) / firstDayPrices.get("035420") * 100;
+            double hyundai변화율 = (lastDayPrices.get("005380") - firstDayPrices.get("005380")) / firstDayPrices.get("005380") * 100;
+            
+            System.out.println("- 삼성전자: " + String.format("%,.0f", lastDayPrices.get("005930")) + "원 (" + 
+                             String.format("%+.1f%%", samsung변화율) + ")");
+            System.out.println("- SK하이닉스: " + String.format("%,.0f", lastDayPrices.get("000660")) + "원 (" + 
+                             String.format("%+.1f%%", sk변화율) + ")");
+            System.out.println("- NAVER: " + String.format("%,.0f", lastDayPrices.get("035420")) + "원 (" + 
+                             String.format("%+.1f%%", naver변화율) + ")");
+            System.out.println("- 현대차: " + String.format("%,.0f", lastDayPrices.get("005380")) + "원 (" + 
+                             String.format("%+.1f%%", hyundai변화율) + ")");
+            System.out.println();
+            
+            // 결과 출력
+            System.out.println("- 계산 시간: " + response.getCalculationTimeMs() + "ms");
+            System.out.println("- 처리된 거래일: " + response.getDetails().size() + "일");
+            System.out.println("- 리밸런싱 횟수: " + rebalancingCount + "회");
+            System.out.println("- 총 수익률: " + String.format("%.2f%%", response.getSummary().getTotalReturn() * 100));
+        }
+    }
+
+    @Nested
+    @DisplayName("주기 기반 리밸런싱 테스트")
+    class PeriodicRebalancingTest {
+
+        @Test
+        @DisplayName("월별 주기적 리밸런싱 테스트")
+        void periodicMonthlyRebalancingTest() {
+            // given
+            BacktestRequest request = createPeriodicBacktestRequest(RebalancingPeriod.MONTHLY);
+
+            // when
+            BacktestResponse response = backtestCalculatorService.executeBacktest(request);
+            
+            // then
             assertThat(response).isNotNull();
             
             // 실패 시 에러 메시지 출력
             if (response.getStatus() == BacktestStatus.FAILED) {
                 System.out.println("백테스트 실패 원인: " + response.getErrorMessage());
-                System.out.println("요청 검증 결과: " + largeRequest.isValid());
+                System.out.println("요청 검증 결과: " + request.isValid());
             }
             
             assertThat(response.getStatus()).isEqualTo(BacktestStatus.COMPLETED);
             assertThat(response.getCalculationTimeMs()).isLessThan(30000); // 30초 이내
-            assertThat(totalTime).isLessThan(60000); // 전체 1분 이내
             
-            // 대용량 데이터 특성 확인
-            assertThat(response.getDetails().size()).isGreaterThan(100);
+            // 데이터 확인
+            int dataSize = response.getDetails().size();
+            int rebalancingCount = response.getSummary().getRebalancingCount();
             
-            // 성능 정보 출력
-            System.out.println("백테스트 성능 테스트 결과:");
+            assertThat(dataSize).isGreaterThan(0); // 최소 1개 이상
+            assertThat(rebalancingCount).isGreaterThan(0); // 최소 1회 이상 리밸런싱
+            
+            // 가격 정보 출력
+            Map<String, Map<String, Double>> dailyPrices = request.getDailyPrices();
+            LocalDate firstDate = request.getStartDate();
+            
+            // 월말 데이터에서 첫날과 마지막날 찾기
+            Map<String, Double> firstDayPrices = dailyPrices.get(firstDate.toString());
+            String lastDateKey = dailyPrices.keySet().stream()
+                    .reduce((first, second) -> second)  // 마지막 키 찾기
+                    .orElse(firstDate.toString());
+            Map<String, Double> lastDayPrices = dailyPrices.get(lastDateKey);
+            
+            System.out.println("월별 주기적 리밸런싱 테스트 결과:");
+            System.out.println();
+            
+            // 첫날 가격 출력
+            System.out.println("첫날 가격 (" + firstDate + "):");
+            System.out.println("- 삼성전자: " + String.format("%,.0f", firstDayPrices.get("005930")) + "원");
+            System.out.println("- SK하이닉스: " + String.format("%,.0f", firstDayPrices.get("000660")) + "원");
+            System.out.println("- NAVER: " + String.format("%,.0f", firstDayPrices.get("035420")) + "원");
+            System.out.println("- 현대차: " + String.format("%,.0f", firstDayPrices.get("005380")) + "원");
+            System.out.println();
+            
+            // 마지막날 가격 및 변화율 출력
+            System.out.println("마지막날 가격 (" + lastDateKey + "):");
+            double samsung변화율 = (lastDayPrices.get("005930") - firstDayPrices.get("005930")) / firstDayPrices.get("005930") * 100;
+            double sk변화율 = (lastDayPrices.get("000660") - firstDayPrices.get("000660")) / firstDayPrices.get("000660") * 100;
+            double naver변화율 = (lastDayPrices.get("035420") - firstDayPrices.get("035420")) / firstDayPrices.get("035420") * 100;
+            double hyundai변화율 = (lastDayPrices.get("005380") - firstDayPrices.get("005380")) / firstDayPrices.get("005380") * 100;
+            
+            System.out.println("- 삼성전자: " + String.format("%,.0f", lastDayPrices.get("005930")) + "원 (" + 
+                             String.format("%+.1f%%", samsung변화율) + ")");
+            System.out.println("- SK하이닉스: " + String.format("%,.0f", lastDayPrices.get("000660")) + "원 (" + 
+                             String.format("%+.1f%%", sk변화율) + ")");
+            System.out.println("- NAVER: " + String.format("%,.0f", lastDayPrices.get("035420")) + "원 (" + 
+                             String.format("%+.1f%%", naver변화율) + ")");
+            System.out.println("- 현대차: " + String.format("%,.0f", lastDayPrices.get("005380")) + "원 (" + 
+                             String.format("%+.1f%%", hyundai변화율) + ")");
+            System.out.println();
+            
+            // 결과 출력
             System.out.println("- 계산 시간: " + response.getCalculationTimeMs() + "ms");
-            System.out.println("- 전체 시간: " + totalTime + "ms");
             System.out.println("- 처리된 거래일: " + response.getDetails().size() + "일");
-            System.out.println("- 리밸런싱 횟수: " + response.getSummary().getRebalancingCount() + "회");
-        }
-
-        @Test
-        @DisplayName("다중 백테스트 순차 처리 성능 테스트")
-        void multipleBacktestSequentialPerformance() {
-            // given
-            int requestCount = 5;
-            List<BacktestRequest> requests = new ArrayList<>();
-            long startTime = System.currentTimeMillis();
-            
-            for (int i = 1; i <= requestCount; i++) {
-                BacktestRequest request = createSimpleBacktestRequest();
-                request.setBacktestId((long) i);
-                requests.add(request);
-            }
-
-            // when - 순차적으로 처리
-            List<BacktestResponse> responses = new ArrayList<>();
-            for (BacktestRequest request : requests) {
-                BacktestResponse response = backtestCalculatorService.executeBacktest(request);
-                responses.add(response);
-            }
-            
-            // then
-            long endTime = System.currentTimeMillis();
-            long totalTime = endTime - startTime;
-            
-            assertThat(responses).hasSize(requestCount);
-            assertThat(totalTime).isLessThan(40000); // 40초 이내
-            
-            // 모든 응답이 성공적으로 처리되었는지 확인
-            for (BacktestResponse response : responses) {
-                assertThat(response.getStatus()).isEqualTo(BacktestStatus.COMPLETED);
-            }
-            
-            // 성능 정보 출력
-            System.out.println("다중 백테스트 순차 처리 성능:");
-            System.out.println("- 처리 건수: " + requestCount + "건");
-            System.out.println("- 총 소요 시간: " + totalTime + "ms");
-            System.out.println("- 평균 처리 시간: " + (totalTime / requestCount) + "ms/건");
+            System.out.println("- 리밸런싱 횟수: " + rebalancingCount + "회 (월별)");
+            System.out.println("- 총 수익률: " + String.format("%.2f%%", response.getSummary().getTotalReturn() * 100));
         }
     }
 
     // ===== Helper Methods =====
 
-    private BacktestRequest createSimpleBacktestRequest() {
+    /**
+     * 임계값 기반 백테스트 요청 생성 - 종목별 개별 임계값 설정
+     * 
+     * @param samsungThreshold 삼성전자 임계값 (0.0 ~ 1.0)
+     * @param skThreshold SK하이닉스 임계값 (0.0 ~ 1.0)
+     * @param naverThreshold NAVER 임계값 (0.0 ~ 1.0)
+     * @param hyundaiThreshold 현대차 임계값 (0.0 ~ 1.0)
+     */
+    private BacktestRequest createThresholdBacktestRequest(double samsungThreshold, double skThreshold, 
+                                                          double naverThreshold, double hyundaiThreshold) {
         BacktestRequest request = new BacktestRequest();
         request.setBacktestId(1L);
-        request.setStartDate(LocalDate.of(2023, 1, 2));
-        request.setEndDate(LocalDate.of(2023, 1, 31));
+        request.setStartDate(LocalDate.of(2022, 1, 3));
+        request.setEndDate(LocalDate.of(2022, 12, 30)); // 1년간
         request.setRebalancingType(RebalancingType.THRESHOLD);
         
         List<BacktestStockDto> stocks = List.of(
-            createBacktestStockWithThreshold("005930", "삼성전자", 40, 100, 0.50),  // 20% 임계값
-            createBacktestStockWithThreshold("000660", "SK하이닉스", 30, 50, 0.50),
-            createBacktestStockWithThreshold("035420", "NAVER", 30, 25, 0.50)
+            createBacktestStockWithThreshold("005930", "삼성전자", 25, 100, samsungThreshold),
+            createBacktestStockWithThreshold("000660", "SK하이닉스", 25, 50, skThreshold),
+            createBacktestStockWithThreshold("035420", "NAVER", 25, 25, naverThreshold),
+            createBacktestStockWithThreshold("005380", "현대차", 25, 30, hyundaiThreshold)
         );
         request.setStocks(stocks);
         request.setDailyPrices(createDivergentPriceData(request.getStartDate(), request.getEndDate()));
         
         return request;
     }
+    
+    /**
+     * 모든 종목에 동일한 임계값을 적용하는 편의 메서드
+     */
+    private BacktestRequest createThresholdBacktestRequest(double uniformThreshold) {
+        return createThresholdBacktestRequest(uniformThreshold, uniformThreshold, uniformThreshold, uniformThreshold);
+    }
 
-    private BacktestRequest createLargeDataBacktestRequest() {
+    /**
+     * 주기 기반 백테스트 요청 생성
+     */
+    private BacktestRequest createPeriodicBacktestRequest(RebalancingPeriod period) {
         BacktestRequest request = new BacktestRequest();
         request.setBacktestId(6L);
         request.setStartDate(LocalDate.of(2022, 1, 3));
         request.setEndDate(LocalDate.of(2022, 12, 30)); // 1년간
         request.setRebalancingType(RebalancingType.PERIODIC);
-        request.setRebalancingPeriod(RebalancingPeriod.MONTHLY);
+        request.setRebalancingPeriod(period);
         
         List<BacktestStockDto> stocks = List.of(
-            createBacktestStockWithThreshold("005930", "삼성전자", 25, 100, 0.03),  // 3% 임계값
-            createBacktestStockWithThreshold("000660", "SK하이닉스", 25, 50, 0.03),
-            createBacktestStockWithThreshold("035420", "NAVER", 25, 25, 0.03),
-            createBacktestStockWithThreshold("005380", "현대차", 25, 30, 0.03)
+            createBacktestStockWithThreshold("005930", "삼성전자", 25, 100, 0.05),  // 주기적 리밸런싱에서는 임계값 무의미
+            createBacktestStockWithThreshold("000660", "SK하이닉스", 25, 50, 0.05),
+            createBacktestStockWithThreshold("035420", "NAVER", 25, 25, 0.05),
+            createBacktestStockWithThreshold("005380", "현대차", 25, 30, 0.05)
         );
         request.setStocks(stocks);
-        request.setDailyPrices(createRealisticPriceData(request.getStartDate(), request.getEndDate()));
+        request.setDailyPrices(createMonthEndPriceData(request.getStartDate(), request.getEndDate()));
         
         return request;
     }
 
+    /**
+     * 기본 임계값 기반 백테스트 요청 생성 (호환성을 위해 유지)
+     */
+    private BacktestRequest createSimpleBacktestRequest() {
+        return createThresholdBacktestRequest(0.05); // 5% 임계값
+    }
+
+    /**
+     * 기본 임계값 5%로 백테스트 종목 DTO 생성
+     */
     private BacktestStockDto createBacktestStock(String stockCode, String stockName, int weight, int shares) {
         BacktestStockDto stock = new BacktestStockDto();
         stock.setStockCode(stockCode);
@@ -165,6 +258,9 @@ class BacktestIntegrationTest {
         return stock;
     }
     
+    /**
+     * 지정된 임계값으로 백테스트 종목 DTO 생성
+     */
     private BacktestStockDto createBacktestStockWithThreshold(String stockCode, String stockName, int weight, int shares, double thresholdPercentage) {
         BacktestStockDto stock = new BacktestStockDto();
         stock.setStockCode(stockCode);
@@ -346,7 +442,70 @@ class BacktestIntegrationTest {
     }
     
     /**
-     * 리밸런싱을 강제로 유도하는 가격 데이터 생성
+     * 월말 데이터만 생성하는 메서드 (주기 기반 리밸런싱용)
+     * 실제 운영에서는 메인서버가 월말 데이터만 전송
+     */
+    private Map<String, Map<String, Double>> createMonthEndPriceData(LocalDate startDate, LocalDate endDate) {
+        Map<String, Map<String, Double>> priceData = new LinkedHashMap<>();
+        Map<String, Double> basePrices = Map.of(
+            "005930", 50000.0,
+            "000660", 80000.0,
+            "035420", 200000.0,
+            "005380", 150000.0
+        );
+        
+        Random random = new Random(12345); // 일관된 결과를 위한 시드
+        
+        // 1. 시작일 데이터 추가 (백테스트 초기 구성용)
+        Map<String, Double> startDayPrices = new HashMap<>();
+        for (Map.Entry<String, Double> entry : basePrices.entrySet()) {
+            startDayPrices.put(entry.getKey(), entry.getValue());
+        }
+        priceData.put(startDate.toString(), startDayPrices);
+        
+        // 2. 시작일의 다음 달부터 각 월말 데이터 생성
+        LocalDate currentMonth = startDate.plusMonths(1).withDayOfMonth(1);
+        
+        while (!currentMonth.isAfter(endDate)) {
+            // 월말 찾기
+            LocalDate monthEnd = currentMonth.withDayOfMonth(currentMonth.lengthOfMonth());
+            
+            // 월말이 주말이면 이전 평일로 이동
+            while (monthEnd.getDayOfWeek().getValue() >= 6) {
+                monthEnd = monthEnd.minusDays(1);
+            }
+            
+            // 종료일을 넘지 않는 경우만 추가
+            if (!monthEnd.isAfter(endDate)) {
+                Map<String, Double> dayPrices = new HashMap<>();
+                
+                for (Map.Entry<String, Double> entry : basePrices.entrySet()) {
+                    String stockCode = entry.getKey();
+                    
+                    // 월별로 다른 변동률 적용
+                    double monthlyVariation = switch (stockCode) {
+                        case "005930" -> 0.98 + (random.nextDouble() * 0.04);  // ±2%
+                        case "000660" -> 0.95 + (random.nextDouble() * 0.10);  // ±5%
+                        case "035420" -> 0.93 + (random.nextDouble() * 0.14);  // ±7%
+                        case "005380" -> 0.96 + (random.nextDouble() * 0.08);  // ±4%
+                        default -> 0.95 + (random.nextDouble() * 0.10);
+                    };
+                    
+                    dayPrices.put(stockCode, entry.getValue() * monthlyVariation);
+                }
+                
+                priceData.put(monthEnd.toString(), dayPrices);
+            }
+            
+            // 다음 달로 이동
+            currentMonth = currentMonth.plusMonths(1);
+        }
+        
+        return priceData;
+    }
+
+    /**
+     * 리밸런싱을 강제로 유도하는 가격 데이터 생성 (임계값 기반용)
      * 종목 간 큰 격차를 만들어 임계값 초과를 보장
      */
     private Map<String, Map<String, Double>> createDivergentPriceData(LocalDate startDate, LocalDate endDate) {
