@@ -27,11 +27,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // WebSocket 엔드포인트 등록
+        // WebSocket 엔드포인트 등록 - SockJS 사용
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")  // CORS 설정
+                .setAllowedOriginPatterns("*")  // 개발 환경에서 모든 origin 허용
                 .addInterceptors(authInterceptor)  // 핸드셰이크 인터셉터 추가
                 .withSockJS();  // SockJS 지원
+
+        // WebSocket 엔드포인트 등록 - Native WebSocket
+        registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns("*")  // 개발 환경에서 모든 origin 허용
+                .addInterceptors(authInterceptor);  // 핸드셰이크 인터셉터 추가 (SockJS 없이)
     }
 
     @Override
