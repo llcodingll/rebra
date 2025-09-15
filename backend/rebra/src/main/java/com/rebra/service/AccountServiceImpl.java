@@ -134,7 +134,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     /**
-     * 계좌 목록 조회 (이미 포트폴리오와 연관되어있는 계좌는 조회되지 않습니다. 현재 연관 되어 있는 계좌 빼고 조회하는 건 X)
+     * 계좌 목록 조회 (Portfolio와 연관되지 않은 계좌만 조회)
      * @param userId
      * @return
      */
@@ -142,7 +142,7 @@ public class AccountServiceImpl implements AccountService {
     public AccountListResponse getAccountList(Long userId) {
         log.info("계좌 목록 조회 - 사용자ID: {}", userId);
 
-        List<Account> accounts = accountRepository.findByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(userId);
+        List<Account> accounts = accountRepository.findAvailableAccountsByUserId(userId);
 
         List<AccountListResponse.AccountSummary> accountSummaries = accounts.stream()
             .map(AccountConverter::toAccountSummary)
@@ -152,7 +152,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     /**
-     * 계좌 단건 조회 (이미 포트폴리오와 연관되어있는 계좌는 조회되지 않습니다. 현재 연관 되어 있는 계좌 빼고 조회하는 건 X)
+     * 계좌 단건 조회
      * @param userId
      * @param accountId
      * @return

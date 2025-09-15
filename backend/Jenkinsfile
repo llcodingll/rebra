@@ -16,6 +16,8 @@ environment {
         DB_USERNAME = credentials('postgresql-username')
         DB_PASSWORD = credentials('postgresql-password')  // Jenkins Secret 사용
 
+        KAFKA_PROCESS_ROLES = "broker,controller"
+
         // GMS API 설정 - Jenkins Credentials에서 보안 관리
         // GMS_API_KEY = credentials('gms-api-key')  // 임시 주석 처리 - credential 미등록
         GMS_API_KEY = "temp-gms-api-key"  // 임시값

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBlocker } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { TrendingUp } from 'lucide-react';
@@ -109,6 +109,10 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
   const [rebalancingPeriod] = useState('월간');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(mockPortfolio);
 

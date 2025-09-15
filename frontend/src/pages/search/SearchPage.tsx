@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './SearchPage.module.css';
 import HoldingsTableWidget from '../../widgets/search/HoldingsTableWidget';
 import RankingTableWidget from '../../widgets/search/RankingTableWidget';
@@ -7,10 +8,10 @@ import NewsWidget from '../../widgets/search/NewsWidget';
 
 export default function SearchPage() {
   const [activeSubTab, setActiveSubTab] = useState<'ranking' | 'search' | 'holdings' | 'holdings-v2'>('ranking');
+  const navigate = useNavigate();
 
   const handleStockSelect = (stockCode: string) => {
-    // TODO: Navigate to StockDetailPage (separate page)
-    console.log('Navigate to stock detail:', stockCode);
+    navigate(`/dashboard/stocks/${stockCode}`);
   };
 
   const renderContent = () => {

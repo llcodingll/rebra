@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router';
 import RealTimeChart from '../../widgets/stock-detail/RealTimeChart';
 import StockBasicInfo from '../../widgets/stock-detail/StockBasicInfo';
 import HoldingInfoTable from '../../widgets/stock-detail/HoldingInfoTable';
 import OrderBook from '../../widgets/stock-detail/OrderBook';
 import OrderForm from '../../widgets/stock-detail/OrderForm';
+import { useRealtimeStock } from '../../features/stock-search/model/useRealtimeStock';
 import styles from './StockDetailPage.module.css';
 
 interface OrderBookItem {
@@ -19,38 +20,32 @@ export default function StockDetailPage() {
   const [selectedRatio, setSelectedRatio] = useState<number | null>(null);
   const [orderPrice, setOrderPrice] = useState(71400);
 
-  // 실시간 데이터 상태
-  const [realTimePrice, setRealTimePrice] = useState<number | null>(null);
-  const [realTimePriceChange, setRealTimePriceChange] = useState<{ amount: number; rate: number } | null>(null);
-
-  // 임시 주식 데이터
-  const getStockInfo = (code: string) => {
-    const stockData: Record<string, any> = {
-      '005930': { name: '삼성전자', currentPrice: 71400 },
-      '000660': { name: 'SK하이닉스', currentPrice: 125000 },
-      '035420': { name: 'NAVER', currentPrice: 180000 },
-      '051910': { name: 'LG화학', currentPrice: 420000 },
-      '006400': { name: '삼성SDI', currentPrice: 250000 },
-    };
-
-    return stockData[code] || { name: '주식명', currentPrice: 50000 };
-  };
-
+  // 실시간 주식 데이터 연동
   const stockCode = symbol || '005930';
-  const stockData = getStockInfo(stockCode);
+  const { stockInfo, realtimePrice, orderbook, isConnected, isLoading, error } = useRealtimeStock(stockCode);
 
-  const stockInfo = {
-    code: stockCode,
-    name: stockData.name,
-    currentPrice: stockData.currentPrice,
-    change: 7000,
-    changePercent: 12.2,
-    prevClose: stockData.currentPrice - 7000,
-    volume: 54747,
-    amount: 166530,
-    high: stockData.currentPrice + 2700,
-    low: stockData.currentPrice - 2600,
-  };
+  // 실시간 가격 업데이트 시 주문가격도 업데이트
+  React.useEffect(() => {
+    if (realtimePrice?.currentPrice) {
+      setOrderPrice(realtimePrice.currentPrice);
+    }
+  }, [realtimePrice]);
+
+  // 실제 주식 정보 (실시간 데이터 기반)
+  const displayStockInfo = stockInfo
+    ? {
+        code: stockInfo.stockCode,
+        name: stockInfo.stockName,
+        currentPrice: realtimePrice?.currentPrice || 0,
+        change: realtimePrice?.change || 0,
+        changePercent: realtimePrice?.changePercent || 0,
+        prevClose: (realtimePrice?.currentPrice || 0) - (realtimePrice?.change || 0),
+        volume: realtimePrice?.volume || 0,
+        amount: 0, // API에서 제공되지 않으면 기본값
+        high: 0, // API에서 제공되지 않으면 기본값
+        low: 0, // API에서 제공되지 않으면 기본값
+      }
+    : null;
 
   // 보유 현황 데이터
   const holdingData = {
@@ -65,23 +60,36 @@ export default function StockDetailPage() {
     tax: 1234,
   };
 
-  // 호가 데이터
-  const orderBook = {
-    asks: [
-      { price: 72000, quantity: 119417, size: 1.34 },
-      { price: 71800, quantity: 329778, size: 3.68 },
-      { price: 71600, quantity: 244413, size: 2.73 },
-      { price: 71400, quantity: 181658, size: 2.03 },
-      { price: 71200, quantity: 187845, size: 2.1 },
-    ],
-    bids: [
-      { price: 71000, quantity: 114635, size: 1.28 },
-      { price: 70800, quantity: 19452, size: 0.22 },
-      { price: 70600, quantity: 329778, size: 3.68 },
-      { price: 70400, quantity: 244413, size: 2.73 },
-      { price: 70200, quantity: 181658, size: 2.03 },
-    ],
-  };
+  // 실시간 호가 데이터 (fallback 포함)
+  const displayOrderBook = orderbook
+    ? {
+        asks: orderbook.asks.map((item) => ({
+          price: item.price,
+          quantity: item.quantity,
+          size: item.size ?? 0, // size가 없으면 0으로 기본값 설정
+        })),
+        bids: orderbook.bids.map((item) => ({
+          price: item.price,
+          quantity: item.quantity,
+          size: item.size ?? 0, // size가 없으면 0으로 기본값 설정
+        })),
+      }
+    : {
+        asks: [
+          { price: 72000, quantity: 119417, size: 1.34 },
+          { price: 71800, quantity: 329778, size: 3.68 },
+          { price: 71600, quantity: 244413, size: 2.73 },
+          { price: 71400, quantity: 181658, size: 2.03 },
+          { price: 71200, quantity: 187845, size: 2.1 },
+        ],
+        bids: [
+          { price: 71000, quantity: 114635, size: 1.28 },
+          { price: 70800, quantity: 19452, size: 0.22 },
+          { price: 70600, quantity: 329778, size: 3.68 },
+          { price: 70400, quantity: 244413, size: 2.73 },
+          { price: 70200, quantity: 181658, size: 2.03 },
+        ],
+      };
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);
@@ -107,106 +115,75 @@ export default function StockDetailPage() {
     setQuantity(Math.floor(maxAffordable * (ratio / 100)));
   };
 
-  // 테스트용 직접 접근 링크들
-  if (window.location.pathname === '/stock-test') {
+  // 로딩 상태 처리
+  if (isLoading) {
     return (
-      <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-        <h2>주식 상세 페이지 테스트</h2>
-        <p>아래 링크들을 클릭하여 다양한 종목의 상세 페이지를 확인해보세요:</p>
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          <li style={{ margin: '10px 0' }}>
-            <a
-              href='/dashboard/stocks/005930'
-              style={{
-                display: 'inline-block',
-                padding: '10px 20px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '8px',
-                marginRight: '10px',
-              }}
-            >
-              삼성전자 (005930)
-            </a>
-          </li>
-          <li style={{ margin: '10px 0' }}>
-            <a
-              href='/dashboard/stocks/000660'
-              style={{
-                display: 'inline-block',
-                padding: '10px 20px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '8px',
-                marginRight: '10px',
-              }}
-            >
-              SK하이닉스 (000660)
-            </a>
-          </li>
-          <li style={{ margin: '10px 0' }}>
-            <a
-              href='/dashboard/stocks/035420'
-              style={{
-                display: 'inline-block',
-                padding: '10px 20px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '8px',
-                marginRight: '10px',
-              }}
-            >
-              NAVER (035420)
-            </a>
-          </li>
-          <li style={{ margin: '10px 0' }}>
-            <a
-              href='/dashboard/stocks/051910'
-              style={{
-                display: 'inline-block',
-                padding: '10px 20px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '8px',
-                marginRight: '10px',
-              }}
-            >
-              LG화학 (051910)
-            </a>
-          </li>
-          <li style={{ margin: '10px 0' }}>
-            <a
-              href='/dashboard/stocks/006400'
-              style={{
-                display: 'inline-block',
-                padding: '10px 20px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '8px',
-                marginRight: '10px',
-              }}
-            >
-              삼성SDI (006400)
-            </a>
-          </li>
-        </ul>
+      <div className={styles.container}>
+        <div className={styles.loadingState}>
+          <div className={styles.loadingSpinner}>⏳</div>
+          <p>📊 주식 정보를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 에러 상태 처리
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.errorState}>
+          <div className={styles.errorIcon}>❌</div>
+          <p>{error}</p>
+          <button onClick={() => window.location.reload()} className={styles.retryButton}>
+            다시 시도
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 데이터가 없는 경우
+  if (!displayStockInfo) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.noDataState}>
+          <p>📈 주식 정보를 찾을 수 없습니다</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className={styles.container}>
+      {/* 연결 상태 표시 */}
+      <div className={styles.connectionStatus}>
+        <span className={isConnected ? styles.connected : styles.disconnected}>
+          {isConnected ? '🟢 실시간 연결됨' : '🔴 연결 중...'}
+        </span>
+        {stockInfo && (
+          <span className={styles.stockCode}>
+            {stockInfo.stockName} ({stockInfo.stockCode})
+          </span>
+        )}
+      </div>
+
       {/* 주식 정보 및 보유 현황 섹션 */}
       <div className={styles.stockInfoSection}>
         <div className={styles.stockBasicInfoWrapper}>
-          <StockBasicInfo stockInfo={stockInfo} realTimePrice={realTimePrice} realTimePriceChange={realTimePriceChange} />
+          <StockBasicInfo
+            stockInfo={displayStockInfo}
+            realTimePrice={realtimePrice?.currentPrice || null}
+            realTimePriceChange={
+              realtimePrice
+                ? {
+                    amount: realtimePrice.change,
+                    rate: realtimePrice.changePercent,
+                  }
+                : null
+            }
+          />
         </div>
-        
+
         <div className={styles.holdingInfoWrapper}>
           <HoldingInfoTable holdingData={holdingData} />
         </div>
@@ -217,17 +194,17 @@ export default function StockDetailPage() {
         {/* 좌측: 차트 */}
         <div className={styles.chartSection}>
           <RealTimeChart
-            stockCode={stockInfo.code}
-            stockName={stockInfo.name}
+            stockCode={displayStockInfo.code}
+            stockName={displayStockInfo.name}
+            realtimeData={realtimePrice}
             onPriceUpdate={(price, change) => {
-              setRealTimePrice(price);
-              setRealTimePriceChange(change);
-              setOrderPrice(price); // 주문 가격도 실시간으로 업데이트
+              // 실시간 차트에서 오는 업데이트는 이제 사용하지 않음 (STOMP로 대체)
+              setOrderPrice(price);
             }}
           />
         </div>
 
-        <OrderBook orderBook={orderBook} stockInfo={stockInfo} />
+        <OrderBook orderBook={displayOrderBook} stockInfo={displayStockInfo} />
 
         <OrderForm
           orderPrice={orderPrice}
