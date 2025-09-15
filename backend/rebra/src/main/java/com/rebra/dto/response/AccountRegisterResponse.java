@@ -1,7 +1,6 @@
 package com.rebra.dto.response;
 
 import com.rebra.entity.AccountType;
-import com.rebra.entity.ConnectionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,7 +16,7 @@ public class AccountRegisterResponse {
     private String accountNumber; // 마스킹된 계좌번호
     private AccountType accountType; // MOCK, REAL
     private String brokerName; // 한국투자증권
-    private ConnectionStatus connectionStatus; // CONNECTED
+    private boolean isConnected; // 연결 상태
     private LocalDateTime registeredAt;
 
     public static AccountRegisterResponse success(Long accountId, String maskedAccountNumber,
@@ -27,7 +26,7 @@ public class AccountRegisterResponse {
             maskedAccountNumber,
             accountType,
             "한국투자증권",
-            ConnectionStatus.CONNECTED,
+            true,
             registeredAt
         );
     }

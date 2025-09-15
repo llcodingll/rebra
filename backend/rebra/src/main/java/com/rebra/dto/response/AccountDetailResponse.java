@@ -16,22 +16,21 @@ public class AccountDetailResponse {
     private String appKey; // 마스킹된 앱키
     private String accountType; // MOCK, REAL
     private String brokerName; // 한국투자증권
-    private String connectionStatus; // CONNECTED, DISCONNECTED, FAILED
+    private boolean isConnected; // 연결 상태
     private LocalDateTime registeredAt;
-    private boolean isDeleted;
-    
+
     // 계좌 상태 정보
     private String statusMessage;
     private boolean canTrade; // 거래 가능 여부
 
-    public static AccountDetailResponse of(Long accountId, String maskedAccountNumber, 
+    public static AccountDetailResponse of(Long accountId, String maskedAccountNumber,
             String maskedAppKey, String accountType, String brokerName,
-            String connectionStatus, LocalDateTime registeredAt,
-             boolean isDeleted, String statusMessage, boolean canTrade) {
+            boolean isConnected, LocalDateTime registeredAt,
+            String statusMessage, boolean canTrade) {
         return new AccountDetailResponse(
             accountId, maskedAccountNumber, maskedAppKey, accountType,
-            brokerName, connectionStatus, registeredAt,
-            isDeleted, statusMessage, canTrade
+            brokerName, isConnected, registeredAt,
+            statusMessage, canTrade
         );
     }
 }

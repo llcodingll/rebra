@@ -23,7 +23,7 @@ public class AccountListResponse {
         private String accountNumber; // 마스킹된 계좌번호
         private String accountType; // 모의투자, 실계좌
         private String brokerName; // 한국투자증권
-        private String connectionStatus; // CONNECTED, DISCONNECTED, FAILED
+        private boolean isConnected; // 연결 상태
         private LocalDateTime registeredAt;
     }
 
