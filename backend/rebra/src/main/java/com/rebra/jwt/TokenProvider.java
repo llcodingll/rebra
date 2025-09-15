@@ -3,7 +3,6 @@ package com.rebra.jwt;
 import com.rebra.dto.TempToken;
 import com.rebra.entity.User;
 import com.rebra.exception.token.TokenException;
-import static com.rebra.exception.ExceptionCode.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
