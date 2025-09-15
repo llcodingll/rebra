@@ -58,7 +58,17 @@ public enum ExceptionCode {
     ACCOUNT_ENCRYPTION_FAILED(11009, "계좌 정보 암호화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     ACCOUNT_DECRYPTION_FAILED(11010, "계좌 정보 복호화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     ACCOUNT_DELETION_FAILED(11011, "계좌 삭제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
-    ACCOUNT_ALREADY_INACTIVE(11012, "이미 비활성화된 계좌입니다.", HttpStatus.BAD_REQUEST);
+    ACCOUNT_ALREADY_INACTIVE(11012, "이미 비활성화된 계좌입니다.", HttpStatus.BAD_REQUEST),
+
+    // ==== Portfolio 관련 ====
+    PORTFOLIO_NOT_FOUND(12001, "포트폴리오를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    PORTFOLIO_ACCESS_DENIED(12002, "포트폴리오 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    PORTFOLIO_ACCOUNT_NOT_FOUND(12003, "포트폴리오에 연결된 계좌를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    PORTFOLIO_CREATION_FAILED(12004, "포트폴리오 생성에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    PORTFOLIO_UPDATE_FAILED(12005, "포트폴리오 수정에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    PORTFOLIO_DELETE_FAILED(12006, "포트폴리오 삭제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    PORTFOLIO_LIMIT_EXCEEDED(12007, "포트폴리오 생성 한도를 초과했습니다.", HttpStatus.BAD_REQUEST),
+    PORTFOLIO_INVALID_REQUEST(12008, "잘못된 포트폴리오 요청입니다.", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;
