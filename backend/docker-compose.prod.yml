@@ -66,12 +66,12 @@ services:
         echo 'KRaft 클러스터 초기화 중...'
         KAFKA_CLUSTER_ID=\$$(kafka-storage random-uuid)
         echo \"생성된 Cluster ID: \$$KAFKA_CLUSTER_ID\"
-        kafka-storage format -t \$$KAFKA_CLUSTER_ID -c /etc/kafka/kafka.properties
+        kafka-storage format -t \$$KAFKA_CLUSTER_ID -c /etc/kafka/server.properties
         echo 'KRaft 초기화 완료'
       else
         echo 'KRaft 클러스터가 이미 초기화되어 있습니다.'
       fi;
-      exec kafka-server-start /etc/kafka/kafka.properties
+      exec kafka-server-start /etc/kafka/server.properties
       "
 
   rebra:
