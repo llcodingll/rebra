@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, ColorType, LineSeries, HistogramSeries } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
+import type { RealtimePriceMessage } from '../../features/stock-search/api/types';
 import styles from './RealTimeChart.module.css';
 
 interface RealTimeChartProps {
   stockCode: string;
   stockName: string;
+  realtimeData?: RealtimePriceMessage | null;
   onPriceUpdate?: (price: number, change: { amount: number; rate: number }) => void;
 }
 
@@ -20,7 +22,7 @@ interface VolumeData {
   color?: string;
 }
 
-export default function RealTimeChart({ stockCode, stockName, onPriceUpdate }: RealTimeChartProps) {
+export default function RealTimeChart({ stockCode, stockName, realtimeData, onPriceUpdate }: RealTimeChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const priceSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
