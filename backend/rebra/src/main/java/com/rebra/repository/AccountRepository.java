@@ -4,6 +4,8 @@ import com.rebra.entity.Account;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -63,4 +65,20 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
      * 계좌번호 해시로 계좌 조회
      */
     Optional<Account> findByAccountNumberHash(String accountNumberHash);
+
+    /**
+     * Portfolio와 연관되지 않은 사용자의 활성 계좌 목록 조회
+     * 추후 QueryDSL 도입 예정
+     */
+    @Query(value = """
+        SELECT * FROM account a
+        WHERE a.user_id = :userId
+          AND a.is_deleted = false
+          AND NOT EXISTS (
+              SELECT 1 FROM portfolio p
+              WHERE p.account_id = a.id
+          )
+        ORDER BY a.created_at DESC
+        """, nativeQuery = true)
+    List<Account> findAvailableAccountsByUserId(@Param("userId") Long userId);
 }
