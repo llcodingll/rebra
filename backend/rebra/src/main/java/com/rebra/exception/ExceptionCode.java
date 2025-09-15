@@ -58,7 +58,15 @@ public enum ExceptionCode {
     ACCOUNT_ENCRYPTION_FAILED(11009, "계좌 정보 암호화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     ACCOUNT_DECRYPTION_FAILED(11010, "계좌 정보 복호화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     ACCOUNT_DELETION_FAILED(11011, "계좌 삭제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
-    ACCOUNT_ALREADY_INACTIVE(11012, "이미 비활성화된 계좌입니다.", HttpStatus.BAD_REQUEST);
+    ACCOUNT_ALREADY_INACTIVE(11012, "이미 비활성화된 계좌입니다.", HttpStatus.BAD_REQUEST),
+
+    // ==== Trading 관련 ====
+    TRADING_ORDER_FAILED(12001, "주식 주문에 실패했습니다.", HttpStatus.BAD_REQUEST),
+    KIS_API_ERROR(12002, "KIS API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
+    INSUFFICIENT_BALANCE(12003, "잔고가 부족합니다.", HttpStatus.BAD_REQUEST),
+    INVALID_ORDER_QUANTITY(12004, "잘못된 주문 수량입니다.", HttpStatus.BAD_REQUEST),
+    INVALID_ORDER_PRICE(12005, "잘못된 주문 가격입니다.", HttpStatus.BAD_REQUEST),
+    TRADING_HOURS_VIOLATION(12006, "거래 시간이 아닙니다.", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;
