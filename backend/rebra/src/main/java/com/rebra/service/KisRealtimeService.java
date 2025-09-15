@@ -1,14 +1,12 @@
 package com.rebra.service;
 
 import com.rebra.component.KisApiComponent;
-import com.rebra.dto.response.RealtimeStockData;
 import com.rebra.entity.Account;
-import com.rebra.entity.AccountType;
+import com.rebra.util.WebSocketHelper;
 import com.youhogeon.finance.kis_api.api.realtime.H0STASP0Data;
 import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,7 +15,7 @@ import org.springframework.stereotype.Service;
 public class KisRealtimeService {
 
     private final KisApiComponent kisApiComponent;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final WebSocketHelper webSocketHelper;
     
     // Redis 캐싱 제거 - 프론트엔드에서 실시간 데이터 관리
     // 실시간 데이터는 WebSocket을 통해 직접 클라이언트로 전달
@@ -105,36 +103,19 @@ public class KisRealtimeService {
     }
     
     /**
-     * KIS WebSocket에서 수신한 데이터를 사용자별 채널로 전솨
+     * KIS WebSocket에서 수신한 체결가 데이터를 프론트엔드로 전달
      */
     private void broadcastPriceData(Long userId, String stockCode, H0STCNT0Data data) {
-        try {
-            String destination = "/topic/stock/" + userId + "/" + stockCode + "/price";
-            RealtimeStockData.CurrentPriceData priceData = 
-                    RealtimeStockData.CurrentPriceData.from(stockCode, data);
-            
-            messagingTemplate.convertAndSend(destination, priceData);
-            
-            log.debug("체결가 데이터 브로드캐스트 - UserId: {}, StockCode: {}", userId, stockCode);
-            
-        } catch (Exception e) {
-            log.error("체결가 데이터 브로드캐스트 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
-        }
+        // KIS에서 받은 데이터를 그대로 프론트엔드에 전달
+        webSocketHelper.broadcastPriceData(userId, stockCode, data);
     }
-    
+
+    /**
+     * KIS WebSocket에서 수신한 호가 데이터를 프론트엔드로 전달
+     */
     private void broadcastOrderbookData(Long userId, String stockCode, H0STASP0Data data) {
-        try {
-            String destination = "/topic/stock/" + userId + "/" + stockCode + "/orderbook";
-            RealtimeStockData.OrderbookData orderbookData = 
-                    RealtimeStockData.OrderbookData.from(stockCode, data);
-            
-            messagingTemplate.convertAndSend(destination, orderbookData);
-            
-            log.debug("호가 데이터 브로드캐스트 - UserId: {}, StockCode: {}", userId, stockCode);
-            
-        } catch (Exception e) {
-            log.error("호가 데이터 브로드캐스트 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
-        }
+        // KIS에서 받은 데이터를 그대로 프론트엔드에 전달
+        webSocketHelper.broadcastOrderbookData(userId, stockCode, data);
     }
 
 }

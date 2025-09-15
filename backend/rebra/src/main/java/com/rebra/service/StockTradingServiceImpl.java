@@ -6,11 +6,9 @@ import com.rebra.dto.request.StockTradeRequest;
 import com.rebra.dto.response.StockTradeResponse;
 import com.rebra.entity.Account;
 import com.rebra.entity.AccountType;
-import com.rebra.entity.User;
 import com.rebra.exception.CustomRuntimeException;
 import com.rebra.exception.ExceptionCode;
 import com.rebra.repository.AccountRepository;
-import com.rebra.repository.UserRepository;
 import com.rebra.util.AccountEncryptionUtil;
 import com.youhogeon.finance.kis_api.KisClient;
 import com.youhogeon.finance.kis_api.api.rest.trading.OrderCashApi;
@@ -31,14 +29,10 @@ public class StockTradingServiceImpl implements StockTradingService {
 
     private final KisApiComponent kisApiComponent;
     private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
 
     @Override
     @Transactional
     public StockTradeResponse buyStock(String stockCode, StockTradeRequest request, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomRuntimeException(ExceptionCode.USER_NOT_FOUND));
-
         log.info("주식 매수 주문 시작 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
                 userId, stockCode, request.getQuantity(), request.getPrice());
 
@@ -48,9 +42,6 @@ public class StockTradingServiceImpl implements StockTradingService {
     @Override
     @Transactional
     public StockTradeResponse sellStock(String stockCode, StockTradeRequest request, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomRuntimeException(ExceptionCode.USER_NOT_FOUND));
-
         log.info("주식 매도 주문 시작 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
                 userId, stockCode, request.getQuantity(), request.getPrice());
 

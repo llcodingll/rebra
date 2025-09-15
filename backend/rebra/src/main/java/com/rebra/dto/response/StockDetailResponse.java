@@ -10,7 +10,6 @@ import java.util.Map;
 public class StockDetailResponse {
     
     private StockInfo stock;
-    private RealtimeStockData realtime;
     private WebSocketInfo webSocketInfo; // WebSocket 채널 정보
     
     @Getter
@@ -48,16 +47,8 @@ public class StockDetailResponse {
                     .build();
         }
     }
-    
-    // 기존 방식 (실시간 데이터 포함)
-    public static StockDetailResponse of(Stock stock, RealtimeStockData realtimeData) {
-        return StockDetailResponse.builder()
-                .stock(StockInfo.from(stock))
-                .realtime(realtimeData)
-                .build();
-    }
-    
-    // 하이브리드 방식 (WebSocket 정보 포함)
+
+    // WebSocket 정보 포함 방식
     public static StockDetailResponse ofWithWebSocketInfo(Stock stock, Long userId, String stockCode) {
         return StockDetailResponse.builder()
                 .stock(StockInfo.from(stock))
