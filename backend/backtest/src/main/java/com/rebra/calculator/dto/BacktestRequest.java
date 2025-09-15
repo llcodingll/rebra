@@ -10,6 +10,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -128,12 +129,19 @@ public class BacktestRequest {
                 return false;
             }
             
-            // 시작일과 종료일 데이터 존재 여부 확인
-            String startDateStr = startDate.toString();
-            String endDateStr = endDate.toString();
+            // 백테스트 기간 내에 가격 데이터가 있는지 확인 (시작일/종료일 정확히 매칭할 필요 없음)
+            boolean hasDataInPeriod = dailyPrices.entrySet().stream()
+                .anyMatch(entry -> {
+                    try {
+                        LocalDate date = LocalDate.parse(entry.getKey());
+                        return !date.isBefore(startDate) && !date.isAfter(endDate);
+                    } catch (Exception e) {
+                        return false; // 잘못된 날짜 형식 무시
+                    }
+                });
             
-            if (!dailyPrices.containsKey(startDateStr) || !dailyPrices.containsKey(endDateStr)) {
-                return false;
+            if (!hasDataInPeriod) {
+                return false; // 기간 내 데이터가 전혀 없음
             }
             
             // 모든 종목의 최소 데이터 존재 여부 확인
@@ -166,7 +174,7 @@ public class BacktestRequest {
         if (startDate == null || endDate == null) {
             return 0;
         }
-        return startDate.until(endDate).getDays() + 1;
+        return ChronoUnit.DAYS.between(startDate, endDate) + 1;
     }
 
     /**

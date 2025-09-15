@@ -529,9 +529,9 @@ class BacktestCalculatorServiceTest {
         
         // 종목 설정
         List<BacktestStockDto> stocks = Arrays.asList(
-            createBacktestStock("005930", "삼성전자", 40, 167, 50000.0, 5.0),
-            createBacktestStock("000660", "SK하이닉스", 30, 83, 80000.0, 5.0),
-            createBacktestStock("035420", "NAVER", 30, 50, 200000.0, 5.0)
+            createBacktestStock("005930", "삼성전자", 40, 167, 50000.0, 0.05),
+            createBacktestStock("000660", "SK하이닉스", 30, 83, 80000.0, 0.05),
+            createBacktestStock("035420", "NAVER", 30, 50, 200000.0, 0.05)
         );
         request.setStocks(stocks);
         
@@ -651,7 +651,7 @@ class BacktestCalculatorServiceTest {
         
         // 낮은 임계값으로 설정하여 리밸런싱 자주 발생하도록
         for (BacktestStockDto stock : request.getStocks()) {
-            stock.setThresholdPercentage(2.0); // 2%로 낮춤
+            stock.setThresholdPercentage(0.02); // 2% = 0.02 (0.0 ~ 1.0 범위)
         }
         
         return request;
@@ -666,9 +666,9 @@ class BacktestCalculatorServiceTest {
         
         // 높은 비중으로 설정하여 차입 유도 (합계 100% 초과)
         List<BacktestStockDto> stocks = Arrays.asList(
-            createBacktestStock("005930", "삼성전자", 60, 200, 50000.0, 5.0),
-            createBacktestStock("000660", "SK하이닉스", 50, 100, 80000.0, 5.0),
-            createBacktestStock("035420", "NAVER", 40, 60, 200000.0, 5.0)
+            createBacktestStock("005930", "삼성전자", 60, 200, 50000.0, 0.05),
+            createBacktestStock("000660", "SK하이닉스", 50, 100, 80000.0, 0.05),
+            createBacktestStock("035420", "NAVER", 40, 60, 200000.0, 0.05)
         );
         request.setStocks(stocks);
         
