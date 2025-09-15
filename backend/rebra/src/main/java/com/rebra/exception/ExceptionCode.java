@@ -44,7 +44,12 @@ public enum ExceptionCode {
     // ==== Stock 관련 ====
     STOCK_NOT_FOUND(10001, "주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     STOCK_CODE_NOT_FOUND(10002, "해당 종목 코드로 주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-    STOCK_NAME_NOT_FOUND(10003, "해당 종목명으로 주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+    STOCK_NAME_NOT_FOUND(10003, "해당 종목명으로 주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+    // ==== External API 관련 ====
+    EXTERNAL_API_ERROR(11001, "외부 API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
+    EXTERNAL_API_TIMEOUT(11002, "외부 API 응답 시간이 초과되었습니다.", HttpStatus.GATEWAY_TIMEOUT),
+    EXTERNAL_API_SERVICE_UNAVAILABLE(11003, "외부 API 서비스를 사용할 수 없습니다.", HttpStatus.SERVICE_UNAVAILABLE);
 
     private final int code;
     private final String message;

@@ -3,12 +3,15 @@ package com.rebra.controller;
 import com.rebra.annotation.LoginUser;
 import com.rebra.common.CommonApiResponse;
 import com.rebra.dto.request.BacktestCreateRequest;
+import com.rebra.dto.request.StockHistoricalSearchRequest;
 import com.rebra.dto.response.BacktestListResponse;
 import com.rebra.dto.response.BacktestResultResponse;
 import com.rebra.dto.response.BacktestValidationResponse;
 import com.rebra.dto.response.PageResponse;
+import com.rebra.dto.response.StockHistoricalDataResponse;
 import com.rebra.entity.User;
 import com.rebra.service.BacktestService;
+import com.rebra.service.StockHistoricalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,7 +27,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -34,6 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class BacktestController {
 
     private final BacktestService backtestService;
+    private final StockHistoricalService stockHistoricalService;
 
     @PostMapping("/validate")
     @Operation(summary = "백테스트 실행 가능성 검증", description = "백테스트 요청이 실행 가능한지 사전 검증합니다.")
@@ -83,6 +90,26 @@ public class BacktestController {
 
         backtestService.deleteBacktest(user, backtestId);
         return ResponseEntity.ok(CommonApiResponse.success());
+    }
+
+    @GetMapping("/stocks/historical")
+    @Operation(summary = "백테스트용 과거 주식 데이터 조회", 
+               description = "종목명과 날짜로 과거 주식 데이터를 조회합니다. DB에서 먼저 찾고, 없으면 FSS API에서 조회 후 저장합니다.")
+    public ResponseEntity<CommonApiResponse<List<StockHistoricalDataResponse>>> getStockHistoricalData(
+            @Parameter(hidden = true) @LoginUser User user,
+            @Parameter(description = "검색할 종목명", example = "삼성전자", required = true)
+            @RequestParam String stockName,
+            @Parameter(description = "조회할 날짜 (YYYY-MM-DD)", example = "2023-01-01", required = true)
+            @RequestParam String date) {
+
+        // 요청 객체 생성 (LocalDate로 변환)
+        StockHistoricalSearchRequest request = new StockHistoricalSearchRequest(
+                stockName, 
+                java.time.LocalDate.parse(date)
+        );
+
+        List<StockHistoricalDataResponse> results = stockHistoricalService.getStockHistoricalData(request);
+        return ResponseEntity.ok(CommonApiResponse.success(results));
     }
 
 }

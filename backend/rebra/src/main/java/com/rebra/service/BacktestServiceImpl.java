@@ -55,6 +55,7 @@ public class BacktestServiceImpl implements BacktestService {
     private final BacktestStockRepository backtestStockRepository;
     private final StockPriceRepository stockPriceRepository;
     private final StockRepository stockRepository;
+    private final SmartStockDataService smartStockDataService;
 
     @Qualifier("backtestRequestKafkaTemplate")
     private final KafkaTemplate<String, Object> kafkaTemplate;
@@ -135,14 +136,30 @@ public class BacktestServiceImpl implements BacktestService {
             throw BacktestException.invalidRequest();
         }
 
-        // 2. 종목별 데이터 가용성 검증
+        // 2. 종목별 데이터 확보 (스마트 캐싱)
         List<String> tickers = request.getStocks().stream()
                 .map(BacktestCreateRequest.BacktestStockRequest::getTicker)
                 .toList();
 
+        log.info("백테스트 데이터 확보 시작 - 종목 수: {}, 기간: {} ~ {}", 
+            tickers.size(), request.getStartDate(), request.getEndDate());
+
+        try {
+            smartStockDataService.ensureBatchDataAvailable(
+                tickers, 
+                request.getStartDate(), 
+                request.getEndDate()
+            );
+            log.info("백테스트 데이터 확보 완료");
+        } catch (Exception e) {
+            log.error("백테스트 데이터 확보 실패", e);
+            throw BacktestException.invalidRequest();
+        }
+
+        // 3. 데이터 가용성 최종 검증 (선택적)
         validateDataAvailability(tickers, request.getStartDate(), request.getEndDate());
 
-        // 3. 리밸런싱 주기에 따른 실제 거래일 확인
+        // 4. 리밸런싱 주기에 따른 실제 거래일 확인
         List<LocalDate> tradingDates = getTradingDatesForRebalancing(
                 request.getRebalancingType(), request.getRebalancingPeriod(),
                 request.getStartDate(), request.getEndDate());
@@ -152,7 +169,7 @@ public class BacktestServiceImpl implements BacktestService {
             throw BacktestException.invalidRequest();
         }
 
-        // 4. BacktestRecord 생성 및 저장
+        // 5. BacktestRecord 생성 및 저장
         BacktestRecord backtestRecord = BacktestRecord.builder()
                 .user(user)
                 .testName(request.getTestName())
@@ -165,10 +182,10 @@ public class BacktestServiceImpl implements BacktestService {
 
         backtestRecord = backtestRecordRepository.save(backtestRecord);
 
-        // 5. 백테스트 종목 정보 저장
+        // 6. 백테스트 종목 정보 저장
         saveBacktestStocks(backtestRecord, request);
 
-        // 6. Kafka로 백테스트 요청 전송
+        // 7. Kafka로 백테스트 요청 전송
         try {
             BacktestRequest backtestRequest = createBacktestRequest(backtestRecord, request, tickers, tradingDates);
             kafkaTemplate.send("backtest-request", backtestRecord.getId().toString(), backtestRequest);
