@@ -11,7 +11,7 @@ export default function SearchPage() {
   const navigate = useNavigate();
 
   const handleStockSelect = (stockCode: string) => {
-    navigate(`/dashboard/stocks/${stockCode}`);
+    navigate(`/search/stocks/${stockCode}`);
   };
 
   const renderContent = () => {
