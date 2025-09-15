@@ -3,6 +3,7 @@ package com.rebra.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
@@ -11,9 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rebra.config.resolver.LoginUserArgumentResolver;
 import com.rebra.dto.request.StockTradeRequest;
 import com.rebra.dto.response.StockTradeResponse;
-import com.rebra.entity.User;
 import com.rebra.exception.CustomRuntimeException;
 import com.rebra.exception.ExceptionCode;
 import com.rebra.service.StockService;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.core.MethodParameter;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -41,10 +43,16 @@ class StockControllerTest {
     @MockitoBean
     private StockTradingService stockTradingService;
 
+    @MockitoBean
+    private LoginUserArgumentResolver loginUserArgumentResolver;
+
     @Test
     @DisplayName("주식 매수 성공")
     @WithMockUser
     void buyStock_Success() throws Exception {
+        // Mock LoginUserArgumentResolver to return userId 1L
+        when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+        when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
         // Given
         String stockCode = "005930";
         StockTradeRequest request = createTradeRequest("00", 10, 70000L, 1L);
@@ -60,7 +68,7 @@ class StockControllerTest {
                 "02"
         );
 
-        given(stockTradingService.buyStock(eq(stockCode), any(StockTradeRequest.class), any(User.class)))
+        given(stockTradingService.buyStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class)))
                 .willReturn(response);
 
         // When & Then
@@ -84,6 +92,9 @@ class StockControllerTest {
     @DisplayName("주식 매도 성공")
     @WithMockUser
     void sellStock_Success() throws Exception {
+        // Mock LoginUserArgumentResolver to return userId 1L
+        when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+        when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
         // Given
         String stockCode = "005930";
         StockTradeRequest request = createTradeRequest("00", 5, 72000L, 1L);
@@ -99,7 +110,7 @@ class StockControllerTest {
                 "01"
         );
 
-        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(User.class)))
+        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class)))
                 .willReturn(response);
 
         // When & Then
@@ -155,11 +166,14 @@ class StockControllerTest {
     @DisplayName("주식 매수 실패 - 계좌 없음")
     @WithMockUser
     void buyStock_AccountNotFound_Fails() throws Exception {
+        // Mock LoginUserArgumentResolver to return userId 1L
+        when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+        when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
         // Given
         String stockCode = "005930";
         StockTradeRequest request = createTradeRequest("00", 10, 70000L, 999L);
 
-        given(stockTradingService.buyStock(eq(stockCode), any(StockTradeRequest.class), any(User.class)))
+        given(stockTradingService.buyStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class)))
                 .willThrow(new CustomRuntimeException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
         // When & Then
@@ -177,11 +191,14 @@ class StockControllerTest {
     @DisplayName("주식 매도 실패 - KIS API 오류")
     @WithMockUser
     void sellStock_KisApiError_Fails() throws Exception {
+        // Mock LoginUserArgumentResolver to return userId 1L
+        when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+        when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
         // Given
         String stockCode = "005930";
         StockTradeRequest request = createTradeRequest("00", 5, 72000L, 1L);
 
-        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(User.class)))
+        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class)))
                 .willThrow(new CustomRuntimeException(ExceptionCode.KIS_API_ERROR));
 
         // When & Then
@@ -231,13 +248,16 @@ class StockControllerTest {
     @DisplayName("주식 매도 실패 - 주문 처리 실패")
     @WithMockUser
     void sellStock_OrderFailed_Fails() throws Exception {
+        // Mock LoginUserArgumentResolver to return userId 1L
+        when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+        when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
         // Given
         String stockCode = "005930";
         StockTradeRequest request = createTradeRequest("00", 5, 72000L, 1L);
 
         StockTradeResponse errorResponse = StockTradeResponse.error("주문 처리 중 알 수 없는 오류가 발생했습니다");
 
-        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(User.class)))
+        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class)))
                 .willReturn(errorResponse);
 
         // When & Then
