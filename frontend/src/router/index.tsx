@@ -10,7 +10,6 @@ import BacktestPage from '../pages/backtest/BacktestPage';
 import BacktestCreationPage from '../pages/backtest/BacktestCreationPage';
 import BacktestResultsPage from '../pages/backtest/BacktestResultsPage';
 import StockDetailPage from '../pages/stock-detail/StockDetailPage';
-import PortfolioCreateModal from '../widgets/portfolio/PortfolioCreateModal';
 
 export const router = createBrowserRouter([
   {
@@ -42,11 +41,7 @@ export const router = createBrowserRouter([
             element: <DashboardPage />,
           },
           {
-            path: 'create-portfolio',
-            element: <DashboardPage />,
-          },
-          {
-            path: 'search',
+            path: 'search', 
             element: <SearchPage />,
           },
           {

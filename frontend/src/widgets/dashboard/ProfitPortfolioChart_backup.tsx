@@ -82,9 +82,6 @@ export default function ProfitPortfolioChart({ data }: ProfitPortfolioChartProps
   const totalReturnPercent = ((totalReturn / (totalValue - totalReturn)) * 100).toFixed(1);
   const isPositiveReturn = totalReturn >= 0;
 
-  // import된 mock 데이터 사용
-  const rebalanceHistoryData = rebalancingHistoryData;
-
   // 현재 선택된 ID의 거래 내역 가져오기
   const getCurrentTrades = () => {
     if (!selectedId) return [];
@@ -94,8 +91,6 @@ export default function ProfitPortfolioChart({ data }: ProfitPortfolioChartProps
     console.log('Found trades:', trades);
     return trades;
   };
-
-  // import된 mock 차트 데이터 사용
 
   // 차트 데이터 변환
   const chartData = chartApiData.map((item) => ({
