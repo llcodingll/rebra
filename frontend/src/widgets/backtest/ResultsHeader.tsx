@@ -25,8 +25,8 @@ export default function ResultsHeader({
   summaryCards = [
     { label: '초기 자본', value: '10,000,000원' },
     { label: '최종 평가액', value: '13,540,000원', highlight: true },
-    { label: '전략 수익률', value: '+35.2%', subtext: '월간 리밸런싱', highlight: true },
-    { label: '총 거래횟수', value: '36회' }
+    { label: '최종 수익률', value: '+35.2%', highlight: true },
+    { label: '총 리밸런싱 횟수', value: '36회' }
   ],
   onTitleChange
 }: ResultsHeaderProps) {

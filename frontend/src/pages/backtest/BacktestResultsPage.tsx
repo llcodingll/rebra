@@ -23,6 +23,7 @@ interface TooltipData {
 }
 
 export default function BacktestResultsPage() {
+
   // 샘플 거래 데이터
   const tradeData: TradeData[] = [
     { date: '2023-01', buyAmount: 1000000, sellAmount: 0, portfolioValue: 1000000 },

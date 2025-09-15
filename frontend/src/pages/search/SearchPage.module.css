@@ -45,7 +45,7 @@
 .mainContent {
   display: flex;
   width: 90%;
-  /* height: calc(100vh - 80px); */
+  height: 70vh; /* 뷰포트 높이의 75% - 비례적 조절 */
   overflow: hidden;
   margin: 0 auto;
 }

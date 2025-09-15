@@ -8,13 +8,13 @@ interface HoldingsTableWidgetProps {
   onStockSelect: (stockCode: string) => void;
 }
 
-export default function HoldingsTableWidget({ onStockSelect }: HoldingsTableWidgetProps) {
+export default function HoldingsTableWidget_v2({ onStockSelect }: HoldingsTableWidgetProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null);
 
-  const itemsPerPage = 10;
+  const itemsPerPage = 5; // 10개에서 5개로 변경
   const totalPages = Math.ceil(stockListData.length / itemsPerPage);
-  
+
   const currentPageData = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return stockListData.slice(startIndex, startIndex + itemsPerPage);
@@ -31,11 +31,7 @@ export default function HoldingsTableWidget({ onStockSelect }: HoldingsTableWidg
 
   const controls = (
     <div className={styles.paginationContainer}>
-      <HoldingsPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
-      />
+      <HoldingsPagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
     </div>
   );
 
@@ -44,7 +40,7 @@ export default function HoldingsTableWidget({ onStockSelect }: HoldingsTableWidg
       <div className={styles.tableContent}>
         {/* 종목명 (단일 컬럼) */}
         <div className={`${styles.tableColumn} ${styles.singleColumn}`}>
-          <div className={styles.columnHeader}>종목명</div>
+          <div className={styles.singleColumnHeader}>종목명</div>
           <div className={styles.columnData}>
             {currentPageData.map((stock, index) => (
               <div

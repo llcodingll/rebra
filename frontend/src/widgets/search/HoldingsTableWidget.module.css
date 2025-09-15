@@ -5,16 +5,20 @@
 
 .holdingTable {
   flex: 1;
+  height: 100%;
+  min-height: 100%;
   background: #f9fafb;
-  /* border-radius: 8px;
-  border: 1px solid #d1d5db; */
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .tableContent {
   display: flex;
   background: white;
-  /* border-bottom: 2px solid #e5e7eb; */
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .tableColumn {
@@ -27,54 +31,64 @@
   border-right: none;
 }
 
-.singleColumn .columnHeader {
-  min-height: 38px;
+.singleColumnHeader {
+  font-size: clamp(11px, 1.8vh, 14px);
+  font-weight: 500;
+  color: #9a9a9a;
+  text-align: center;
+  line-height: clamp(36px, 5.5vh, 48px); /* line-height로 높이 확보 */
+  display: block; /* flex 제거 */
   /* border-right: 1px solid #e5e7eb;
   border-bottom: 1px solid #e5e7eb; */
 }
 
 .columnHeader {
-  font-size: 11px;
+  font-size: clamp(11px, 1.8vh, 14px);
   font-weight: 500;
   color: #9a9a9a;
   text-align: center;
   /* border-bottom: 1px solid #f3f4f6; */
-  height: 19px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  line-height: clamp(18px, 2.75vh, 24px);
+  display: block;
 }
 
 .columnHeaderSecond {
-  font-size: 11px;
+  font-size: clamp(11px, 1.8vh, 14px);
   font-weight: 500;
   color: #9a9a9a;
   text-align: center;
   /* border-bottom: 1px solid #e5e7eb; */
-  height: 19px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  line-height: clamp(18px, 2.75vh, 24px);
+  display: block;
 }
 
 .columnData {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 100%;
+  overflow-y: auto;
+  justify-content: flex-start;
+}
+
+.columnData::after {
+  content: '';
+  flex: 1;
 }
 
 .dataRow {
   display: flex;
   flex-direction: column;
-  min-height: 38px;
+  height: clamp(64px, 11vh, 108px);
   cursor: pointer;
   transition: background-color 0.2s;
-  padding: 2px 8px;
+  padding: clamp(4px, 1vh, 12px) 8px;
+  flex-shrink: 0;
 }
 
 .dataRow:hover,
 .dataRow.hovered,
-.singleWxDataValue:hover,
+.singleDataValue:hover,
 .singleDataValue.hovered {
   background: #eaecee;
 }
@@ -84,7 +98,8 @@
 }
 
 .dataValue {
-  font-size: 11px;
+  font-size: clamp(14px, 2.4vh, 18px);
+  font-family: 'Content', 'Noto Sans KR', sans-serif;
   font-weight: 500;
   color: black;
   text-align: center;
@@ -95,17 +110,20 @@
 }
 
 .singleDataValue {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: clamp(16px, 2.8vh, 22px);
+  font-family: 'Content', 'Noto Sans KR', sans-serif;
+  font-weight: 600;
   color: black;
   text-align: center;
-  min-height: 38px;
+  height: clamp(64px, 11vh, 108px);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: background-color 0.2s;
-  padding: 2px 8px;
+  border-bottom: 1px solid #f3f4f6;
+  padding: clamp(4px, 1vh, 12px) 8px;
+  flex-shrink: 0;
 }
 
 .singleDataValue:hover {

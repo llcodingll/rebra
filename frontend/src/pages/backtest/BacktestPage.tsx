@@ -20,8 +20,9 @@ export default function BacktestPage() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [backtestData, setBacktestData] = useState(legacyBacktestData);
   const itemsPerPage = 10;
-  const totalPages = Math.ceil(legacyBacktestData.length / itemsPerPage);
+  const totalPages = Math.ceil(backtestData.length / itemsPerPage);
    const portfolios: Portfolio[] = [
     {
       id: 'portfolio-1',
@@ -101,6 +102,21 @@ export default function BacktestPage() {
     navigate(`/dashboard/backtest/results/${backtest.id}`);
   };
 
+  const handleBacktestDelete = (backtest: any, index: number) => {
+    const confirmDelete = window.confirm(`"${backtest.name}" 백테스트를 정말로 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`);
+    if (confirmDelete) {
+      // 배열에서 해당 항목 제거
+      const newData = backtestData.filter((_, i) => i !== index);
+      setBacktestData(newData);
+      
+      // 현재 페이지 조정 (마지막 페이지에서 모든 항목이 삭제된 경우)
+      const newTotalPages = Math.ceil(newData.length / itemsPerPage);
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages);
+      }
+    }
+  };
+
 
   return (
     <div className={styles.backtest}>
@@ -113,8 +129,9 @@ export default function BacktestPage() {
 
         {/* 백테스트 히스토리 */}
         <BacktestHistoryWidget
-          data={legacyBacktestData}
+          data={backtestData}
           onBacktestClick={handleBacktestClick}
+          onBacktestDelete={handleBacktestDelete}
           currentPage={currentPage}
           itemsPerPage={itemsPerPage}
         />
