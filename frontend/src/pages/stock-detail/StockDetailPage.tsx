@@ -116,7 +116,7 @@ export default function StockDetailPage() {
         <ul style={{ listStyle: 'none', padding: 0 }}>
           <li style={{ margin: '10px 0' }}>
             <a
-              href='/dashboard/stocks/005930'
+              href='/search/stocks/005930'
               style={{
                 display: 'inline-block',
                 padding: '10px 20px',
@@ -132,7 +132,7 @@ export default function StockDetailPage() {
           </li>
           <li style={{ margin: '10px 0' }}>
             <a
-              href='/dashboard/stocks/000660'
+              href='/search/stocks/000660'
               style={{
                 display: 'inline-block',
                 padding: '10px 20px',
@@ -148,7 +148,7 @@ export default function StockDetailPage() {
           </li>
           <li style={{ margin: '10px 0' }}>
             <a
-              href='/dashboard/stocks/035420'
+              href='/search/stocks/035420'
               style={{
                 display: 'inline-block',
                 padding: '10px 20px',
@@ -164,7 +164,7 @@ export default function StockDetailPage() {
           </li>
           <li style={{ margin: '10px 0' }}>
             <a
-              href='/dashboard/stocks/051910'
+              href='/search/stocks/051910'
               style={{
                 display: 'inline-block',
                 padding: '10px 20px',
@@ -180,7 +180,7 @@ export default function StockDetailPage() {
           </li>
           <li style={{ margin: '10px 0' }}>
             <a
-              href='/dashboard/stocks/006400'
+              href='/search/stocks/006400'
               style={{
                 display: 'inline-block',
                 padding: '10px 20px',
