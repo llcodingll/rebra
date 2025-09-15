@@ -6,6 +6,7 @@ import HoldingInfoTable from '../../widgets/stock-detail/HoldingInfoTable';
 import OrderBook from '../../widgets/stock-detail/OrderBook';
 import OrderForm from '../../widgets/stock-detail/OrderForm';
 import { useRealtimeStock } from '../../features/stock-search/model/useRealtimeStock';
+import { isDevMode } from '../../features/stock-search/lib/mockData';
 import styles from './StockDetailPage.module.css';
 
 interface OrderBookItem {
@@ -31,7 +32,7 @@ export default function StockDetailPage() {
     }
   }, [realtimePrice]);
 
-  // 실제 주식 정보 (실시간 데이터 기반)
+  // 실제 주식 정보 (실시간 데이터 기반) + 안전한 기본값
   const displayStockInfo = stockInfo
     ? {
         code: stockInfo.stockCode,
@@ -46,6 +47,20 @@ export default function StockDetailPage() {
         low: 0, // API에서 제공되지 않으면 기본값
       }
     : null;
+
+  // 안전한 주식 정보 (null 체크 완료)
+  const safeStockInfo = displayStockInfo || {
+    code: stockCode,
+    name: '로딩 중...',
+    currentPrice: 0,
+    change: 0,
+    changePercent: 0,
+    prevClose: 0,
+    volume: 0,
+    amount: 0,
+    high: 0,
+    low: 0,
+  };
 
   // 보유 현황 데이터
   const holdingData = {
@@ -127,8 +142,8 @@ export default function StockDetailPage() {
     );
   }
 
-  // 에러 상태 처리
-  if (error) {
+  // 에러 상태 처리 (개발 모드가 아닐 때만)
+  if (error && !isDevMode()) {
     return (
       <div className={styles.container}>
         <div className={styles.errorState}>
@@ -142,12 +157,15 @@ export default function StockDetailPage() {
     );
   }
 
-  // 데이터가 없는 경우
-  if (!displayStockInfo) {
+  // 심각한 에러가 있고 개발 모드가 아닐 때만 에러 화면 표시
+  if (error && !isDevMode() && !isLoading && !stockInfo) {
     return (
       <div className={styles.container}>
         <div className={styles.noDataState}>
-          <p>📈 주식 정보를 찾을 수 없습니다</p>
+          <p>📈 주식 정보를 불러올 수 없습니다</p>
+          <button onClick={() => window.location.reload()} className={styles.retryButton}>
+            다시 시도
+          </button>
         </div>
       </div>
     );
@@ -155,23 +173,36 @@ export default function StockDetailPage() {
 
   return (
     <div className={styles.container}>
-      {/* 연결 상태 표시 */}
+      {/* 연결 상태 및 개발 모드 표시 */}
       <div className={styles.connectionStatus}>
-        <span className={isConnected ? styles.connected : styles.disconnected}>
-          {isConnected ? '🟢 실시간 연결됨' : '🔴 연결 중...'}
-        </span>
-        {stockInfo && (
+        <div className={styles.statusLeft}>
+          {isDevMode() ? (
+            <span className={styles.devMode}>
+              🛠️ 개발 모드 | 목업 데이터
+            </span>
+          ) : (
+            <span className={isConnected ? styles.connected : styles.disconnected}>
+              {isConnected ? '🟢 실시간 연결됨' : '🔴 연결 중...'}
+            </span>
+          )}
+          {error && isDevMode() && (
+            <span className={styles.devError}>
+              ⚠️ {error}
+            </span>
+          )}
+        </div>
+        <div className={styles.statusRight}>
           <span className={styles.stockCode}>
-            {stockInfo.stockName} ({stockInfo.stockCode})
+            {safeStockInfo.name} ({safeStockInfo.code})
           </span>
-        )}
+        </div>
       </div>
 
       {/* 주식 정보 및 보유 현황 섹션 */}
       <div className={styles.stockInfoSection}>
         <div className={styles.stockBasicInfoWrapper}>
           <StockBasicInfo
-            stockInfo={displayStockInfo}
+            stockInfo={safeStockInfo}
             realTimePrice={realtimePrice?.currentPrice || null}
             realTimePriceChange={
               realtimePrice
@@ -194,8 +225,8 @@ export default function StockDetailPage() {
         {/* 좌측: 차트 */}
         <div className={styles.chartSection}>
           <RealTimeChart
-            stockCode={displayStockInfo.code}
-            stockName={displayStockInfo.name}
+            stockCode={safeStockInfo.code}
+            stockName={safeStockInfo.name}
             realtimeData={realtimePrice}
             onPriceUpdate={(price, change) => {
               // 실시간 차트에서 오는 업데이트는 이제 사용하지 않음 (STOMP로 대체)
@@ -204,7 +235,7 @@ export default function StockDetailPage() {
           />
         </div>
 
-        <OrderBook orderBook={displayOrderBook} stockInfo={displayStockInfo} />
+        <OrderBook orderBook={displayOrderBook} stockInfo={safeStockInfo} />
 
         <OrderForm
           orderPrice={orderPrice}
