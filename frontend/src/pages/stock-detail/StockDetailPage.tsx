@@ -61,33 +61,35 @@ export default function StockDetailPage() {
   };
 
   // 실시간 호가 데이터 (fallback 포함)
-  const displayOrderBook = orderbook ? {
-    asks: orderbook.asks.map(item => ({
-      price: item.price,
-      quantity: item.quantity,
-      size: item.size ?? 0 // size가 없으면 0으로 기본값 설정
-    })),
-    bids: orderbook.bids.map(item => ({
-      price: item.price,
-      quantity: item.quantity,
-      size: item.size ?? 0 // size가 없으면 0으로 기본값 설정
-    }))
-  } : {
-    asks: [
-      { price: 72000, quantity: 119417, size: 1.34 },
-      { price: 71800, quantity: 329778, size: 3.68 },
-      { price: 71600, quantity: 244413, size: 2.73 },
-      { price: 71400, quantity: 181658, size: 2.03 },
-      { price: 71200, quantity: 187845, size: 2.1 },
-    ],
-    bids: [
-      { price: 71000, quantity: 114635, size: 1.28 },
-      { price: 70800, quantity: 19452, size: 0.22 },
-      { price: 70600, quantity: 329778, size: 3.68 },
-      { price: 70400, quantity: 244413, size: 2.73 },
-      { price: 70200, quantity: 181658, size: 2.03 },
-    ],
-  };
+  const displayOrderBook = orderbook
+    ? {
+        asks: orderbook.asks.map((item) => ({
+          price: item.price,
+          quantity: item.quantity,
+          size: item.size ?? 0, // size가 없으면 0으로 기본값 설정
+        })),
+        bids: orderbook.bids.map((item) => ({
+          price: item.price,
+          quantity: item.quantity,
+          size: item.size ?? 0, // size가 없으면 0으로 기본값 설정
+        })),
+      }
+    : {
+        asks: [
+          { price: 72000, quantity: 119417, size: 1.34 },
+          { price: 71800, quantity: 329778, size: 3.68 },
+          { price: 71600, quantity: 244413, size: 2.73 },
+          { price: 71400, quantity: 181658, size: 2.03 },
+          { price: 71200, quantity: 187845, size: 2.1 },
+        ],
+        bids: [
+          { price: 71000, quantity: 114635, size: 1.28 },
+          { price: 70800, quantity: 19452, size: 0.22 },
+          { price: 70600, quantity: 329778, size: 3.68 },
+          { price: 70400, quantity: 244413, size: 2.73 },
+          { price: 70200, quantity: 181658, size: 2.03 },
+        ],
+      };
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);

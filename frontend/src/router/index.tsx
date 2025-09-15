@@ -45,25 +45,37 @@ export const router = createBrowserRouter([
             path: 'create-portfolio',
             element: <DashboardPage />,
           },
+        ],
+      },
+      {
+        path: 'search',
+        element: <Layout />,
+        children: [
           {
-            path: 'search',
+            index: true,
             element: <SearchPage />,
-          },
-          {
-            path: 'backtest',
-            element: <BacktestPage />,
-          },
-          {
-            path: 'backtest/create',
-            element: <BacktestCreationPage />,
-          },
-          {
-            path: 'backtest/results/:id',
-            element: <BacktestResultsPage />,
           },
           {
             path: 'stocks/:symbol',
             element: <StockDetailPage />,
+          },
+        ],
+      },
+      {
+        path: 'backtest',
+        element: <Layout />,
+        children: [
+          {
+            index: true,
+            element: <BacktestPage />,
+          },
+          {
+            path: 'create',
+            element: <BacktestCreationPage />,
+          },
+          {
+            path: 'results/:id',
+            element: <BacktestResultsPage />,
           },
         ],
       },
@@ -73,7 +85,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '*',
-        element: <Navigate to='/landing' replace />,
+        element: <Navigate to='/dashboard' replace />,
       },
     ],
   },

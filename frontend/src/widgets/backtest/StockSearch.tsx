@@ -27,6 +27,8 @@ interface StockSearchProps {
   filteredStocks: Stock[];
   portfolioItems: PortfolioItem[];
   onAddToPortfolio: (stock: Stock) => void;
+  startDate?: string;
+  endDate?: string;
 }
 
 export default function StockSearch({
@@ -34,8 +36,11 @@ export default function StockSearch({
   setSearchTerm,
   filteredStocks,
   portfolioItems,
-  onAddToPortfolio
+  onAddToPortfolio,
+  startDate,
+  endDate
 }: StockSearchProps) {
+  const isSearchEnabled = startDate && endDate;
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -45,6 +50,11 @@ export default function StockSearch({
     >
       <div className={styles.cardHeader}>
         <h3>주식 검색</h3>
+        {!isSearchEnabled && (
+          <p className={styles.disabledMessage}>
+            시작 날짜와 종료 날짜를 먼저 설정해주세요
+          </p>
+        )}
       </div>
 
       <div className={styles.searchWrapper}>
@@ -54,19 +64,17 @@ export default function StockSearch({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="종목명 또는 종목코드를 입력하세요"
-            className={styles.searchInput}
+            placeholder={isSearchEnabled ? "종목명 또는 종목코드를 입력하세요" : "시작/종료 날짜를 먼저 설정해주세요"}
+            className={`${styles.searchInput} ${!isSearchEnabled ? styles.disabled : ''}`}
+            disabled={!isSearchEnabled}
           />
         </div>
       </div>
 
-      <div className={styles.stockList}>
-        {filteredStocks.map((stock, index) => (
-          <motion.div
+      <div className={`${styles.stockList} ${!isSearchEnabled ? styles.disabled : ''}`}>
+        {isSearchEnabled ? filteredStocks.map((stock, index) => (
+          <div
             key={stock.code}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
             className={styles.stockItem}
           >
             <div className={styles.stockInfo}>
@@ -92,8 +100,12 @@ export default function StockSearch({
               <Plus className={styles.addIcon} />
               {portfolioItems.some(item => item.code === stock.code) ? '추가됨' : '추가'}
             </button>
-          </motion.div>
-        ))}
+          </div>
+        )) : (
+          <div className={styles.emptyState}>
+            <p>백테스트 기간을 설정하면 해당 기간의 주식 데이터를 검색할 수 있습니다.</p>
+          </div>
+        )}
       </div>
     </motion.div>
   );
