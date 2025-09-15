@@ -6,8 +6,6 @@ import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockSearchResponse;
 import com.rebra.entity.Account;
 import com.rebra.entity.Stock;
-import com.rebra.entity.User;
-import com.rebra.repository.UserRepository;
 import com.rebra.exception.stock.StockException;
 import com.rebra.repository.AccountRepository;
 import com.rebra.repository.StockRepository;
@@ -27,7 +25,6 @@ public class StockServiceImpl implements StockService {
 
     private final StockRepository stockRepository;
     private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
     private final KisRealtimeService kisRealtimeService;
     // Redis 캐싱 제거 - 프론트엔드에서 실시간 데이터 관리
     // 실시간 데이터는 WebSocket을 통해 직접 클라이언트로 전달
@@ -55,8 +52,6 @@ public class StockServiceImpl implements StockService {
 
     @Override
     public StockDetailResponse getStockDetailWithRealtime(String stockCode, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         // 기존 즉시 호출 방식은 더 이상 사용하지 않음
         // 프론트엔드에서 WebSocket 채널 정보를 받고 직접 구독
         return getStockDetailWithWebSocketInfo(stockCode, userId);
