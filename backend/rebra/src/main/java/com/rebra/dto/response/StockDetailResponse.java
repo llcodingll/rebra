@@ -41,8 +41,8 @@ public class StockDetailResponse {
         
         public static WebSocketInfo create(Long userId, String stockCode) {
             return WebSocketInfo.builder()
-                    .priceChannel("/topic/stock/" + userId + "/" + stockCode + "/price")
-                    .orderbookChannel("/topic/stock/" + userId + "/" + stockCode + "/orderbook")
+                    .priceChannel("/user/queue/stock/" + stockCode + "/price")
+                    .orderbookChannel("/user/queue/stock/" + stockCode + "/orderbook")
                     .endpoint("/ws")
                     .build();
         }

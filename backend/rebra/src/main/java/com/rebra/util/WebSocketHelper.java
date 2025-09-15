@@ -22,8 +22,8 @@ public class WebSocketHelper {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    // WebSocket 채널 상수
-    private static final String STOCK_TOPIC_PREFIX = "/topic/stock/";
+    // WebSocket 채널 상수 - 모든 메시지를 개인 Queue로 전송
+    private static final String STOCK_QUEUE_PREFIX = "/queue/stock/";
     private static final String USER_QUEUE = "/queue/user";
 
     // ==================== 주식 실시간 데이터 전송 ====================
@@ -33,17 +33,17 @@ public class WebSocketHelper {
      */
     public void broadcastPriceData(Long userId, String stockCode, Object priceData) {
         try {
-            String destination = STOCK_TOPIC_PREFIX + userId + "/" + stockCode + "/price";
+            String queueDestination = STOCK_QUEUE_PREFIX + stockCode + "/price";
             WebSocketResponse response = WebSocketResponse.of(
                     WebSocketResponse.MessageType.PRICE_UPDATE,
                     priceData
             );
 
-            messagingTemplate.convertAndSend(destination, response);
-            log.debug("체결가 데이터 브로드캐스트 - UserId: {}, StockCode: {}", userId, stockCode);
+            messagingTemplate.convertAndSendToUser(userId.toString(), queueDestination, response);
+            log.debug("체결가 데이터 개인 전송 - UserId: {}, StockCode: {}", userId, stockCode);
 
         } catch (Exception e) {
-            log.error("체결가 데이터 브로드캐스트 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
+            log.error("체결가 데이터 개인 전송 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
         }
     }
 
@@ -52,17 +52,17 @@ public class WebSocketHelper {
      */
     public void broadcastOrderbookData(Long userId, String stockCode, Object orderbookData) {
         try {
-            String destination = STOCK_TOPIC_PREFIX + userId + "/" + stockCode + "/orderbook";
+            String queueDestination = STOCK_QUEUE_PREFIX + stockCode + "/orderbook";
             WebSocketResponse response = WebSocketResponse.of(
                     WebSocketResponse.MessageType.ORDERBOOK_UPDATE,
                     orderbookData
             );
 
-            messagingTemplate.convertAndSend(destination, response);
-            log.debug("호가 데이터 브로드캐스트 - UserId: {}, StockCode: {}", userId, stockCode);
+            messagingTemplate.convertAndSendToUser(userId.toString(), queueDestination, response);
+            log.debug("호가 데이터 개인 전송 - UserId: {}, StockCode: {}", userId, stockCode);
 
         } catch (Exception e) {
-            log.error("호가 데이터 브로드캐스트 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
+            log.error("호가 데이터 개인 전송 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
         }
     }
 
@@ -71,7 +71,7 @@ public class WebSocketHelper {
      */
     public void sendSubscriptionStarted(Long userId, String stockCode, String dataType) {
         try {
-            String destination = STOCK_TOPIC_PREFIX + userId + "/" + stockCode + "/" + dataType;
+            String queueDestination = STOCK_QUEUE_PREFIX + stockCode + "/" + dataType;
 
             SubscriptionStatusData statusData = SubscriptionStatusData.builder()
                     .stockCode(stockCode)
@@ -86,7 +86,7 @@ public class WebSocketHelper {
                     statusData
             );
 
-            messagingTemplate.convertAndSend(destination, response);
+            messagingTemplate.convertAndSendToUser(userId.toString(), queueDestination, response);
             log.info("구독 시작 알림 - UserId: {}, StockCode: {}, Type: {}", userId, stockCode, dataType);
 
         } catch (Exception e) {
@@ -99,7 +99,7 @@ public class WebSocketHelper {
      */
     public void sendSubscriptionStopped(Long userId, String stockCode, String dataType) {
         try {
-            String destination = STOCK_TOPIC_PREFIX + userId + "/" + stockCode + "/" + dataType;
+            String queueDestination = STOCK_QUEUE_PREFIX + stockCode + "/" + dataType;
 
             SubscriptionStatusData statusData = SubscriptionStatusData.builder()
                     .stockCode(stockCode)
@@ -114,7 +114,7 @@ public class WebSocketHelper {
                     statusData
             );
 
-            messagingTemplate.convertAndSend(destination, response);
+            messagingTemplate.convertAndSendToUser(userId.toString(), queueDestination, response);
             log.info("구독 중지 알림 - UserId: {}, StockCode: {}, Type: {}", userId, stockCode, dataType);
 
         } catch (Exception e) {
@@ -176,7 +176,7 @@ public class WebSocketHelper {
      */
     public void sendStockError(Long userId, String stockCode, String dataType, String error, String message) {
         try {
-            String destination = STOCK_TOPIC_PREFIX + userId + "/" + stockCode + "/" + dataType;
+            String queueDestination = STOCK_QUEUE_PREFIX + stockCode + "/" + dataType;
 
             StockErrorData errorResponse = StockErrorData.builder()
                     .error(error)
@@ -188,7 +188,7 @@ public class WebSocketHelper {
 
             WebSocketResponse payload = WebSocketResponse.of(WebSocketResponse.MessageType.ERROR, errorResponse);
 
-            messagingTemplate.convertAndSend(destination, payload);
+            messagingTemplate.convertAndSendToUser(userId.toString(), queueDestination, payload);
 
             log.error("주식 채널 에러 전송 - UserId: {}, StockCode: {}, Type: {}, Error: {}",
                     userId, stockCode, dataType, error);
