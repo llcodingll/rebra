@@ -168,6 +168,7 @@ export const unregisteredStocksData: ProfitStatusStock[] = [
 ];
 
 export const rebalancingHistoryData: RebalancingHistoryItem[] = [
+  /*
   {
     date: '2024-11-15',
     type: '자동',
@@ -191,7 +192,7 @@ export const rebalancingHistoryData: RebalancingHistoryItem[] = [
     buyAmount: '+1,200,000원',
     sellAmount: '-800,000원',
     status: '성공'
-  }
+  }*/
 ];
 
 export const chartLegendData: ChartLegendItem[] = [

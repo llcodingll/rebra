@@ -1,6 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './DashboardPage.module.css';
+import { portfolioList, type Portfolio } from '../../mocks/portfolio';
+import { dashboardStockData } from '../../mocks/dashboardStocks';
+import { type PortfolioCreateData } from '../../mocks/portfolioCreate';
 import DashBoardSettingsTab from '../../widgets/dashboard/DashBoardSettingsTab';
 import AssetPortfolioChart from '../../widgets/dashboard/AssetPortfolioChart';
 import AssetTable from '../../widgets/dashboard/AssetTable';
@@ -8,103 +11,15 @@ import ProfitPortfolioChart from '../../widgets/dashboard/ProfitPortfolioChart';
 import PortfolioSelectionModal from '../../widgets/portfolio/PortfolioSelectionModal';
 import NoPortfolioState from '../../widgets/dashboard/NoPortfolioState';
 import PortfolioCreateModal from '../../widgets/portfolio/PortfolioCreateModal';
+import PortfolioHeader from '../../widgets/dashboard/PortfolioHeader';
 
-interface Portfolio {
-  id: string;
-  name: string;
-  return: string;
-  stockCount: number;
-  createdDate: string;
-  returnPositive: boolean;
-  description?: string;
-}
-
-interface Stock {
-  name: string;
-  code: string;
-  buyPrice: string;
-  currentPrice: string;
-  quantity: string;
-  value: string;
-  return: string;
-  returnAmount: string;
-  currentWeight: string;
-  targetWeight: string;
-  weight: string;
-  threshold: string;
-  type: 'registered' | 'unregistered';
-}
-
-interface PortfolioCreateData {
-  name: string;
-  purpose: string;
-  accountNumber: string;
-}
 
 export default function DashboardPage() {
-  const location = useLocation();
-  const navigate = useNavigate();
   const [activeSubTab, setActiveSubTab] = useState<'assets' | 'profit'>('assets');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
-  const isCreateModalOpen = location.pathname === '/dashboard/create-portfolio';
-  
-  const portfolios: Portfolio[] = [
-    {
-      id: 'portfolio-1',
-      name: '삼성전자 + SK하이닉스 포트폴리오',
-      return: '+24.5%',
-      stockCount: 3,
-      createdDate: '2024-01-15',
-      returnPositive: true,
-      description: '반도체 대장주 중심'
-    },
-    {
-      id: 'portfolio-2',
-      name: '배당 중심 포트폴리오',
-      return: '+18.2%',
-      stockCount: 5,
-      createdDate: '2024-02-10',
-      returnPositive: true,
-      description: '안정적인 배당 수익'
-    },
-    {
-      id: 'portfolio-3',
-      name: '성장주 포트폴리오',
-      return: '+32.8%',
-      stockCount: 8,
-      createdDate: '2024-03-05',
-      returnPositive: true,
-      description: '고성장 기업 투자'
-    },
-    {
-      id: 'portfolio-4',
-      name: '안전자산 포트폴리오',
-      return: '+12.1%',
-      stockCount: 4,
-      createdDate: '2024-01-20',
-      returnPositive: true,
-      description: '리스크 최소화'
-    },
-    {
-      id: 'portfolio-5',
-      name: '테크주 포트폴리오',
-      return: '+28.9%',
-      stockCount: 6,
-      createdDate: '2024-02-28',
-      returnPositive: true,
-      description: '기술 혁신 기업'
-    },
-    {
-      id: 'portfolio-6',
-      name: '글로벌 포트폴리오',
-      return: '-5.2%',
-      stockCount: 12,
-      createdDate: '2024-03-15',
-      returnPositive: false,
-      description: '해외 주식 분산투자'
-    }
-  ];
+  const portfolios = portfolioList;
 
   // 포트폴리오 상태 테스트용 - 아래 두 줄 중 하나만 주석 해제하여 테스트
   const [hasPortfolio, setHasPortfolio] = useState(true); // 포트폴리오 없음 상태 테스트
@@ -112,122 +27,31 @@ export default function DashboardPage() {
   
   // 포트폴리오 있음 상태일 때 기본값 설정 (portfolios 배열의 첫 번째 항목)
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(
-    portfolios[0]
+    portfolioList[0]
   );
   
   // 개발용 포트폴리오 상태 토글 함수
   const togglePortfolioState = () => {
     setHasPortfolio(prev => !prev);
     if (!hasPortfolio) {
-      setSelectedPortfolio(portfolios[0]);
+      setSelectedPortfolio(portfolioList[0]);
     } else {
       setSelectedPortfolio(null);
     }
   };
 
-  const [stockData] = useState<Stock[]>([
-    {
-      name: '삼성전자',
-      code: '005930',
-      buyPrice: '68,000',
-      currentPrice: '71,800',
-      quantity: '50주',
-      value: '3,590,000원',
-      return: '+5.6%',
-      returnAmount: '(+190,000원)',
-      currentWeight: '32.1%',
-      targetWeight: '30',
-      weight: '6',
-      threshold: '10',
-      type: 'registered'
-    },
-    {
-      name: 'SK하이닉스',
-      code: '000660',
-      buyPrice: '85,000',
-      currentPrice: '89,500',
-      quantity: '30주',
-      value: '2,685,000원',
-      return: '+5.3%',
-      returnAmount: '(+135,000원)',
-      currentWeight: '24.0%',
-      targetWeight: '25',
-      weight: '5',
-      threshold: '5',
-      type: 'registered'
-    },
-    {
-      name: 'LG에너지솔루션',
-      code: '373220',
-      buyPrice: '390,000',
-      currentPrice: '412,000',
-      quantity: '15주',
-      value: '6,180,000원',
-      return: '+5.6%',
-      returnAmount: '(+330,000원)',
-      currentWeight: '18.5%',
-      targetWeight: '20',
-      weight: '4',
-      threshold: '10',
-      type: 'registered'
-    },
-    {
-      name: '삼성바이오로직스',
-      code: '207940',
-      buyPrice: '750,000',
-      currentPrice: '789,000',
-      quantity: '2주',
-      value: '1,578,000원',
-      return: '+5.2%',
-      returnAmount: '(+78,000원)',
-      currentWeight: '14.1%',
-      targetWeight: '15',
-      weight: '3',
-      threshold: '5',
-      type: 'registered'
-    },
-    {
-      name: 'NAVER',
-      code: '035420',
-      buyPrice: '175,000',
-      currentPrice: '183,500',
-      quantity: '25주',
-      value: '4,587,500원',
-      return: '+4.9%',
-      returnAmount: '(+212,500원)',
-      currentWeight: '11.4%',
-      targetWeight: '10',
-      weight: '2',
-      threshold: '3',
-      type: 'unregistered'
-    },
-    {
-      name: '카카오',
-      code: '035720',
-      buyPrice: '45,000',
-      currentPrice: '48,200',
-      quantity: '40주',
-      value: '1,928,000원',
-      return: '+7.1%',
-      returnAmount: '(+128,000원)',
-      currentWeight: '0%',
-      targetWeight: '0',
-      weight: '0',
-      threshold: '0',
-      type: 'unregistered'
-    }
-  ]);
+  const stockData = dashboardStockData;
 
   const handlePortfolioLinkClick = () => {
     setIsModalOpen(true);
   };
 
   const handleCreatePortfolio = () => {
-    navigate('/dashboard/create-portfolio');
+    setIsCreateModalOpen(true);
   };
 
   const handleCreateModalClose = () => {
-    navigate('/dashboard');
+    setIsCreateModalOpen(false);
   };
 
   const handlePortfolioCreate = (portfolioData: PortfolioCreateData) => {
@@ -239,7 +63,7 @@ export default function DashboardPage() {
     // 추후 실제 포트폴리오 데이터로 selectedPortfolio 설정
     
     // 모달 닫기
-    navigate('/dashboard');
+    setIsCreateModalOpen(false);
   };
 
   const handleModalClose = () => {
@@ -247,7 +71,7 @@ export default function DashboardPage() {
   };
 
   const handlePortfolioSelect = (portfolioId: string) => {
-    const selected = portfolios.find(p => p.id === portfolioId);
+    const selected = portfolioList.find(p => p.id === portfolioId);
     if (selected) {
       setSelectedPortfolio(selected);
       setHasPortfolio(true);
@@ -300,7 +124,7 @@ export default function DashboardPage() {
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onSelect={handlePortfolioSelect}
-          portfolios={portfolios}
+          portfolios={portfolioList}
           onCreatePortfolio={handleCreatePortfolio}
         />
         <PortfolioCreateModal
@@ -337,17 +161,10 @@ export default function DashboardPage() {
         
         <div className={styles.container}>
           {/* 포트폴리오 선택 섹션 */}
-          <div className={styles.portfolioHeader}>
-            <div className={styles.portfolioTitle}>
-              <h2>{selectedPortfolio?.name}</h2>
-              <span className={styles.portfolioDesc}>{selectedPortfolio?.description}</span>
-            </div>
-            <div className={styles.portfolioInfo}>
-              <button className={styles.portfolioLink} onClick={handlePortfolioLinkClick}>
-                다른 포트폴리오 보기
-              </button>
-            </div>
-          </div>
+          <PortfolioHeader
+            selectedPortfolio={selectedPortfolio}
+            onPortfolioLinkClick={handlePortfolioLinkClick}
+          />
 
           <DashBoardSettingsTab />
 
@@ -388,7 +205,7 @@ export default function DashboardPage() {
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onSelect={handlePortfolioSelect}
-          portfolios={portfolios}
+          portfolios={portfolioList}
           onCreatePortfolio={handleCreatePortfolio}
         />
         <PortfolioCreateModal

@@ -6,7 +6,6 @@ import com.rebra.dto.request.StockTradeRequest;
 import com.rebra.dto.response.StockTradeResponse;
 import com.rebra.entity.Account;
 import com.rebra.entity.AccountType;
-import com.rebra.entity.User;
 import com.rebra.exception.CustomRuntimeException;
 import com.rebra.exception.ExceptionCode;
 import com.rebra.repository.AccountRepository;
@@ -16,12 +15,11 @@ import com.youhogeon.finance.kis_api.api.rest.trading.OrderCashApi;
 import com.youhogeon.finance.kis_api.api.rest.trading.OrderCashResult;
 import com.youhogeon.finance.kis_api.config.Configuration;
 import com.youhogeon.finance.kis_api.config.Credentials;
+import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Duration;
 
 @Slf4j
 @Service
@@ -34,42 +32,44 @@ public class StockTradingServiceImpl implements StockTradingService {
 
     @Override
     @Transactional
-    public StockTradeResponse buyStock(String stockCode, StockTradeRequest request, User user) {
+    public StockTradeResponse buyStock(String stockCode, StockTradeRequest request, Long userId) {
         log.info("주식 매수 주문 시작 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
-                user.getId(), stockCode, request.getQuantity(), request.getPrice());
+                userId, stockCode, request.getQuantity(), request.getPrice());
 
-        return executeOrder(stockCode, request, user, "buy");
+        return executeOrder(stockCode, request, userId, "buy");
     }
 
     @Override
     @Transactional
-    public StockTradeResponse sellStock(String stockCode, StockTradeRequest request, User user) {
+    public StockTradeResponse sellStock(String stockCode, StockTradeRequest request, Long userId) {
         log.info("주식 매도 주문 시작 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
-                user.getId(), stockCode, request.getQuantity(), request.getPrice());
+                userId, stockCode, request.getQuantity(), request.getPrice());
 
-        return executeOrder(stockCode, request, user, "sell");
+        return executeOrder(stockCode, request, userId, "sell");
     }
 
-    private StockTradeResponse executeOrder(String stockCode, StockTradeRequest request, User user, String orderDirection) {
+    private StockTradeResponse executeOrder(String stockCode, StockTradeRequest request, Long userId,
+                                            String orderDirection) {
         try {
             // 1. 계좌 정보 조회 및 검증
-            Account account = accountRepository.findByIdAndUserIdAndIsDeletedFalse(request.getAccountId(), user.getId())
+            Account account = accountRepository.findByIdAndUserIdAndIsDeletedFalse(request.getAccountId(), userId)
                     .orElseThrow(() -> new CustomRuntimeException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
             // 2. 계좌 인증 정보 복호화
-            DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, user.getId());
+            DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
 
             // 3. KIS 클라이언트 초기화
-            String credentialsName = generateCredentialsName(user.getId(), account.getId());
-            kisApiComponent.ensureUserCredentials(user.getId(), account.getId(), account.getAccountType(), credentials);
+            String credentialsName = generateCredentialsName(userId, account.getId());
+            kisApiComponent.ensureUserCredentials(userId, account.getId(), account.getAccountType(), credentials);
 
             // 4. 주문 API 호출
-            OrderCashResult result = callKisOrderApi(stockCode, request, account, credentials, orderDirection, credentialsName);
+            OrderCashResult result = callKisOrderApi(stockCode, request, account, credentials, orderDirection,
+                    credentialsName);
 
             // 5. 결과 처리
             if (result != null) {
                 log.info("주식 {} 주문 완료 - UserId: {}, Result: {}",
-                        orderDirection.equals("buy") ? "매수" : "매도", user.getId(), "Success");
+                        orderDirection.equals("buy") ? "매수" : "매도", userId, "Success");
 
                 // 기본적으로 성공으로 처리하고, 실제 주문번호 등은 KIS API Response 구조에 맞게 추후 수정
                 return StockTradeResponse.success(
@@ -85,24 +85,25 @@ public class StockTradingServiceImpl implements StockTradingService {
             } else {
                 String errorMessage = "주문 처리 중 알 수 없는 오류가 발생했습니다";
                 log.error("주식 {} 주문 실패 - UserId: {}, Error: {}",
-                        orderDirection.equals("buy") ? "매수" : "매도", user.getId(), errorMessage);
+                        orderDirection.equals("buy") ? "매수" : "매도", userId, errorMessage);
 
                 return StockTradeResponse.error(errorMessage);
             }
 
         } catch (CustomRuntimeException e) {
             log.error("주식 {} 주문 실패 - UserId: {}, BusinessError: {}",
-                    orderDirection.equals("buy") ? "매수" : "매도", user.getId(), e.getMessage());
+                    orderDirection.equals("buy") ? "매수" : "매도", userId, e.getMessage());
             throw e;
         } catch (Exception e) {
             log.error("주식 {} 주문 중 시스템 오류 - UserId: {}",
-                    orderDirection.equals("buy") ? "매수" : "매도", user.getId(), e);
+                    orderDirection.equals("buy") ? "매수" : "매도", userId, e);
             throw new CustomRuntimeException(ExceptionCode.KIS_API_ERROR);
         }
     }
 
     private OrderCashResult callKisOrderApi(String stockCode, StockTradeRequest request, Account account,
-                                          DecryptedAccountCredentials credentials, String orderDirection, String credentialsName) {
+                                            DecryptedAccountCredentials credentials, String orderDirection,
+                                            String credentialsName) {
         try {
             // Configuration 설정
             Configuration config = new Configuration();
