@@ -13,6 +13,7 @@ import com.rebra.entity.Account;
 import com.rebra.entity.User;
 import com.rebra.exception.CustomRuntimeException;
 import com.rebra.repository.AccountRepository;
+import com.rebra.repository.UserRepository;
 import com.rebra.util.AccountEncryptionUtil;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +31,9 @@ class StockTradingServiceImplTest {
 
     @Mock
     private AccountRepository accountRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private StockTradingServiceImpl stockTradingService;
@@ -74,11 +78,12 @@ class StockTradingServiceImplTest {
     void buyStock_AccountNotFound_ThrowsException() {
         // Given
         String stockCode = "005930";
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
         given(accountRepository.findByIdAndUserIdAndIsDeletedFalse(1L, 1L))
                 .willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, testRequest, testUser))
+        assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, testRequest, 1L))
                 .isInstanceOf(CustomRuntimeException.class)
                 .hasFieldOrPropertyWithValue("exceptionCode", ACCOUNT_NOT_FOUND);
     }
@@ -92,11 +97,12 @@ class StockTradingServiceImplTest {
                 .willReturn(Optional.of(testAccount));
 
         try (MockedStatic<AccountEncryptionUtil> mockedUtil = Mockito.mockStatic(AccountEncryptionUtil.class)) {
+            given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
             mockedUtil.when(() -> AccountEncryptionUtil.decryptAccountCredentials(testAccount, 1L))
                     .thenThrow(new RuntimeException("복호화 실패"));
 
             // When & Then
-            assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, testRequest, testUser))
+            assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, testRequest, 1L))
                     .isInstanceOf(CustomRuntimeException.class)
                     .hasFieldOrPropertyWithValue("exceptionCode", KIS_API_ERROR);
         }
@@ -113,11 +119,12 @@ class StockTradingServiceImplTest {
         setField(marketOrderRequest, "price", null); // 시장가는 가격 null
         setField(marketOrderRequest, "accountId", 1L);
 
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
         given(accountRepository.findByIdAndUserIdAndIsDeletedFalse(1L, 1L))
                 .willReturn(Optional.empty()); // 계좌 없음으로 KIS API 호출 전에 예외 발생
 
         // When & Then
-        assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, marketOrderRequest, testUser))
+        assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, marketOrderRequest, 1L))
                 .isInstanceOf(CustomRuntimeException.class)
                 .hasFieldOrPropertyWithValue("exceptionCode", ACCOUNT_NOT_FOUND);
     }
@@ -133,11 +140,12 @@ class StockTradingServiceImplTest {
                 .build();
         setField(otherUser, "id", 2L);
 
+        given(userRepository.findById(2L)).willReturn(Optional.of(otherUser));
         given(accountRepository.findByIdAndUserIdAndIsDeletedFalse(1L, 2L))
                 .willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, testRequest, otherUser))
+        assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, testRequest, 2L))
                 .isInstanceOf(CustomRuntimeException.class)
                 .hasFieldOrPropertyWithValue("exceptionCode", ACCOUNT_NOT_FOUND);
     }
@@ -147,11 +155,12 @@ class StockTradingServiceImplTest {
     void sellStock_AccountNotFound_ThrowsException() {
         // Given
         String stockCode = "005930";
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
         given(accountRepository.findByIdAndUserIdAndIsDeletedFalse(1L, 1L))
                 .willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> stockTradingService.sellStock(stockCode, testRequest, testUser))
+        assertThatThrownBy(() -> stockTradingService.sellStock(stockCode, testRequest, 1L))
                 .isInstanceOf(CustomRuntimeException.class)
                 .hasFieldOrPropertyWithValue("exceptionCode", ACCOUNT_NOT_FOUND);
     }

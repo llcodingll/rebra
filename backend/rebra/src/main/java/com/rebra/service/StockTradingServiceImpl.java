@@ -7,6 +7,7 @@ import com.rebra.dto.response.StockTradeResponse;
 import com.rebra.entity.Account;
 import com.rebra.entity.AccountType;
 import com.rebra.entity.User;
+import com.rebra.repository.UserRepository;
 import com.rebra.exception.CustomRuntimeException;
 import com.rebra.exception.ExceptionCode;
 import com.rebra.repository.AccountRepository;
@@ -16,12 +17,12 @@ import com.youhogeon.finance.kis_api.api.rest.trading.OrderCashApi;
 import com.youhogeon.finance.kis_api.api.rest.trading.OrderCashResult;
 import com.youhogeon.finance.kis_api.config.Configuration;
 import com.youhogeon.finance.kis_api.config.Credentials;
+import java.time.Duration;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Duration;
 
 @Slf4j
 @Service
@@ -31,40 +32,51 @@ public class StockTradingServiceImpl implements StockTradingService {
 
     private final KisApiComponent kisApiComponent;
     private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
-    public StockTradeResponse buyStock(String stockCode, StockTradeRequest request, User user) {
+    public StockTradeResponse buyStock(String stockCode, StockTradeRequest request, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomRuntimeException(ExceptionCode.USER_NOT_FOUND));
+
         log.info("주식 매수 주문 시작 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
-                user.getId(), stockCode, request.getQuantity(), request.getPrice());
+                userId, stockCode, request.getQuantity(), request.getPrice());
 
         return executeOrder(stockCode, request, user, "buy");
     }
 
     @Override
     @Transactional
-    public StockTradeResponse sellStock(String stockCode, StockTradeRequest request, User user) {
+    public StockTradeResponse sellStock(String stockCode, StockTradeRequest request, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomRuntimeException(ExceptionCode.USER_NOT_FOUND));
+
         log.info("주식 매도 주문 시작 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
-                user.getId(), stockCode, request.getQuantity(), request.getPrice());
+                userId, stockCode, request.getQuantity(), request.getPrice());
 
         return executeOrder(stockCode, request, user, "sell");
     }
 
-    private StockTradeResponse executeOrder(String stockCode, StockTradeRequest request, User user, String orderDirection) {
+    private StockTradeResponse executeOrder(String stockCode, StockTradeRequest request, User user,
+                                            String orderDirection) {
         try {
             // 1. 계좌 정보 조회 및 검증
+
             Account account = accountRepository.findByIdAndUserIdAndIsDeletedFalse(request.getAccountId(), user.getId())
                     .orElseThrow(() -> new CustomRuntimeException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
             // 2. 계좌 인증 정보 복호화
-            DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, user.getId());
+            DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account,
+                    user.getId());
 
             // 3. KIS 클라이언트 초기화
             String credentialsName = generateCredentialsName(user.getId(), account.getId());
             kisApiComponent.ensureUserCredentials(user.getId(), account.getId(), account.getAccountType(), credentials);
 
             // 4. 주문 API 호출
-            OrderCashResult result = callKisOrderApi(stockCode, request, account, credentials, orderDirection, credentialsName);
+            OrderCashResult result = callKisOrderApi(stockCode, request, account, credentials, orderDirection,
+                    credentialsName);
 
             // 5. 결과 처리
             if (result != null) {
@@ -102,7 +114,8 @@ public class StockTradingServiceImpl implements StockTradingService {
     }
 
     private OrderCashResult callKisOrderApi(String stockCode, StockTradeRequest request, Account account,
-                                          DecryptedAccountCredentials credentials, String orderDirection, String credentialsName) {
+                                            DecryptedAccountCredentials credentials, String orderDirection,
+                                            String credentialsName) {
         try {
             // Configuration 설정
             Configuration config = new Configuration();

@@ -91,9 +91,9 @@ public class StockController {
     public ResponseEntity<CommonApiResponse<StockDetailResponse>> getStockDetail(
             @Parameter(description = "조회할 종목 코드", example = "005930")
             @PathVariable String stockCode,
-            @LoginUser User user) {
+            @Parameter(hidden = true) @LoginUser Long userId) {
 
-        StockDetailResponse stockDetail = stockService.getStockDetailWithWebSocketInfo(stockCode, user);
+        StockDetailResponse stockDetail = stockService.getStockDetailWithWebSocketInfo(stockCode, userId);
 
         return ResponseEntity.ok(CommonApiResponse.success(stockDetail));
     }
@@ -110,12 +110,12 @@ public class StockController {
             @Parameter(description = "매수할 종목 코드", example = "005930")
             @PathVariable String stockCode,
             @Valid @RequestBody StockTradeRequest request,
-            @LoginUser User user) {
+            @Parameter(hidden = true) @LoginUser Long userId) {
 
         log.info("주식 매수 요청 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
-                user.getId(), stockCode, request.getQuantity(), request.getPrice());
+                userId, stockCode, request.getQuantity(), request.getPrice());
 
-        StockTradeResponse response = stockTradingService.buyStock(stockCode, request, user);
+        StockTradeResponse response = stockTradingService.buyStock(stockCode, request, userId);
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
@@ -132,12 +132,12 @@ public class StockController {
             @Parameter(description = "매도할 종목 코드", example = "005930")
             @PathVariable String stockCode,
             @Valid @RequestBody StockTradeRequest request,
-            @LoginUser User user) {
+            @Parameter(hidden = true) @LoginUser Long userId) {
 
         log.info("주식 매도 요청 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
-                user.getId(), stockCode, request.getQuantity(), request.getPrice());
+                userId, stockCode, request.getQuantity(), request.getPrice());
 
-        StockTradeResponse response = stockTradingService.sellStock(stockCode, request, user);
+        StockTradeResponse response = stockTradingService.sellStock(stockCode, request, userId);
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
