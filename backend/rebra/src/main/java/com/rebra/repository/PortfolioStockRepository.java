@@ -29,12 +29,12 @@ public interface PortfolioStockRepository extends JpaRepository<PortfolioStock, 
     /**
      * 특정 포트폴리오의 특정 주식 조회
      */
-    Optional<PortfolioStock> findByPortfolioIdAndStockId(Long portfolioId, Long stockId);
+    Optional<PortfolioStock> findByPortfolioIdAndStockCode(Long portfolioId, String stockCode);
 
     /**
      * 포트폴리오별 주식 존재 여부 확인
      */
-    boolean existsByPortfolioIdAndStockId(Long portfolioId, Long stockId);
+    boolean existsByPortfolioIdAndStockCode(Long portfolioId, String stockCode);
 
     /**
      * 포트폴리오의 총 목표 비중 합계 조회
@@ -45,7 +45,7 @@ public interface PortfolioStockRepository extends JpaRepository<PortfolioStock, 
     /**
      * 특정 주식이 등록된 모든 포트폴리오 조회
      */
-    List<PortfolioStock> findByStockIdAndStatus(Long stockId, String status);
+    List<PortfolioStock> findByStockCodeAndStatus(String stockCode, String status);
 
     /**
      * 사용자별 모든 포트폴리오 주식 조회 (JOIN)

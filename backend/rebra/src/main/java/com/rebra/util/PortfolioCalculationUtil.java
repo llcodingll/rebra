@@ -39,7 +39,7 @@ public class PortfolioCalculationUtil {
 
         // 등록 주식의 종목코드 Set 생성 (O(1) 검색을 위해)
         Set<String> registeredStockCodes = portfolioStocks.stream()
-            .map(ps -> ps.getStock().getStockCode())
+            .map(PortfolioStock::getStockCode)
             .collect(Collectors.toSet());
 
         log.debug("등록 주식 종목코드: {}", registeredStockCodes);
