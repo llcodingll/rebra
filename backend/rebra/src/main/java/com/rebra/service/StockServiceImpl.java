@@ -60,9 +60,6 @@ public class StockServiceImpl implements StockService {
         try {
             log.info("차트 데이터 조회 시작 - UserId: {}, StockCode: {}, Period: {}", userId, stockCode, periodType);
 
-            Stock stock = stockRepository.findByStockCodeAndIsActiveTrue(stockCode)
-                    .orElseThrow(StockException::stockCodeNotFound);
-
             Account account = accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true)
                     .orElseThrow(() -> new RuntimeException("활성화된 계좌를 찾을 수 없습니다."));
 
@@ -74,7 +71,7 @@ public class StockServiceImpl implements StockService {
                     stockCode, startDate, endDate, periodType
             );
 
-            return buildStockChartResponse(stock, kisResult, startDate, endDate, periodType);
+            return buildStockChartResponse(stockCode, kisResult, startDate, endDate, periodType);
 
         } catch (Exception e) {
             log.error("차트 데이터 조회 실패 - UserId: {}, StockCode: {}, Period: {}, ErrorType: {}, Message: {}",
@@ -89,6 +86,9 @@ public class StockServiceImpl implements StockService {
                     detailedMessage = "계좌 정보 복호화에 실패했습니다.";
                 } else if (e.getMessage().contains("KIS")) {
                     detailedMessage = "KIS API 연동에 실패했습니다. 잠시 후 다시 시도해주세요.";
+                } else {
+                    // KIS API에서 발생한 구체적인 에러 메시지를 그대로 전달
+                    detailedMessage = "차트 데이터 조회 실패: " + e.getMessage();
                 }
             }
 
@@ -96,7 +96,7 @@ public class StockServiceImpl implements StockService {
         }
     }
 
-    private StockChartResponse buildStockChartResponse(Stock stock, Map<String, Object> kisResult,
+    private StockChartResponse buildStockChartResponse(String stockCode, Map<String, Object> kisResult,
                                                        String startDate, String endDate, String periodType) {
         List<StockChartResponse.ChartDataPoint> chartData = new ArrayList<>();
         StockChartResponse.StockSummary summary = null;
@@ -135,8 +135,6 @@ public class StockServiceImpl implements StockService {
         }
 
         return StockChartResponse.builder()
-                .stockCode(stock.getStockCode())
-                .stockName(stock.getStockName())
                 .periodType(periodType)
                 .periodDescription(StockChartResponse.PeriodType.fromCode(periodType).getDescription())
                 .startDate(startDate)
