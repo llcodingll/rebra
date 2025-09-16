@@ -7,6 +7,7 @@ import com.rebra.exception.account.AccountException;
 import com.rebra.exception.auth.AuthException;
 import com.rebra.exception.backtest.BacktestException;
 import com.rebra.exception.portfolio.PortfolioException;
+import com.rebra.exception.portfoliostock.PortfolioStockException;
 import com.rebra.exception.signup.SignupException;
 import com.rebra.exception.token.TokenException;
 import com.rebra.exception.stock.StockException;
@@ -106,6 +107,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PortfolioException.class)
     public ResponseEntity<CommonApiResponse<Void>> handlePortfolioException(PortfolioException e) {
         log.warn("Portfolio exception: {}", e.getMessage());
+        return ResponseEntity.status(e.getStatus())
+                .body(CommonApiResponse.error(e));
+    }
+
+    @ExceptionHandler(PortfolioStockException.class)
+    public ResponseEntity<CommonApiResponse<Void>> handlePortfolioStockException(PortfolioStockException e) {
+        log.warn("PortfolioStock exception: {}", e.getMessage());
         return ResponseEntity.status(e.getStatus())
                 .body(CommonApiResponse.error(e));
     }

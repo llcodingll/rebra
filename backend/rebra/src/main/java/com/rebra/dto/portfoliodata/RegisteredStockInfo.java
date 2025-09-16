@@ -20,16 +20,19 @@ public class RegisteredStockInfo {
     private BigDecimal thresholdPercentage;  // 임계치 (PortfolioStock)
     private String status;                   // 상태 (PortfolioStock)
 
-    public static RegisteredStockInfo from(InquireBalanceResult.Output1 balance, PortfolioStock portfolioStock) {
+    public static RegisteredStockInfo from(InquireBalanceResult.Output1 balance,
+                                          BigDecimal targetWeight,
+                                          BigDecimal thresholdPercentage,
+                                          String status) {
         return RegisteredStockInfo.builder()
             .stockCode(balance.getPdno())
             .stockName(balance.getPrdtName())
             .purchasePrice(new BigDecimal(balance.getPchsAvgPric()))
             .quantity(Long.parseLong(balance.getHldgQty()))
             .currentPrice(new BigDecimal(balance.getPrpr()))
-            .targetWeight(portfolioStock.getTargetWeight())
-            .thresholdPercentage(portfolioStock.getThresholdPercentage())
-            .status(portfolioStock.getStatus())
+            .targetWeight(targetWeight)
+            .thresholdPercentage(thresholdPercentage)
+            .status(status)
             .build();
     }
 }
