@@ -620,8 +620,6 @@ public class KisApiComponent {
             chartApi.setFidPeriodDivCode(periodType);  // D:일봉 W:주봉, M:월봉, Y:년봉
             chartApi.setFidOrgAdjPrc("1");             // 0:수정주가 1:원주가
 
-            // TR ID 설정 (실전/모의 동일)
-            chartApi.setTrId("FHKST03010100");
             // P:개인, B:법인
             chartApi.setCusttype("P");
 
@@ -630,6 +628,19 @@ public class KisApiComponent {
 
             // KIS API 실행 (기존 패턴과 동일)
             InquireDailyItemchartpriceResult result = client.execute(chartApi, credentialsName);
+
+            // 실무 표준: KIS API 응답 코드 검증
+            if (result == null) {
+                throw new RuntimeException("KIS API 응답이 null입니다.");
+            }
+
+            // rtCd가 "0"이 아니면 실패 (KIS API 표준)
+            if (!"0".equals(result.getRtCd())) {
+                String errorMsg = String.format("KIS 차트 API 실패 - 응답코드: %s, 메시지: %s",
+                        result.getRtCd(), result.getMsg1());
+                log.error("차트 데이터 조회 실패 - UserId: {}, StockCode: {}, {}", userId, stockCode, errorMsg);
+                throw new RuntimeException(errorMsg);
+            }
 
             if (result != null) {
                 Map<String, Object> responseData = new ConcurrentHashMap<>();
@@ -653,6 +664,11 @@ public class KisApiComponent {
                 throw new RuntimeException("KIS API에서 차트 데이터를 가져올 수 없습니다. 잠시 후 다시 시도해주세요.");
             }
 
+        } catch (KisClientException e) {
+            // KIS 라이브러리 전용 예외 처리
+            log.error("KIS API 클라이언트 오류 - UserId: {}, StockCode: {}, Period: {}, 오류: {}",
+                    userId, stockCode, periodType, e.getMessage(), e);
+            throw new RuntimeException("KIS API 연결 오류: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("주식 차트 데이터 조회 실패 - UserId: {}, StockCode: {}, Period: {}, Error: {}, StackTrace: {}",
                     userId, stockCode, periodType, e.getMessage(), e.getClass().getSimpleName(), e);
