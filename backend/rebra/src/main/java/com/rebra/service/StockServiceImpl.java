@@ -4,7 +4,6 @@ import com.rebra.component.KisApiComponent;
 import com.rebra.dto.DecryptedAccountCredentials;
 import com.rebra.dto.response.PageResponse;
 import com.rebra.dto.response.StockChartResponse;
-import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockSearchResponse;
 import com.rebra.entity.Account;
 import com.rebra.entity.Stock;
@@ -30,7 +29,6 @@ public class StockServiceImpl implements StockService {
 
     private final StockRepository stockRepository;
     private final AccountRepository accountRepository;
-    private final KisRealtimeService kisRealtimeService;
     private final KisApiComponent kisApiComponent;
     // Redis 캐싱 제거 - 프론트엔드에서 실시간 데이터 관리
     // 실시간 데이터는 WebSocket을 통해 직접 클라이언트로 전달
@@ -54,42 +52,6 @@ public class StockServiceImpl implements StockService {
         Page<Stock> stockPage = stockRepository.findByStockNameContainingIgnoreCaseAndIsActiveTrue(stockName, pageable);
         Page<StockSearchResponse> dtoPage = stockPage.map(StockSearchResponse::from);
         return PageResponse.from(dtoPage);
-    }
-
-    @Override
-    public StockDetailResponse getStockDetailWithWebSocketInfo(String stockCode, Long userId) {
-        try {
-            // 주식 기본 정보 조회
-            Stock stock = stockRepository.findByStockCodeAndIsActiveTrue(stockCode)
-                    .orElseThrow(StockException::stockCodeNotFound);
-
-            log.info("종목 상세 정보 조회 완료 (WebSocket 방식) - UserId: {}, StockCode: {}",
-                    userId, stockCode);
-
-            // 사용자 계좌 정보 조회
-            Account account = accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true)
-                    .orElseThrow(() -> new RuntimeException("활성화된 계좌를 찾을 수 없습니다."));
-
-            // 즉시 한국투자증권 실시간 데이터 구독 시작
-            String sessionId = "api-request-" + userId + "-" + stockCode;
-
-            log.info("KIS 실시간 데이터 구독 시작 - UserId: {}, StockCode: {}, SessionId: {}",
-                    userId, stockCode, sessionId);
-
-            // 실시간 체결가 구독 시작
-            kisRealtimeService.startPriceSubscription(account, stockCode, sessionId);
-
-            // 실시간 호가 구독 시작
-            kisRealtimeService.startOrderbookSubscription(account, stockCode, sessionId);
-
-            // WebSocket 채널 정보와 함께 반환
-            return StockDetailResponse.ofWithWebSocketInfo(stock, userId, stockCode);
-
-        } catch (Exception e) {
-            log.error("종목 상세 정보 조회 실패 (WebSocket 방식) - UserId: {}, StockCode: {}",
-                    userId, stockCode, e);
-            throw new RuntimeException("종목 상세 정보 조회에 실패했습니다.", e);
-        }
     }
 
     @Override
