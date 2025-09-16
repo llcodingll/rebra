@@ -112,4 +112,4 @@ const dashboardStockDataWithData: DashboardStock[] = [
 const dashboardStockDataEmpty: DashboardStock[] = [];
 
 // 현재 사용할 데이터 (개발할 때 이 부분만 변경)
-export const dashboardStockData = dashboardStockDataWithData; // dashboardStockDataEmpty로 변경하면 빈 상태
+export const dashboardStockData = dashboardStockDataEmpty; // dashboardStockDataEmpty로 변경하면 빈 상태

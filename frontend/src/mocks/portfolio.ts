@@ -129,6 +129,6 @@ const portfolioListWithData: Portfolio[] = [
 const portfolioListEmpty: Portfolio[] = [];
 
 // 현재 사용할 데이터 (개발할 때 이 부분만 변경)
-export const portfolioList = portfolioListWithData; 
+export const portfolioList = portfolioListEmpty; 
 // portfolioListEmpty로 변경하면 빈 상태
 //

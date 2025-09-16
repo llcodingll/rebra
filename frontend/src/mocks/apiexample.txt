@@ -1,0 +1,81 @@
+개발 주소 : localhost8080
+
+1. 포트폴리오 목록 조회
+/api/v1/portfolios
+
+응답 예시
+조회 성공 (200) : 
+
+{
+  "success": true,
+  "status": 0,
+  "data": {
+    "totalCount": 0,
+    "portfolios": [
+      {
+        "portfolioId": 0,
+        "name": "string",
+        "description": "string",
+        "registeredStockCount": 0,
+        "totalReturnRate": 0,
+        "isAccountConnected": true,
+        "createdAt": "2025-09-16T00:11:40.796Z",
+        "accountType": "MOCK"
+      }
+    ]
+  },
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-16T00:11:40.796Z"
+}
+
+인증 실패 (401) 
+{
+  "success": true,
+  "status": 0,
+  "data": {
+    "totalCount": 0,
+    "portfolios": [
+      {
+        "portfolioId": 0,
+        "name": "string",
+        "description": "string",
+        "registeredStockCount": 0,
+        "totalReturnRate": 0,
+        "isAccountConnected": true,
+        "createdAt": "2025-09-16T00:11:40.798Z",
+        "accountType": "MOCK"
+      }
+    ]
+  },
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-16T00:11:40.798Z"
+}
+
+서버오류 (500) : 
+{
+  "success": true,
+  "status": 0,
+  "data": {
+    "totalCount": 0,
+    "portfolios": [
+      {
+        "portfolioId": 0,
+        "name": "string",
+        "description": "string",
+        "registeredStockCount": 0,
+        "totalReturnRate": 0,
+        "isAccountConnected": true,
+        "createdAt": "2025-09-16T00:11:40.801Z",
+        "accountType": "MOCK"
+      }
+    ]
+  },
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-16T00:11:40.801Z"
+}

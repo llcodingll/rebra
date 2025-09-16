@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './DashboardPage.module.css';
 import { portfolioList, type Portfolio } from '../../mocks/portfolio';
 import { dashboardStockData } from '../../mocks/dashboardStocks';
+import { useApi } from '../../shared/hook/useApi';
+import { portfolioApi } from '../../features/portfolio/api/portfolioApi';
 import { type PortfolioCreateData } from '../../mocks/portfolioCreate';
 import DashBoardSettingsTab from '../../widgets/dashboard/DashBoardSettingsTab';
 import AssetPortfolioChart from '../../widgets/dashboard/AssetPortfolioChart';
@@ -18,27 +20,43 @@ export default function DashboardPage() {
   const [activeSubTab, setActiveSubTab] = useState<'assets' | 'profit'>('assets');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  
-  const portfolios = portfolioList;
 
-  // 포트폴리오 상태 테스트용 - 아래 두 줄 중 하나만 주석 해제하여 테스트
-  const [hasPortfolio, setHasPortfolio] = useState(true); // 포트폴리오 없음 상태 테스트
-  // const [hasPortfolio, setHasPortfolio] = useState(true); // 포트폴리오 있음 상태 테스트
-  
+  // API로 포트폴리오 목록 조회
+  const { data: portfolioData, isLoading: isPortfolioLoading, error: portfolioError } = useApi({
+    queryKey: ['portfolios'],
+    apiFunction: () => portfolioApi.getPortfolioList(),
+  });
+
+  // API 데이터를 기존 Portfolio 타입으로 변환
+  const portfolios = useMemo(() => {
+    if (!portfolioData?.portfolios) return [];
+
+    return portfolioData.portfolios.map(item => ({
+      id: item.portfolioId.toString(),
+      name: item.name,
+      description: item.description,
+      stockCount: item.registeredStockCount,
+      return: `${item.totalReturnRate > 0 ? '+' : ''}${item.totalReturnRate.toFixed(1)}%`,
+      createdDate: item.createdAt.split('T')[0],
+      returnPositive: item.totalReturnRate > 0,
+      accountType: item.accountType,
+    }));
+  }, [portfolioData]);
+
+  // 포트폴리오 존재 여부는 API 데이터로 판단
+  const hasPortfolio = portfolios.length > 0 && !isPortfolioLoading;
+
   // 포트폴리오 있음 상태일 때 기본값 설정 (portfolios 배열의 첫 번째 항목)
-  const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(
-    portfolioList[0]
-  );
-  
-  // 개발용 포트폴리오 상태 토글 함수
-  const togglePortfolioState = () => {
-    setHasPortfolio(prev => !prev);
-    if (!hasPortfolio) {
-      setSelectedPortfolio(portfolioList[0]);
-    } else {
-      setSelectedPortfolio(null);
+  const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(null);
+
+  // API 데이터 로드 후 첫 번째 포트폴리오 선택
+  useMemo(() => {
+    if (portfolios.length > 0 && !selectedPortfolio) {
+      setSelectedPortfolio(portfolios[0]);
     }
-  };
+  }, [portfolios, selectedPortfolio]);
+  
+  // 개발용 토글 함수 제거 (API 기반으로 동작)
 
   const stockData = dashboardStockData;
 
@@ -71,10 +89,9 @@ export default function DashboardPage() {
   };
 
   const handlePortfolioSelect = (portfolioId: string) => {
-    const selected = portfolioList.find(p => p.id === portfolioId);
+    const selected = portfolios.find(p => p.id === portfolioId);
     if (selected) {
       setSelectedPortfolio(selected);
-      setHasPortfolio(true);
     }
   };
 
@@ -95,36 +112,25 @@ export default function DashboardPage() {
     }
   };
 
+  // 로딩 중이면 로딩 표시
+  if (isPortfolioLoading) {
+    return (
+      <div className={styles.dashboard}>
+        <div>포트폴리오 목록을 불러오는 중...</div>
+      </div>
+    );
+  }
+
   // 포트폴리오가 없으면 NoPortfolioState 컴포넌트 렌더링
   if (!hasPortfolio) {
     return (
       <div className={styles.dashboard}>
-        {/* 개발용 토글 버튼 */}
-        <button 
-          onClick={togglePortfolioState}
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            zIndex: 9999,
-            padding: '4px 8px',
-            fontSize: '10px',
-            backgroundColor: '#2563eb',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          {hasPortfolio ? '포트폴리오 있음' : '포트폴리오 없음'}
-        </button>
-        
         <NoPortfolioState onCreatePortfolio={handleCreatePortfolio} />
-        <PortfolioSelectionModal 
+        <PortfolioSelectionModal
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onSelect={handlePortfolioSelect}
-          portfolios={portfolioList}
+          portfolios={portfolios}
           onCreatePortfolio={handleCreatePortfolio}
         />
         <PortfolioCreateModal
@@ -139,25 +145,6 @@ export default function DashboardPage() {
   return (
     <div>
       <div className={styles.dashboard}>
-        {/* 개발용 토글 버튼 */}
-        <button 
-          onClick={togglePortfolioState}
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            zIndex: 9999,
-            padding: '4px 8px',
-            fontSize: '10px',
-            backgroundColor: '#2563eb',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          {hasPortfolio ? '포트폴리오 있음' : '포트폴리오 없음'}
-        </button>
         
         <div className={styles.container}>
           {/* 포트폴리오 선택 섹션 */}
@@ -201,11 +188,11 @@ export default function DashboardPage() {
           />
         </div>
 
-        <PortfolioSelectionModal 
+        <PortfolioSelectionModal
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onSelect={handlePortfolioSelect}
-          portfolios={portfolioList}
+          portfolios={portfolios}
           onCreatePortfolio={handleCreatePortfolio}
         />
         <PortfolioCreateModal

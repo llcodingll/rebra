@@ -195,6 +195,9 @@ export const rebalancingHistoryData: RebalancingHistoryItem[] = [
   }*/
 ];
 
+export const chartLegendData: ChartLegendItem[] = [];
+
+/*
 export const chartLegendData: ChartLegendItem[] = [
   { name: '삼성전자', weight: 32.1, color: '#3b82f6' },
   { name: 'SK하이닉스', weight: 24.0, color: '#10b981' },
@@ -202,3 +205,4 @@ export const chartLegendData: ChartLegendItem[] = [
   { name: '삼성바이오로직스', weight: 14.1, color: '#ef4444' },
   { name: 'NAVER', weight: 11.4, color: '#8b5cf6' }
 ];
+*/
