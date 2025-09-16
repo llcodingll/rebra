@@ -17,6 +17,7 @@ import com.youhogeon.finance.kis_api.config.Credentials;
 import com.youhogeon.finance.kis_api.exception.KisClientException;
 import jakarta.annotation.PostConstruct;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -650,9 +651,9 @@ public class KisApiComponent {
                     responseData.put("output1", result.getOutput1());
                 }
 
-                // output2 (차트 데이터 배열)
+                // output2 (차트 데이터 배열) - 배열을 List로 변환
                 if (result.getOutput2() != null) {
-                    responseData.put("output2", result.getOutput2());
+                    responseData.put("output2", Arrays.asList(result.getOutput2()));
                 }
 
                 log.info("주식 차트 데이터 조회 완료 (KIS API) - UserId: {}, StockCode: {}, Period: {}",
