@@ -7,20 +7,18 @@ import com.youhogeon.finance.kis_api.api.realtime.H0STASP0Api;
 import com.youhogeon.finance.kis_api.api.realtime.H0STASP0Data;
 import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Api;
 import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Data;
-import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceApi;
-import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
-import com.youhogeon.finance.kis_api.api.rest.trading.OrderCashApi;
-import com.youhogeon.finance.kis_api.api.rest.trading.OrderCashResult;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceApi;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult;
+import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceApi;
+import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import com.youhogeon.finance.kis_api.client.socket.SubscribableApiResult;
 import com.youhogeon.finance.kis_api.config.Configuration;
 import com.youhogeon.finance.kis_api.config.Credentials;
 import jakarta.annotation.PostConstruct;
 import java.time.Duration;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -210,10 +208,10 @@ public class KisApiComponent {
 
 
     /**
-     * 등록된 사용자 Credentials로 잔고 조회
-     * ensureUserCredentials()를 통해 Credentials가 없으면 자동으로 등록
+     * 등록된 사용자 Credentials로 잔고 조회 ensureUserCredentials()를 통해 Credentials가 없으면 자동으로 등록
      */
-    public InquireBalanceResult getUserBalance(Long userId, Long accountId, AccountType accountType, DecryptedAccountCredentials credentials) {
+    public InquireBalanceResult getUserBalance(Long userId, Long accountId, AccountType accountType,
+                                               DecryptedAccountCredentials credentials) {
         try {
             log.info("사용자 잔고 조회 시작 - 사용자ID: {}, 계좌ID: {}, 계좌타입: {}", userId, accountId, accountType);
 
@@ -392,15 +390,6 @@ public class KisApiComponent {
     }
 
     /**
-     * 활성 구독 상태 확인
-     */
-    public boolean isSubscribed(Long userId, String stockCode, String dataType) {
-        String subscriptionKey = generateSubscriptionKey(userId, stockCode, dataType);
-        return subscriptionCount.containsKey(subscriptionKey) &&
-                subscriptionCount.get(subscriptionKey).get() > 0;
-    }
-
-    /**
      * 실시간 체결가 데이터 처리 백그라운드 스레드 시작
      */
     private void startRealtimePriceProcessing(SubscribableApiResult subscription,
@@ -561,11 +550,11 @@ public class KisApiComponent {
     }
 
     /**
-     * 국내주식기간별시세(일/주/월/년) 조회
-     * KIS API의 FHKST03010100 TR ID 사용
+     * 국내주식기간별시세(일/주/월/년) 조회 KIS API의 FHKST03010100 TR ID 사용
      */
     public Map<String, Object> getStockChartData(Long userId, Long accountId, AccountType accountType,
-                                                 String stockCode, String startDate, String endDate, String periodType) {
+                                                 String stockCode, String startDate, String endDate,
+                                                 String periodType) {
         try {
             String credentialsName = getUserCredentialsName(userId, accountId);
             if (credentialsName == null) {
@@ -614,18 +603,19 @@ public class KisApiComponent {
             }
 
         } catch (Exception e) {
-            log.error("주식 차트 데이터 조회 실패 - UserId: {}, StockCode: {}, Period: {}",
-                    userId, stockCode, periodType, e);
+            log.error("주식 차트 데이터 조회 실패 - UserId: {}, StockCode: {}, Period: {}, Error: {}, StackTrace: {}",
+                    userId, stockCode, periodType, e.getMessage(), e.getClass().getSimpleName(), e);
 
-            // 예외 발생 시 기본 데이터 반환 (개발 단계에서 안정성 확보)
-            return getDefaultChartData(stockCode, startDate, endDate, periodType);
+            // KIS API 호출 실패 시 예외를 다시 던져서 상위 레이어에서 처리하도록 함
+            throw new RuntimeException("KIS API 차트 데이터 조회 실패: " + e.getMessage(), e);
         }
     }
 
     /**
      * 차트 API 개발/테스트용 기본 데이터
      */
-    private Map<String, Object> getDefaultChartData(String stockCode, String startDate, String endDate, String periodType) {
+    private Map<String, Object> getDefaultChartData(String stockCode, String startDate, String endDate,
+                                                    String periodType) {
         Map<String, Object> result = new ConcurrentHashMap<>();
 
         // KIS API 응답 구조에 맞는 기본 데이터

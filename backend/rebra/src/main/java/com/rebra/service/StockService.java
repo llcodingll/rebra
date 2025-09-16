@@ -4,7 +4,6 @@ import com.rebra.dto.response.PageResponse;
 import com.rebra.dto.response.StockChartResponse;
 import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockSearchResponse;
-import com.rebra.entity.User;
 import org.springframework.data.domain.Pageable;
 
 public interface StockService {
@@ -25,11 +24,6 @@ public interface StockService {
     PageResponse<StockSearchResponse> searchStocks(String stockName, Pageable pageable);
 
     /**
-     * 종목 상세 정보 조회 (실시간 데이터 포함) - 기존 방식
-     */
-    StockDetailResponse getStockDetailWithRealtime(String stockCode, Long userId);
-
-    /**
      * 종목 상세 정보 조회 (WebSocket 채널 정보 포함) - 하이브리드 방식
      */
     StockDetailResponse getStockDetailWithWebSocketInfo(String stockCode, Long userId);
@@ -37,5 +31,6 @@ public interface StockService {
     /**
      * 종목 차트 데이터 조회 (일/주/월/년봉)
      */
-    StockChartResponse getStockChartData(String stockCode, String startDate, String endDate, String periodType, Long userId);
+    StockChartResponse getStockChartData(String stockCode, String startDate, String endDate, String periodType,
+                                         Long userId);
 }

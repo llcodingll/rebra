@@ -57,13 +57,6 @@ public class StockServiceImpl implements StockService {
     }
 
     @Override
-    public StockDetailResponse getStockDetailWithRealtime(String stockCode, Long userId) {
-        // 기존 즉시 호출 방식은 더 이상 사용하지 않음
-        // 프론트엔드에서 WebSocket 채널 정보를 받고 직접 구독
-        return getStockDetailWithWebSocketInfo(stockCode, userId);
-    }
-
-    @Override
     public StockDetailResponse getStockDetailWithWebSocketInfo(String stockCode, Long userId) {
         try {
             // 주식 기본 정보 조회
@@ -108,9 +101,7 @@ public class StockServiceImpl implements StockService {
             Stock stock = stockRepository.findByStockCodeAndIsActiveTrue(stockCode)
                     .orElseThrow(StockException::stockCodeNotFound);
 
-            Account account = accountRepository.findByUserId(userId)
-                    .stream()
-                    .findFirst()
+            Account account = accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true)
                     .orElseThrow(() -> new RuntimeException("활성화된 계좌를 찾을 수 없습니다."));
 
             DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
