@@ -25,7 +25,7 @@ environment {
 
         // JWT 설정 - Jenkins Credentials에서 보안 관리
         JWT_SECRET_KEY = credentials('jwt-secret-key')  // Jenkins Secret 사용
-        JWT_ACCESS_TOKEN_MINUTE_TIME = "30"
+        JWT_ACCESS_TOKEN_MINUTE_TIME = "300"
         JWT_REFRESH_TOKEN_MINUTE_TIME = "10080"
 
         // Kakao OAuth2 설정 - Jenkins Credentials에서 보안 관리

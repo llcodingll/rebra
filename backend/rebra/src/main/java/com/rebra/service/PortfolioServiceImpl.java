@@ -69,7 +69,7 @@ public class PortfolioServiceImpl implements PortfolioService {
 
                 // 2. 등록 주식 목록 조회
                 List<PortfolioStock> portfolioStocks = portfolioStockRepository
-                    .findByPortfolioIdAndStatus(portfolio.getId(), "ACTIVE");
+                    .findByPortfolioIdOrderByCreatedAtDesc(portfolio.getId());
                 int stockCount = portfolioStocks.size();
 
                 DecryptedAccountCredentials credentials = AccountEncryptionUtil
@@ -226,7 +226,7 @@ public class PortfolioServiceImpl implements PortfolioService {
 
             // 2. 등록된 주식 목록 조회 (PortfolioStock)
             List<PortfolioStock> portfolioStocks = portfolioStockRepository
-                .findByPortfolioIdAndStatus(portfolioId, "ACTIVE");
+                .findByPortfolioIdOrderByCreatedAtDesc(portfolioId);
 
             // 3. KIS API로 전체 잔고 조회
             Account account = portfolio.getAccount();
@@ -238,7 +238,7 @@ public class PortfolioServiceImpl implements PortfolioService {
             // 4. 등록된 주식 코드별 PortfolioStock 맵 생성 (O(1) 검색을 위해)
             Map<String, PortfolioStock> portfolioStockMap = portfolioStocks.stream()
                 .collect(Collectors.toMap(
-                    ps -> ps.getStock().getStockCode(),
+                    PortfolioStock::getStockCode,
                     Function.identity()
                 ));
 
@@ -257,7 +257,10 @@ public class PortfolioServiceImpl implements PortfolioService {
                 if (portfolioStockMap.containsKey(stockCode)) {
                     // 등록된 주식 - PortfolioStock 정보와 결합
                     PortfolioStock ps = portfolioStockMap.get(stockCode);
-                    registeredStocks.add(RegisteredStockInfo.from(balance, ps));
+                    registeredStocks.add(RegisteredStockInfo.from(balance,
+                        ps.getTargetWeight(),
+                        ps.getThresholdPercentage(),
+                        ps.getStatus()));
                 } else {
                     // 미등록 주식 - KIS 정보만
                     unregisteredStocks.add(UnregisteredStockInfo.from(balance));

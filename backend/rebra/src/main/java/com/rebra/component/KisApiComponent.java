@@ -17,6 +17,7 @@ import com.youhogeon.finance.kis_api.config.Credentials;
 import com.youhogeon.finance.kis_api.exception.KisClientException;
 import jakarta.annotation.PostConstruct;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -561,9 +562,9 @@ public class KisApiComponent {
     /**
      * 국내주식기간별시세(일/주/월/년) 조회 KIS API의 FHKST03010100 TR ID 사용
      */
-    public InquireDailyItemchartpriceResult getStockChartData(Long userId, Long accountId, AccountType accountType,
-                                                              String stockCode, String startDate, String endDate,
-                                                              String periodType) {
+    public Map<String, Object> getStockChartData(Long userId, Long accountId, AccountType accountType,
+                                                 String stockCode, String startDate, String endDate,
+                                                 String periodType) {
         try {
             String credentialsName = getUserCredentialsName(userId, accountId);
             if (credentialsName == null) {
@@ -605,10 +606,27 @@ public class KisApiComponent {
                 throw new RuntimeException(errorMsg);
             }
 
-            log.info("주식 차트 데이터 조회 완료 (KIS API) - UserId: {}, StockCode: {}, Period: {}",
-                    userId, stockCode, periodType);
+            if (result != null) {
+                Map<String, Object> responseData = new ConcurrentHashMap<>();
 
-            return result;
+                // output1 (종목 요약 정보)
+                if (result.getOutput1() != null) {
+                    responseData.put("output1", result.getOutput1());
+                }
+
+                // output2 (차트 데이터 배열) - 원본 배열 그대로 사용
+                if (result.getOutput2() != null) {
+                    responseData.put("output2", result.getOutput2());
+                }
+
+                log.info("주식 차트 데이터 조회 완료 (KIS API) - UserId: {}, StockCode: {}, Period: {}",
+                        userId, stockCode, periodType);
+
+                return responseData;
+            } else {
+                log.error("KIS API 응답이 null - UserId: {}, StockCode: {}, Period: {}", userId, stockCode, periodType);
+                throw new RuntimeException("KIS API에서 차트 데이터를 가져올 수 없습니다. 잠시 후 다시 시도해주세요.");
+            }
 
         } catch (KisClientException e) {
             // KIS 라이브러리 전용 예외 처리

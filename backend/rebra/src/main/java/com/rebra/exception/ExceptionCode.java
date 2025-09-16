@@ -76,7 +76,13 @@ public enum ExceptionCode {
     INSUFFICIENT_BALANCE(13003, "잔고가 부족합니다.", HttpStatus.BAD_REQUEST),
     INVALID_ORDER_QUANTITY(13004, "잘못된 주문 수량입니다.", HttpStatus.BAD_REQUEST),
     INVALID_ORDER_PRICE(13005, "잘못된 주문 가격입니다.", HttpStatus.BAD_REQUEST),
-    TRADING_HOURS_VIOLATION(13006, "거래 시간이 아닙니다.", HttpStatus.BAD_REQUEST);
+    TRADING_HOURS_VIOLATION(13006, "거래 시간이 아닙니다.", HttpStatus.BAD_REQUEST),
+
+    // ==== PortfolioStock 관련 ====
+    PORTFOLIO_STOCK_NOT_FOUND(14001, "포트폴리오에서 해당 주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    PORTFOLIO_STOCK_ALREADY_EXISTS(14002, "이미 포트폴리오에 등록된 주식입니다.", HttpStatus.CONFLICT),
+    PORTFOLIO_STOCK_ACCESS_DENIED(14003, "포트폴리오 주식 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    TARGET_WEIGHT_SUM_EXCEEDED(14004, "목표 비중의 합이 100%를 초과할 수 없습니다.", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;

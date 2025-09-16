@@ -14,6 +14,7 @@ import com.rebra.util.AccountEncryptionUtil;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -66,7 +67,7 @@ public class StockServiceImpl implements StockService {
             DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
             kisApiComponent.ensureUserCredentials(userId, account.getId(), account.getAccountType(), credentials);
 
-            InquireDailyItemchartpriceResult kisResult = kisApiComponent.getStockChartData(
+            Map<String, Object> kisResult = kisApiComponent.getStockChartData(
                     userId, account.getId(), account.getAccountType(),
                     stockCode, startDate, endDate, periodType
             );
@@ -96,40 +97,49 @@ public class StockServiceImpl implements StockService {
         }
     }
 
-    private StockChartResponse buildStockChartResponse(String stockCode, InquireDailyItemchartpriceResult kisResult,
+    private StockChartResponse buildStockChartResponse(String stockCode, Map<String, Object> kisResult,
                                                        String startDate, String endDate, String periodType) {
         List<StockChartResponse.ChartDataPoint> chartData = new ArrayList<>();
         StockChartResponse.StockSummary summary = null;
 
-        if (kisResult != null && kisResult.getOutput2() != null) {
-            InquireDailyItemchartpriceResult.Output2[] output2Array = kisResult.getOutput2();
+        if (kisResult != null && kisResult.containsKey("output2")) {
+            InquireDailyItemchartpriceResult.Output2[] output2 = (InquireDailyItemchartpriceResult.Output2[]) kisResult.get("output2");
 
-            for (InquireDailyItemchartpriceResult.Output2 item : output2Array) {
+            for (InquireDailyItemchartpriceResult.Output2 item : output2) {
                 chartData.add(StockChartResponse.ChartDataPoint.builder()
-                        .tradingDate(item.getStckBsopDate())
-                        .openPrice(item.getStckOprc())
-                        .highPrice(item.getStckHgpr())
-                        .lowPrice(item.getStckLwpr())
-                        .closePrice(item.getStckClpr())
-                        .volume(item.getAcmlVol())
-                        .tradingValue(item.getAcmlTrPbmn())
-                        .priceChange(item.getPrdyVrss())
-                        .changeSign(item.getPrdyVrssSign())
-                        .changeRate(item.getPrttRate())
+                        .tradingDate(item.getStckBsopDate())      // 주식 영업일자
+                        .openPrice(item.getStckOprc())             // 주식 시가
+                        .highPrice(item.getStckHgpr())             // 주식 최고가
+                        .lowPrice(item.getStckLwpr())              // 주식 최저가
+                        .closePrice(item.getStckClpr())            // 주식 종가
+                        .volume(item.getAcmlVol())                 // 누적 거래량
+                        .tradingValue(item.getAcmlTrPbmn())        // 누적 거래대금
+                        .priceChange(item.getPrdyVrss())           // 전일 대비
+                        .changeSign(item.getPrdyVrssSign())        // 전일 대비 부호
+                        // changeRate는 각 포인트마다 계산하거나 Output1에서 가져와야 함
                         .build());
             }
 
-            if (kisResult.getOutput1() != null) {
-                InquireDailyItemchartpriceResult.Output1 output1 = kisResult.getOutput1();
+            if (kisResult.containsKey("output1")) {
+                InquireDailyItemchartpriceResult.Output1 output1 = (InquireDailyItemchartpriceResult.Output1) kisResult.get("output1");
                 summary = StockChartResponse.StockSummary.builder()
-                        .currentPrice(output1.getStckPrpr())
-                        .priceChange(output1.getPrdyVrss())
-                        .changeRate(output1.getPrdyCtrt())
-                        .changeSign(output1.getPrdyVrssSign())
-                        .volume(output1.getAcmlVol())
-                        .marketCap(output1.getHtsAvls())
-                        .per(output1.getPer())
-                        .pbr(output1.getPbr())
+                        .currentPrice(output1.getStckPrpr())         // 주식 현재가
+                        .priceChange(output1.getPrdyVrss())          // 전일 대비
+                        .changeRate(output1.getPrdyCtrt())           // 전일 대비율
+                        .changeSign(output1.getPrdyVrssSign())       // 전일 대비 부호
+                        .volume(output1.getAcmlVol())                // 누적 거래량
+                        .marketCap(output1.getHtsAvls())             // HTS 시가총액
+                        .per(output1.getPer())                       // PER
+                        .pbr(output1.getPbr())                       // PBR
+                        // 새로 추가된 필드들 활용
+                        .previousClosePrice(output1.getStckPrdyClpr()) // 전일 종가
+                        .upperLimit(output1.getStckMxpr())             // 상한가
+                        .lowerLimit(output1.getStckLlam())             // 하한가
+                        .askPrice(output1.getAskp())                   // 매도호가
+                        .bidPrice(output1.getBidp())                   // 매수호가
+                        .eps(output1.getEps())                         // EPS
+                        .listedShares(output1.getLstnStcn())           // 상장주수
+                        .capital(output1.getCpfn())                    // 자본금
                         .build();
             }
         }
