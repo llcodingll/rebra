@@ -135,8 +135,6 @@ public class StockServiceImpl implements StockService {
         }
 
         return StockChartResponse.builder()
-                .stockCode(stockCode)
-                .stockName(null) // 프론트엔드에서 관리하므로 null로 설정
                 .periodType(periodType)
                 .periodDescription(StockChartResponse.PeriodType.fromCode(periodType).getDescription())
                 .startDate(startDate)
