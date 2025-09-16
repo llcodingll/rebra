@@ -211,12 +211,19 @@ public class KisApiComponent {
 
     /**
      * 등록된 사용자 Credentials로 잔고 조회
+     * ensureUserCredentials()를 통해 Credentials가 없으면 자동으로 등록
      */
-    public InquireBalanceResult getUserBalance(Long userId, Long accountId, AccountType accountType) {
+    public InquireBalanceResult getUserBalance(Long userId, Long accountId, AccountType accountType, DecryptedAccountCredentials credentials) {
         try {
+            log.info("사용자 잔고 조회 시작 - 사용자ID: {}, 계좌ID: {}, 계좌타입: {}", userId, accountId, accountType);
+
+            // Credentials가 Config에 없으면 자동으로 등록
+            ensureUserCredentials(userId, accountId, accountType, credentials);
+
             String credentialsName = getUserCredentialsName(userId, accountId);
             if (credentialsName == null) {
-                throw new RuntimeException("등록된 Credentials를 찾을 수 없음");
+                log.error("ensureUserCredentials 후에도 Credentials를 찾을 수 없음 - 사용자ID: {}, 계좌ID: {}", userId, accountId);
+                throw new RuntimeException("Credentials 등록 실패");
             }
 
             KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
@@ -229,12 +236,11 @@ public class KisApiComponent {
 
             InquireBalanceResult result = client.execute(req, credentialsName);
 
-            log.info("사용자 잔고 조회 완료 - 사용자ID: {}, 계좌ID: {}", userId, accountId);
             return result;
         } catch (Exception e) {
             log.error("사용자 잔고 조회 실패 - 사용자ID: {}, 계좌ID: {}, 오류: {}",
                     userId, accountId, e.getMessage(), e);
-            throw new RuntimeException("사용자 잔고 조회 실패", e);
+            throw new RuntimeException("사용자 잔고 조회 실패: " + e.getMessage(), e);
         }
     }
 

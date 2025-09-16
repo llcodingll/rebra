@@ -12,19 +12,14 @@ import org.springframework.stereotype.Repository;
 public interface AccountRepository extends JpaRepository<Account, Long> {
 
     /**
-     * 사용자별 활성 계좌 목록 조회
-     */
-    List<Account> findByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(Long userId);
-
-    /**
-     * 삭제되지 않은 특정 계좌 조회
-     */
-    boolean existsByAccountNumberHashAndIsDeletedFalse(String accountNumberHash);
-
-    /**
-     * 사용자별 모든 계좌 목록 조회 (비활성 포함)
+     * 사용자별 계좌 목록 조회
      */
     List<Account> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    /**
+     * 계좌번호 해시로 계좌 존재 여부 확인
+     */
+    boolean existsByAccountNumberHash(String accountNumberHash);
 
     /**
      * 사용자의 특정 계좌 조회 (소유자 검증 포함)
@@ -32,34 +27,30 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByIdAndUserId(Long id, Long userId);
 
     /**
-     * 사용자의 활성 계좌 조회 (소유자 검증 포함)
+     * 사용자별 계좌 개수 조회
      */
-    Optional<Account> findByIdAndUserIdAndIsDeletedFalse(Long id, Long userId);
+    long countByUserId(Long userId);
 
     /**
-     * 사용자별 활성 계좌 개수 조회
+     * 사용자별 계좌 목록 조회
      */
-    long countByUserIdAndIsDeletedFalse(Long userId);
-
-    /**
-     * 계좌번호 중복 확인 (동일 사용자 내에서) 암호화된 계좌번호로 저장되므로 복호화 후 비교는 서비스 레이어에서 처리
-     */
-    List<Account> findByUserIdAndIsDeletedFalse(Long userId);
+    List<Account> findByUserId(Long userId);
 
     /**
      * 브로커별 계좌 개수 조회
      */
-    long countByUserIdAndBrokerNameAndIsDeletedFalse(Long userId, String brokerName);
+    long countByUserIdAndBrokerName(Long userId, String brokerName);
 
     /**
-     * 사용자의 첫 번째 활성 계좌 조회 (기본 계좌로 사용)
+     * 사용자의 첫 번째 계좌 조회 (기본 계좌로 사용)
      */
-    Optional<Account> findTopByUserIdAndIsDeletedFalseOrderByCreatedAtAsc(Long userId);
+    Optional<Account> findTopByUserIdOrderByCreatedAtAsc(Long userId);
 
     /**
-     * 계좌번호 해시 기반 중복 확인
+     * 사용자의 첫 번째 활성 계좌 조회 (연결된 계좌만)
      */
-    boolean existsByAccountNumberHash(String accountNumberHash);
+    Optional<Account> findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(Long userId, boolean isConnected);
+
 
     /**
      * 계좌번호 해시로 계좌 조회
@@ -73,7 +64,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     @Query(value = """
         SELECT * FROM account a
         WHERE a.user_id = :userId
-          AND a.is_deleted = false
           AND NOT EXISTS (
               SELECT 1 FROM portfolio p
               WHERE p.account_id = a.id

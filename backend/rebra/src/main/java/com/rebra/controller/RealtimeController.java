@@ -52,8 +52,8 @@ public class RealtimeController {
             reconnectionService.updateSessionActivity(sessionId);
 
             // 사용자의 첫 번째 활성 계좌 정보 조회
-            Account account = accountRepository.findTopByUserIdAndIsDeletedFalseOrderByCreatedAtAsc(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("활성화된 계좌을 찾을 수 없습니다."));
+            Account account = accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true)
+                    .orElseThrow(() -> new IllegalArgumentException("활성화된 계좌를 찾을 수 없습니다."));
 
             // KIS WebSocket 구독 시작
             kisRealtimeService.startPriceSubscription(account, stockCode, sessionId);
@@ -96,8 +96,8 @@ public class RealtimeController {
             reconnectionService.updateSessionActivity(sessionId);
 
             // 사용자의 첫 번째 활성 계좌 정보 조회
-            Account account = accountRepository.findTopByUserIdAndIsDeletedFalseOrderByCreatedAtAsc(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("활성화된 계좌을 찾을 수 없습니다."));
+            Account account = accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true)
+                    .orElseThrow(() -> new IllegalArgumentException("활성화된 계좌를 찾을 수 없습니다."));
 
             // KIS WebSocket 구독 시작
             kisRealtimeService.startOrderbookSubscription(account, stockCode, sessionId);

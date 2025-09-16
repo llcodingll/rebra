@@ -10,11 +10,11 @@ import com.rebra.dto.response.AccountRegisterResponse;
 import com.rebra.dto.response.AccountVerifyResponse;
 import com.rebra.component.KisApiComponent;
 import com.rebra.entity.Account;
-import com.rebra.entity.ConnectionStatus;
 import com.rebra.entity.User;
 import com.rebra.exception.account.AccountException;
 import com.rebra.exception.user.UserException;
 import com.rebra.repository.AccountRepository;
+import com.rebra.repository.PortfolioRepository;
 import com.rebra.repository.UserRepository;
 import com.rebra.util.AccountConverter;
 import com.rebra.util.AccountEncryptionUtil;
@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
+    private final PortfolioRepository portfolioRepository;
     private final UserRepository userRepository;
     private final KisApiComponent kisApiComponent;
 
@@ -72,32 +73,10 @@ public class AccountServiceImpl implements AccountService {
             .orElseThrow(() -> UserException.userNotFound());
 
         String accountNumberHash = AccountEncryptionUtil.generateAccountNumberHash(request.getAccountNumber());
-        Optional<Account> existing = accountRepository.findByAccountNumberHash(accountNumberHash);
 
-        if(existing.isPresent()) {
-            if(!existing.get().getIsDeleted()) {
-                throw AccountException.duplicateAccount();
-            }
-
-            existing.get().create();
-
-            kisApiComponent.verifyAccount(request.getAccountNumber(), request.getAppKey(), request.getAppSecret(), request.getAccountType());
-
-            kisApiComponent.addUserCredentials(
-                    userId,
-                    existing.get().getId(),
-                    request.getAccountNumber(),
-                    request.getAppKey(),
-                    request.getAppSecret(),
-                    request.getAccountType()
-            );
-
-            return AccountRegisterResponse.success(
-                    existing.get().getId(),
-                    AccountEncryptionUtil.maskAccountNumber(request.getAccountNumber()),
-                    existing.get().getAccountType(),
-                    existing.get().getCreatedAt()
-            );
+        // 중복 계좌 확인 (Hard Delete이므로 존재하면 중복)
+        if (accountRepository.existsByAccountNumberHash(accountNumberHash)) {
+            throw AccountException.duplicateAccount();
         }
 
         try {
@@ -161,7 +140,7 @@ public class AccountServiceImpl implements AccountService {
     public AccountDetailResponse getAccountDetail(Long userId, Long accountId) {
         log.info("계좌 상세 조회 - 사용자ID: {}, 계좌ID: {}", userId, accountId);
 
-        Account account = accountRepository.findByIdAndUserIdAndIsDeletedFalse(accountId, userId)
+        Account account = accountRepository.findByIdAndUserId(accountId, userId)
             .orElseThrow(() -> AccountException.accountNotFound());
 
         return AccountConverter.toAccountDetail(account);
@@ -177,14 +156,17 @@ public class AccountServiceImpl implements AccountService {
     public void deleteAccount(Long userId, Long accountId) {
         log.info("계좌 삭제 시작 - 사용자ID: {}, 계좌ID: {}", userId, accountId);
 
-        Account account = accountRepository.findByIdAndUserIdAndIsDeletedFalse(accountId, userId)
+        Account account = accountRepository.findByIdAndUserId(accountId, userId)
             .orElseThrow(() -> AccountException.accountNotFound());
 
-        // 계좌 삭제 (soft delete)
-        account.delete();
-        
+        // 연관된 포트폴리오가 있다면 먼저 삭제
+        portfolioRepository.deleteByAccountId(accountId);
+
         // KIS API Component에서 사용자 Credentials 제거
         kisApiComponent.removeUserCredentials(userId, accountId, account.getAccountType());
+
+        // 계좌 삭제 (hard delete)
+        accountRepository.delete(account);
 
         log.info("계좌 삭제 완료 - 사용자ID: {}, 계좌ID: {}", userId, accountId);
     }
@@ -204,15 +186,15 @@ public class AccountServiceImpl implements AccountService {
      * 사용자별 계좌 조회 (공통 로직)
      */
     private Account findAccountByUserAndId(Long userId, Long accountId) {
-        return accountRepository.findByIdAndUserIdAndIsDeletedFalse(accountId, userId)
+        return accountRepository.findByIdAndUserId(accountId, userId)
             .orElseThrow(() -> AccountException.accountNotFound());
     }
 
     /**
      * 연결 상태 업데이트 및 저장 (공통 로직)
      */
-    private void updateConnectionStatusAndSave(Account account, ConnectionStatus status) {
-        account.updateConnectionStatus(status);
+    private void updateIsConnectedAndSave(Account account, boolean isConnected) {
+        account.updateIsConnected(isConnected);
     }
 
     /**
@@ -234,11 +216,11 @@ public class AccountServiceImpl implements AccountService {
 
             kisApiComponent.verifyAccount(credentials, account.getAccountType());
 
-            updateConnectionStatusAndSave(account, ConnectionStatus.CONNECTED);
+            updateIsConnectedAndSave(account, true);
             return AccountVerifyResponse.success(account.getAccountType());
 
         } catch (Exception e) {
-            updateConnectionStatusAndSave(account, ConnectionStatus.FAILED);
+            updateIsConnectedAndSave(account, false);
             throw AccountException.kisConnectionFailed();
         }
     }
