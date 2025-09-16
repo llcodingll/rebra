@@ -569,7 +569,7 @@ public class KisApiComponent {
             // 실제 KIS 라이브러리의 InquireDailyItemchartpriceApi 사용
             InquireDailyItemchartpriceApi chartApi = new InquireDailyItemchartpriceApi();
 
-            // KIS API 파라미터 설정 (MCP에서 확인한 정확한 파라미터명)
+            // KIS API 파라미터 설정
             chartApi.setFidCondMrktDivCode("J");      // J:KRX, NX:NXT, UN:통합
             chartApi.setFidInputIscd(stockCode);       // 종목코드 (ex 005930)
             chartApi.setFidInputDate1(startDate);      // 조회 시작일자
@@ -579,6 +579,11 @@ public class KisApiComponent {
 
             // TR ID 설정 (실전/모의 동일)
             chartApi.setTrId("FHKST03010100");
+            // P:개인, B:법인
+            chartApi.setCusttype("P");
+
+            log.info("KIS 차트 API 파라미터 설정 완료 - StockCode: {}, StartDate: {}, EndDate: {}, Period: {}, AccountType: {}",
+                    stockCode, startDate, endDate, periodType, accountType);
 
             // KIS API 실행 (기존 패턴과 동일)
             InquireDailyItemchartpriceResult result = client.execute(chartApi, credentialsName);
@@ -601,8 +606,8 @@ public class KisApiComponent {
 
                 return responseData;
             } else {
-                log.warn("KIS API 응답이 null, 기본 데이터 반환 - StockCode: {}", stockCode);
-                return getDefaultChartData(stockCode, startDate, endDate, periodType);
+                log.error("KIS API 응답이 null - UserId: {}, StockCode: {}, Period: {}", userId, stockCode, periodType);
+                throw new RuntimeException("KIS API에서 차트 데이터를 가져올 수 없습니다. 잠시 후 다시 시도해주세요.");
             }
 
         } catch (Exception e) {
@@ -614,55 +619,5 @@ public class KisApiComponent {
         }
     }
 
-    /**
-     * 차트 API 개발/테스트용 기본 데이터
-     */
-    private Map<String, Object> getDefaultChartData(String stockCode, String startDate, String endDate,
-                                                    String periodType) {
-        Map<String, Object> result = new ConcurrentHashMap<>();
-
-        // KIS API 응답 구조에 맞는 기본 데이터
-        Map<String, String> output1 = new ConcurrentHashMap<>();
-        output1.put("stck_prpr", "71000");         // 현재가
-        output1.put("prdy_vrss", "1000");          // 전일대비
-        output1.put("prdy_ctrt", "1.43");          // 전일대비율
-        output1.put("prdy_vrss_sign", "2");        // 전일대비부호
-        output1.put("acml_vol", "15000000");       // 누적거래량
-        output1.put("hts_avls", "425000000000000"); // 시가총액
-        output1.put("per", "12.5");                // PER
-        output1.put("pbr", "0.8");                 // PBR
-
-        List<Map<String, String>> output2 = new ArrayList<>();
-
-        // 여러 날짜의 차트 데이터 생성 (기간별로 다르게)
-        int dataPoints = "D".equals(periodType) ? 30 : "W".equals(periodType) ? 12 : "M".equals(periodType) ? 6 : 3;
-
-        for (int i = 0; i < dataPoints; i++) {
-            Map<String, String> chartPoint = new ConcurrentHashMap<>();
-
-            // 가상의 가격 변동 (70000 기준으로 ±5% 범위)
-            int basePrice = 70000;
-            int variation = (int) (basePrice * 0.05 * (Math.random() - 0.5) * 2);
-            int dayPrice = basePrice + variation;
-
-            chartPoint.put("stck_bsop_date", String.format("2024121%d", Math.max(1, 15 - i)));
-            chartPoint.put("stck_oprc", String.valueOf(dayPrice - 500));       // 시가
-            chartPoint.put("stck_hgpr", String.valueOf(dayPrice + 1000));      // 고가
-            chartPoint.put("stck_lwpr", String.valueOf(dayPrice - 1000));      // 저가
-            chartPoint.put("stck_clpr", String.valueOf(dayPrice));             // 종가
-            chartPoint.put("acml_vol", String.valueOf(15000000 + i * 1000000)); // 거래량
-            chartPoint.put("acml_tr_pbmn", String.valueOf((long) dayPrice * (15000000 + i * 1000000))); // 거래대금
-            chartPoint.put("prdy_vrss", String.valueOf(variation));            // 전일대비
-            chartPoint.put("prdy_vrss_sign", variation >= 0 ? "2" : "5");      // 전일대비부호
-            chartPoint.put("prdy_ctrt", String.format("%.2f", (double) variation / basePrice * 100)); // 전일대비율
-
-            output2.add(chartPoint);
-        }
-
-        result.put("output1", output1);
-        result.put("output2", output2);
-
-        return result;
-    }
 
 }

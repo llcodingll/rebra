@@ -247,7 +247,7 @@ class StockServiceImplChartTest {
         assertThatThrownBy(() -> stockService.getStockChartData(
                 stockCode, startDate, endDate, "D", userId))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("차트 데이터 조회에 실패했습니다");
+                .hasMessageContaining("활성화된 계좌를 찾을 수 없습니다");
 
         // Mock 호출 검증
         then(stockRepository).should().findByStockCodeAndIsActiveTrue(stockCode);
@@ -285,7 +285,7 @@ class StockServiceImplChartTest {
             assertThatThrownBy(() -> stockService.getStockChartData(
                     stockCode, startDate, endDate, periodType, userId))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("차트 데이터 조회에 실패했습니다");
+                    .hasMessageContaining("KIS API 연동에 실패했습니다");
 
             // Mock 호출 검증
             then(stockRepository).should().findByStockCodeAndIsActiveTrue(stockCode);
@@ -320,7 +320,7 @@ class StockServiceImplChartTest {
             assertThatThrownBy(() -> stockService.getStockChartData(
                     stockCode, startDate, endDate, periodType, userId))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("차트 데이터 조회에 실패했습니다");
+                    .hasMessageContaining("계좌 정보 복호화에 실패했습니다");
 
             // Mock 호출 검증
             then(stockRepository).should().findByStockCodeAndIsActiveTrue(stockCode);

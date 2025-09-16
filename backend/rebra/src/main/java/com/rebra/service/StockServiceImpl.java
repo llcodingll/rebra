@@ -115,8 +115,22 @@ public class StockServiceImpl implements StockService {
             return buildStockChartResponse(stock, kisResult, startDate, endDate, periodType);
 
         } catch (Exception e) {
-            log.error("차트 데이터 조회 실패 - UserId: {}, StockCode: {}, Period: {}", userId, stockCode, periodType, e);
-            throw new RuntimeException("차트 데이터 조회에 실패했습니다.", e);
+            log.error("차트 데이터 조회 실패 - UserId: {}, StockCode: {}, Period: {}, ErrorType: {}, Message: {}",
+                    userId, stockCode, periodType, e.getClass().getSimpleName(), e.getMessage(), e);
+
+            // 구체적인 에러 메시지 제공
+            String detailedMessage = "차트 데이터 조회에 실패했습니다";
+            if (e.getMessage() != null) {
+                if (e.getMessage().contains("활성화된 계좌")) {
+                    detailedMessage = "활성화된 계좌를 찾을 수 없습니다. 계좌를 연결해주세요.";
+                } else if (e.getMessage().contains("복호화")) {
+                    detailedMessage = "계좌 정보 복호화에 실패했습니다.";
+                } else if (e.getMessage().contains("KIS")) {
+                    detailedMessage = "KIS API 연동에 실패했습니다. 잠시 후 다시 시도해주세요.";
+                }
+            }
+
+            throw new RuntimeException(detailedMessage, e);
         }
     }
 
