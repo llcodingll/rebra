@@ -5,9 +5,9 @@ export default function NewsWidget() {
   return (
     <div className={styles.newsSidebar}>
       <div className={styles.newsHeader}>
-        <h3>주요 뉴스</h3>
+        <h3>추천 뉴스</h3>
       </div>
-      
+
       <div className={styles.newsList}>
         {simpleNewsData.map((news, index) => (
           <div key={index} className={styles.newsItem}>

@@ -9,7 +9,7 @@
 
 .header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   padding: 12px 16px;
   border-bottom: 1px solid #e5e7eb;
@@ -17,24 +17,35 @@
   min-height: 50px;
 }
 
-.stockInfo {
+.timeSelector {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
+  gap: 2px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 2px;
+  background: white;
 }
 
-.label {
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.priceData {
+.timeButton {
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
   font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.timeButton:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.timeButton.active {
+  background: #3b82f6;
+  color: white;
 }
 
 .positive {
@@ -52,30 +63,56 @@
 .chartContainer {
   flex: 1;
   width: 100%;
-  min-height: 350px;
+  display: flex;
+  flex-direction: column;
+  gap: 0; /* 차트 간 간격 제거 */
+  padding: 8px;
   background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.priceChart {
+  flex: 3;
+  min-height: 280px;
+  background: white;
+  border: none; /* 개별 테두리 제거 */
+  border-bottom: 1px solid #f0f0f0; /* 구분선만 */
+  pointer-events: auto; /* 마우스 이벤트 허용 */
+  overflow: visible; /* 크로스헤어 표시 허용 */
+  position: relative; /* 크로스헤어 정위치 */
+}
+
+.volumeChart {
+  flex: 1;
+  min-height: 120px;
+  background: white;
+  border: none; /* 개별 테두리 제거 */
+  pointer-events: auto; /* 마우스 이벤트 허용 */
+  overflow: visible; /* 크로스헤어 표시 허용 */
+  position: relative; /* 크로스헤어 정위치 */
 }
 
 @media (max-width: 768px) {
   .header {
     padding: 8px 12px;
   }
-  
-  .stockInfo {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-  
-  .label {
-    font-size: 11px;
-  }
-  
-  .priceData {
+
+  .timeButton {
+    padding: 4px 8px;
     font-size: 12px;
   }
-  
+
   .chartContainer {
-    min-height: 300px;
+    gap: 0; /* 모바일에서도 간격 제거 */
+    padding: 6px;
+  }
+
+  .priceChart {
+    min-height: 200px;
+  }
+
+  .volumeChart {
+    min-height: 80px;
   }
 }

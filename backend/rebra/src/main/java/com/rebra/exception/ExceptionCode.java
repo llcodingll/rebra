@@ -46,10 +46,42 @@ public enum ExceptionCode {
     STOCK_CODE_NOT_FOUND(10002, "해당 종목 코드로 주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     STOCK_NAME_NOT_FOUND(10003, "해당 종목명으로 주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
+    // ==== Account 관련 ====
+    ACCOUNT_NOT_FOUND(11001, "계좌를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    ACCOUNT_ACCESS_DENIED(11002, "계좌 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    DUPLICATE_ACCOUNT(11003, "이미 등록된 계좌입니다.", HttpStatus.CONFLICT),
+    ACCOUNT_REGISTRATION_FAILED(11004, "계좌 등록에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    ACCOUNT_LIMIT_EXCEEDED(11005, "계좌 등록 한도를 초과했습니다.", HttpStatus.BAD_REQUEST),
+    ACCOUNT_VERIFICATION_FAILED(11006, "계좌 인증에 실패했습니다.", HttpStatus.BAD_REQUEST),
+    INVALID_ACCOUNT_CREDENTIALS(11007, "잘못된 계좌 인증 정보입니다.", HttpStatus.BAD_REQUEST),
+    KIS_CONNECTION_FAILED(11008, "KIS API 연결에 실패했습니다.", HttpStatus.BAD_GATEWAY),
+    ACCOUNT_ENCRYPTION_FAILED(11009, "계좌 정보 암호화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    ACCOUNT_DECRYPTION_FAILED(11010, "계좌 정보 복호화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    ACCOUNT_DELETION_FAILED(11011, "계좌 삭제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    ACCOUNT_ALREADY_INACTIVE(11012, "이미 비활성화된 계좌입니다.", HttpStatus.BAD_REQUEST),
+
+    // ==== Portfolio 관련 ====
+    PORTFOLIO_NOT_FOUND(12001, "포트폴리오를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    PORTFOLIO_ACCESS_DENIED(12002, "포트폴리오 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    PORTFOLIO_ACCOUNT_NOT_FOUND(12003, "포트폴리오에 연결된 계좌를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    PORTFOLIO_CREATION_FAILED(12004, "포트폴리오 생성에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    PORTFOLIO_UPDATE_FAILED(12005, "포트폴리오 수정에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    PORTFOLIO_DELETE_FAILED(12006, "포트폴리오 삭제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    PORTFOLIO_LIMIT_EXCEEDED(12007, "포트폴리오 생성 한도를 초과했습니다.", HttpStatus.BAD_REQUEST),
+    PORTFOLIO_INVALID_REQUEST(12008, "잘못된 포트폴리오 요청입니다.", HttpStatus.BAD_REQUEST),
+
+    // ==== Trading 관련 ====
+    TRADING_ORDER_FAILED(13001, "주식 주문에 실패했습니다.", HttpStatus.BAD_REQUEST),
+    KIS_API_ERROR(13002, "KIS API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
+    INSUFFICIENT_BALANCE(13003, "잔고가 부족합니다.", HttpStatus.BAD_REQUEST),
+    INVALID_ORDER_QUANTITY(13004, "잘못된 주문 수량입니다.", HttpStatus.BAD_REQUEST),
+    INVALID_ORDER_PRICE(13005, "잘못된 주문 가격입니다.", HttpStatus.BAD_REQUEST),
+    TRADING_HOURS_VIOLATION(13006, "거래 시간이 아닙니다.", HttpStatus.BAD_REQUEST),
+
     // ==== External API 관련 ====
-    EXTERNAL_API_ERROR(11001, "외부 API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
-    EXTERNAL_API_TIMEOUT(11002, "외부 API 응답 시간이 초과되었습니다.", HttpStatus.GATEWAY_TIMEOUT),
-    EXTERNAL_API_SERVICE_UNAVAILABLE(11003, "외부 API 서비스를 사용할 수 없습니다.", HttpStatus.SERVICE_UNAVAILABLE);
+    EXTERNAL_API_ERROR(14001, "외부 API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
+    EXTERNAL_API_TIMEOUT(14002, "외부 API 응답 시간이 초과되었습니다.", HttpStatus.GATEWAY_TIMEOUT),
+    EXTERNAL_API_SERVICE_UNAVAILABLE(14003, "외부 API 서비스를 사용할 수 없습니다.", HttpStatus.SERVICE_UNAVAILABLE);
 
     private final int code;
     private final String message;

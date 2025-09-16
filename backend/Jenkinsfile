@@ -16,6 +16,8 @@ environment {
         DB_USERNAME = credentials('postgresql-username')
         DB_PASSWORD = credentials('postgresql-password')  // Jenkins Secret 사용
 
+        KAFKA_PROCESS_ROLES = "broker,controller"
+
         // GMS API 설정 - Jenkins Credentials에서 보안 관리
         // GMS_API_KEY = credentials('gms-api-key')  // 임시 주석 처리 - credential 미등록
         GMS_API_KEY = "temp-gms-api-key"  // 임시값
@@ -31,6 +33,8 @@ environment {
         KAKAO_CLIENT_SECRET = credentials('kakao-client-secret')  // Jenkins Secret 사용
         KAKAO_REDIRECT_URL = "https://rebra.site/oauth2/authorization/kakao/callback"
         KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token"
+
+        SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER = credentials('security-encryption-account-hash-pepper')
 
         // 배포 환경 설정
         SPRING_PROFILES_ACTIVE = "prod"

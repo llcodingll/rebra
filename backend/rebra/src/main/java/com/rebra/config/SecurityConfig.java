@@ -52,7 +52,13 @@ public class SecurityConfig {
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/api-docs/**",
-            "/v3/api-docs/**"
+            "/v3/api-docs/**",
+            "/realtime-test.html",
+            "/static/**",
+            "/*.html",
+            "/*.css",
+            "/*.js",
+            "/*.ico"
     };
 
     private static final long HSTS_MAX_AGE_IN_SECONDS = 31536000L;
@@ -73,7 +79,7 @@ public class SecurityConfig {
                 // 보안 헤더 설정
                 .headers(headers -> headers
                         .contentSecurityPolicy(csp ->
-                                csp.policyDirectives("default-src 'self'"))
+                                csp.policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:"))
                         // HSTS 정책 적용
                         .httpStrictTransportSecurity(hsts ->
                                 hsts.includeSubDomains(true).maxAgeInSeconds(HSTS_MAX_AGE_IN_SECONDS)) // HSTS 1년
@@ -92,14 +98,24 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // 개발 단계: 모든 origin 허용
-         List<String> allowedOrigins = Arrays.asList(allowedOriginsString.split(","));
-         configuration.setAllowedOrigins(allowedOrigins);
-        configuration.addAllowedOriginPattern("*");
+
+        // allowedOriginsString에서 origin 목록 파싱
+        List<String> allowedOrigins = Arrays.asList(allowedOriginsString.split(","));
+        configuration.setAllowedOrigins(allowedOrigins);
+
+        // 카카오 인증 origin 추가
         configuration.addAllowedOrigin("https://kauth.kakao.com");
+
+        // 개발환경에서만 모든 origin 패턴 허용 (credentials가 false일 때만)
+        if (allowedOrigins.contains("*")) {
+            configuration.setAllowCredentials(false);
+            configuration.addAllowedOriginPattern("*");
+        } else {
+            configuration.setAllowCredentials(true);
+        }
+
         configuration.setAllowedMethods(ALLOWED_METHODS);
         configuration.setAllowedHeaders(ALLOWED_HEADERS);
-        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

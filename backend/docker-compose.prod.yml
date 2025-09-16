@@ -20,7 +20,10 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
     networks:
@@ -28,31 +31,48 @@ services:
     restart: unless-stopped
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.5.0
     hostname: kafka
     ports:
       - "9092:9092"
+      - "9093:9093"
+      - "29092:29092"
+      - "29093:29093"
     environment:
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
-    depends_on:
-      - zookeeper
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+    volumes:
+      - kafka_data:/tmp/kraft-combined-logs
+      - ./config/server.properties:/etc/kafka/server.properties
     networks:
       - rebra-network
     restart: unless-stopped
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    ports:
-      - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - rebra-network
-    restart: unless-stopped
+    command: >
+      sh -c "
+      if [ ! -f /tmp/kraft-combined-logs/meta.properties ]; then
+        echo 'KRaft 클러스터 초기화 중...'
+        KAFKA_CLUSTER_ID=\$$(kafka-storage random-uuid)
+        echo \"생성된 Cluster ID: \$$KAFKA_CLUSTER_ID\"
+        kafka-storage format -t \$$KAFKA_CLUSTER_ID -c /etc/kafka/server.properties
+        echo 'KRaft 초기화 완료'
+      else
+        echo 'KRaft 클러스터가 이미 초기화되어 있습니다.'
+      fi;
+      exec kafka-server-start /etc/kafka/server.properties
+      "
 
   rebra:
     image: rebra-main:latest
@@ -80,6 +100,7 @@ services:
       - KAKAO_TOKEN_URL=https://kauth.kakao.com/oauth/token
       - GMS_API_KEY=temp-gms-api-key
       - GMS_GPT_URL=https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions
+      - SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER=${SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER}
       - DDL_AUTO=create
     depends_on:
       - postgres
@@ -116,6 +137,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  kafka_data:
 
 networks:
   rebra-network:

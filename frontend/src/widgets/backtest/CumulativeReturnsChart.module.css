@@ -64,102 +64,16 @@
 /* 차트 래퍼 */
 .chartWrapper {
   position: relative;
-  display: flex;
   height: 500px;
+  width: 100%;
 }
 
-/* Y축 */
-.yAxis {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 60px;
+/* Lightweight Charts 컨테이너 */
+.chartContainer {
+  width: 100%;
+  min-width: 800px;
   height: 400px;
   margin-top: 20px;
-  padding-right: 16px;
-}
-
-.yLabel {
-  font-size: 12px;
-  font-weight: 500;
-  color: #6b7280;
-  text-align: right;
-  line-height: 1;
-}
-
-/* 차트 영역 */
-.chartArea {
-  flex: 1;
-  position: relative;
-  height: 440px;
-  margin-top: 20px;
-}
-
-/* 그리드 라인 */
-.gridLines {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 400px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.gridLine {
-  width: 100%;
-  height: 1px;
-  background: #f3f4f6;
-}
-
-.gridLine:first-child {
-  background: #e5e7eb;
-}
-
-/* SVG 차트 */
-.chartSvg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 400px;
-}
-
-.chartLine {
-  transition: stroke-width 0.2s ease;
-}
-
-.chartLine:hover {
-  stroke-width: 4;
-}
-
-.chartPoint {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.chartPoint:hover {
-  r: 8;
-  stroke-width: 3;
-}
-
-/* X축 */
-.xAxis {
-  position: absolute;
-  bottom: -20px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 40px;
-}
-
-.xLabel {
-  font-size: 12px;
-  font-weight: 500;
-  color: #6b7280;
-  text-align: center;
 }
 
 /* 툴팁 */
@@ -218,23 +132,15 @@
   .chartCard {
     padding: 20px;
   }
-  
+
   .chartWrapper {
     height: 400px;
   }
-  
-  .chartArea {
-    height: 340px;
-  }
-  
-  .yAxis {
+
+  .chartContainer {
     height: 300px;
   }
-  
-  .chartSvg {
-    height: 300px;
-  }
-  
+
   .legend {
     flex-direction: column;
     gap: 12px;

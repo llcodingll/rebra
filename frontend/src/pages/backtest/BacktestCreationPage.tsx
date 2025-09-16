@@ -107,8 +107,12 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
   const [selectedPortfolio, setSelectedPortfolio] = useState('');
   const [backtestName, setBacktestName] = useState('');
   const [rebalancingPeriod] = useState('월간');
-  const [startDate, setStartDate] = useState('2023-01');
-  const [endDate, setEndDate] = useState('2024-12');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(mockPortfolio);
 
@@ -169,7 +173,7 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
           endDate={endDate}
           setEndDate={setEndDate}
           onRunBacktest={handleRunBacktest}
-          isRunDisabled={!backtestName || portfolioItems.length === 0}
+          isRunDisabled={!backtestName || !startDate || !endDate || portfolioItems.length === 0}
         />
 
         <div className={styles.contentGrid}>
@@ -179,6 +183,8 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
             filteredStocks={filteredStocks}
             portfolioItems={portfolioItems}
             onAddToPortfolio={handleAddToPortfolio}
+            startDate={startDate}
+            endDate={endDate}
           />
 
           <MyPortfolio

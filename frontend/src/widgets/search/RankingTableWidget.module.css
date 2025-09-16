@@ -44,23 +44,35 @@
 
 .stockTable {
   width: 100%;
-  flex: 1;
-  overflow-y: auto;
+  height: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .tableBody {
   display: flex;
   flex-direction: column;
   flex: 1;
-  overflow: hidden;
+  min-height: 100%;
+  overflow-y: auto;
+  justify-content: flex-start;
+}
+
+.tableBody::after {
+  content: '';
+  flex: 1;
 }
 
 .tableHeader {
   display: grid;
   grid-template-columns: 3fr 2fr 2fr 2fr;
   gap: 20px;
-  padding: 5px 20px 5px 20px;
+  padding: 8px 20px;
   align-items: center;
+  height: clamp(36px, 5.5vh, 48px);
+  flex-shrink: 0;
 }
 
 .headerStock,
@@ -86,18 +98,17 @@
 .stockRow {
   display: grid;
   grid-template-columns: 3fr 2fr 2fr 2fr;
-  gap: 20px;
-  padding: 0px 20px;
-  margin-bottom: 2px;
-  border-radius: 4px;
+  gap: clamp(16px, 2.5vh, 24px);
+  padding: clamp(6px, 1vh, 10px) 20px;
   cursor: pointer;
   transition: background-color 0.2s;
   align-items: center;
-  min-height: 38px;
+  height: clamp(32px, 5.5vh, 54px);
+  flex-shrink: 0;
 }
 
 .stockRow:hover {
-  background: #f8f9fa;
+  background: #eaecee;
 }
 
 .evenRow {
@@ -105,11 +116,11 @@
 }
 
 .evenRow:hover {
-  background: #f0f0f0;
+  background: #eaecee;
 }
 
 .rank {
-  font-size: 14px;
+  font-size: clamp(11px, 1.8vh, 15px);
   font-family: 'Content', 'Noto Sans KR', sans-serif;
   color: #454545;
   font-weight: 500;
@@ -120,12 +131,12 @@
 .stockInfo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: clamp(8px, 1.5vh, 16px);
 }
 
 .favoriteIcon {
-  width: 14px;
-  height: 14px;
+  width: clamp(12px, 2vh, 18px);
+  height: clamp(12px, 2vh, 18px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -133,14 +144,14 @@
 }
 
 .stockName {
-  font-size: 14px;
+  font-size: clamp(12px, 2vh, 16px);
   font-family: 'Content', 'Noto Sans KR', sans-serif;
   font-weight: 500;
   color: black;
 }
 
 .price {
-  font-size: 14px;
+  font-size: clamp(12px, 2vh, 16px);
   font-family: 'Content', 'Noto Sans KR', sans-serif;
   color: black;
   text-align: right;
@@ -148,7 +159,7 @@
 }
 
 .change {
-  font-size: 14px;
+  font-size: clamp(12px, 2vh, 16px);
   font-family: 'Content', 'Noto Sans KR', sans-serif;
   text-align: right;
   width: 100%;
@@ -164,7 +175,7 @@
 }
 
 .volume {
-  font-size: 14px;
+  font-size: clamp(12px, 2vh, 16px);
   font-family: 'Content', 'Noto Sans KR', sans-serif;
   color: black;
   text-align: right;

@@ -6,7 +6,6 @@ import com.rebra.dto.request.SignupRequest;
 import com.rebra.dto.response.NicknameCheckResponse;
 import com.rebra.dto.response.SignupResponse;
 import com.rebra.dto.response.TokenRefreshResponse;
-import com.rebra.jwt.Token;
 import com.rebra.jwt.TokenProvider;
 import com.rebra.service.SignupService;
 import com.rebra.service.TokenService;

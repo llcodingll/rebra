@@ -37,7 +37,7 @@ public class SwaggerConfig {
                 .info(apiInfo())
                 .servers(List.of(
                         new Server().url("http://localhost:8080").description("Development Server"),
-                        new Server().url("https://api.rebra.com").description("Production Server")
+                        new Server().url("https://rebra.site").description("Production Server")
                 ))
                 .addSecurityItem(new SecurityRequirement().addList("JWT"))
                 .components(new Components()

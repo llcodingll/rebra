@@ -7,7 +7,6 @@
 }
 
 .stockSearchCard .cardHeader {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .cardHeader {
@@ -170,6 +169,36 @@
 .addIcon {
   width: 16px;
   height: 16px;
+}
+
+.disabledMessage {
+  color: #717182;
+  font-size: 13px;
+  margin: 8px 0 0 0;
+  font-weight: normal;
+}
+
+.searchInput.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stockList.disabled {
+  opacity: 0.5;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: #717182;
+  font-size: 14px;
+  background: #f8f9fb;
+  border-radius: 12px;
+  margin: 0 20px 20px 20px;
+}
+
+.emptyState p {
+  margin: 0;
 }
 
 /* Responsive Design */

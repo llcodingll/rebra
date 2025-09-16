@@ -1,0 +1,64 @@
+package com.rebra.repository;
+
+import com.rebra.entity.Portfolio;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
+
+    /**
+     * 사용자별 포트폴리오 목록 조회
+     */
+    List<Portfolio> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    /**
+     * 특정 계좌의 포트폴리오 조회
+     */
+    Optional<Portfolio> findByAccountId(Long accountId);
+
+    /**
+     * 사용자의 특정 포트폴리오 조회 (소유자 검증 포함)
+     */
+    Optional<Portfolio> findByIdAndUserId(Long id, Long userId);
+
+    /**
+     * 사용자별 포트폴리오 개수 조회
+     */
+    long countByUserId(Long userId);
+
+    /**
+     * 자동 리밸런싱이 활성화된 포트폴리오 목록 조회
+     */
+    List<Portfolio> findByAutoRebalancingTrueOrderByNextRebalanceDateAsc();
+
+    /**
+     * 사용자별 자동 리밸런싱 활성화된 포트폴리오 개수
+     */
+    long countByUserIdAndAutoRebalancingTrue(Long userId);
+
+    /**
+     * 계좌 ID로 포트폴리오 존재 여부 확인
+     */
+    boolean existsByAccountId(Long accountId);
+
+    /**
+     * 사용자의 최근 생성된 포트폴리오 조회
+     */
+    Optional<Portfolio> findTopByUserIdOrderByCreatedAtDesc(Long userId);
+
+    /**
+     * 리밸런싱 전략별 포트폴리오 조회
+     */
+    @Query("SELECT p FROM Portfolio p WHERE p.user.id = :userId AND p.rebalancingStrategy = :strategy ORDER BY p.createdAt DESC")
+    List<Portfolio> findByUserIdAndRebalancingStrategy(@Param("userId") Long userId, @Param("strategy") String strategy);
+
+    /**
+     * 계좌 ID로 포트폴리오 삭제
+     */
+    void deleteByAccountId(Long accountId);
+}

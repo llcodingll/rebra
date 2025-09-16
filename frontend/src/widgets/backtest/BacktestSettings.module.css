@@ -54,6 +54,8 @@
   font-size: 14px;
   transition: all 0.2s ease;
   outline: none;
+  box-sizing: border-box;
+  height: 46px;
 }
 
 .input:focus,
@@ -70,13 +72,15 @@
 .fixedValue {
   background: #f8f9fb;
   border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 12px 16px;
   color: #030213;
   font-size: 14px;
   width: 100%;
   display: flex;
   align-items: center;
+  box-sizing: border-box;
+  height: 46px;
 }
 
 .fixedValue span {
@@ -87,19 +91,97 @@
 .dateInput {
   background: #f8f9fb;
   border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 12px 16px;
   color: #030213;
   font-size: 14px;
+  font-family: inherit;
   transition: all 0.2s ease;
   outline: none;
   width: 100%;
+  box-sizing: border-box;
+  height: 46px;
 }
 
 .dateInput:focus {
   border-color: #030213;
   background: white;
   box-shadow: 0 0 0 3px rgba(3, 2, 19, 0.08);
+}
+
+/* date input의 개별 요소들에 대한 색상 통일 */
+.dateInput::-webkit-datetime-edit {
+  color: #030213;
+}
+
+.dateInput::-webkit-datetime-edit-fields-wrapper {
+  color: #030213;
+}
+
+.dateInput::-webkit-datetime-edit-text {
+  color: #030213;
+}
+
+.dateInput::-webkit-datetime-edit-month-field {
+  color: #030213;
+}
+
+.dateInput::-webkit-datetime-edit-day-field {
+  color: #030213;
+}
+
+.dateInput::-webkit-datetime-edit-year-field {
+  color: #030213;
+}
+
+.dateInput::-webkit-calendar-picker-indicator {
+  filter: invert(0.2);
+  opacity: 0.7;
+}
+
+/* 날짜 입력 컨테이너 */
+.dateInputContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 경고 메시지 컨테이너 - 고정 높이로 레이아웃 시프트 방지 */
+.warningContainer {
+  height: 50px; /* 경고 메시지가 들어갈 공간 미리 확보 */
+  margin-top: 8px;
+}
+
+/* 경고 메시지 스타일 */
+.warningMessage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fef3cd;
+  border: 1px solid #facc15;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  color: #92400e;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.warningIcon {
+  width: 16px;
+  height: 16px;
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+/* 페이드인 애니메이션 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .runButton {

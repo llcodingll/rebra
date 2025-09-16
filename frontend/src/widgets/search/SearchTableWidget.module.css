@@ -1,51 +1,95 @@
-
 .controlContainer {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  width: 100%;
+}
+
+.leftSection {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.rightSection {
+  flex: 1;
   display: flex;
   justify-content: flex-start;
 }
 
-
+.sectionTitle {
+  font-size: 16px;
+  font-family: 'Content', 'Noto Sans KR', sans-serif;
+  font-weight: bold;
+  color: #454545;
+  white-space: nowrap;
+}
 
 .searchInputContainer {
   position: relative;
-  width: 300px;
+  width: 80%;
+  padding: 3px 0px;
 }
 
 .searchInput {
   width: 100%;
-  padding: 8px 16px;
-  border: 1px solid #e9e9e9;
+  padding: 8px 40px 8px 16px;
+  border: 1px solid #d4d4d4;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: clamp(12px, 1.8vh, 15px);
   font-family: 'Content', 'Noto Sans KR', sans-serif;
   background: white;
   transition: border-color 0.2s;
-  height: 36px;
+  height: clamp(26px, 4vh, 36px);
   box-sizing: border-box;
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #454545;
+  border-color: #a1a1a1;
 }
 
 .searchInput::placeholder {
-  color: #9ca3af;
+  color: #bebebe;
+  font-weight: 500;
 }
 
 .searchIcon {
   position: absolute;
-  right: 12px;
-  top: 50%;
+  right: 10px;
+  top: 55%;
   transform: translateY(-50%);
   pointer-events: none;
 }
 
+.splitTableContainer {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.leftTable,
+.rightTable {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 
 .stockTable {
   width: 100%;
-  flex: 1;
-  overflow-y: auto;
+  height: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.rightTable {
+  border-left: 2px solid transparent;
+  border-image: linear-gradient(to bottom, #e9e9e9, rgba(233, 233, 233, 0.056)) 1;
 }
 
 .emptyState {
@@ -53,7 +97,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 300px;
+  height: 100%;
   gap: 16px;
 }
 
@@ -72,47 +116,28 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  overflow: hidden;
+  min-height: 100%;
+  overflow-y: auto;
+  justify-content: flex-start;
 }
 
-.tableHeader {
-  display: grid;
-  grid-template-columns: 1fr 120px 100px 140px;
-  gap: 20px;
-  padding: 0 40px 10px 40px;
-  align-items: center;
-}
-
-.headerStock,
-.headerPrice,
-.headerChange,
-.headerVolume {
-  font-size: 16px;
-  font-family: 'Content', 'Noto Sans KR', sans-serif;
-  font-weight: bold;
-  color: #afafaf;
-}
-
-.headerVolume {
-  text-align: right;
-  color: #454545;
+.tableBody::after {
+  content: '';
+  flex: 1;
 }
 
 .stockRow {
-  display: grid;
-  grid-template-columns: 1fr 120px 100px 140px;
-  gap: 20px;
-  padding: 6px 40px;
-  margin-bottom: 2px;
-  border-radius: 4px;
+  display: flex;
+  padding: clamp(6px, 1vh, 10px) 20px;
   cursor: pointer;
   transition: background-color 0.2s;
   align-items: center;
-  min-height: 40px;
+  height: clamp(32px, 5.5vh, 54px);
+  flex-shrink: 0;
 }
 
 .stockRow:hover {
-  background: #f8f9fa;
+  background: #eaecee;
 }
 
 .evenRow {
@@ -120,18 +145,19 @@
 }
 
 .evenRow:hover {
-  background: #f0f0f0;
+  background: #eaecee;
 }
 
 .stockInfo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: clamp(8px, 1.5vh, 16px);
+  flex: 1;
 }
 
 .favoriteIcon {
-  width: 16px;
-  height: 16px;
+  width: clamp(12px, 2vh, 18px);
+  height: clamp(12px, 2vh, 18px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -139,41 +165,8 @@
 }
 
 .stockName {
-  font-size: 16px;
+  font-size: clamp(12px, 2vh, 16px);
   font-family: 'Content', 'Noto Sans KR', sans-serif;
-  font-weight: bold;
+  font-weight: 500;
   color: black;
-}
-
-
-.price {
-  font-size: 16px;
-  font-family: 'Consolas', sans-serif;
-  color: black;
-  text-align: left;
-  width: 100%;
-}
-
-.change {
-  font-size: 16px;
-  font-family: 'Consolas', sans-serif;
-  text-align: left;
-  width: 100%;
-  font-weight: bold;
-}
-
-.change.positive {
-  color: #ef1515;
-}
-
-.change.negative {
-  color: #1570ef;
-}
-
-.volume {
-  font-size: 16px;
-  font-family: 'Consolas', 'Noto Sans KR', sans-serif;
-  color: black;
-  text-align: right;
-  width: 100%;
 }

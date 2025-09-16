@@ -14,42 +14,44 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
   const buttonsContainerRef = useRef<HTMLDivElement>(null);
   const underlineRef = useRef<HTMLDivElement>(null);
 
-  const sortedData = [...stockListData].sort((a, b) => {
-    switch (sortType) {
-      case 'volume':
-        return parseFloat(b.volume.replace(/[^\d.-]/g, '')) - parseFloat(a.volume.replace(/[^\d.-]/g, ''));
-      case 'rising':
-        // 급상승: 양수 변화율만, 큰 순서대로
-        const aRising = a.change > 0 ? a.change : -Infinity;
-        const bRising = b.change > 0 ? b.change : -Infinity;
-        return bRising - aRising;
-      case 'falling':
-        // 급하락: 음수 변화율만, 절댓값 큰 순서대로
-        const aFalling = a.change < 0 ? Math.abs(a.change) : -Infinity;
-        const bFalling = b.change < 0 ? Math.abs(b.change) : -Infinity;
-        return bFalling - aFalling;
-      default:
-        return 0;
-    }
-  });
+  const sortedData = [...stockListData]
+    .sort((a, b) => {
+      switch (sortType) {
+        case 'volume':
+          return parseFloat(b.volume.replace(/[^\d.-]/g, '')) - parseFloat(a.volume.replace(/[^\d.-]/g, ''));
+        case 'rising':
+          // 급상승: 양수 변화율만, 큰 순서대로
+          const aRising = a.change > 0 ? a.change : -Infinity;
+          const bRising = b.change > 0 ? b.change : -Infinity;
+          return bRising - aRising;
+        case 'falling':
+          // 급하락: 음수 변화율만, 절댓값 큰 순서대로
+          const aFalling = a.change < 0 ? Math.abs(a.change) : -Infinity;
+          const bFalling = b.change < 0 ? Math.abs(b.change) : -Infinity;
+          return bFalling - aFalling;
+        default:
+          return 0;
+      }
+    })
+    .slice(0, 10);
 
   useEffect(() => {
     const moveUnderline = () => {
       if (!buttonsContainerRef.current || !underlineRef.current) return;
-      
+
       const activeButton = buttonsContainerRef.current.querySelector(`.${styles.active}`) as HTMLElement;
       if (!activeButton) return;
-      
+
       const containerRect = buttonsContainerRef.current.getBoundingClientRect();
       const buttonRect = activeButton.getBoundingClientRect();
-      
+
       const left = buttonRect.left - containerRect.left;
       const width = buttonRect.width;
-      
+
       underlineRef.current.style.transform = `translateX(${left}px)`;
       underlineRef.current.style.width = `${width}px`;
     };
-    
+
     moveUnderline();
   }, [sortType]);
 
@@ -117,7 +119,7 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
 
             <div className={`${styles.change} ${stock.changePercent ? styles.positive : styles.negative}`}>
               {stock.changePercent ? '+' : ''}
-              {stock.change}%
+              {stock.change.toFixed(1)}%
             </div>
 
             <div className={styles.volume}>{stock.volume}</div>

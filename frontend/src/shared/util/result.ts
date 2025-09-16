@@ -140,3 +140,5 @@ export const combineResults = <T extends readonly unknown[], E>(results: { [K in
 export type AsyncResult<T, E = Error> = Promise<Result<T, E>>;
 export type VoidResult<E = Error> = Result<void, E>;
 export type AsyncVoidResult<E = Error> = Promise<Result<void, E>>;
+
+export { AppError };

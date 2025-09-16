@@ -10,9 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.rebra.dto.TempToken;
-import com.rebra.dto.request.SignupRequest;
 import com.rebra.dto.response.KakaoTokenResponse;
-import com.rebra.entity.SurveyResult;
 import com.rebra.entity.User;
 import com.rebra.jwt.Token;
 import com.rebra.jwt.TokenProvider;

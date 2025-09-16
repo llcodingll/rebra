@@ -107,7 +107,7 @@
   justify-content: center;
 }
 
-.dataValue:first-child {
+.dataValue:second-child {
   border-bottom: 1px solid #f3f4f6;
 }
 
