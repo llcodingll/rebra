@@ -88,6 +88,10 @@ class BacktestCalculatorServiceTest {
             // given
             validRequest.setRebalancingType(RebalancingType.PERIODIC);
             validRequest.setRebalancingPeriod(RebalancingPeriod.MONTHLY);
+            // PERIODIC 타입에서는 리밸런싱 날짜 명시
+            validRequest.setRebalancingDates(Arrays.asList(
+                LocalDate.of(2023, 1, 31) // 1월 말
+            ));
 
             // when
             BacktestResponse response = backtestCalculatorService.executeBacktest(validRequest);
@@ -359,6 +363,10 @@ class BacktestCalculatorServiceTest {
             // given
             validRequest.setRebalancingType(RebalancingType.PERIODIC);
             validRequest.setRebalancingPeriod(RebalancingPeriod.MONTHLY);
+            // 리밸런싱 날짜 명시
+            validRequest.setRebalancingDates(Arrays.asList(
+                LocalDate.of(2023, 1, 31) // 1월 말
+            ));
 
             // when
             BacktestResponse response = backtestCalculatorService.executeBacktest(validRequest);
@@ -373,14 +381,12 @@ class BacktestCalculatorServiceTest {
                     .filter(BacktestDetailDto::getIsRebalanced)
                     .toList();
             
-            // 각 리밸런싱 날짜가 월말 근처인지 확인
+            // 지정된 리밸런싱 날짜에만 발생했는지 확인
             for (BacktestDetailDto detail : rebalancingDetails) {
                 LocalDate date = detail.getPeriodDate();
-                LocalDate monthEnd = date.withDayOfMonth(date.lengthOfMonth());
-                
-                // 월말 또는 월말 이전 영업일인지 확인 (주말 고려)
-                long daysDifference = Math.abs(date.toEpochDay() - monthEnd.toEpochDay());
-                assertThat(daysDifference).isLessThanOrEqualTo(3); // 3일 이내 차이 허용
+                assertThat(validRequest.getRebalancingDates())
+                    .as("리밸런싱이 지정된 날짜에만 발생해야 함")
+                    .contains(date);
             }
         }
 
@@ -526,6 +532,7 @@ class BacktestCalculatorServiceTest {
         request.setEndDate(LocalDate.of(2023, 1, 31));
         request.setRebalancingType(RebalancingType.THRESHOLD);
         request.setRebalancingPeriod(null);
+        request.setRebalancingDates(null); // THRESHOLD 타입에서는 null
         
         // 종목 설정
         List<BacktestStockDto> stocks = Arrays.asList(

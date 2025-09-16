@@ -227,6 +227,11 @@ class BacktestIntegrationTest {
         request.setRebalancingType(RebalancingType.PERIODIC);
         request.setRebalancingPeriod(period);
         
+        // 리밸런싱 날짜 계산 및 설정
+        List<LocalDate> rebalancingDates = calculateRebalancingDates(
+            request.getStartDate(), request.getEndDate(), period);
+        request.setRebalancingDates(rebalancingDates);
+        
         List<BacktestStockDto> stocks = List.of(
             createBacktestStockWithThreshold("005930", "삼성전자", 25, 100, 0.05),  // 주기적 리밸런싱에서는 임계값 무의미
             createBacktestStockWithThreshold("000660", "SK하이닉스", 25, 50, 0.05),
@@ -234,7 +239,9 @@ class BacktestIntegrationTest {
             createBacktestStockWithThreshold("005380", "현대차", 25, 30, 0.05)
         );
         request.setStocks(stocks);
-        request.setDailyPrices(createMonthEndPriceData(request.getStartDate(), request.getEndDate()));
+        
+        // 모든 거래일 데이터 생성 (리밸런싱 날짜는 별도 지정)
+        request.setDailyPrices(createSimplePriceData(request.getStartDate(), request.getEndDate()));
         
         return request;
     }
@@ -563,5 +570,59 @@ class BacktestIntegrationTest {
             case "005380" -> 0.985 + (random.nextDouble() * 0.03);  // 현대차: 중간 변동성
             default -> 0.99 + (random.nextDouble() * 0.02);
         };
+    }
+    
+    /**
+     * 리밸런싱 날짜를 계산한다
+     */
+    private List<LocalDate> calculateRebalancingDates(LocalDate startDate, LocalDate endDate, RebalancingPeriod period) {
+        List<LocalDate> rebalancingDates = new ArrayList<>();
+        
+        if (period == RebalancingPeriod.MONTHLY) {
+            // 월말 날짜 계산
+            LocalDate currentMonth = startDate.plusMonths(1).withDayOfMonth(1);
+            
+            while (!currentMonth.isAfter(endDate)) {
+                // 월말 찾기
+                LocalDate monthEnd = currentMonth.withDayOfMonth(currentMonth.lengthOfMonth());
+                
+                // 월말이 주말이면 이전 평일로 이동
+                while (monthEnd.getDayOfWeek().getValue() >= 6) {
+                    monthEnd = monthEnd.minusDays(1);
+                }
+                
+                // 종료일을 넘지 않는 경우만 추가
+                if (!monthEnd.isAfter(endDate)) {
+                    rebalancingDates.add(monthEnd);
+                }
+                
+                currentMonth = currentMonth.plusMonths(1);
+            }
+        } else if (period == RebalancingPeriod.QUARTERLY) {
+            // 분기말 날짜 계산 (3, 6, 9, 12월 말)
+            LocalDate current = startDate.withMonth(3).withDayOfMonth(31);
+            if (current.isBefore(startDate)) {
+                current = current.withMonth(6);
+            }
+            
+            while (!current.isAfter(endDate)) {
+                // 분기말이 주말이면 이전 평일로 이동
+                LocalDate quarterEnd = current;
+                while (quarterEnd.getDayOfWeek().getValue() >= 6) {
+                    quarterEnd = quarterEnd.minusDays(1);
+                }
+                
+                if (!quarterEnd.isBefore(startDate) && !quarterEnd.isAfter(endDate)) {
+                    rebalancingDates.add(quarterEnd);
+                }
+                
+                current = current.plusMonths(3);
+                if (current.getMonthValue() > 12) {
+                    current = current.plusYears(1).withMonth(3);
+                }
+            }
+        }
+        
+        return rebalancingDates;
     }
 }

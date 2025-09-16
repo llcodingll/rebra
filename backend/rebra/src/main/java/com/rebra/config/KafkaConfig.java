@@ -22,8 +22,8 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import java.util.HashMap;
 import java.util.Map;
 
-// @Configuration
-// @EnableKafka
+@Configuration
+@EnableKafka
 public class KafkaConfig {
 
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
@@ -68,6 +68,7 @@ public class KafkaConfig {
         // JSON 역직렬화 설정
         configProps.put(JsonDeserializer.TRUSTED_PACKAGES, "com.rebra.calculator.dto,java.util");
         configProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "java.util.Map");
+        configProps.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         
         // Consumer 안정성 설정
         configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");

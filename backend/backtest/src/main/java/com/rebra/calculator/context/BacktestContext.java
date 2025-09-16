@@ -30,6 +30,7 @@ public class BacktestContext {
     // 비즈니스 로직에 필요한 추가 정보
     private final RebalancingType rebalancingType;
     private final RebalancingPeriod rebalancingPeriod;
+    private final List<LocalDate> rebalancingDates; // PERIODIC용 리밸런싱 날짜
     
     // stocks 필드만 사용하여 모든 정보 관리 (초기 수량, 가중치, 임계값 등)
     
@@ -39,7 +40,7 @@ public class BacktestContext {
     public BacktestContext(Long backtestId, LocalDate startDate, LocalDate endDate,
                           List<Stock> stocks, LinkedHashMap<LocalDate, Map<String, Double>> dailyPrices,
                           RebalancingStrategy rebalancingStrategy, RebalancingType rebalancingType,
-                          RebalancingPeriod rebalancingPeriod) {
+                          RebalancingPeriod rebalancingPeriod, List<LocalDate> rebalancingDates) {
         this.backtestId = backtestId;
         this.startDate = startDate;
         this.endDate = endDate;
@@ -48,6 +49,7 @@ public class BacktestContext {
         this.rebalancingStrategy = rebalancingStrategy;
         this.rebalancingType = rebalancingType;
         this.rebalancingPeriod = rebalancingPeriod;
+        this.rebalancingDates = rebalancingDates;
         
         // Stock 객체가 모든 정보를 포함하므로 추가 저장 불필요
     }
@@ -61,6 +63,7 @@ public class BacktestContext {
     public RebalancingStrategy getRebalancingStrategy() { return rebalancingStrategy; }
     public RebalancingType getRebalancingType() { return rebalancingType; }
     public RebalancingPeriod getRebalancingPeriod() { return rebalancingPeriod; }
+    public List<LocalDate> getRebalancingDates() { return rebalancingDates; }
     
     // 초기 수량을 Stock 리스트에서 추출하는 헬퍼 메서드
     public Map<String, Integer> getInitialQuantities() {
@@ -88,5 +91,19 @@ public class BacktestContext {
         return dailyPrices.keySet().stream()
                 .max(LocalDate::compareTo)
                 .orElseThrow(() -> new RuntimeException("가격 데이터가 없습니다"));
+    }
+    
+    /**
+     * 특정 날짜가 리밸런싱 날짜인지 확인한다
+     * THRESHOLD: 항상 false 반환 (매일 임계값 체크)
+     * PERIODIC: rebalancingDates에 포함된 날짜만 true
+     */
+    public boolean isRebalancingDate(LocalDate date) {
+        if (rebalancingType == RebalancingType.THRESHOLD) {
+            return false; // THRESHOLD는 매일 체크하므로 여기서 false
+        } else if (rebalancingType == RebalancingType.PERIODIC) {
+            return rebalancingDates != null && rebalancingDates.contains(date);
+        }
+        return false;
     }
 }

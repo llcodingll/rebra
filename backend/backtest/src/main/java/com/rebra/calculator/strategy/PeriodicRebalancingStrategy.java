@@ -56,10 +56,7 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
     @Override
     public boolean shouldRebalance(Map<String, Double> currentPrices, BacktestContext context, LocalDate currentDate, Portfolio portfolio,
                                  LocalDate lastRebalancingDate) {
-        // 주기적 리밸런싱: 메인 서버에서 이미 설정된 주기에 맞는 날짜만 필터링해서 전송
-        // 따라서 계산 서버는 받은 모든 날짜에 대해 무조건 리밸런싱 실행
-        // 단, 유효한 가격이 없는 경우는 제외
-        
+        // 유효한 가격 정보 확인
         if (currentPrices == null) {
             log.warn("날짜 {}의 가격 정보를 찾을 수 없습니다", currentDate);
             return false;
@@ -71,10 +68,15 @@ public class PeriodicRebalancingStrategy implements RebalancingStrategy {
             return false;
         }
         
-        log.debug("주기적 리밸런싱 실행: {} (주기: {}, 유효 가격: {}개)", 
-                currentDate, rebalancingPeriod.getDisplayName(), validPrices.size());
+        // 메인 서버에서 전달받은 리밸런싱 날짜인지 확인
+        boolean isRebalancingDate = context.isRebalancingDate(currentDate);
         
-        return true;
+        if (isRebalancingDate) {
+            log.debug("주기적 리밸런싱 실행: {} (주기: {}, 유효 가격: {}개)", 
+                    currentDate, rebalancingPeriod.getDisplayName(), validPrices.size());
+        }
+        
+        return isRebalancingDate;
     }
 
     @Override

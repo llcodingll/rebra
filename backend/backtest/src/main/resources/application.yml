@@ -30,7 +30,7 @@ spring:
 
 # 애플리케이션 설정
 server:
-  port: 8081
+  port: 8082
 
 # 액추에이터 설정
 management:

@@ -151,7 +151,8 @@ public class BacktestCalculatorService {
                 dailyPrices,
                 rebalancingStrategy,
                 request.getRebalancingType(),
-                request.getRebalancingPeriod()
+                request.getRebalancingPeriod(),
+                request.getRebalancingDates()
         );
         
         log.debug("백테스트 컨텍스트 준비 완료 - 거래일: {}일, 전략: {}", 
@@ -391,8 +392,10 @@ public class BacktestCalculatorService {
                                      maxDrawdown, rebalancingCount, portfolio, 
                                      periodGrowthRate, volatility, sharpeRatio, timeWeightedReturn));
         
-        log.info(String.format("최종 결과 계산 완료 - 최종가치: %.0f원, 총수익률: %.2f%%, TWR: %.2f%%, 바이앤홀드: %.2f%%, 샤프비율: %.2f",
-                finalValue, totalReturn * 100, timeWeightedReturn * 100, buyHoldReturn * 100, sharpeRatio));
+        log.info(String.format("최종 결과 계산 완료 - 최종가치: %.0f원, 총수익률: %.2f%%, TWR: %.2f%%, 바이앤홀드: %.2f%%, " +
+                        "최대낙폭: %.2f%%, 변동성: %.2f%%, 연환산수익률: %.2f%%, 샤프비율: %.2f, 주기성장률: %.4f",
+                finalValue, totalReturn * 100, timeWeightedReturn * 100, buyHoldReturn * 100, 
+                maxDrawdown * 100, volatility * 100, annualizedReturn * 100, sharpeRatio, periodGrowthRate));
     }
 
     /**

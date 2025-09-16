@@ -23,7 +23,8 @@ spring:
         format_sql: false
         use_sql_comments: false
         jdbc:
-          batch_size: 20
+          batch_size: 100
+          batch_versioned_data: true
         order_inserts: true
         order_updates: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect

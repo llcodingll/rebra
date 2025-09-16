@@ -5,6 +5,7 @@ import com.rebra.dto.external.FssStockPriceResponse;
 import com.rebra.entity.Stock;
 import com.rebra.entity.StockPrice;
 import com.rebra.exception.external.ExternalApiException;
+import com.rebra.exception.stock.StockException;
 import com.rebra.repository.StockPriceRepository;
 import com.rebra.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,13 +35,15 @@ public class SmartStockDataService {
 
     /**
      * 종목의 데이터를 효율적으로 확보 (스마트 캐싱)
+     * 동시성 보장을 위해 synchronized 처리
      */
-    public void ensureDataAvailable(String stockCode, LocalDate requestStart, LocalDate requestEnd) {
-        log.info("데이터 확보 요청 - 종목: {}, 범위: {} ~ {}", stockCode, requestStart, requestEnd);
+    public synchronized void ensureDataAvailable(String stockCode, LocalDate requestStart, LocalDate requestEnd) {
+        log.info("데이터 확보 요청 - 종목: {}, 범위: {} ~ {}, 스레드: {}", 
+            stockCode, requestStart, requestEnd, Thread.currentThread().getName());
 
-        // 1. Stock 엔티티 조회 또는 생성
+        // 1. Stock 엔티티 조회
         Stock stock = stockRepository.findByStockCode(stockCode)
-            .orElseGet(() -> createNewStock(stockCode));
+            .orElseThrow(() -> StockException.stockCodeNotFound());
 
         // 2. 이미 데이터가 충분한지 확인
         if (stock.hasDataInRange(requestStart, requestEnd)) {
@@ -79,7 +83,8 @@ public class SmartStockDataService {
             stockRepository.save(stock);
         }
 
-        log.info("데이터 확보 완료 - 종목: {}", stockCode);
+        log.info("데이터 확보 완료 - 종목: {}, 스레드: {}", 
+            stockCode, Thread.currentThread().getName());
     }
 
     /**
@@ -101,79 +106,51 @@ public class SmartStockDataService {
         log.info("배치 데이터 확보 완료 - 종목 수: {}", stockCodes.size());
     }
 
-    /**
-     * 새로운 Stock 엔티티 생성
-     */
-    private Stock createNewStock(String stockCode) {
-        log.info("새로운 Stock 엔티티 생성 - 종목코드: {}", stockCode);
-
-        Stock newStock = Stock.builder()
-            .stockCode(stockCode)
-            .stockName(stockCode) // 임시로 코드와 동일하게 설정
-            .stockType("STOCK")
-            .isActive(true)
-            .build();
-
-        return stockRepository.save(newStock);
-    }
 
     /**
-     * API를 통해 데이터 조회 및 저장
+     * API를 통해 데이터 조회 및 저장 (구간 검색 사용)
      */
     private void fetchDataForPeriod(Stock stock, LocalDate start, LocalDate end) {
         log.info("API 데이터 조회 - 종목: {}, 범위: {} ~ {}", stock.getStockCode(), start, end);
 
-        LocalDate current = start;
-        int savedCount = 0;
+        try {
+            // FSS API 호출 (종목코드로 구간 검색)
+            List<FssStockPriceResponse.StockItem> items = 
+                fssApiClient.getStockPriceByCodeAndDateRange(stock.getStockCode(), start, end);
 
-        while (!current.isAfter(end)) {
-            try {
-                // FSS API 호출 (종목명으로 검색)
-                List<FssStockPriceResponse.StockItem> items = 
-                    fssApiClient.getStockPriceByNameAndDate(stock.getStockName(), current);
-
-                // 매칭되는 종목 데이터 저장
-                for (FssStockPriceResponse.StockItem item : items) {
-                    if (isMatchingStock(item, stock)) {
-                        StockPrice stockPrice = convertToStockPrice(item, stock);
-                        stockPriceRepository.save(stockPrice);
-                        
-                        // Stock 정보 업데이트 (실제 데이터에서 얻은 정보)
+            // 조회된 모든 데이터를 리스트로 변환
+            List<StockPrice> stockPrices = new ArrayList<>();
+            
+            for (FssStockPriceResponse.StockItem item : items) {
+                try {
+                    StockPrice stockPrice = convertToStockPrice(item, stock);
+                    stockPrices.add(stockPrice);
+                    
+                    // Stock 정보 업데이트 (첫 번째 데이터에서만)
+                    if (stockPrices.size() == 1) {
                         updateStockInfoFromApi(stock, item);
-                        
-                        savedCount++;
-                        break; // 해당 종목 찾으면 중단
                     }
+                } catch (Exception e) {
+                    log.warn("개별 데이터 변환 실패 - 종목: {}, 날짜: {}, 오류: {}", 
+                        stock.getStockCode(), item.getBasDt(), e.getMessage());
                 }
-            } catch (Exception e) {
-                log.debug("데이터 조회 실패 (주말/공휴일 가능) - 날짜: {}, 오류: {}", 
-                    current, e.getMessage());
             }
+            
+            // 일괄 저장
+            List<StockPrice> savedStockPrices = stockPriceRepository.saveAll(stockPrices);
+            int savedCount = savedStockPrices.size();
 
-            current = current.plusDays(1);
+            log.info("API 데이터 저장 완료 - 종목: {}, 조회된 건수: {}, 저장된 건수: {}", 
+                stock.getStockCode(), items.size(), savedCount);
+                
+        } catch (Exception e) {
+            log.error("API 데이터 조회 실패 - 종목: {}, 범위: {} ~ {}, 오류: {}", 
+                stock.getStockCode(), start, end, e.getMessage());
+            throw e;
         }
-
-        log.info("API 데이터 저장 완료 - 종목: {}, 저장된 건수: {}", 
-            stock.getStockCode(), savedCount);
     }
 
-    /**
-     * API 응답 종목이 요청 종목과 일치하는지 확인
-     */
-    private boolean isMatchingStock(FssStockPriceResponse.StockItem item, Stock stock) {
-        // 종목 코드로 매칭 (6자리)
-        if (item.getSrtnCd() != null && item.getSrtnCd().equals(stock.getStockCode())) {
-            return true;
-        }
-        
-        // 종목명으로 매칭 (부분 일치)
-        if (item.getItmsNm() != null && stock.getStockName() != null) {
-            return item.getItmsNm().contains(stock.getStockName()) ||
-                   stock.getStockName().contains(item.getItmsNm());
-        }
-        
-        return false;
-    }
+    // isMatchingStock 메서드 제거: 종목코드로 정확하게 검색하므로 매칭 검증 불필요
 
     /**
      * API 응답에서 Stock 정보 업데이트

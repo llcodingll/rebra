@@ -529,7 +529,8 @@ class PeriodicRebalancingStrategyTest {
             dailyPrices,
             periodicStrategy,
             RebalancingType.PERIODIC,
-            RebalancingPeriod.MONTHLY
+            RebalancingPeriod.MONTHLY,
+            Arrays.asList(LocalDate.of(2023, 1, 31), LocalDate.of(2023, 2, 28)) // 월말 리밸런싱 날짜
         );
     }
 }

@@ -20,6 +20,11 @@ public interface StockPriceRepository extends JpaRepository<StockPrice, Long> {
     Optional<StockPrice> findByTickerAndDate(String ticker, LocalDate date);
 
     /**
+     * 특정 종목의 특정 날짜 데이터 존재 여부 확인
+     */
+    boolean existsByTickerAndDate(String ticker, LocalDate date);
+
+    /**
      * 특정 종목의 기간별 주가 조회 (날짜 오름차순)
      */
     List<StockPrice> findByTickerAndDateBetweenOrderByDateAsc(String ticker, LocalDate startDate, LocalDate endDate);

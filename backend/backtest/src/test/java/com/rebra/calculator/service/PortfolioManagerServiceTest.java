@@ -521,7 +521,8 @@ class PortfolioManagerServiceTest {
             dailyPrices,
             thresholdStrategy,
             RebalancingType.THRESHOLD,
-            RebalancingPeriod.MONTHLY
+            RebalancingPeriod.MONTHLY,
+            null // THRESHOLD 타입에서는 리밸런싱 날짜 불필요
         );
     }
 }

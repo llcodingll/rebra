@@ -1,6 +1,7 @@
 package com.rebra.calculator.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rebra.calculator.enums.RebalancingPeriod;
 import com.rebra.calculator.enums.RebalancingType;
@@ -80,6 +81,15 @@ public class BacktestRequest {
      */
     @JsonProperty("daily_prices")
     private Map<String, Map<String, Double>> dailyPrices;
+
+    /**
+     * 리밸런싱 수행 날짜 목록
+     * PERIODIC 타입에서만 사용되며, 해당 날짜에만 리밸런싱 실행
+     * THRESHOLD 타입에서는 null (매일 임계값 확인)
+     */
+    @JsonProperty("rebalancing_dates")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private List<LocalDate> rebalancingDates;
 
     /**
      * 요청 데이터의 유효성을 검증한다
@@ -183,6 +193,7 @@ public class BacktestRequest {
      * @param stockCode 종목 코드
      * @return 해당 종목의 날짜별 가격 맵 (날짜 오름차순)
      */
+    @JsonIgnore
     public Map<LocalDate, Double> getPricesForStock(String stockCode) {
         if (dailyPrices == null || stockCode == null) {
             return Map.of();
@@ -212,6 +223,7 @@ public class BacktestRequest {
      * 
      * @return 정렬된 거래일 리스트
      */
+    @JsonIgnore
     public List<LocalDate> getTradingDates() {
         if (dailyPrices == null) {
             return List.of();
@@ -230,6 +242,7 @@ public class BacktestRequest {
      * @param date 조회할 날짜
      * @return 종목코드 -> 종가 매핑 (null 값 포함)
      */
+    @JsonIgnore
     public Map<String, Double> getPricesForDate(LocalDate date) {
         if (dailyPrices == null || date == null) {
             return Map.of();
@@ -255,6 +268,7 @@ public class BacktestRequest {
      * 
      * @return 정규화된 종목별 목표 비중 맵 (종목코드 -> 비중)
      */
+    @JsonIgnore
     public java.util.Map<String, Double> getNormalizedWeights() {
         if (stocks == null || stocks.isEmpty()) {
             return java.util.Map.of();
@@ -284,8 +298,37 @@ public class BacktestRequest {
      * @param stockCode 종목 코드
      * @return 정규화된 목표 비중 (0.0 ~ 1.0)
      */
+    @JsonIgnore
     public double getNormalizedWeight(String stockCode) {
         return getNormalizedWeights().getOrDefault(stockCode, 0.0);
+    }
+
+    /**
+     * 특정 날짜가 리밸런싱 날짜인지 확인한다
+     * 
+     * @param date 확인할 날짜
+     * @return 리밸런싱 날짜이면 true
+     */
+    public boolean isRebalancingDate(LocalDate date) {
+        if (rebalancingDates == null || date == null) {
+            return false;
+        }
+        return rebalancingDates.contains(date);
+    }
+
+    /**
+     * 리밸런싱 날짜 목록을 반환한다 (정렬된 상태)
+     * 
+     * @return 정렬된 리밸런싱 날짜 리스트
+     */
+    @JsonIgnore
+    public List<LocalDate> getSortedRebalancingDates() {
+        if (rebalancingDates == null) {
+            return List.of();
+        }
+        return rebalancingDates.stream()
+                .sorted()
+                .toList();
     }
 
     /**
@@ -293,6 +336,7 @@ public class BacktestRequest {
      * 
      * @return 상세 정보 문자열
      */
+    @JsonIgnore
     public String getDetailedInfo() {
         StringBuilder sb = new StringBuilder();
         sb.append(getSummary()).append("\n");
@@ -325,6 +369,7 @@ public class BacktestRequest {
      * 
      * @return 정렬된 날짜 문자열 리스트
      */
+    @JsonIgnore
     public List<String> getSortedDateKeys() {
         if (dailyPrices == null) {
             return List.of();
@@ -341,6 +386,7 @@ public class BacktestRequest {
      * @param date 조회할 날짜
      * @return 유효한 가격을 가진 종목코드 -> 가격 맵
      */
+    @JsonIgnore
     public Map<String, Double> getValidPricesForDate(LocalDate date) {
         if (dailyPrices == null || date == null) {
             return Map.of();
@@ -368,6 +414,7 @@ public class BacktestRequest {
      * @param stockCode 종목 코드
      * @return 거래된 일수
      */
+    @JsonIgnore
     public long getTradingDaysForStock(String stockCode) {
         if (dailyPrices == null || stockCode == null) {
             return 0;
@@ -384,6 +431,7 @@ public class BacktestRequest {
      * 
      * @return 날짜별 유효 종목 개수 맵
      */
+    @JsonIgnore
     public Map<LocalDate, Integer> getValidStockCountByDate() {
         if (dailyPrices == null) {
             return Map.of();
