@@ -1,5 +1,5 @@
 import { ApiClient } from '../../../shared/api/apiClient';
-import type { StockDetailResponse } from './types';
+import type { StockDetailResponse, DailyChartData, ChartDataRequest } from './types';
 import type { Result, AppError } from '../../../shared/util/result';
 
 class StockApiService extends ApiClient {
@@ -17,6 +17,27 @@ class StockApiService extends ApiClient {
       console.log('✅ 주식 상세 정보 API 응답:', result.data);
     } else {
       console.error('❌ 주식 상세 정보 API 에러:', result.error);
+    }
+
+    return result;
+  }
+
+  /**
+   * 일봉 차트 데이터 조회
+   * @param params 종목코드, 시작날짜, 종료날짜
+   * @returns 일봉 차트 데이터
+   */
+  async getDailyChartData(params: ChartDataRequest): Promise<Result<DailyChartData, AppError>> {
+    console.log(`📊 일봉 차트 데이터 API 호출: /api/stocks/${params.stockCode}/chart/daily`);
+
+    const result = await this.get<DailyChartData>(
+      `/api/stocks/${params.stockCode}/chart/daily?startDate=${params.startDate}&endDate=${params.endDate}`
+    );
+
+    if (result.success) {
+      console.log('✅ 일봉 차트 데이터 API 응답:', result.data);
+    } else {
+      console.error('❌ 일봉 차트 데이터 API 에러:', result.error);
     }
 
     return result;

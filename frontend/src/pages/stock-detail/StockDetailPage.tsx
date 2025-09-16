@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router';
+import { useParams, useLocation } from 'react-router-dom';
 import RealTimeChart from '../../widgets/stock-detail/RealTimeChart';
 import StockBasicInfo from '../../widgets/stock-detail/StockBasicInfo';
 import HoldingInfoTable from '../../widgets/stock-detail/HoldingInfoTable';
@@ -17,13 +17,27 @@ interface OrderBookItem {
 
 export default function StockDetailPage() {
   const { symbol } = useParams<{ symbol: string }>();
+  const location = useLocation();
+
+  // SearchPage에서 전달받은 종목 정보
+  const stockInfoFromState = location.state as { stockCode: string; stockName: string } | null;
   const [quantity, setQuantity] = useState(0);
   const [selectedRatio, setSelectedRatio] = useState<number | null>(null);
   const [orderPrice, setOrderPrice] = useState(71400);
 
   // 실시간 주식 데이터 연동
   const stockCode = symbol || '005930';
-  const { stockInfo, realtimePrice, orderbook, isConnected, isLoading, error } = useRealtimeStock(stockCode);
+  const {
+    stockInfo,
+    realtimePrice,
+    orderbook,
+    isConnected,
+    isLoading,
+    error,
+    connectionDetails,
+    disconnect,
+    reconnect,
+  } = useRealtimeStock(stockCode);
 
   // 실시간 가격 업데이트 시 주문가격도 업데이트
   React.useEffect(() => {
@@ -32,11 +46,11 @@ export default function StockDetailPage() {
     }
   }, [realtimePrice]);
 
-  // 실제 주식 정보 (실시간 데이터 기반) + 안전한 기본값
+  // 실제 주식 정보 (실시간 데이터 기반) + SearchPage에서 전달받은 정보 우선 사용
   const displayStockInfo = stockInfo
     ? {
-        code: stockInfo.stockCode,
-        name: stockInfo.stockName,
+        code: stockInfoFromState?.stockCode || stockInfo.stockCode,
+        name: stockInfoFromState?.stockName || stockInfo.stockName,
         currentPrice: realtimePrice?.currentPrice || 0,
         change: realtimePrice?.change || 0,
         changePercent: realtimePrice?.changePercent || 0,
@@ -48,10 +62,10 @@ export default function StockDetailPage() {
       }
     : null;
 
-  // 안전한 주식 정보 (null 체크 완료)
+  // 안전한 주식 정보 (null 체크 완료) + SearchPage에서 전달받은 정보로 폴백
   const safeStockInfo = displayStockInfo || {
-    code: stockCode,
-    name: '로딩 중...',
+    code: stockInfoFromState?.stockCode || stockCode,
+    name: stockInfoFromState?.stockName || '로딩 중...',
     currentPrice: 0,
     change: 0,
     changePercent: 0,
@@ -143,7 +157,7 @@ export default function StockDetailPage() {
   }
 
   // 에러 상태 처리 (개발 모드가 아닐 때만)
-  if (error && !isDevMode()) {
+  if (error && isDevMode()) {
     return (
       <div className={styles.container}>
         <div className={styles.errorState}>
@@ -158,7 +172,7 @@ export default function StockDetailPage() {
   }
 
   // 심각한 에러가 있고 개발 모드가 아닐 때만 에러 화면 표시
-  if (error && !isDevMode() && !isLoading && !stockInfo) {
+  if (error && isDevMode() && !isLoading && !stockInfo) {
     return (
       <div className={styles.container}>
         <div className={styles.noDataState}>
@@ -176,20 +190,14 @@ export default function StockDetailPage() {
       {/* 연결 상태 및 개발 모드 표시 */}
       <div className={styles.connectionStatus}>
         <div className={styles.statusLeft}>
-          {isDevMode() ? (
-            <span className={styles.devMode}>
-              🛠️ 개발 모드 | 목업 데이터
-            </span>
+          {!isDevMode() ? (
+            <span className={styles.devMode}>🛠️ 개발 모드 | 목업 데이터</span>
           ) : (
             <span className={isConnected ? styles.connected : styles.disconnected}>
               {isConnected ? '🟢 실시간 연결됨' : '🔴 연결 중...'}
             </span>
           )}
-          {error && isDevMode() && (
-            <span className={styles.devError}>
-              ⚠️ {error}
-            </span>
-          )}
+          {error && !isDevMode() && <span className={styles.devError}>⚠️ {error}</span>}
         </div>
         <div className={styles.statusRight}>
           <span className={styles.stockCode}>
@@ -197,6 +205,69 @@ export default function StockDetailPage() {
           </span>
         </div>
       </div>
+
+      {/* STOMP 연결 디버깅 패널 */}
+      {isDevMode() && (
+        <div className={styles.debugPanel}>
+          <div className={styles.debugHeader}>
+            <h3>🔌 STOMP 연결 상태</h3>
+            <div className={styles.debugControls}>
+              <button onClick={disconnect} className={styles.disconnectBtn} disabled={!isConnected}>
+                연결 해제
+              </button>
+              <button onClick={reconnect} className={styles.reconnectBtn} disabled={true}>
+                재연결 (비활성화됨)
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.debugContent}>
+            <div className={styles.debugRow}>
+              <span className={styles.debugLabel}>STOMP 연결:</span>
+              <span className={connectionDetails.stompConnected ? styles.statusOk : styles.statusError}>
+                {connectionDetails.stompConnected ? '✅ 연결됨' : '❌ 연결 안됨'}
+              </span>
+            </div>
+
+            <div className={styles.debugRow}>
+              <span className={styles.debugLabel}>가격 구독:</span>
+              <span className={connectionDetails.priceSubscribed ? styles.statusOk : styles.statusError}>
+                {connectionDetails.priceSubscribed ? '✅ 구독 중' : '❌ 구독 안됨'}
+              </span>
+            </div>
+
+            <div className={styles.debugRow}>
+              <span className={styles.debugLabel}>호가 구독:</span>
+              <span className={connectionDetails.orderbookSubscribed ? styles.statusOk : styles.statusError}>
+                {connectionDetails.orderbookSubscribed ? '✅ 구독 중' : '❌ 구독 안됨'}
+              </span>
+            </div>
+
+            <div className={styles.debugRow}>
+              <span className={styles.debugLabel}>연결 시도:</span>
+              <span className={styles.debugValue}>{connectionDetails.connectionAttempts}회</span>
+            </div>
+
+            {connectionDetails.lastPriceUpdate && (
+              <div className={styles.debugRow}>
+                <span className={styles.debugLabel}>마지막 가격 업데이트:</span>
+                <span className={styles.debugValue}>
+                  {new Date(connectionDetails.lastPriceUpdate).toLocaleTimeString()}
+                </span>
+              </div>
+            )}
+
+            {connectionDetails.lastOrderbookUpdate && (
+              <div className={styles.debugRow}>
+                <span className={styles.debugLabel}>마지막 호가 업데이트:</span>
+                <span className={styles.debugValue}>
+                  {new Date(connectionDetails.lastOrderbookUpdate).toLocaleTimeString()}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 주식 정보 및 보유 현황 섹션 */}
       <div className={styles.stockInfoSection}>
