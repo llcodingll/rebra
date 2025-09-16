@@ -1,12 +1,11 @@
 package com.rebra.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Getter
 @Builder
@@ -14,12 +13,6 @@ import java.util.List;
 @AllArgsConstructor
 @Schema(description = "주식 차트 데이터 응답")
 public class StockChartResponse {
-
-    @Schema(description = "종목코드", example = "005930")
-    private String stockCode;
-
-    @Schema(description = "종목명", example = "삼성전자")
-    private String stockName;
 
     @Schema(description = "차트 기간 타입", example = "D")
     private String periodType;

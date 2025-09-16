@@ -1,18 +1,28 @@
 package com.rebra.controller;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rebra.common.CommonApiResponse;
 import com.rebra.config.resolver.LoginUserArgumentResolver;
 import com.rebra.dto.response.StockChartResponse;
-import com.rebra.exception.CustomRuntimeException;
-import com.rebra.exception.ExceptionCode;
 import com.rebra.exception.stock.StockException;
 import com.rebra.service.StockService;
 import com.rebra.service.StockTradingService;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.core.MethodParameter;
@@ -20,15 +30,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(StockController.class)
 @DisplayName("StockController 차트 API 테스트")
@@ -76,8 +77,6 @@ class StockControllerChartTest {
                 .build();
 
         return StockChartResponse.builder()
-                .stockCode("005930")
-                .stockName("삼성전자")
                 .periodType(periodType)
                 .periodDescription(StockChartResponse.PeriodType.fromCode(periodType).getDescription())
                 .startDate("20240101")
@@ -110,8 +109,6 @@ class StockControllerChartTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data.stockCode").value("005930"))
-                .andExpect(jsonPath("$.data.stockName").value("삼성전자"))
                 .andExpect(jsonPath("$.data.periodType").value("D"))
                 .andExpect(jsonPath("$.data.periodDescription").value("일봉"))
                 .andExpect(jsonPath("$.data.chartData").isArray())
@@ -120,7 +117,8 @@ class StockControllerChartTest {
                 .andExpect(jsonPath("$.data.chartData[0].closePrice").value("71000"))
                 .andExpect(jsonPath("$.data.summary.currentPrice").value("71000"));
 
-        verify(stockService, times(1)).getStockChartData(eq(stockCode), eq("20240101"), eq("20241231"), eq("D"), eq(1L));
+        verify(stockService, times(1)).getStockChartData(eq(stockCode), eq("20240101"), eq("20241231"), eq("D"),
+                eq(1L));
     }
 
     @Test
@@ -144,7 +142,8 @@ class StockControllerChartTest {
                 .andDo(print())
                 .andExpect(status().isNotFound());
 
-        verify(stockService, times(1)).getStockChartData(eq(nonExistentStockCode), eq("20240101"), eq("20241231"), eq("D"), eq(1L));
+        verify(stockService, times(1)).getStockChartData(eq(nonExistentStockCode), eq("20240101"), eq("20241231"),
+                eq("D"), eq(1L));
     }
 
     @Test

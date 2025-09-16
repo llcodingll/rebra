@@ -86,6 +86,7 @@
   z-index: 1; /* 크로스헤어 렌더링 우선순위 */
 }
 
+
 .volumeChart {
   flex: 2; /* 6:4 비율 - 4에 해당 */
   min-height: 120px; /* 원래 높이로 복원 */
