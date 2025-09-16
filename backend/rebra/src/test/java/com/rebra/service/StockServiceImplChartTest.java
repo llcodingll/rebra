@@ -1,11 +1,14 @@
 package com.rebra.service;
 
+import static com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult.Output1;
+import static com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult.Output2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.mock;
 import static org.mockito.BDDMockito.mockStatic;
 import static org.mockito.BDDMockito.never;
 import static org.mockito.BDDMockito.then;
@@ -15,16 +18,15 @@ import static org.springframework.test.util.ReflectionTestUtils.setField;
 import com.rebra.component.KisApiComponent;
 import com.rebra.dto.DecryptedAccountCredentials;
 import com.rebra.dto.response.StockChartResponse;
+import com.rebra.dto.response.StockChartResponse.ChartDataPoint;
+import com.rebra.dto.response.StockChartResponse.StockSummary;
 import com.rebra.entity.Account;
 import com.rebra.entity.AccountType;
 import com.rebra.entity.Stock;
 import com.rebra.entity.User;
 import com.rebra.repository.AccountRepository;
-import com.rebra.repository.StockRepository;
 import com.rebra.util.AccountEncryptionUtil;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,13 +45,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class StockServiceImplChartTest {
 
     @Mock
-    private StockRepository stockRepository;
-
-    @Mock
     private AccountRepository accountRepository;
 
-    @Mock
-    private KisRealtimeService kisRealtimeService;
 
     @Mock
     private KisApiComponent kisApiComponent;
@@ -61,7 +58,6 @@ class StockServiceImplChartTest {
     private User testUser;
     private Account testAccount;
     private DecryptedAccountCredentials testCredentials;
-    private Map<String, Object> mockKisResult;
 
     @BeforeEach
     void setUp() {
@@ -100,40 +96,49 @@ class StockServiceImplChartTest {
                 "test_app_key",
                 "test_app_secret"
         );
-
-        // Mock KIS API 응답 데이터 생성
-        mockKisResult = createMockKisApiResponse();
     }
 
     private Map<String, Object> createMockKisApiResponse() {
         Map<String, Object> result = new HashMap<>();
 
-        // output1 (종목 요약 정보)
-        Map<String, String> output1 = new HashMap<>();
-        output1.put("stck_prpr", "71000");         // 현재가
-        output1.put("prdy_vrss", "1000");          // 전일대비
-        output1.put("prdy_ctrt", "1.43");          // 전일대비율
-        output1.put("prdy_vrss_sign", "2");        // 전일대비부호
-        output1.put("acml_vol", "15000000");       // 누적거래량
-        output1.put("hts_avls", "425000000000000"); // HTS 시가총액
-        output1.put("per", "12.5");                // PER
-        output1.put("pbr", "0.8");                 // PBR
-        result.put("output1", output1);
+        // output1 (종목 요약 정보) - 실제 KIS API 응답과 동일한 구조로 변경
+        Output1 mockOutput1 = mock(Output1.class);
+        given(mockOutput1.getStckPrpr()).willReturn("71000");         // 현재가
+        given(mockOutput1.getPrdyVrss()).willReturn("1000");          // 전일대비
+        given(mockOutput1.getPrdyCtrt()).willReturn("1.43");          // 전일대비율
+        given(mockOutput1.getPrdyVrssSign()).willReturn("2");        // 전일대비부호
+        given(mockOutput1.getAcmlVol()).willReturn("15000000");       // 누적거래량
+        given(mockOutput1.getHtsAvls()).willReturn("425000000000000"); // HTS 시가총액
+        given(mockOutput1.getPer()).willReturn("12.5");                // PER
+        given(mockOutput1.getPbr()).willReturn("0.8");                 // PBR
+        // 새로 추가된 필드들 Mock 설정
+        given(mockOutput1.getStckPrdyClpr()).willReturn("70000");      // 전일 종가
+        given(mockOutput1.getStckMxpr()).willReturn("91000");          // 상한가
+        given(mockOutput1.getStckLlam()).willReturn("49000");          // 하한가
+        given(mockOutput1.getAskp()).willReturn("71100");              // 매도호가
+        given(mockOutput1.getBidp()).willReturn("70900");              // 매수호가
+        given(mockOutput1.getEps()).willReturn("5680");                // EPS
+        given(mockOutput1.getLstnStcn()).willReturn("5969782550");     // 상장주수
+        given(mockOutput1.getCpfn()).willReturn("778047");             // 자본금
+        result.put("output1", mockOutput1);
 
-        // output2 (차트 데이터)
-        List<Map<String, Object>> output2 = new ArrayList<>();
-        Map<String, Object> chartPoint = new HashMap<>();
-        chartPoint.put("stck_bsop_date", "20241215");    // 영업일자
-        chartPoint.put("stck_oprc", "70000");            // 시가
-        chartPoint.put("stck_hgpr", "72000");            // 고가
-        chartPoint.put("stck_lwpr", "69000");            // 저가
-        chartPoint.put("stck_clpr", "71000");            // 종가
-        chartPoint.put("acml_vol", "15000000");          // 누적거래량
-        chartPoint.put("acml_tr_pbmn", "1065000000000"); // 누적거래대금
-        chartPoint.put("prdy_vrss", "1000");             // 전일대비
-        chartPoint.put("prdy_vrss_sign", "2");           // 전일대비부호
-        chartPoint.put("prdy_ctrt", "1.43");             // 전일대비율
-        output2.add(chartPoint);
+        // output2 (차트 데이터) - 실제 KIS API 응답과 동일한 구조로 변경
+        // Mock InquireDailyItemchartpriceResult.Output2 객체 생성
+        Output2 mockOutput2 = mock(Output2.class);
+        given(mockOutput2.getStckBsopDate()).willReturn("20241215");     // 주식 영업일자
+        given(mockOutput2.getStckOprc()).willReturn("70000");            // 주식 시가
+        given(mockOutput2.getStckHgpr()).willReturn("72000");            // 주식 최고가
+        given(mockOutput2.getStckLwpr()).willReturn("69000");            // 주식 최저가
+        given(mockOutput2.getStckClpr()).willReturn("71000");            // 주식 종가
+        given(mockOutput2.getAcmlVol()).willReturn("15000000");          // 누적 거래량
+        given(mockOutput2.getAcmlTrPbmn()).willReturn("1065000000000"); // 누적 거래대금
+        given(mockOutput2.getPrdyVrss()).willReturn("1000");             // 전일 대비
+        given(mockOutput2.getPrdyVrssSign()).willReturn("2");           // 전일 대비 부호
+        // Output2에는 changeRate(prdyCtrt)가 없음 - Output1에만 존재
+
+        // KIS API에서 반환되는 것은 배열이므로 배열 형태로 모킹
+        Output2[] output2 = new Output2[]{
+                mockOutput2};
         result.put("output2", output2);
 
         return result;
@@ -148,6 +153,9 @@ class StockServiceImplChartTest {
         String startDate = "20240101";
         String endDate = "20241231";
         Long userId = 1L;
+
+        // 성공 테스트에서만 Mock KIS API 응답 생성
+        Map<String, Object> mockKisResult = createMockKisApiResponse();
 
         given(accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true))
                 .willReturn(Optional.of(testAccount));
@@ -174,7 +182,7 @@ class StockServiceImplChartTest {
 
             // 차트 데이터 검증
             assertThat(result.getChartData()).hasSize(1);
-            StockChartResponse.ChartDataPoint chartData = result.getChartData().get(0);
+            ChartDataPoint chartData = result.getChartData().get(0);
             assertThat(chartData.getTradingDate()).isEqualTo("20241215");
             assertThat(chartData.getOpenPrice()).isEqualTo("70000");
             assertThat(chartData.getHighPrice()).isEqualTo("72000");
@@ -182,11 +190,21 @@ class StockServiceImplChartTest {
             assertThat(chartData.getClosePrice()).isEqualTo("71000");
 
             // 요약 정보 검증
-            StockChartResponse.StockSummary summary = result.getSummary();
+            StockSummary summary = result.getSummary();
             assertThat(summary).isNotNull();
             assertThat(summary.getCurrentPrice()).isEqualTo("71000");
             assertThat(summary.getPriceChange()).isEqualTo("1000");
             assertThat(summary.getChangeRate()).isEqualTo("1.43");
+
+            // 새로 추가된 필드들 검증
+            assertThat(summary.getPreviousClosePrice()).isEqualTo("70000");
+            assertThat(summary.getUpperLimit()).isEqualTo("91000");
+            assertThat(summary.getLowerLimit()).isEqualTo("49000");
+            assertThat(summary.getAskPrice()).isEqualTo("71100");
+            assertThat(summary.getBidPrice()).isEqualTo("70900");
+            assertThat(summary.getEps()).isEqualTo("5680");
+            assertThat(summary.getListedShares()).isEqualTo("5969782550");
+            assertThat(summary.getCapital()).isEqualTo("778047");
 
             // Mock 호출 검증 - StockRepository 호출 제거됨
             then(accountRepository).should().findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true);
@@ -218,6 +236,7 @@ class StockServiceImplChartTest {
 
         // Mock 호출 검증
         then(accountRepository).should().findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true);
+        // KIS API는 계좌를 찾지 못하면 호출되지 않음
         then(kisApiComponent).should(never())
                 .getStockChartData(anyLong(), anyLong(), any(), anyString(), anyString(), anyString(), anyString());
     }
@@ -285,6 +304,7 @@ class StockServiceImplChartTest {
 
             // Mock 호출 검증
             then(accountRepository).should().findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true);
+            // KIS API는 복호화 실패 시 호출되지 않음
             then(kisApiComponent).should(never()).ensureUserCredentials(anyLong(), anyLong(), any(), any());
             then(kisApiComponent).should(never())
                     .getStockChartData(anyLong(), anyLong(), any(), anyString(), anyString(), anyString(), anyString());
@@ -325,6 +345,13 @@ class StockServiceImplChartTest {
             assertThat(result.getPeriodType()).isEqualTo(periodType);
             assertThat(result.getChartData()).isEmpty(); // 빈 차트 데이터
             assertThat(result.getSummary()).isNull();    // null 요약 정보
+
+            // Mock 호출 검증
+            then(accountRepository).should().findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true);
+            then(kisApiComponent).should()
+                    .ensureUserCredentials(userId, testAccount.getId(), testAccount.getAccountType(), testCredentials);
+            then(kisApiComponent).should().getStockChartData(userId, testAccount.getId(), testAccount.getAccountType(),
+                    stockCode, startDate, endDate, periodType);
         }
     }
 
@@ -336,6 +363,9 @@ class StockServiceImplChartTest {
         String startDate = "20240101";
         String endDate = "20241231";
         Long userId = 1L;
+
+        // 성공 테스트에서만 Mock KIS API 응답 생성
+        Map<String, Object> mockKisResult = createMockKisApiResponse();
 
         given(accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true))
                 .willReturn(Optional.of(testAccount));
