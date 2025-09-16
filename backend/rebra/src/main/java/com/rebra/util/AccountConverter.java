@@ -49,7 +49,7 @@ public class AccountConverter {
         return new AccountListResponse.AccountSummary(
             account.getId(),
             maskedAccountNumber,
-            account.getAccountType().name(),
+            account.getAccountType(),
             account.getBrokerName(),
             account.isConnected(),
             account.getCreatedAt()
@@ -66,7 +66,7 @@ public class AccountConverter {
             account.getId(),
             maskedAccountNumber,
             maskedAppKey,
-            account.getAccountType().name(),
+            account.getAccountType(),
             account.getBrokerName(),
             account.isConnected(),
             account.getCreatedAt(),
