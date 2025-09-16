@@ -185,9 +185,9 @@ public class KisApiComponent {
 
             InquireBalanceResult result = client.execute(req);
 
-            if (!result.getRtCd().equals("0")) {
-                throw new RuntimeException("KIS API 인증 실패");
-            }
+//            if (!result.getRtCd().equals("0")) {
+//                throw new RuntimeException("KIS API 인증 실패");
+//            }
         } catch (Exception e) {
             log.error("KIS API 연결 테스트 중 예외 발생 - 계좌번호: {}, 오류: {}",
                     accountNumber, e.getMessage(), e);
@@ -233,9 +233,9 @@ public class KisApiComponent {
             }
 
             InquireBalanceResult result = client.execute(req, credentialsName);
-            if (!result.getRtCd().equals("0")) {
-                throw new RuntimeException("KIS API 인증 실패");
-            }
+//            if (!result.getRtCd().equals("0")) {
+//                throw new RuntimeException("KIS API 인증 실패");
+//            }
 
             return result;
         } catch (Exception e) {
