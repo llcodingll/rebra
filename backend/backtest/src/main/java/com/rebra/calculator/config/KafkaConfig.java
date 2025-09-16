@@ -74,9 +74,9 @@ public class KafkaConfig {
         // 성능 및 안정성 설정
         configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"); // 처음부터 읽기
         configProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false); // 수동 커밋
-        configProps.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 30000); // 30초
-        configProps.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 10000); // 10초
-        configProps.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 600000); // 10분 (백테스트 처리 시간 고려)
+        configProps.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 45000); // 45초 (안정성 향상)
+        configProps.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 15000); // 15초 (session timeout의 1/3)
+        configProps.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 300000); // 5분 (rebalancing 빈도 줄임)
         configProps.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1); // 한 번에 하나씩 처리
         
         // 메모리 사용량 제한
@@ -233,8 +233,8 @@ public class KafkaConfig {
         
         factory.setConsumerFactory(consumerFactory());
         
-        // 동시성 설정 (CPU 코어 수만큼 컨슈머 생성)
-        int concurrency = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
+        // 동시성 설정 (백테스트는 CPU 집약적이므로 적은 수의 컨슈머로 안정성 확보)
+        int concurrency = 2;
         factory.setConcurrency(concurrency);
         
         // 수동 ACK 설정
@@ -287,7 +287,7 @@ public class KafkaConfig {
             @Value("${kafka.topics.backtest-request}") String requestTopic,
             @Value("${kafka.topics.backtest-result}") String resultTopic) {
         
-        int numPartitions = Math.max(2, Runtime.getRuntime().availableProcessors()); // 최소 2개 파티션
+        int numPartitions = 4; // Consumer 수와 균형을 맞춘 파티션 수
         short replicationFactor = 1; // 개발환경용
         
         org.apache.kafka.clients.admin.NewTopic requestTopicConfig = 

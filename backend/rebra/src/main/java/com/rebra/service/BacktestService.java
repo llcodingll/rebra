@@ -7,6 +7,8 @@ import com.rebra.dto.response.BacktestValidationResponse;
 import com.rebra.dto.response.PageResponse;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Map;
+
 public interface BacktestService {
 
     /**
@@ -37,6 +39,6 @@ public interface BacktestService {
     /**
      * 백테스트 결과 처리 (Kafka Consumer에서 호출)
      */
-    void processBacktestResult(Object backtestResponse);
+    void processBacktestResult(Map<String, Object> backtestResponse);
 
 }

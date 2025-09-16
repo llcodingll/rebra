@@ -58,9 +58,8 @@ public class StockHistoricalServiceImpl implements StockHistoricalService {
             return List.of();
         }
 
-        // 2. API 결과 처리 및 새로운 데이터만 DB에 저장
+        // 2. API 결과 처리 - Stock 엔티티만 저장, StockPrice는 응답용으로만 사용
         List<StockHistoricalDataResponse> responses = new ArrayList<>();
-        List<StockPrice> newStockPrices = new ArrayList<>();
         
         for (FssStockPriceResponse.StockItem item : apiResults) {
             try {
@@ -69,23 +68,13 @@ public class StockHistoricalServiceImpl implements StockHistoricalService {
                     continue; // 관련 없는 종목은 건너뛰기
                 }
 
-                // Stock 엔티티 생성 또는 조회
+                // Stock 엔티티 생성 또는 조회 (DB에 저장됨)
                 Stock stock = getOrCreateStock(item.getSrtnCd(), item.getItmsNm());
                 
-                // StockPrice가 이미 DB에 존재하는지 확인
-                LocalDate itemDate = LocalDate.parse(item.getBasDt(), DATE_FORMATTER);
-                boolean exists = stockPriceRepository.existsByTickerAndDate(item.getSrtnCd(), itemDate);
-                
+                // StockPrice는 메모리에서만 생성 (DB 저장 없음)
                 StockPrice stockPrice = convertToStockPrice(item, stock);
                 
-                // DB에 없는 경우에만 저장 리스트에 추가
-                if (!exists) {
-                    newStockPrices.add(stockPrice);
-                    log.debug("새로운 주식 데이터 추가 - 종목: {}, 코드: {}", item.getItmsNm(), item.getSrtnCd());
-                } else {
-                    log.debug("기존 주식 데이터 발견 - 종목: {}, 코드: {}", item.getItmsNm(), item.getSrtnCd());
-                }
-                
+                // 응답 리스트에 추가 (프론트엔드 반환용)
                 responses.add(StockHistoricalDataResponse.from(stockPrice));
                 
             } catch (Exception e) {
@@ -94,14 +83,7 @@ public class StockHistoricalServiceImpl implements StockHistoricalService {
             }
         }
         
-        // 3. 새로운 StockPrice만 일괄 저장
-        if (!newStockPrices.isEmpty()) {
-            stockPriceRepository.saveAll(newStockPrices);
-            log.info("새로운 주식 데이터 저장 완료 - 저장된 건수: {}", newStockPrices.size());
-        }
-
-        log.info("FSS API 조회 및 처리 완료 - 전체 응답 건수: {}, 새로 저장된 건수: {}", 
-                responses.size(), newStockPrices.size());
+        log.info("FSS API 조회 및 처리 완료 - 전체 응답 건수: {}", responses.size());
         return responses;
     }
 

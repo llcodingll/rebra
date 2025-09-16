@@ -28,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -234,7 +235,7 @@ public class BacktestServiceImpl implements BacktestService {
     }
 
     @KafkaListener(topics = "backtest-result", groupId = "rebra-main-server")
-    public void handleBacktestResult(Object message, Acknowledgment acknowledgment) {
+    public void handleBacktestResult(@Payload Map<String, Object> message, Acknowledgment acknowledgment) {
         try {
             processBacktestResult(message);
             acknowledgment.acknowledge();
@@ -246,10 +247,9 @@ public class BacktestServiceImpl implements BacktestService {
     }
 
     @Override
-    public void processBacktestResult(Object backtestResponse) {
+    public void processBacktestResult(Map<String, Object> responseMap) {
         try {
-            // JSON을 Map으로 변환
-            Map<String, Object> responseMap = objectMapper.convertValue(backtestResponse, Map.class);
+            // 이미 Map으로 받아왔으므로 변환 불필요
             Long backtestId = Long.valueOf(responseMap.get("backtest_id").toString());
             String status = responseMap.get("status").toString();
 
