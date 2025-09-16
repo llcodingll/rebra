@@ -6,6 +6,7 @@ import com.rebra.dto.common.ValidationErrorResponse;
 import com.rebra.exception.account.AccountException;
 import com.rebra.exception.auth.AuthException;
 import com.rebra.exception.backtest.BacktestException;
+import com.rebra.exception.portfolio.PortfolioException;
 import com.rebra.exception.signup.SignupException;
 import com.rebra.exception.token.TokenException;
 import com.rebra.exception.stock.StockException;
@@ -102,13 +103,19 @@ public class GlobalExceptionHandler {
                 .body(CommonApiResponse.error(e));
     }
 
+    @ExceptionHandler(PortfolioException.class)
+    public ResponseEntity<CommonApiResponse<Void>> handlePortfolioException(PortfolioException e) {
+        log.warn("Portfolio exception: {}", e.getMessage());
+        return ResponseEntity.status(e.getStatus())
+                .body(CommonApiResponse.error(e));
+    }
+
     @ExceptionHandler(CustomRuntimeException.class)
     public ResponseEntity<CommonApiResponse<Void>> handleCustomRuntimeException(CustomRuntimeException e) {
         log.warn("Custom runtime exception: {} - {}", e.getExceptionCode(), e.getMessage());
         return ResponseEntity.status(e.getExceptionCode().getStatus())
                 .body(CommonApiResponse.error(e.getExceptionCode().name(), e.getMessage(), e.getExceptionCode().getStatus()));
     }
-
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<CommonApiResponse<ValidationErrorResponse>> handleValidationException(MethodArgumentNotValidException ex) {

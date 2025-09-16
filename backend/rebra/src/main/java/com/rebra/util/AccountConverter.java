@@ -6,7 +6,6 @@ import com.rebra.dto.response.AccountListResponse;
 import com.rebra.dto.response.AccountListResponse.AccountSummary;
 import com.rebra.entity.Account;
 import com.rebra.entity.AccountType;
-import com.rebra.entity.ConnectionStatus;
 import com.rebra.entity.User;
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,9 +49,9 @@ public class AccountConverter {
         return new AccountListResponse.AccountSummary(
             account.getId(),
             maskedAccountNumber,
-            account.getAccountType().name(),
+            account.getAccountType(),
             account.getBrokerName(),
-            account.getConnectionStatus().name(),
+            account.isConnected(),
             account.getCreatedAt()
         );
     }
@@ -63,17 +62,16 @@ public class AccountConverter {
         String maskedAppKey = decryptAndMaskAppKey(
             account.getAppKey(), account.getUser().getId());
 
-        return new AccountDetailResponse(
+        return AccountDetailResponse.of(
             account.getId(),
             maskedAccountNumber,
             maskedAppKey,
-            account.getAccountType().name(),
+            account.getAccountType(),
             account.getBrokerName(),
-            account.getConnectionStatus().name(),
+            account.isConnected(),
             account.getCreatedAt(),
-            account.getIsDeleted(),
-            "연결 상태 양호",
-            !account.getIsDeleted()
+            "계좌 연결됨",
+            account.isConnected()
         );
     }
 
@@ -96,8 +94,7 @@ public class AccountConverter {
                 .appSecret(encryptedAppSecret)
                 .brokerName("한국투자증권") // TODO: 확장 할까요 말까요..?
                 .accountType(accountType)
-                .isDeleted(false)
-                .connectionStatus(ConnectionStatus.CONNECTED)
+                .isConnected(true)
                 .build();
 
         } catch (Exception e) {
