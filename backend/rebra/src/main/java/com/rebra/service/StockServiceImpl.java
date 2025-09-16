@@ -11,9 +11,9 @@ import com.rebra.exception.stock.StockException;
 import com.rebra.repository.AccountRepository;
 import com.rebra.repository.StockRepository;
 import com.rebra.util.AccountEncryptionUtil;
+import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -66,7 +66,7 @@ public class StockServiceImpl implements StockService {
             DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
             kisApiComponent.ensureUserCredentials(userId, account.getId(), account.getAccountType(), credentials);
 
-            Map<String, Object> kisResult = kisApiComponent.getStockChartData(
+            InquireDailyItemchartpriceResult kisResult = kisApiComponent.getStockChartData(
                     userId, account.getId(), account.getAccountType(),
                     stockCode, startDate, endDate, periodType
             );
@@ -96,40 +96,40 @@ public class StockServiceImpl implements StockService {
         }
     }
 
-    private StockChartResponse buildStockChartResponse(String stockCode, Map<String, Object> kisResult,
+    private StockChartResponse buildStockChartResponse(String stockCode, InquireDailyItemchartpriceResult kisResult,
                                                        String startDate, String endDate, String periodType) {
         List<StockChartResponse.ChartDataPoint> chartData = new ArrayList<>();
         StockChartResponse.StockSummary summary = null;
 
-        if (kisResult != null && kisResult.containsKey("output2")) {
-            List<Map<String, Object>> output2 = (List<Map<String, Object>>) kisResult.get("output2");
+        if (kisResult != null && kisResult.getOutput2() != null) {
+            InquireDailyItemchartpriceResult.Output2[] output2Array = kisResult.getOutput2();
 
-            for (Map<String, Object> item : output2) {
+            for (InquireDailyItemchartpriceResult.Output2 item : output2Array) {
                 chartData.add(StockChartResponse.ChartDataPoint.builder()
-                        .tradingDate((String) item.get("stck_bsop_date"))
-                        .openPrice((String) item.get("stck_oprc"))
-                        .highPrice((String) item.get("stck_hgpr"))
-                        .lowPrice((String) item.get("stck_lwpr"))
-                        .closePrice((String) item.get("stck_clpr"))
-                        .volume((String) item.get("acml_vol"))
-                        .tradingValue((String) item.get("acml_tr_pbmn"))
-                        .priceChange((String) item.get("prdy_vrss"))
-                        .changeSign((String) item.get("prdy_vrss_sign"))
-                        .changeRate((String) item.get("prdy_ctrt"))
+                        .tradingDate(item.getStckBsopDate())
+                        .openPrice(item.getStckOprc())
+                        .highPrice(item.getStckHgpr())
+                        .lowPrice(item.getStckLwpr())
+                        .closePrice(item.getStckClpr())
+                        .volume(item.getAcmlVol())
+                        .tradingValue(item.getAcmlTrPbmn())
+                        .priceChange(item.getPrdyVrss())
+                        .changeSign(item.getPrdyVrssSign())
+                        .changeRate(item.getPrttRate())
                         .build());
             }
 
-            if (kisResult.containsKey("output1")) {
-                Map<String, Object> output1 = (Map<String, Object>) kisResult.get("output1");
+            if (kisResult.getOutput1() != null) {
+                InquireDailyItemchartpriceResult.Output1 output1 = kisResult.getOutput1();
                 summary = StockChartResponse.StockSummary.builder()
-                        .currentPrice((String) output1.get("stck_prpr"))
-                        .priceChange((String) output1.get("prdy_vrss"))
-                        .changeRate((String) output1.get("prdy_ctrt"))
-                        .changeSign((String) output1.get("prdy_vrss_sign"))
-                        .volume((String) output1.get("acml_vol"))
-                        .marketCap((String) output1.get("hts_avls"))
-                        .per((String) output1.get("per"))
-                        .pbr((String) output1.get("pbr"))
+                        .currentPrice(output1.getStckPrpr())
+                        .priceChange(output1.getPrdyVrss())
+                        .changeRate(output1.getPrdyCtrt())
+                        .changeSign(output1.getPrdyVrssSign())
+                        .volume(output1.getAcmlVol())
+                        .marketCap(output1.getHtsAvls())
+                        .per(output1.getPer())
+                        .pbr(output1.getPbr())
                         .build();
             }
         }

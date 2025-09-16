@@ -10,6 +10,7 @@ import static org.mockito.BDDMockito.mockStatic;
 import static org.mockito.BDDMockito.never;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.Mockito.mock;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 import com.rebra.component.KisApiComponent;
@@ -22,9 +23,9 @@ import com.rebra.entity.User;
 import com.rebra.repository.AccountRepository;
 import com.rebra.repository.StockRepository;
 import com.rebra.util.AccountEncryptionUtil;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult;
+import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult.Output1;
+import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult.Output2;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,7 +62,7 @@ class StockServiceImplChartTest {
     private User testUser;
     private Account testAccount;
     private DecryptedAccountCredentials testCredentials;
-    private Map<String, Object> mockKisResult;
+    private InquireDailyItemchartpriceResult mockKisResult;
 
     @BeforeEach
     void setUp() {
@@ -101,40 +102,40 @@ class StockServiceImplChartTest {
                 "test_app_secret"
         );
 
-        // Mock KIS API 응답 데이터 생성
-        mockKisResult = createMockKisApiResponse();
+        // Mock KIS API 응답 데이터는 각 테스트에서 개별 생성
     }
 
-    private Map<String, Object> createMockKisApiResponse() {
-        Map<String, Object> result = new HashMap<>();
+    private InquireDailyItemchartpriceResult createMockKisApiResponse() {
+        InquireDailyItemchartpriceResult result = mock(InquireDailyItemchartpriceResult.class);
 
-        // output1 (종목 요약 정보)
-        Map<String, String> output1 = new HashMap<>();
-        output1.put("stck_prpr", "71000");         // 현재가
-        output1.put("prdy_vrss", "1000");          // 전일대비
-        output1.put("prdy_ctrt", "1.43");          // 전일대비율
-        output1.put("prdy_vrss_sign", "2");        // 전일대비부호
-        output1.put("acml_vol", "15000000");       // 누적거래량
-        output1.put("hts_avls", "425000000000000"); // HTS 시가총액
-        output1.put("per", "12.5");                // PER
-        output1.put("pbr", "0.8");                 // PBR
-        result.put("output1", output1);
+        // Output1 Mock
+        Output1 output1 = mock(Output1.class);
+        given(output1.getStckPrpr()).willReturn("71000");
+        given(output1.getPrdyVrss()).willReturn("1000");
+        given(output1.getPrdyCtrt()).willReturn("1.43");
+        given(output1.getPrdyVrssSign()).willReturn("2");
+        given(output1.getAcmlVol()).willReturn("15000000");
+        given(output1.getHtsAvls()).willReturn("425000000000000");
+        given(output1.getPer()).willReturn("12.5");
+        given(output1.getPbr()).willReturn("0.8");
 
-        // output2 (차트 데이터)
-        List<Map<String, Object>> output2 = new ArrayList<>();
-        Map<String, Object> chartPoint = new HashMap<>();
-        chartPoint.put("stck_bsop_date", "20241215");    // 영업일자
-        chartPoint.put("stck_oprc", "70000");            // 시가
-        chartPoint.put("stck_hgpr", "72000");            // 고가
-        chartPoint.put("stck_lwpr", "69000");            // 저가
-        chartPoint.put("stck_clpr", "71000");            // 종가
-        chartPoint.put("acml_vol", "15000000");          // 누적거래량
-        chartPoint.put("acml_tr_pbmn", "1065000000000"); // 누적거래대금
-        chartPoint.put("prdy_vrss", "1000");             // 전일대비
-        chartPoint.put("prdy_vrss_sign", "2");           // 전일대비부호
-        chartPoint.put("prdy_ctrt", "1.43");             // 전일대비율
-        output2.add(chartPoint);
-        result.put("output2", output2);
+        // Output2 Mock
+        Output2 output2Item = mock(Output2.class);
+        given(output2Item.getStckBsopDate()).willReturn("20241215");
+        given(output2Item.getStckOprc()).willReturn("70000");
+        given(output2Item.getStckHgpr()).willReturn("72000");
+        given(output2Item.getStckLwpr()).willReturn("69000");
+        given(output2Item.getStckClpr()).willReturn("71000");
+        given(output2Item.getAcmlVol()).willReturn("15000000");
+        given(output2Item.getAcmlTrPbmn()).willReturn("1065000000000");
+        given(output2Item.getPrdyVrss()).willReturn("1000");
+        given(output2Item.getPrdyVrssSign()).willReturn("2");
+        given(output2Item.getPrttRate()).willReturn("1.43");
+
+        Output2[] output2Array = {output2Item};
+
+        given(result.getOutput1()).willReturn(output1);
+        given(result.getOutput2()).willReturn(output2Array);
 
         return result;
     }
@@ -156,6 +157,7 @@ class StockServiceImplChartTest {
             mockedUtil.when(() -> AccountEncryptionUtil.decryptAccountCredentials(testAccount, userId))
                     .thenReturn(testCredentials);
 
+            InquireDailyItemchartpriceResult mockKisResult = createMockKisApiResponse();
             willDoNothing().given(kisApiComponent)
                     .ensureUserCredentials(userId, testAccount.getId(), testAccount.getAccountType(), testCredentials);
             given(kisApiComponent.getStockChartData(userId, testAccount.getId(), testAccount.getAccountType(),
@@ -301,7 +303,7 @@ class StockServiceImplChartTest {
         String periodType = "D";
         Long userId = 1L;
 
-        Map<String, Object> emptyKisResult = new HashMap<>();
+        InquireDailyItemchartpriceResult emptyKisResult = mock(InquireDailyItemchartpriceResult.class);
 
         given(accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true))
                 .willReturn(Optional.of(testAccount));
