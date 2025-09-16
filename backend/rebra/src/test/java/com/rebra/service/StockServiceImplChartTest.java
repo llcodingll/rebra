@@ -150,8 +150,6 @@ class StockServiceImplChartTest {
         String endDate = "20241231";
         Long userId = 1L;
 
-        given(stockRepository.findByStockCodeAndIsActiveTrue(stockCode))
-                .willReturn(Optional.of(testStock));
         given(accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true))
                 .willReturn(Optional.of(testAccount));
 
@@ -172,7 +170,7 @@ class StockServiceImplChartTest {
             // Then
             assertThat(result).isNotNull();
             assertThat(result.getStockCode()).isEqualTo(stockCode);
-            assertThat(result.getStockName()).isEqualTo("삼성전자");
+            assertThat(result.getStockName()).isNull(); // 프론트엔드에서 관리
             assertThat(result.getPeriodType()).isEqualTo(periodType);
             assertThat(result.getStartDate()).isEqualTo(startDate);
             assertThat(result.getEndDate()).isEqualTo(endDate);
@@ -193,8 +191,7 @@ class StockServiceImplChartTest {
             assertThat(summary.getPriceChange()).isEqualTo("1000");
             assertThat(summary.getChangeRate()).isEqualTo("1.43");
 
-            // Mock 호출 검증
-            then(stockRepository).should().findByStockCodeAndIsActiveTrue(stockCode);
+            // Mock 호출 검증 - StockRepository 호출 제거됨
             then(accountRepository).should().findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true);
             then(kisApiComponent).should()
                     .ensureUserCredentials(userId, testAccount.getId(), testAccount.getAccountType(), testCredentials);
@@ -203,31 +200,6 @@ class StockServiceImplChartTest {
         }
     }
 
-    @Test
-    @DisplayName("존재하지 않는 종목코드로 차트 조회 실패")
-    void getStockChartData_Fail_StockNotFound() {
-        // Given
-        String nonExistentStockCode = "999999";
-        String startDate = "20240101";
-        String endDate = "20241231";
-        Long userId = 1L;
-
-        given(stockRepository.findByStockCodeAndIsActiveTrue(nonExistentStockCode))
-                .willReturn(Optional.empty());
-
-        // When & Then
-        assertThatThrownBy(() -> stockService.getStockChartData(
-                nonExistentStockCode, startDate, endDate, "D", userId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("차트 데이터 조회에 실패했습니다");
-
-        // Mock 호출 검증
-        then(stockRepository).should().findByStockCodeAndIsActiveTrue(nonExistentStockCode);
-        then(accountRepository).should(never())
-                .findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(anyLong(), anyBoolean());
-        then(kisApiComponent).should(never())
-                .getStockChartData(anyLong(), anyLong(), any(), anyString(), anyString(), anyString(), anyString());
-    }
 
     @Test
     @DisplayName("활성화된 계좌 없음으로 차트 조회 실패")
@@ -238,8 +210,6 @@ class StockServiceImplChartTest {
         String endDate = "20241231";
         Long userId = 1L;
 
-        given(stockRepository.findByStockCodeAndIsActiveTrue(stockCode))
-                .willReturn(Optional.of(testStock));
         given(accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true))
                 .willReturn(Optional.empty());
 
@@ -250,7 +220,6 @@ class StockServiceImplChartTest {
                 .hasMessageContaining("활성화된 계좌를 찾을 수 없습니다");
 
         // Mock 호출 검증
-        then(stockRepository).should().findByStockCodeAndIsActiveTrue(stockCode);
         then(accountRepository).should().findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true);
         then(kisApiComponent).should(never())
                 .getStockChartData(anyLong(), anyLong(), any(), anyString(), anyString(), anyString(), anyString());
@@ -266,8 +235,6 @@ class StockServiceImplChartTest {
         String periodType = "D";
         Long userId = 1L;
 
-        given(stockRepository.findByStockCodeAndIsActiveTrue(stockCode))
-                .willReturn(Optional.of(testStock));
         given(accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true))
                 .willReturn(Optional.of(testAccount));
 
@@ -288,7 +255,6 @@ class StockServiceImplChartTest {
                     .hasMessageContaining("KIS API 연동에 실패했습니다");
 
             // Mock 호출 검증
-            then(stockRepository).should().findByStockCodeAndIsActiveTrue(stockCode);
             then(accountRepository).should().findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true);
             then(kisApiComponent).should()
                     .ensureUserCredentials(userId, testAccount.getId(), testAccount.getAccountType(), testCredentials);
@@ -307,8 +273,6 @@ class StockServiceImplChartTest {
         String periodType = "D";
         Long userId = 1L;
 
-        given(stockRepository.findByStockCodeAndIsActiveTrue(stockCode))
-                .willReturn(Optional.of(testStock));
         given(accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true))
                 .willReturn(Optional.of(testAccount));
 
@@ -323,7 +287,6 @@ class StockServiceImplChartTest {
                     .hasMessageContaining("계좌 정보 복호화에 실패했습니다");
 
             // Mock 호출 검증
-            then(stockRepository).should().findByStockCodeAndIsActiveTrue(stockCode);
             then(accountRepository).should().findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true);
             then(kisApiComponent).should(never()).ensureUserCredentials(anyLong(), anyLong(), any(), any());
             then(kisApiComponent).should(never())
@@ -343,8 +306,6 @@ class StockServiceImplChartTest {
 
         Map<String, Object> emptyKisResult = new HashMap<>();
 
-        given(stockRepository.findByStockCodeAndIsActiveTrue(stockCode))
-                .willReturn(Optional.of(testStock));
         given(accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true))
                 .willReturn(Optional.of(testAccount));
 
@@ -365,7 +326,7 @@ class StockServiceImplChartTest {
             // Then
             assertThat(result).isNotNull();
             assertThat(result.getStockCode()).isEqualTo(stockCode);
-            assertThat(result.getStockName()).isEqualTo("삼성전자");
+            assertThat(result.getStockName()).isNull(); // 프론트엔드에서 관리
             assertThat(result.getPeriodType()).isEqualTo(periodType);
             assertThat(result.getChartData()).isEmpty(); // 빈 차트 데이터
             assertThat(result.getSummary()).isNull();    // null 요약 정보
@@ -381,8 +342,6 @@ class StockServiceImplChartTest {
         String endDate = "20241231";
         Long userId = 1L;
 
-        given(stockRepository.findByStockCodeAndIsActiveTrue(stockCode))
-                .willReturn(Optional.of(testStock));
         given(accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true))
                 .willReturn(Optional.of(testAccount));
 
