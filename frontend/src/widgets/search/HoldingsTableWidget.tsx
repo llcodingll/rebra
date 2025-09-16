@@ -5,7 +5,7 @@ import HoldingsPagination from './components/HoldingsPagination';
 import TableLayoutContainer from './components/TableLayoutContainer';
 
 interface HoldingsTableWidgetProps {
-  onStockSelect: (stockCode: string) => void;
+  onStockSelect: (stock: { code: string; name: string }) => void;
 }
 
 export default function HoldingsTableWidget_v2({ onStockSelect }: HoldingsTableWidgetProps) {
@@ -48,7 +48,7 @@ export default function HoldingsTableWidget_v2({ onStockSelect }: HoldingsTableW
                 className={`${styles.singleDataValue} ${index % 2 === 0 ? styles.evenRow : ''} ${
                   hoveredRowIndex === index ? styles.hovered : ''
                 }`}
-                onClick={() => onStockSelect(stock.code)}
+                onClick={() => onStockSelect({ code: stock.code, name: stock.name })}
                 onMouseEnter={() => setHoveredRowIndex(index)}
                 onMouseLeave={() => setHoveredRowIndex(null)}
               >
@@ -69,7 +69,7 @@ export default function HoldingsTableWidget_v2({ onStockSelect }: HoldingsTableW
                 className={`${styles.dataRow} ${index % 2 === 0 ? styles.evenRow : ''} ${
                   hoveredRowIndex === index ? styles.hovered : ''
                 }`}
-                onClick={() => onStockSelect(stock.code)}
+                onClick={() => onStockSelect({ code: stock.code, name: stock.name })}
                 onMouseEnter={() => setHoveredRowIndex(index)}
                 onMouseLeave={() => setHoveredRowIndex(null)}
               >
@@ -91,7 +91,7 @@ export default function HoldingsTableWidget_v2({ onStockSelect }: HoldingsTableW
                 className={`${styles.dataRow} ${index % 2 === 0 ? styles.evenRow : ''} ${
                   hoveredRowIndex === index ? styles.hovered : ''
                 }`}
-                onClick={() => onStockSelect(stock.code)}
+                onClick={() => onStockSelect({ code: stock.code, name: stock.name })}
                 onMouseEnter={() => setHoveredRowIndex(index)}
                 onMouseLeave={() => setHoveredRowIndex(null)}
               >
@@ -119,7 +119,7 @@ export default function HoldingsTableWidget_v2({ onStockSelect }: HoldingsTableW
                 className={`${styles.dataRow} ${index % 2 === 0 ? styles.evenRow : ''} ${
                   hoveredRowIndex === index ? styles.hovered : ''
                 }`}
-                onClick={() => onStockSelect(stock.code)}
+                onClick={() => onStockSelect({ code: stock.code, name: stock.name })}
                 onMouseEnter={() => setHoveredRowIndex(index)}
                 onMouseLeave={() => setHoveredRowIndex(null)}
               >
@@ -147,7 +147,7 @@ export default function HoldingsTableWidget_v2({ onStockSelect }: HoldingsTableW
                 className={`${styles.dataRow} ${index % 2 === 0 ? styles.evenRow : ''} ${
                   hoveredRowIndex === index ? styles.hovered : ''
                 }`}
-                onClick={() => onStockSelect(stock.code)}
+                onClick={() => onStockSelect({ code: stock.code, name: stock.name })}
                 onMouseEnter={() => setHoveredRowIndex(index)}
                 onMouseLeave={() => setHoveredRowIndex(null)}
               >
@@ -169,7 +169,7 @@ export default function HoldingsTableWidget_v2({ onStockSelect }: HoldingsTableW
                 className={`${styles.dataRow} ${index % 2 === 0 ? styles.evenRow : ''} ${
                   hoveredRowIndex === index ? styles.hovered : ''
                 }`}
-                onClick={() => onStockSelect(stock.code)}
+                onClick={() => onStockSelect({ code: stock.code, name: stock.name })}
                 onMouseEnter={() => setHoveredRowIndex(index)}
                 onMouseLeave={() => setHoveredRowIndex(null)}
               >
@@ -191,7 +191,7 @@ export default function HoldingsTableWidget_v2({ onStockSelect }: HoldingsTableW
                 className={`${styles.dataRow} ${index % 2 === 0 ? styles.evenRow : ''} ${
                   hoveredRowIndex === index ? styles.hovered : ''
                 }`}
-                onClick={() => onStockSelect(stock.code)}
+                onClick={() => onStockSelect({ code: stock.code, name: stock.name })}
                 onMouseEnter={() => setHoveredRowIndex(index)}
                 onMouseLeave={() => setHoveredRowIndex(null)}
               >
