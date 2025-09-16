@@ -78,7 +78,7 @@ class PortfolioServiceImplTest {
             List<Portfolio> portfolios = Arrays.asList(portfolio);
 
             given(portfolioRepository.findByUserIdOrderByCreatedAtDesc(userId)).willReturn(portfolios);
-            given(portfolioStockRepository.findByPortfolioIdAndStatus(portfolio.getId(), "ACTIVE"))
+            given(portfolioStockRepository.findByPortfolioIdOrderByCreatedAtDesc(portfolio.getId()))
                     .willReturn(Collections.emptyList());
 
             try (MockedStatic<AccountEncryptionUtil> mockedStatic = mockStatic(AccountEncryptionUtil.class);
@@ -269,7 +269,7 @@ class PortfolioServiceImplTest {
 
                 InquireBalanceResult balanceResult = createMockBalanceResult();
 
-                given(portfolioStockRepository.findByPortfolioIdAndStatus(portfolioId, "ACTIVE"))
+                given(portfolioStockRepository.findByPortfolioIdOrderByCreatedAtDesc(portfolioId))
                         .willReturn(Arrays.asList());
                 given(kisApiComponent.getUserBalance(eq(userId), eq(account.getId()), eq(account.getAccountType()), any(DecryptedAccountCredentials.class)))
                         .willReturn(balanceResult);
