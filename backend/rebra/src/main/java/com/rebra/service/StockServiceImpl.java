@@ -1,5 +1,7 @@
 package com.rebra.service;
 
+import com.rebra.component.KisApiComponent;
+import com.rebra.dto.DecryptedAccountCredentials;
 import com.rebra.dto.response.PageResponse;
 import com.rebra.dto.response.StockChartResponse;
 import com.rebra.dto.response.StockDetailResponse;
@@ -9,16 +11,10 @@ import com.rebra.entity.Stock;
 import com.rebra.exception.stock.StockException;
 import com.rebra.repository.AccountRepository;
 import com.rebra.repository.StockRepository;
-import com.rebra.service.KisRealtimeService;
-import com.rebra.component.KisApiComponent;
-import com.rebra.entity.AccountType;
 import com.rebra.util.AccountEncryptionUtil;
-import com.rebra.dto.DecryptedAccountCredentials;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -66,7 +62,7 @@ public class StockServiceImpl implements StockService {
         // 프론트엔드에서 WebSocket 채널 정보를 받고 직접 구독
         return getStockDetailWithWebSocketInfo(stockCode, userId);
     }
-    
+
     @Override
     public StockDetailResponse getStockDetailWithWebSocketInfo(String stockCode, Long userId) {
         try {
@@ -104,14 +100,15 @@ public class StockServiceImpl implements StockService {
     }
 
     @Override
-    public StockChartResponse getStockChartData(String stockCode, String startDate, String endDate, String periodType, Long userId) {
+    public StockChartResponse getStockChartData(String stockCode, String startDate, String endDate, String periodType,
+                                                Long userId) {
         try {
             log.info("차트 데이터 조회 시작 - UserId: {}, StockCode: {}, Period: {}", userId, stockCode, periodType);
 
             Stock stock = stockRepository.findByStockCodeAndIsActiveTrue(stockCode)
                     .orElseThrow(StockException::stockCodeNotFound);
 
-            Account account = accountRepository.findByUserIdAndIsDeletedFalse(userId)
+            Account account = accountRepository.findByUserId(userId)
                     .stream()
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("활성화된 계좌를 찾을 수 없습니다."));
@@ -133,7 +130,7 @@ public class StockServiceImpl implements StockService {
     }
 
     private StockChartResponse buildStockChartResponse(Stock stock, Map<String, Object> kisResult,
-                                                      String startDate, String endDate, String periodType) {
+                                                       String startDate, String endDate, String periodType) {
         List<StockChartResponse.ChartDataPoint> chartData = new ArrayList<>();
         StockChartResponse.StockSummary summary = null;
 
