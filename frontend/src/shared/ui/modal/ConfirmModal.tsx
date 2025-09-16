@@ -36,7 +36,14 @@ export default function ConfirmModal({
       showCloseButton={false}
     >
       <div className={styles.content}>
-        <p className={styles.message}>{message}</p>
+        <p className={styles.message}>
+          {message.split('\n').map((line, index) => (
+            <span key={index}>
+              {line}
+              {index < message.split('\n').length - 1 && <br />}
+            </span>
+          ))}
+        </p>
 
         <div className={styles.buttonGroup}>
           <button

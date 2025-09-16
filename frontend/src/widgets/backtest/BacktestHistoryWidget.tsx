@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Activity, TrendingUp } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import styles from './BacktestHistoryWidget.module.css';
 import BacktestRow from '../../features/backtest/BacktestRow';
 
@@ -27,47 +27,8 @@ interface BacktestHistoryWidgetProps {
 export default function BacktestHistoryWidget({ data = [], onBacktestClick, onBacktestDelete, currentPage, itemsPerPage }: BacktestHistoryWidgetProps) {
   const paginatedData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  // 전체 통계 계산
-  const totalBacktests = data.length;
-  const completedBacktests = data.filter(item => item.status === '완료').length;
-  const avgReturn = data.length > 0 
-    ? (data.reduce((sum, item) => sum + parseFloat(item.totalReturn.replace('%', '')), 0) / data.length).toFixed(1)
-    : '0.0';
-
   return (
     <div className={styles.historySection}>
-      {/* 전체 통계 요약 */}
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statContent}>
-            <div className={styles.statText}>
-              <p className={styles.statLabel}>총 백테스트</p>
-              <p className={styles.statValue}>{totalBacktests}</p>
-            </div>
-            <BarChart3 className={styles.statIcon} />
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statContent}>
-            <div className={styles.statText}>
-              <p className={styles.statLabel}>완료된 백테스트</p>
-              <p className={styles.statValue}>{completedBacktests}</p>
-            </div>
-            <Activity className={styles.statIcon} />
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statContent}>
-            <div className={styles.statText}>
-              <p className={styles.statLabel}>평균 수익률</p>
-              <p className={`${styles.statValue} ${parseFloat(avgReturn) >= 0 ? styles.positive : styles.negative}`}>
-                {avgReturn}%
-              </p>
-            </div>
-            <TrendingUp className={styles.statIcon} />
-          </div>
-        </div>
-      </div>
 
       <div className={styles.historyCard}>
         <div className={styles.cardHeader}>

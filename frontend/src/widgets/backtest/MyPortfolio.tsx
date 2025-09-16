@@ -38,10 +38,28 @@ export default function MyPortfolio({
   const [tooltipPosition, setTooltipPosition] = useState<{ [key: string]: { top: number, left: number } }>({});
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
+  const checkRebalanceWarning = (item: PortfolioItem) => {
+    if (totalValue === 0 || item.threshold === 0 || item.targetWeight === 0) return false;
+
+    // 현재 평가액 기준 실제 비중 계산
+    const currentValue = calculateValue(item.buyPrice, item.quantity);
+    const actualWeight = (currentValue / totalValue) * 100;
+
+    // 목표비중 합계 계산 및 정규화
+    const totalTargetWeight = portfolioItems.reduce((sum, portfolioItem) => sum + portfolioItem.targetWeight, 0);
+    const normalizedTargetWeight = totalTargetWeight > 0 ? (item.targetWeight / totalTargetWeight) * 100 : 0;
+
+    // 정규화된 목표비중 대비 편차율 계산: |실제비중 - 정규화목표비중| / 정규화목표비중 * 100
+    const deviationRate = normalizedTargetWeight > 0 ? Math.abs(actualWeight - normalizedTargetWeight) / normalizedTargetWeight * 100 : 0;
+
+    // 편차율이 임계값보다 큰 경우 경고
+    return deviationRate > item.threshold;
+  };
+
   const handleThresholdChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const itemKey = `${portfolioItems[index].code}-${index}`;
-    
+
     // 빈 문자열인 경우
     if (value === '') {
       const newItems = [...portfolioItems];
@@ -50,24 +68,27 @@ export default function MyPortfolio({
       setWarningVisible(prev => ({ ...prev, [itemKey]: false }));
       return;
     }
-    
+
     // 숫자가 아닌 문자가 포함된 경우 입력을 막음
     if (!/^\d+$/.test(value)) {
       e.preventDefault();
       return false;
     }
-    
+
     const numValue = parseInt(value, 10);
     if (numValue < 0 || numValue > 100) {
       return false;
     }
-    
+
     const newItems = [...portfolioItems];
     newItems[index].threshold = numValue;
     setPortfolioItems(newItems);
 
-    // 유효한 숫자 입력 후에만 경고창 표시
-    if (numValue <= 20 && numValue > 0) {
+    // 임계값 설정 후 리밸런싱 경고 확인
+    const hasRebalanceWarning = checkRebalanceWarning(newItems[index]);
+
+    // 유효한 숫자 입력 후에만 경고창 표시 (기존 경고 + 리밸런싱 경고)
+    if ((numValue < 10 && numValue > 0) || hasRebalanceWarning) {
       const inputElement = inputRefs.current[itemKey];
       if (inputElement) {
         const rect = inputElement.getBoundingClientRect();
@@ -119,7 +140,7 @@ export default function MyPortfolio({
               <div className={styles.headerCell}>종목</div>
               <div className={styles.headerCell}>매수가</div>
               <div className={styles.headerCell}>수량</div>
-              <div className={styles.headerCell}>가중치</div>
+              <div className={styles.headerCell}>비중</div>
               <div className={styles.headerCell}>평가금액</div>
               <div className={styles.headerCell}>임계값</div>
               <div className={styles.headerCell}>삭제</div>
@@ -159,6 +180,27 @@ export default function MyPortfolio({
                       const newItems = [...portfolioItems];
                       newItems[index].quantity = parseInt(e.target.value) || 0;
                       setPortfolioItems(newItems);
+
+                      // 수량 변경 시에도 리밸런싱 경고 체크
+                      const itemKey = `${item.code}-${index}`;
+                      const hasRebalanceWarning = checkRebalanceWarning(newItems[index]);
+                      if (hasRebalanceWarning && newItems[index].threshold > 0) {
+                        const inputElement = inputRefs.current[itemKey];
+                        if (inputElement) {
+                          const rect = inputElement.getBoundingClientRect();
+                          setTooltipPosition(prev => ({
+                            ...prev,
+                            [itemKey]: {
+                              top: rect.top - 60,
+                              left: rect.left + rect.width / 2
+                            }
+                          }));
+                        }
+                        setWarningVisible(prev => ({ ...prev, [itemKey]: true }));
+                        setTimeout(() => {
+                          setWarningVisible(prev => ({ ...prev, [itemKey]: false }));
+                        }, 3000);
+                      }
                     }}
                     className={styles.numberInput}
                     min="1"
@@ -173,6 +215,27 @@ export default function MyPortfolio({
                       const newItems = [...portfolioItems];
                       newItems[index].targetWeight = parseInt(e.target.value) || 0;
                       setPortfolioItems(newItems);
+
+                      // 목표비중 변경 시에도 리밸런싱 경고 체크
+                      const itemKey = `${item.code}-${index}`;
+                      const hasRebalanceWarning = checkRebalanceWarning(newItems[index]);
+                      if (hasRebalanceWarning && newItems[index].threshold > 0) {
+                        const inputElement = inputRefs.current[itemKey];
+                        if (inputElement) {
+                          const rect = inputElement.getBoundingClientRect();
+                          setTooltipPosition(prev => ({
+                            ...prev,
+                            [itemKey]: {
+                              top: rect.top - 60,
+                              left: rect.left + rect.width / 2
+                            }
+                          }));
+                        }
+                        setWarningVisible(prev => ({ ...prev, [itemKey]: true }));
+                        setTimeout(() => {
+                          setWarningVisible(prev => ({ ...prev, [itemKey]: false }));
+                        }, 3000);
+                      }
                     }}
                     className={styles.numberInput}
                     min="0"
@@ -197,6 +260,18 @@ export default function MyPortfolio({
                       maxLength={3}
                     />
                     <span className={styles.unit}>%</span>
+                    {checkRebalanceWarning(item) && (
+                      <AlertTriangle
+                        className={styles.permanentWarningIcon}
+                        style={{
+                          color: '#ff6b6b',
+                          marginLeft: '5px',
+                          width: '16px',
+                          height: '16px'
+                        }}
+                        title="목표비중 대비 편차가 임계값을 초과합니다. 리밸런싱 시 대량 거래가 발생할 수 있습니다."
+                      />
+                    )}
                   </div>
                 </div>
                 <div className={styles.tableCell}>
@@ -242,7 +317,7 @@ export default function MyPortfolio({
       if (!visible || !tooltipPosition[key]) return null;
       
       return createPortal(
-        <div 
+        <div
           key={key}
           className={styles.warningTooltip}
           style={{
@@ -254,7 +329,21 @@ export default function MyPortfolio({
           }}
         >
           <AlertTriangle className={styles.warningIcon} />
-          <span>임계값이 낮으면 잦은 거래로 인한 수수료 부담이 클 수 있습니다</span>
+          <span>
+            {(() => {
+              const [code, indexStr] = key.split('-');
+              const index = parseInt(indexStr);
+              const item = portfolioItems[index];
+
+              if (item && checkRebalanceWarning(item)) {
+                return '목표비중 대비 편차가 임계값을 초과합니다. 리밸런싱 시 대량 거래가 발생할 수 있습니다.';
+              }
+              if (item && item.threshold > 0 && item.threshold < 10) {
+                return '임계값이 낮으면 잦은 거래로 인한 수수료 부담이 클 수 있습니다';
+              }
+              return '';
+            })()}
+          </span>
         </div>,
         document.body
       );
