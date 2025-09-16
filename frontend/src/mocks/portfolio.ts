@@ -16,6 +16,7 @@ export interface Portfolio {
   createdDate: string;
   returnPositive: boolean;
   description?: string;
+  accountType?: 'MOCK' | 'REAL';
 }
 
 

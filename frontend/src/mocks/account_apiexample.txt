@@ -79,3 +79,38 @@
   "errorData": "string",
   "timestamp": "2025-09-16T00:11:40.801Z"
 }
+
+
+
+2. 포트폴리오 생성
+POST /api/v1/portfolios
+
+request 
+{
+  "name": "string",
+  "description": "string",
+  "accountId": 0
+}
+
+
+Responses
+{
+  "success": true,
+  "status": 0,
+  "data": {
+    "id": 0,
+    "name": "string",
+    "description": "string",
+    "account": {
+      "id": 0,
+      "accountNumber": "string",
+      "brokerName": "string"
+    },
+    "createdAt": "2025-09-16T08:42:24.602Z",
+    "updatedAt": "2025-09-16T08:42:24.602Z"
+  },
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-16T08:42:24.602Z"
+}

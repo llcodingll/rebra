@@ -1,19 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { X, CreditCard, Plus, ChevronDown } from 'lucide-react';
 import styles from './PortfolioCreateModal.module.css';
 import AccountRegisterModal from './AccountRegisterModal';
+import { useApi } from '../../shared/hook/useApi';
+import { accountApi } from '../../features/account/api/accountApi';
+import { transformAccountData } from '../../features/account/utils/accountTransform';
+import type { Account } from '../../mocks/account';
+import { useApiMutation } from '../../shared/hook/useApi';
+import { portfolioApi } from '../../features/portfolio/api/portfolioApi';
 
 interface PortfolioCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreatePortfolio: (portfolioData: PortfolioCreateData) => void;
-}
-
-interface PortfolioCreateData {
-  name: string;
-  purpose: string;
-  accountNumber: string;
+  onSuccess?: () => void; // 성공 시 부모에게 알림 (선택적)
 }
 
 interface AccountRegisterData {
@@ -32,17 +32,51 @@ interface Account {
 }
 
 export default function PortfolioCreateModal({ 
-  isOpen, 
-  onClose, 
-  onCreatePortfolio 
+  isOpen,
+  onClose,
+  onSuccess
 }: PortfolioCreateModalProps) {
   const [portfolioName, setPortfolioName] = useState('');
   const [portfolioPurpose, setPortfolioPurpose] = useState('');
-  const [selectedAccount, setSelectedAccount] = useState('');
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [isAccountRegisterModalOpen, setIsAccountRegisterModalOpen] = useState(false);
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
+
+  // 폼 초기화 함수
+  const resetForm = () => {
+    setPortfolioName('');
+    setPortfolioPurpose('');
+    setSelectedAccount(null);
+    setIsAccountDropdownOpen(false);
+  };
+
+  // 포트폴리오 생성 mutation
+  const { mutate: createPortfolio, isPending: isCreating } = useApiMutation({
+    apiFunction: portfolioApi.createPortfolio,
+    onSuccess: (data) => {
+      console.log('포트폴리오 생성 성공:', data);
+      alert('포트폴리오가 성공적으로 생성되었습니다.');
+      resetForm();
+      onClose();
+      onSuccess?.(); // 부모에게 성공 알림
+    },
+    onError: (error) => {
+      console.error('포트폴리오 생성 실패:', error);
+      alert('포트폴리오 생성에 실패했습니다. 다시 시도해주세요.');
+    }
+  });
   
-  // 목데이터 - 실제로는 API에서 받아올 데이터
+  // API로 계좌 목록 조회
+  const { data: accountData, isLoading: isAccountLoading, refetch: refetchAccounts } = useApi({
+    queryKey: ['accounts'],
+    apiFunction: () => accountApi.getAccountList(),
+    enabled: isOpen, // 모달이 열릴 때만 API 호출
+  });
+
+  // API 데이터를 Account 타입으로 변환
+  const accounts = accountData?.accounts ? transformAccountData(accountData.accounts) : [];
+
+  // 백업용 목데이터 (API 실패 시)
   const mockAccounts: Account[] = [
     {
       accountId: 1,
@@ -78,25 +112,37 @@ export default function PortfolioCreateModal({
     }
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!portfolioName.trim() || !portfolioPurpose.trim() || !selectedAccount) {
-      alert('모든 필드를 입력해주세요.');
-      return;
+  // 입력 검증 함수
+  const validateForm = () => {
+    if (!portfolioName.trim()) {
+      alert('포트폴리오 이름을 입력해주세요.');
+      return false;
     }
 
-    onCreatePortfolio({
-      name: portfolioName,
-      purpose: portfolioPurpose,
-      accountNumber: selectedAccount
-    });
+    if (!portfolioPurpose.trim()) {
+      alert('투자 목적을 입력해주세요.');
+      return false;
+    }
 
-    // 폼 초기화
-    setPortfolioName('');
-    setPortfolioPurpose('');
-    setSelectedAccount('');
-    onClose();
+    if (!selectedAccount) {
+      alert('계좌를 선택해주세요.');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    // API 호출
+    createPortfolio({
+      name: portfolioName,
+      description: portfolioPurpose,
+      accountId: selectedAccount.accountId
+    });
   };
 
   const handleAccountSelect = () => {
@@ -104,7 +150,7 @@ export default function PortfolioCreateModal({
   };
 
   const handleAccountChoice = (account: Account) => {
-    setSelectedAccount(account.accountNumber);
+    setSelectedAccount(account);
     setIsAccountDropdownOpen(false);
   };
 
@@ -197,12 +243,12 @@ export default function PortfolioCreateModal({
                 <div className={styles.selectedAccount}>
                   <CreditCard className={styles.accountIcon} />
                   <div className={styles.accountInfo}>
-                    <span className={styles.accountNumber}>{selectedAccount}</span>
-                    <span className={styles.accountType}>투자계좌</span>
+                    <span className={styles.accountNumber}>{selectedAccount.accountNumber}</span>
+                    <span className={styles.accountType}>{selectedAccount.brokerName} ({selectedAccount.accountType})</span>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setSelectedAccount('')}
+                    onClick={() => setSelectedAccount(null)}
                     className={styles.changeButton}
                   >
                     변경
@@ -223,7 +269,7 @@ export default function PortfolioCreateModal({
                   {/* 계좌 드롭다운 */}
                   {isAccountDropdownOpen && (
                     <div className={styles.accountDropdown}>
-                      {mockAccounts.filter(account => account.connectionStatus === 'CONNECTED').map((account) => (
+                      {accounts.map((account) => (
                         <button
                           key={account.accountId}
                           type="button"
@@ -243,7 +289,7 @@ export default function PortfolioCreateModal({
                         </button>
                       ))}
                       
-                      {mockAccounts.filter(account => account.connectionStatus === 'CONNECTED').length === 0 && (
+                      {accounts.length === 0 && !isAccountLoading && (
                         <div className={styles.noAccounts}>
                           연결된 계좌가 없습니다
                         </div>
@@ -269,7 +315,10 @@ export default function PortfolioCreateModal({
           <div className={styles.formActions}>
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                resetForm();
+                onClose();
+              }}
               className={styles.cancelButton}
             >
               취소
@@ -277,8 +326,9 @@ export default function PortfolioCreateModal({
             <button
               type="submit"
               className={styles.submitButton}
+              disabled={isCreating}
             >
-              포트폴리오 생성
+              {isCreating ? '생성 중...' : '포트폴리오 생성'}
             </button>
           </div>
         </form>
@@ -287,7 +337,10 @@ export default function PortfolioCreateModal({
         <AccountRegisterModal
           isOpen={isAccountRegisterModalOpen}
           onClose={handleAccountRegisterModalClose}
-          onRegisterAccount={handleAccountRegister}
+          onSuccess={() => {
+            // 계좌 등록 성공 시 계좌 목록 새로고침
+            refetchAccounts();
+          }}
         />
       </motion.div>
     </div>

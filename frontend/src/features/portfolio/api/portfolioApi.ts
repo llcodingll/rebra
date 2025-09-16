@@ -18,6 +18,25 @@ export interface PortfolioListResponse {
   portfolios: PortfolioItem[];
 }
 
+export interface PortfolioCreateRequest {
+  name: string;
+  description: string;
+  accountId: number;
+}
+
+export interface PortfolioCreateResponse {
+  id: number;
+  name: string;
+  description: string;
+  account: {
+    id: number;
+    accountNumber: string;
+    brokerName: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 class PortfolioApi {
   private apiClient: ApiClient;
 
@@ -25,8 +44,12 @@ class PortfolioApi {
     this.apiClient = new ApiClient();
   }
 
-  async getPortfolioList(): Promise<Result<PortfolioListResponse, AppError>> {
+  getPortfolioList = async (): Promise<Result<PortfolioListResponse, AppError>> => {
     return this.apiClient.get<PortfolioListResponse>('/api/v1/portfolios');
+  }
+
+  createPortfolio = async (requestData: PortfolioCreateRequest): Promise<Result<PortfolioCreateResponse, AppError>> => {
+    return this.apiClient.post<PortfolioCreateResponse>('/api/v1/portfolios', requestData);
   }
 }
 

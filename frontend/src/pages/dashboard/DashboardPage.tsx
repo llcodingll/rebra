@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './DashboardPage.module.css';
 import { portfolioList, type Portfolio } from '../../mocks/portfolio';
 import { dashboardStockData } from '../../mocks/dashboardStocks';
 import { useApi } from '../../shared/hook/useApi';
 import { portfolioApi } from '../../features/portfolio/api/portfolioApi';
-import { type PortfolioCreateData } from '../../mocks/portfolioCreate';
+import { transformPortfolioData } from '../../features/portfolio/utils/portfolioTransform';
 import DashBoardSettingsTab from '../../widgets/dashboard/DashBoardSettingsTab';
 import AssetPortfolioChart from '../../widgets/dashboard/AssetPortfolioChart';
 import AssetTable from '../../widgets/dashboard/AssetTable';
@@ -22,7 +22,7 @@ export default function DashboardPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // API로 포트폴리오 목록 조회
-  const { data: portfolioData, isLoading: isPortfolioLoading, error: portfolioError } = useApi({
+  const { data: portfolioData, isLoading: isPortfolioLoading, error: portfolioError, refetch: refetchPortfolios } = useApi({
     queryKey: ['portfolios'],
     apiFunction: () => portfolioApi.getPortfolioList(),
   });
@@ -30,17 +30,7 @@ export default function DashboardPage() {
   // API 데이터를 기존 Portfolio 타입으로 변환
   const portfolios = useMemo(() => {
     if (!portfolioData?.portfolios) return [];
-
-    return portfolioData.portfolios.map(item => ({
-      id: item.portfolioId.toString(),
-      name: item.name,
-      description: item.description,
-      stockCount: item.registeredStockCount,
-      return: `${item.totalReturnRate > 0 ? '+' : ''}${item.totalReturnRate.toFixed(1)}%`,
-      createdDate: item.createdAt.split('T')[0],
-      returnPositive: item.totalReturnRate > 0,
-      accountType: item.accountType,
-    }));
+    return transformPortfolioData(portfolioData.portfolios);
   }, [portfolioData]);
 
   // 포트폴리오 존재 여부는 API 데이터로 판단
@@ -50,7 +40,7 @@ export default function DashboardPage() {
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(null);
 
   // API 데이터 로드 후 첫 번째 포트폴리오 선택
-  useMemo(() => {
+  useEffect(() => {
     if (portfolios.length > 0 && !selectedPortfolio) {
       setSelectedPortfolio(portfolios[0]);
     }
@@ -72,17 +62,6 @@ export default function DashboardPage() {
     setIsCreateModalOpen(false);
   };
 
-  const handlePortfolioCreate = (portfolioData: PortfolioCreateData) => {
-    console.log('새 포트폴리오 생성:', portfolioData);
-    // 실제 API 호출 및 포트폴리오 생성 로직 구현 예정
-    
-    // 생성 후 상태 업데이트
-    setHasPortfolio(true);
-    // 추후 실제 포트폴리오 데이터로 selectedPortfolio 설정
-    
-    // 모달 닫기
-    setIsCreateModalOpen(false);
-  };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -121,6 +100,16 @@ export default function DashboardPage() {
     );
   }
 
+  // 에러 상태 처리
+  if (portfolioError) {
+    return (
+      <div className={styles.dashboard}>
+        <div>포트폴리오 목록을 불러오는데 실패했습니다.</div>
+        <button onClick={() => window.location.reload()}>다시 시도</button>
+      </div>
+    );
+  }
+
   // 포트폴리오가 없으면 NoPortfolioState 컴포넌트 렌더링
   if (!hasPortfolio) {
     return (
@@ -136,7 +125,10 @@ export default function DashboardPage() {
         <PortfolioCreateModal
           isOpen={isCreateModalOpen}
           onClose={handleCreateModalClose}
-          onCreatePortfolio={handlePortfolioCreate}
+          onSuccess={() => {
+            // 포트폴리오 생성 성공 시 목록 새로고침
+            refetchPortfolios();
+          }}
         />
       </div>
     );
@@ -198,7 +190,10 @@ export default function DashboardPage() {
         <PortfolioCreateModal
           isOpen={isCreateModalOpen}
           onClose={handleCreateModalClose}
-          onCreatePortfolio={handlePortfolioCreate}
+          onSuccess={() => {
+            // 포트폴리오 생성 성공 시 목록 새로고침
+            refetchPortfolios();
+          }}
         />
       </div>
     </div>

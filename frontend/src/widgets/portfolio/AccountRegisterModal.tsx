@@ -2,23 +2,19 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { X, CreditCard, Key, Eye, EyeOff, HelpCircle } from 'lucide-react';
 import styles from './AccountRegisterModal.module.css';
+import { useApiMutation } from '../../shared/hook/useApi';
+import { accountApi } from '../../features/account/api/accountApi';
 
 interface AccountRegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onRegisterAccount: (accountData: AccountRegisterData) => void;
+  onSuccess?: () => void; // 성공 시 부모에게 알림 (선택적)
 }
 
-interface AccountRegisterData {
-  accountNumber: string;
-  appKey: string;
-  secretKey: string;
-}
-
-export default function AccountRegisterModal({ 
-  isOpen, 
-  onClose, 
-  onRegisterAccount 
+export default function AccountRegisterModal({
+  isOpen,
+  onClose,
+  onSuccess
 }: AccountRegisterModalProps) {
   const [accountNumber, setAccountNumber] = useState('');
   const [appKey, setAppKey] = useState('');
@@ -27,33 +23,57 @@ export default function AccountRegisterModal({
   const [showSecretKey, setShowSecretKey] = useState(false);
   const [accountType, setAccountType] = useState<'real' | 'mock'>('real');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!accountNumber.trim() || !appKey.trim() || !secretKey.trim()) {
-      alert('모든 필드를 입력해주세요.');
-      return;
-    }
-
-    // 계좌번호 형식 간단 검증
-    if (!/^\d{8,12}$/.test(accountNumber.replace(/-/g, ''))) {
-      alert('올바른 계좌번호를 입력해주세요.');
-      return;
-    }
-
-    onRegisterAccount({
-      accountNumber,
-      appKey,
-      secretKey
-    });
-
-    // 폼 초기화
+  // 폼 초기화 함수
+  const resetForm = () => {
     setAccountNumber('');
     setAppKey('');
     setSecretKey('');
     setShowAppKey(false);
     setShowSecretKey(false);
-    onClose();
+  };
+
+  // 계좌 등록 mutation
+  const { mutate: registerAccount, isPending: isRegistering } = useApiMutation({
+    apiFunction: accountApi.registerAccount,
+    onSuccess: (data) => {
+      console.log('계좌 등록 성공:', data);
+      alert('계좌가 성공적으로 등록되었습니다.');
+      resetForm();
+      onClose();
+      onSuccess?.(); // 부모에게 성공 알림 (필요한 경우)
+    },
+    onError: (error) => {
+      console.error('계좌 등록 실패:', error);
+      alert('계좌 등록에 실패했습니다. 입력 정보를 확인해주세요.');
+    }
+  });
+
+  // 입력 검증 함수
+  const validateForm = () => {
+    if (!accountNumber.trim() || !appKey.trim() || !secretKey.trim()) {
+      alert('모든 필드를 입력해주세요.');
+      return false;
+    }
+
+    if (!/^\d{8,12}$/.test(accountNumber.replace(/-/g, ''))) {
+      alert('올바른 계좌번호를 입력해주세요.');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    registerAccount({
+      accountNumber,
+      appKey,
+      appSecret: secretKey,
+      accountType: accountType.toUpperCase() as 'MOCK' | 'REAL'
+    });
   };
 
   const handleKeyRegistrationGuide = () => {
@@ -219,7 +239,10 @@ export default function AccountRegisterModal({
           <div className={styles.formActions}>
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                resetForm();
+                onClose();
+              }}
               className={styles.cancelButton}
             >
               취소
@@ -227,8 +250,9 @@ export default function AccountRegisterModal({
             <button
               type="submit"
               className={styles.submitButton}
+              disabled={isRegistering}
             >
-              등록
+              {isRegistering ? '등록 중...' : '등록'}
             </button>
           </div>
         </form>
