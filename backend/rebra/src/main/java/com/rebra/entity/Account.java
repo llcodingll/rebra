@@ -34,7 +34,6 @@ public class Account extends BaseEntity {
     @Column(name = "broker_name", nullable = false)
     private String brokerName;
 
-
     @Column(name = "account_number", nullable = false, columnDefinition = "TEXT", updatable = false)
     private String accountNumber;  // 암호화된 계좌번호
 
@@ -51,17 +50,13 @@ public class Account extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private AccountType accountType;
 
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;  // 사용자가 계좌 삭제했는지 여부
-
-    @Column(name = "connection_status")
-    @Enumerated(EnumType.STRING)
-    private ConnectionStatus connectionStatus = ConnectionStatus.CONNECTED;
+    @Column(name = "is_connected")
+    private boolean isConnected = true;
 
     @Builder
     public Account(User user, String accountNumber, String accountNumberHash,
                    String appKey, String appSecret, String brokerName, AccountType accountType,
-                   Boolean isDeleted, ConnectionStatus connectionStatus) {
+                   boolean isConnected) {
         this.user = user;
         this.accountNumber = accountNumber;
         this.accountNumberHash = accountNumberHash;
@@ -69,26 +64,15 @@ public class Account extends BaseEntity {
         this.appSecret = appSecret;
         this.brokerName = brokerName;
         this.accountType = accountType;
-        this.isDeleted = isDeleted != null ? isDeleted : false;
-        this.connectionStatus = connectionStatus != null ? connectionStatus : ConnectionStatus.CONNECTED;
+        this.isConnected = isConnected;
     }
 
-    /**
-     * 계좌 삭제 (비활성화)
-     */
-    public void delete() {
-        this.isDeleted = true;
-    }
-
-    public void create() {
-        this.isDeleted = false;
-    }
 
     /**
      * 연결 상태 업데이트
      */
-    public void updateConnectionStatus(ConnectionStatus connectionStatus) {
-        this.connectionStatus = connectionStatus;
+    public void updateIsConnected(boolean isConnected) {
+        this.isConnected = isConnected;
     }
 
 }

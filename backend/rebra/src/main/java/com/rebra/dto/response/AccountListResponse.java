@@ -1,5 +1,6 @@
 package com.rebra.dto.response;
 
+import com.rebra.entity.AccountType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,9 +22,9 @@ public class AccountListResponse {
     public static class AccountSummary {
         private Long accountId;
         private String accountNumber; // 마스킹된 계좌번호
-        private String accountType; // 모의투자, 실계좌
+        private AccountType accountType; // 모의투자, 실계좌
         private String brokerName; // 한국투자증권
-        private String connectionStatus; // CONNECTED, DISCONNECTED, FAILED
+        private boolean isConnected; // 연결 상태
         private LocalDateTime registeredAt;
     }
 

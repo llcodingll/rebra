@@ -1,6 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { DollarSign } from 'lucide-react';
+import { createChart, ColorType, LineSeries } from 'lightweight-charts';
+import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import styles from './CumulativeReturnsChart.module.css';
 
 interface TradeData {
@@ -28,7 +30,6 @@ interface CumulativeReturnsChartProps {
   chartMax: number;
   chartRange: number;
   yAxisLabels: string[];
-  createPath: (values: number[]) => string;
 }
 
 export default function CumulativeReturnsChart({
@@ -39,32 +40,178 @@ export default function CumulativeReturnsChart({
   chartMin,
   chartMax,
   chartRange,
-  yAxisLabels,
-  createPath
+  yAxisLabels
 }: CumulativeReturnsChartProps) {
   const [hoveredPoint, setHoveredPoint] = useState<TooltipData | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
+  const chartInstanceRef = useRef<IChartApi | null>(null);
+  const portfolioSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const buyHoldSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const kospiSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
 
-  const handleMouseMove = (e: React.MouseEvent, data: TradeData) => {
+
+  useEffect(() => {
     if (!chartRef.current) return;
-    
-    const rect = chartRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    setHoveredPoint({
-      x,
-      y,
-      date: data.date,
-      buyAmount: data.buyAmount,
-      sellAmount: data.sellAmount,
-      portfolioValue: data.portfolioValue
-    });
-  };
 
-  const handleMouseLeave = () => {
-    setHoveredPoint(null);
-  };
+    try {
+      const chart = createChart(chartRef.current, {
+        width: chartRef.current.clientWidth || 800,
+        height: 400,
+        layout: {
+          background: { type: ColorType.Solid, color: 'transparent' },
+          textColor: '#374151',
+          fontSize: 12,
+          attributionLogo: false,
+        },
+        grid: {
+          vertLines: { color: '#f3f4f6' },
+          horzLines: { color: '#f3f4f6' },
+        },
+        rightPriceScale: {
+          borderColor: '#e5e7eb',
+          visible: false,
+        },
+        leftPriceScale: {
+          borderColor: '#e5e7eb',
+          visible: true,
+        },
+        timeScale: {
+          borderColor: '#e5e7eb',
+          timeVisible: true,
+          secondsVisible: false,
+        },
+        crosshair: {
+          mode: 0,
+          vertLine: {
+            color: '#6b7280',
+            width: 1,
+            style: 2,
+          },
+          horzLine: {
+            color: '#6b7280',
+            width: 1,
+            style: 2,
+          },
+        },
+      });
+
+      chartInstanceRef.current = chart;
+
+      // Use v5 API with LineSeries
+      const portfolioSeries = chart.addSeries(LineSeries, {
+        color: '#2563eb',
+        lineWidth: 3,
+      });
+
+      const buyHoldSeries = chart.addSeries(LineSeries, {
+        color: '#10b981',
+        lineWidth: 2,
+      });
+
+      const kospiSeries = chart.addSeries(LineSeries, {
+        color: '#6b7280',
+        lineWidth: 2,
+      });
+
+      portfolioSeriesRef.current = portfolioSeries;
+      buyHoldSeriesRef.current = buyHoldSeries;
+      kospiSeriesRef.current = kospiSeries;
+
+      const formatDataForLightweight = (values: number[], dates: string[]) => {
+        return values.map((value, index) => {
+          // dates는 이제 "2023-01-01" 형식이므로 그대로 사용
+          const dateStr = dates[index];
+
+          return {
+            time: dateStr as any,
+            value: value,
+          };
+        });
+      };
+
+      const dates = tradeData.map(data => data.date);
+      const portfolioData = formatDataForLightweight(portfolioPercents, dates);
+      const buyHoldData = formatDataForLightweight(buyHoldPercents, dates);
+      const kospiData = formatDataForLightweight(kospiPercents, dates);
+
+      portfolioSeries.setData(portfolioData);
+      buyHoldSeries.setData(buyHoldData);
+      kospiSeries.setData(kospiData);
+
+      // 전체 데이터가 보이도록 시간 범위 설정
+      chart.timeScale().fitContent();
+
+      chart.subscribeCrosshairMove((param: any) => {
+        if (!param.time || !param.point) {
+          setHoveredPoint(null);
+          return;
+        }
+
+        // Convert time back to original format for comparison
+        const paramTime = param.time;
+        let matchingDataIndex = -1;
+
+        // Find matching data by comparing formatted dates
+        for (let i = 0; i < portfolioData.length; i++) {
+          if (portfolioData[i].time === paramTime) {
+            matchingDataIndex = i;
+            break;
+          }
+        }
+
+        if (matchingDataIndex >= 0 && matchingDataIndex < tradeData.length) {
+          const data = tradeData[matchingDataIndex];
+
+          setHoveredPoint({
+            x: param.point.x,
+            y: param.point.y,
+            date: data.date,
+            buyAmount: data.buyAmount,
+            sellAmount: data.sellAmount,
+            portfolioValue: data.portfolioValue,
+          });
+        }
+      });
+
+      const handleResize = () => {
+        if (chartRef.current && chart) {
+          chart.applyOptions({
+            width: chartRef.current.clientWidth,
+          });
+        }
+      };
+
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        chart.remove();
+      };
+    } catch (error) {
+      console.error('Error creating chart:', error);
+    }
+  }, [tradeData, portfolioPercents, buyHoldPercents, kospiPercents]);
+
+  useEffect(() => {
+    if (!chartInstanceRef.current) return;
+
+    const handleResize = () => {
+      if (chartRef.current && chartInstanceRef.current) {
+        chartInstanceRef.current.applyOptions({
+          width: chartRef.current.clientWidth,
+        });
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(handleResize);
+    if (chartRef.current) {
+      resizeObserver.observe(chartRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   return (
     <motion.div
@@ -94,89 +241,17 @@ export default function CumulativeReturnsChart({
         </div>
       </div>
 
-      <div className={styles.chartWrapper} ref={chartRef}>
-        {/* Y축 라벨 */}
-        <div className={styles.yAxis}>
-          {yAxisLabels.map((label, index) => (
-            <div key={index} className={styles.yLabel}>{label}</div>
-          ))}
-        </div>
-
-        {/* 차트 영역 */}
-        <div className={styles.chartArea}>
-          {/* 그리드 라인 */}
-          <div className={styles.gridLines}>
-            {[0, 1, 2, 3, 4].map(i => (
-              <div key={i} className={styles.gridLine}></div>
-            ))}
-          </div>
-
-          {/* SVG 차트 */}
-          <svg className={styles.chartSvg} viewBox="0 0 800 400">
-            {/* 포트폴리오 라인 */}
-            <path
-              d={createPath(portfolioPercents)}
-              stroke="#2563eb"
-              strokeWidth="3"
-              fill="none"
-              className={styles.chartLine}
-            />
-            
-            {/* Buy & Hold 라인 */}
-            <path
-              d={createPath(buyHoldPercents)}
-              stroke="#10b981"
-              strokeWidth="2"
-              fill="none"
-              className={styles.chartLine}
-            />
-            
-            {/* KOSPI 라인 */}
-            <path
-              d={createPath(kospiPercents)}
-              stroke="#6b7280"
-              strokeWidth="2"
-              fill="none"
-              className={styles.chartLine}
-            />
-
-            {/* 인터랙티브 포인트 */}
-            {tradeData.map((data, index) => {
-              const x = (index / (tradeData.length - 1)) * 720 + 40;
-              const y = 360 - ((portfolioPercents[index] - chartMin) / chartRange) * 320;
-              
-              return (
-                <circle
-                  key={index}
-                  cx={x}
-                  cy={y}
-                  r="6"
-                  fill="#ffffff"
-                  stroke="#2563eb"
-                  strokeWidth="2"
-                  className={styles.chartPoint}
-                  onMouseMove={(e) => handleMouseMove(e as any, data)}
-                  onMouseLeave={handleMouseLeave}
-                />
-              );
-            })}
-          </svg>
-
-          {/* X축 라벨 */}
-          <div className={styles.xAxis}>
-            {['2023-01', '2023-03', '2023-05', '2023-07', '2023-09', '2023-12'].map((month, index) => (
-              <div key={index} className={styles.xLabel}>{month}</div>
-            ))}
-          </div>
-        </div>
+      <div className={styles.chartWrapper}>
+        {/* Lightweight Charts 컨테이너 */}
+        <div className={styles.chartContainer} ref={chartRef}></div>
 
         {/* 툴팁 */}
         {hoveredPoint && (
-          <div 
+          <div
             className={styles.tooltip}
             style={{
-              left: hoveredPoint.x + 10,
-              top: hoveredPoint.y - 10,
+              left: hoveredPoint.x - 250,
+              top: hoveredPoint.y - 120,
             }}
           >
             <div className={styles.tooltipDate}>{hoveredPoint.date}</div>

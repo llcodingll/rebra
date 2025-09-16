@@ -29,18 +29,18 @@ export default function BacktestResultsPage() {
 
   // 샘플 거래 데이터
   const tradeData: TradeData[] = [
-    { date: '2023-01', buyAmount: 1000000, sellAmount: 0, portfolioValue: 1000000 },
-    { date: '2023-02', buyAmount: 500000, sellAmount: 200000, portfolioValue: 1020000 },
-    { date: '2023-03', buyAmount: 300000, sellAmount: 100000, portfolioValue: 1050000 },
-    { date: '2023-04', buyAmount: 200000, sellAmount: 300000, portfolioValue: 1090000 },
-    { date: '2023-05', buyAmount: 400000, sellAmount: 150000, portfolioValue: 1150000 },
-    { date: '2023-06', buyAmount: 100000, sellAmount: 250000, portfolioValue: 1180000 },
-    { date: '2023-07', buyAmount: 600000, sellAmount: 100000, portfolioValue: 1250000 },
-    { date: '2023-08', buyAmount: 200000, sellAmount: 400000, portfolioValue: 1290000 },
-    { date: '2023-09', buyAmount: 300000, sellAmount: 200000, portfolioValue: 1320000 },
-    { date: '2023-10', buyAmount: 150000, sellAmount: 350000, portfolioValue: 1280000 },
-    { date: '2023-11', buyAmount: 400000, sellAmount: 100000, portfolioValue: 1300000 },
-    { date: '2023-12', buyAmount: 250000, sellAmount: 300000, portfolioValue: 1350000 },
+    { date: '2023-01-01', buyAmount: 1000000, sellAmount: 0, portfolioValue: 1000000 },
+    { date: '2023-02-01', buyAmount: 500000, sellAmount: 200000, portfolioValue: 1020000 },
+    { date: '2023-03-01', buyAmount: 300000, sellAmount: 100000, portfolioValue: 1050000 },
+    { date: '2023-04-01', buyAmount: 200000, sellAmount: 300000, portfolioValue: 1090000 },
+    { date: '2023-05-01', buyAmount: 400000, sellAmount: 150000, portfolioValue: 1150000 },
+    { date: '2023-06-01', buyAmount: 100000, sellAmount: 250000, portfolioValue: 1180000 },
+    { date: '2023-07-01', buyAmount: 600000, sellAmount: 100000, portfolioValue: 1250000 },
+    { date: '2023-08-01', buyAmount: 200000, sellAmount: 400000, portfolioValue: 1290000 },
+    { date: '2023-09-01', buyAmount: 300000, sellAmount: 200000, portfolioValue: 1320000 },
+    { date: '2023-10-01', buyAmount: 150000, sellAmount: 350000, portfolioValue: 1280000 },
+    { date: '2023-11-01', buyAmount: 400000, sellAmount: 100000, portfolioValue: 1300000 },
+    { date: '2023-12-01', buyAmount: 250000, sellAmount: 300000, portfolioValue: 1350000 },
   ];
 
   // 성과 데이터 계산
@@ -70,20 +70,6 @@ export default function BacktestResultsPage() {
     yAxisLabels.unshift(value.toFixed(1) + '%');
   }
 
-  // SVG 경로 생성
-  const createPath = (values: number[]) => {
-    const width = 800;
-    const height = 400;
-    const padding = 40;
-
-    return values
-      .map((value, index) => {
-        const x = (index / (values.length - 1)) * (width - 2 * padding) + padding;
-        const y = height - padding - ((value - chartMin) / chartRange) * (height - 2 * padding);
-        return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
-      })
-      .join(' ');
-  };
 
   return (
     <div className={styles.container}>
@@ -100,7 +86,6 @@ export default function BacktestResultsPage() {
             chartMax={chartMax}
             chartRange={chartRange}
             yAxisLabels={yAxisLabels}
-            createPath={createPath}
           />
         </div>
 

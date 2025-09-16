@@ -198,6 +198,9 @@
             <div style="margin-top: 10px;">
                 <span id="subscriptionInfo">구독 상태: 없음</span>
             </div>
+            <div style="margin-top: 5px; font-size: 0.9em; color: #666;">
+                <span id="serverInfo">서버: http://localhost:8080/ws</span>
+            </div>
         </div>
         
         <div class="control-panel">
@@ -210,6 +213,10 @@
             <div class="control-section">
                 <div class="section-title">📈 실시간 구독</div>
                 <div class="input-group">
+                    <label for="userIdInput">사용자 ID (테스트용)</label>
+                    <input type="number" id="userIdInput" value="1" min="1">
+                </div>
+                <div class="input-group">
                     <label for="stockCodeInput">종목코드</label>
                     <select id="stockCodeInput">
                         <option value="005930">005930 (삼성전자)</option>
@@ -217,6 +224,8 @@
                         <option value="035420">035420 (NAVER)</option>
                         <option value="005490">005490 (POSCO홀딩스)</option>
                         <option value="068270">068270 (셀트리온)</option>
+                        <option value="373220">373220 (LG에너지솔루션)</option>
+                        <option value="207940">207940 (삼성바이오로직스)</option>
                     </select>
                 </div>
                 <button class="btn btn-primary" onclick="subscribePrice()">실시간 체결가 구독</button>
@@ -225,8 +234,10 @@
             </div>
             
             <div class="control-section">
-                <div class="section-title">🧪 테스트</div>
+                <div class="section-title">🧪 테스트 제어</div>
                 <button class="btn btn-info" onclick="clearLogs()">로그 초기화</button>
+                <button class="btn btn-success" onclick="testConnection()">연결 테스트</button>
+                <button class="btn btn-primary" onclick="subscribeAll()">체결가+호가 동시구독</button>
             </div>
         </div>
         
@@ -257,7 +268,7 @@
         let heartbeatTimeout = null;
 
         function connect() {
-            const socket = new SockJS('/ws');
+            const socket = new SockJS('http://localhost:8080/ws');
             stompClient = new StompJs.Client({
                 webSocketFactory: () => socket,
                 debug: (str) => {
@@ -317,22 +328,40 @@
             }
 
             const stockCode = document.getElementById('stockCodeInput').value;
+            const userId = parseInt(document.getElementById('userIdInput').value);
             currentStockCode = stockCode;
+
+            console.log(`구독 시도: /topic/stock/${userId}/${stockCode}/price`);
+            addLog('priceData', `구독 시도: /topic/stock/${userId}/${stockCode}/price`, 'success');
 
             // 기존 구독 해제
             if (priceSubscription) {
                 priceSubscription.unsubscribe();
             }
 
-            // 실시간 체결가 구독 (사용자 ID는 임시로 1 사용)
-            const userId = 1; // TODO: 실제 로그인된 사용자 ID 사용
-            priceSubscription = stompClient.subscribe(`/topic/stock/${userId}/${stockCode}/price`, (message) => {
-                const data = JSON.parse(message.body);
-                displayPriceData(data);
-            });
+            try {
+                // 실시간 체결가 구독
+                priceSubscription = stompClient.subscribe(`/topic/stock/${userId}/${stockCode}/price`, (message) => {
+                    console.log('Price data received:', message.body);
+                    const data = JSON.parse(message.body);
+                    displayPriceData(data);
+                });
 
-            addLog('priceData', `체결가 구독 시작: ${stockCode}`, 'success');
-            updateSubscriptionInfo(`체결가 구독 중: ${stockCode}`);
+                addLog('priceData', `체결가 구독 성공: ${stockCode} (User: ${userId})`, 'success');
+                updateSubscriptionInfo(`체결가 구독 중: ${stockCode} (User: ${userId})`);
+
+                // 명시적으로 구독 시작 메시지 전송
+                console.log('Sending subscription start message...');
+                stompClient.publish({
+                    destination: `/app/subscribe/${userId}/${stockCode}/price`,
+                    body: JSON.stringify({ action: 'subscribe', stockCode: stockCode })
+                });
+
+                console.log('Price subscription completed successfully');
+            } catch (error) {
+                console.error('Price subscription error:', error);
+                addLog('priceData', `구독 실패: ${error.message}`, 'error');
+            }
         }
 
         function subscribeOrderbook() {
@@ -342,6 +371,7 @@
             }
 
             const stockCode = document.getElementById('stockCodeInput').value;
+            const userId = parseInt(document.getElementById('userIdInput').value);
             currentStockCode = stockCode;
 
             // 기존 구독 해제
@@ -349,22 +379,22 @@
                 orderbookSubscription.unsubscribe();
             }
 
-            // 실시간 호가 구독 (사용자 ID는 임시로 1 사용)
-            const userId = 1; // TODO: 실제 로그인된 사용자 ID 사용
+            // 실시간 호가 구독
             orderbookSubscription = stompClient.subscribe(`/topic/stock/${userId}/${stockCode}/orderbook`, (message) => {
                 const data = JSON.parse(message.body);
                 displayOrderbookData(data);
             });
 
-            addLog('orderbookData', `호가 구독 시작: ${stockCode}`, 'success');
-            updateSubscriptionInfo(`호가 구독 중: ${stockCode}`);
+            addLog('orderbookData', `호가 구독 시작: ${stockCode} (User: ${userId})`, 'success');
+            updateSubscriptionInfo(`호가 구독 중: ${stockCode} (User: ${userId})`);
         }
 
         function unsubscribeAll() {
+            const userId = parseInt(document.getElementById('userIdInput').value);
+
             if (priceSubscription) {
                 // 구독 해제 메시지 전송
                 if (currentStockCode && stompClient && stompClient.connected) {
-                    const userId = 1; // TODO: 실제 로그인된 사용자 ID 사용
                     stompClient.publish({
                         destination: `/app/unsubscribe/${userId}/${currentStockCode}`,
                         body: 'price'
@@ -377,7 +407,6 @@
             if (orderbookSubscription) {
                 // 구독 해제 메시지 전송
                 if (currentStockCode && stompClient && stompClient.connected) {
-                    const userId = 1; // TODO: 실제 로그인된 사용자 ID 사용
                     stompClient.publish({
                         destination: `/app/unsubscribe/${userId}/${currentStockCode}`,
                         body: 'orderbook'
@@ -415,14 +444,24 @@
                 heartbeatSubscription.unsubscribe();
             }
 
-            // 세션별 하트비트 채널 구독
-            const sessionId = stompClient.ws._transport.url.split('/').pop().split('/')[0];
-            heartbeatSubscription = stompClient.subscribe(`/topic/heartbeat/${sessionId}`, (message) => {
-                const heartbeatData = JSON.parse(message.body);
-                handleHeartbeat(heartbeatData);
-            });
+            try {
+                // 세션 ID 추출 시도
+                let sessionId = 'unknown';
+                if (stompClient && stompClient.ws && stompClient.ws._transport) {
+                    sessionId = stompClient.ws._transport.url.split('/').pop().split('/')[0];
+                }
 
-            addLog('priceData', '하트비트 모니터링 시작', 'success');
+                // 세션별 하트비트 채널 구독
+                heartbeatSubscription = stompClient.subscribe(`/topic/heartbeat/${sessionId}`, (message) => {
+                    const heartbeatData = JSON.parse(message.body);
+                    handleHeartbeat(heartbeatData);
+                });
+
+                addLog('priceData', `하트비트 모니터링 시작 (SessionId: ${sessionId})`, 'success');
+            } catch (e) {
+                addLog('priceData', '하트비트 설정 오류 - 계속 진행', 'error');
+                console.warn('Heartbeat setup error:', e);
+            }
         }
 
         // 하트비트 처리
@@ -469,11 +508,22 @@
                 recoverySubscription.unsubscribe();
             }
 
-            const sessionId = stompClient.ws._transport.url.split('/').pop().split('/')[0];
-            recoverySubscription = stompClient.subscribe(`/topic/recovery/${sessionId}`, (message) => {
-                const recoveryData = JSON.parse(message.body);
-                handleRecovery(recoveryData);
-            });
+            try {
+                let sessionId = 'unknown';
+                if (stompClient && stompClient.ws && stompClient.ws._transport) {
+                    sessionId = stompClient.ws._transport.url.split('/').pop().split('/')[0];
+                }
+
+                recoverySubscription = stompClient.subscribe(`/topic/recovery/${sessionId}`, (message) => {
+                    const recoveryData = JSON.parse(message.body);
+                    handleRecovery(recoveryData);
+                });
+
+                addLog('priceData', `복구 리스너 설정 완료 (SessionId: ${sessionId})`, 'success');
+            } catch (e) {
+                addLog('priceData', '복구 리스너 설정 오류 - 계속 진행', 'error');
+                console.warn('Recovery listener setup error:', e);
+            }
         }
 
         // 복구 처리
@@ -541,6 +591,33 @@
         function clearLogs() {
             document.getElementById('priceData').innerHTML = '';
             document.getElementById('orderbookData').innerHTML = '';
+        }
+
+        function testConnection() {
+            if (stompClient && stompClient.connected) {
+                addLog('priceData', '✅ WebSocket 연결 상태: 정상', 'success');
+                addLog('orderbookData', '✅ WebSocket 연결 상태: 정상', 'success');
+            } else {
+                addLog('priceData', '❌ WebSocket 연결 상태: 끊김', 'error');
+                addLog('orderbookData', '❌ WebSocket 연결 상태: 끊김', 'error');
+                connect();
+            }
+        }
+
+        function subscribeAll() {
+            if (stompClient === null || !stompClient.connected) {
+                alert('먼저 WebSocket에 연결해주세요.');
+                return;
+            }
+
+            const stockCode = document.getElementById('stockCodeInput').value;
+            const userId = parseInt(document.getElementById('userIdInput').value);
+
+            subscribePrice();
+            setTimeout(() => subscribeOrderbook(), 1000); // 1초 간격으로 구독
+
+            addLog('priceData', `동시 구독 시작: ${stockCode} (User: ${userId})`, 'success');
+            addLog('orderbookData', `동시 구독 시작: ${stockCode} (User: ${userId})`, 'success');
         }
 
         // 페이지 로드 시 자동 연결

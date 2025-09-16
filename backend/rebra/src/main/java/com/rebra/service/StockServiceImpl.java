@@ -1,6 +1,9 @@
 package com.rebra.service;
 
+import com.rebra.component.KisApiComponent;
+import com.rebra.dto.DecryptedAccountCredentials;
 import com.rebra.dto.response.PageResponse;
+import com.rebra.dto.response.StockChartResponse;
 import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockSearchResponse;
 import com.rebra.entity.Account;
@@ -8,7 +11,10 @@ import com.rebra.entity.Stock;
 import com.rebra.exception.stock.StockException;
 import com.rebra.repository.AccountRepository;
 import com.rebra.repository.StockRepository;
-import com.rebra.service.KisRealtimeService;
+import com.rebra.util.AccountEncryptionUtil;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,6 +31,7 @@ public class StockServiceImpl implements StockService {
     private final StockRepository stockRepository;
     private final AccountRepository accountRepository;
     private final KisRealtimeService kisRealtimeService;
+    private final KisApiComponent kisApiComponent;
     // Redis 캐싱 제거 - 프론트엔드에서 실시간 데이터 관리
     // 실시간 데이터는 WebSocket을 통해 직접 클라이언트로 전달
 
@@ -55,7 +62,7 @@ public class StockServiceImpl implements StockService {
         // 프론트엔드에서 WebSocket 채널 정보를 받고 직접 구독
         return getStockDetailWithWebSocketInfo(stockCode, userId);
     }
-    
+
     @Override
     public StockDetailResponse getStockDetailWithWebSocketInfo(String stockCode, Long userId) {
         try {
@@ -67,7 +74,7 @@ public class StockServiceImpl implements StockService {
                     userId, stockCode);
 
             // 사용자 계좌 정보 조회
-            Account account = accountRepository.findTopByUserIdAndIsDeletedFalseOrderByCreatedAtAsc(userId)
+            Account account = accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true)
                     .orElseThrow(() -> new RuntimeException("활성화된 계좌를 찾을 수 없습니다."));
 
             // 즉시 한국투자증권 실시간 데이터 구독 시작
@@ -90,5 +97,85 @@ public class StockServiceImpl implements StockService {
                     userId, stockCode, e);
             throw new RuntimeException("종목 상세 정보 조회에 실패했습니다.", e);
         }
+    }
+
+    @Override
+    public StockChartResponse getStockChartData(String stockCode, String startDate, String endDate, String periodType,
+                                                Long userId) {
+        try {
+            log.info("차트 데이터 조회 시작 - UserId: {}, StockCode: {}, Period: {}", userId, stockCode, periodType);
+
+            Stock stock = stockRepository.findByStockCodeAndIsActiveTrue(stockCode)
+                    .orElseThrow(StockException::stockCodeNotFound);
+
+            Account account = accountRepository.findByUserId(userId)
+                    .stream()
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("활성화된 계좌를 찾을 수 없습니다."));
+
+            DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+            kisApiComponent.ensureUserCredentials(userId, account.getId(), account.getAccountType(), credentials);
+
+            Map<String, Object> kisResult = kisApiComponent.getStockChartData(
+                    userId, account.getId(), account.getAccountType(),
+                    stockCode, startDate, endDate, periodType
+            );
+
+            return buildStockChartResponse(stock, kisResult, startDate, endDate, periodType);
+
+        } catch (Exception e) {
+            log.error("차트 데이터 조회 실패 - UserId: {}, StockCode: {}, Period: {}", userId, stockCode, periodType, e);
+            throw new RuntimeException("차트 데이터 조회에 실패했습니다.", e);
+        }
+    }
+
+    private StockChartResponse buildStockChartResponse(Stock stock, Map<String, Object> kisResult,
+                                                       String startDate, String endDate, String periodType) {
+        List<StockChartResponse.ChartDataPoint> chartData = new ArrayList<>();
+        StockChartResponse.StockSummary summary = null;
+
+        if (kisResult != null && kisResult.containsKey("output2")) {
+            List<Map<String, Object>> output2 = (List<Map<String, Object>>) kisResult.get("output2");
+
+            for (Map<String, Object> item : output2) {
+                chartData.add(StockChartResponse.ChartDataPoint.builder()
+                        .tradingDate((String) item.get("stck_bsop_date"))
+                        .openPrice((String) item.get("stck_oprc"))
+                        .highPrice((String) item.get("stck_hgpr"))
+                        .lowPrice((String) item.get("stck_lwpr"))
+                        .closePrice((String) item.get("stck_clpr"))
+                        .volume((String) item.get("acml_vol"))
+                        .tradingValue((String) item.get("acml_tr_pbmn"))
+                        .priceChange((String) item.get("prdy_vrss"))
+                        .changeSign((String) item.get("prdy_vrss_sign"))
+                        .changeRate((String) item.get("prdy_ctrt"))
+                        .build());
+            }
+
+            if (kisResult.containsKey("output1")) {
+                Map<String, Object> output1 = (Map<String, Object>) kisResult.get("output1");
+                summary = StockChartResponse.StockSummary.builder()
+                        .currentPrice((String) output1.get("stck_prpr"))
+                        .priceChange((String) output1.get("prdy_vrss"))
+                        .changeRate((String) output1.get("prdy_ctrt"))
+                        .changeSign((String) output1.get("prdy_vrss_sign"))
+                        .volume((String) output1.get("acml_vol"))
+                        .marketCap((String) output1.get("hts_avls"))
+                        .per((String) output1.get("per"))
+                        .pbr((String) output1.get("pbr"))
+                        .build();
+            }
+        }
+
+        return StockChartResponse.builder()
+                .stockCode(stock.getStockCode())
+                .stockName(stock.getStockName())
+                .periodType(periodType)
+                .periodDescription(StockChartResponse.PeriodType.fromCode(periodType).getDescription())
+                .startDate(startDate)
+                .endDate(endDate)
+                .chartData(chartData)
+                .summary(summary)
+                .build();
     }
 }
