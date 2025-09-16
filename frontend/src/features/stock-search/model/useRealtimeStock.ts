@@ -80,15 +80,9 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
         setOrderbook(mockOrderbook);
         setIsConnected(false); // 개발 모드는 실제 연결 아님
         setIsLoading(false);
-
-        console.log('🛠️ 목업 데이터 로드 완료');
-        console.log('📊 목업 주식 정보:', mockStock);
-        console.log('💰 목업 가격 정보:', mockPrice);
-
         // 실시간 가격 시뮬레이션 시작
         const cleanup = createPriceSimulation(stockCode, (priceData) => {
           if (!mounted) return;
-          console.log('🛠️ 시뮬레이션 가격 업데이트:', priceData);
           setRealtimePrice(priceData);
         });
 
