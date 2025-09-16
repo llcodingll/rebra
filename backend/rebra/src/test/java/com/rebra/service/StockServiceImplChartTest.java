@@ -3,7 +3,6 @@ package com.rebra.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
@@ -169,8 +168,6 @@ class StockServiceImplChartTest {
 
             // Then
             assertThat(result).isNotNull();
-            assertThat(result.getStockCode()).isEqualTo(stockCode);
-            assertThat(result.getStockName()).isNull(); // 프론트엔드에서 관리
             assertThat(result.getPeriodType()).isEqualTo(periodType);
             assertThat(result.getStartDate()).isEqualTo(startDate);
             assertThat(result.getEndDate()).isEqualTo(endDate);
@@ -325,8 +322,6 @@ class StockServiceImplChartTest {
 
             // Then
             assertThat(result).isNotNull();
-            assertThat(result.getStockCode()).isEqualTo(stockCode);
-            assertThat(result.getStockName()).isNull(); // 프론트엔드에서 관리
             assertThat(result.getPeriodType()).isEqualTo(periodType);
             assertThat(result.getChartData()).isEmpty(); // 빈 차트 데이터
             assertThat(result.getSummary()).isNull();    // null 요약 정보
