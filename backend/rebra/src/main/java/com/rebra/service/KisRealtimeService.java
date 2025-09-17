@@ -28,20 +28,20 @@ public class KisRealtimeService {
     public void startPriceSubscription(Account account, String stockCode, String sessionId) {
         try {
             Long userId = account.getUser().getId();
-            log.info("WebSocket 체결가 구독 시작 - UserId: {}, StockCode: {}, SessionId: {}", 
+            log.info("WebSocket 체결가 구독 시작 - UserId: {}, StockCode: {}, SessionId: {}",
                     userId, stockCode, sessionId);
-            
+
             // KIS API Component를 통해 실시간 체결가 구독 시작
             kisApiComponent.startPriceSubscription(
-                userId, 
-                account.getId(), 
-                stockCode, 
+                userId,
+                account.getId(),
+                stockCode,
                 account.getAccountType(),
                 data -> broadcastPriceData(userId, stockCode, data)
             );
-            
+
         } catch (Exception e) {
-            log.error("WebSocket 체결가 구독 실패 - UserId: {}, StockCode: {}", 
+            log.error("WebSocket 체결가 구독 실패 - UserId: {}, StockCode: {}",
                     account.getUser().getId(), stockCode, e);
             throw new RuntimeException("실시간 체결가 구독에 실패했습니다.", e);
         }
@@ -54,20 +54,20 @@ public class KisRealtimeService {
     public void startOrderbookSubscription(Account account, String stockCode, String sessionId) {
         try {
             Long userId = account.getUser().getId();
-            log.info("WebSocket 호가 구독 시작 - UserId: {}, StockCode: {}, SessionId: {}", 
+            log.info("WebSocket 호가 구독 시작 - UserId: {}, StockCode: {}, SessionId: {}",
                     userId, stockCode, sessionId);
-            
+
             // KIS API Component를 통해 실시간 호가 구독 시작
             kisApiComponent.startOrderbookSubscription(
-                userId, 
-                account.getId(), 
-                stockCode, 
+                userId,
+                account.getId(),
+                stockCode,
                 account.getAccountType(),
                 data -> broadcastOrderbookData(userId, stockCode, data)
             );
-            
+
         } catch (Exception e) {
-            log.error("WebSocket 호가 구독 실패 - UserId: {}, StockCode: {}", 
+            log.error("WebSocket 호가 구독 실패 - UserId: {}, StockCode: {}",
                     account.getUser().getId(), stockCode, e);
             throw new RuntimeException("실시간 호가 구독에 실패했습니다.", e);
         }
