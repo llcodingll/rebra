@@ -15,20 +15,21 @@ export const formatDateToString = (date: Date): string => {
 };
 
 /**
- * 현재일자-1에서 3개월 전까지의 날짜 범위를 구함
+ * 현재일자에서 4개월 전까지의 날짜 범위를 구함
  */
 export const getDefaultDateRange = (): { startDate: string; endDate: string } => {
   const today = new Date();
 
-  // 전날 (어제)
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  const endDate = formatDateToString(yesterday);
+  // A(start) ~ B(end) 구간 까지의 날짜 범위를 구함
+  // B (오늘)
+  const end = new Date(today);
+  end.setDate(today.getDate());
+  const endDate = formatDateToString(end);
 
-  // 3개월 전
-  const threeMonthsAgo = new Date(yesterday);
-  threeMonthsAgo.setMonth(yesterday.getMonth() - 3);
-  const startDate = formatDateToString(threeMonthsAgo);
+  // A (4개월 전)
+  const start = new Date(today);
+  start.setMonth(today.getMonth() - 4);
+  const startDate = formatDateToString(start);
 
   return { startDate, endDate };
 };
