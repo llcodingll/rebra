@@ -35,8 +35,11 @@ export const transformToVolumeData = (chartData: DailyChartItem[]): VolumeData[]
  * API 응답 데이터를 차트에 사용할 수 있는 형태로 변환
  */
 export const transformChartData = (apiData: DailyChartData) => {
-  const candleData = transformToCandleData(apiData.chartData);
-  const volumeData = transformToVolumeData(apiData.chartData);
+  // API 데이터가 내림차순(최신순)으로 제공되므로 오름차순으로 뒤집기
+  const sortedChartData = [...apiData.chartData].reverse();
+
+  const candleData = transformToCandleData(sortedChartData);
+  const volumeData = transformToVolumeData(sortedChartData);
 
   return {
     candleData,

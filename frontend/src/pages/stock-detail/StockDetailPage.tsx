@@ -6,6 +6,7 @@ import HoldingInfoTable from '../../widgets/stock-detail/HoldingInfoTable';
 import OrderBook from '../../widgets/stock-detail/OrderBook';
 import OrderForm from '../../widgets/stock-detail/OrderForm';
 import { useRealtimeStock } from '../../features/stock-search/model/useRealtimeStock';
+import { useStockChartData } from '../../features/stock-search/hooks/useStockChartData';
 import { isDevMode } from '../../features/stock-search/lib/mockData';
 import styles from './StockDetailPage.module.css';
 
@@ -39,6 +40,9 @@ export default function StockDetailPage() {
     reconnect,
   } = useRealtimeStock(stockCode);
 
+  // 차트 데이터에서 현재 가격 정보 가져오기
+  const { data: chartApiData } = useStockChartData(stockCode, true);
+
   // 실시간 가격 업데이트 시 주문가격도 업데이트
   React.useEffect(() => {
     if (realtimePrice?.currentPrice) {
@@ -46,16 +50,23 @@ export default function StockDetailPage() {
     }
   }, [realtimePrice]);
 
-  // 실제 주식 정보 (실시간 데이터 기반) + SearchPage에서 전달받은 정보 우선 사용
-  const displayStockInfo = stockInfo
+  // 차트 데이터 로드 시 초기 주문가격 설정
+  React.useEffect(() => {
+    if (chartApiData?.summary?.currentPrice && !realtimePrice?.currentPrice) {
+      setOrderPrice(Number(chartApiData.summary.currentPrice));
+    }
+  }, [chartApiData, realtimePrice]);
+
+  // 실제 주식 정보 (차트 API 데이터 우선, 실시간 데이터는 보조) + SearchPage에서 전달받은 정보 우선 사용
+  const displayStockInfo = chartApiData || stockInfo
     ? {
-        code: stockInfoFromState?.stockCode || stockInfo.stockCode,
-        name: stockInfoFromState?.stockName || stockInfo.stockName,
-        currentPrice: realtimePrice?.currentPrice || 0,
-        change: realtimePrice?.change || 0,
-        changePercent: realtimePrice?.changePercent || 0,
-        prevClose: (realtimePrice?.currentPrice || 0) - (realtimePrice?.change || 0),
-        volume: realtimePrice?.volume || 0,
+        code: stockInfoFromState?.stockCode || chartApiData?.stockCode || stockInfo?.stockCode || stockCode,
+        name: stockInfoFromState?.stockName || chartApiData?.stockName || stockInfo?.stockName || '로딩 중...',
+        currentPrice: realtimePrice?.currentPrice || Number(chartApiData?.summary?.currentPrice) || 0,
+        change: realtimePrice?.change || Number(chartApiData?.summary?.priceChange) || 0,
+        changePercent: realtimePrice?.changePercent || Number(chartApiData?.summary?.changeRate) || 0,
+        prevClose: (realtimePrice?.currentPrice || Number(chartApiData?.summary?.currentPrice) || 0) - (realtimePrice?.change || Number(chartApiData?.summary?.priceChange) || 0),
+        volume: realtimePrice?.volume || Number(chartApiData?.summary?.volume) || 0,
         amount: 0, // API에서 제공되지 않으면 기본값
         high: 0, // API에서 제공되지 않으면 기본값
         low: 0, // API에서 제공되지 않으면 기본값
