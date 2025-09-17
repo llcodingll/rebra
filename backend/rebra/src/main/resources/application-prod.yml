@@ -83,6 +83,15 @@ management:
     db:
       enabled: true
 
+# 금융위원회 api
+fss:
+  api:
+    base-url: "https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService"
+    service-key: "${FSS_API_SERVICE_KEY:}"
+    timeout: 30000
+    max-retries: 3
+    retry-delay: 1000
+
 # 로깅 설정
 logging:
   level:
