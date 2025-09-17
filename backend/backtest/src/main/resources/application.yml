@@ -4,7 +4,7 @@ spring:
   
   # Kafka 설정
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
     consumer:
       group-id: backtest-calculator
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
