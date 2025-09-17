@@ -1,7 +1,6 @@
 package com.rebra.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Getter;
@@ -14,7 +13,7 @@ public class StockTradeRequest {
 
 
     @NotNull(message = "주문구분은 필수입니다")
-    @Schema(description = "주문구분 (00: 지정가, 01: 시장가, 02: 조건부지정가 등)", example = "00")
+    @Schema(description = "주문구분 (00: 지정가, 01: 시장가, 02: 조건부지정가 등)", example = "01")
     private String orderType;
 
     @NotNull(message = "주문수량은 필수입니다")
@@ -22,7 +21,7 @@ public class StockTradeRequest {
     @Schema(description = "주문수량", example = "10")
     private Integer quantity;
 
-    @Schema(description = "주문단가 (시장가의 경우 0 또는 null)", example = "70000")
+    @Schema(description = "주문단가 (시장가의 경우 0 또는 null)", example = "0")
     private Long price;
 
     @NotNull(message = "계좌ID는 필수입니다")
