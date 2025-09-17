@@ -152,9 +152,16 @@ public final class BacktestConstants {
         
         /**
          * 영업일 기준 연간 거래일 수
-         * 한국 증권시장 기준 평균 영업일 수
+         * 미국 증권시장 기준 평균 영업일 수
          */
-        public static final int TRADING_DAYS_PER_YEAR = 250;
+        public static final int TRADING_DAYS_PER_YEAR = 252;
+        
+        /**
+         * 무위험 수익률 (3%)
+         * 샤프 비율 계산에 사용되는 기준 수익률
+         * 일반적으로 국고채 수익률을 기준으로 설정
+         */
+        public static final double RISK_FREE_RATE = 0.03;
         
         private Calculation() {
             // 인스턴스화 방지
@@ -179,6 +186,40 @@ public final class BacktestConstants {
         public static final double DETAILED_TRADE_LOG_THRESHOLD = 100000.0;
         
         private Logging() {
+            // 인스턴스화 방지
+        }
+    }
+
+    /**
+     * 백테스트 요청 검증 관련 상수
+     */
+    public static final class Validation {
+        
+        /**
+         * 최소 백테스트 기간 (일)
+         * 의미 있는 백테스트 결과를 위한 최소 기간
+         */
+        public static final int MINIMUM_BACKTEST_PERIOD_DAYS = 30;
+        
+        /**
+         * 최소 종목 수
+         * 포트폴리오 구성을 위한 최소 종목 개수
+         */
+        public static final int MINIMUM_STOCK_COUNT = 2;
+        
+        /**
+         * 최대 백테스트 기간 (일)
+         * 성능상 제한을 위한 최대 기간 (약 10년)
+         */
+        public static final int MAXIMUM_BACKTEST_PERIOD_DAYS = 3650;
+        
+        /**
+         * 최대 종목 수
+         * 실용적 제한을 위한 최대 종목 개수
+         */
+        public static final int MAXIMUM_STOCK_COUNT = 100;
+        
+        private Validation() {
             // 인스턴스화 방지
         }
     }
