@@ -1,41 +1,17 @@
 import { ApiClient } from '../../../shared/api/apiClient';
 import type { Result } from '../../../shared/util/result';
 import type { AppError } from '../../../shared/util/appErrors';
-
-export interface PortfolioItem {
-  portfolioId: number;
-  name: string;
-  description: string;
-  registeredStockCount: number;
-  totalReturnRate: number;
-  isAccountConnected: boolean;
-  createdAt: string;
-  accountType: 'MOCK' | 'REAL';
-}
-
-export interface PortfolioListResponse {
-  totalCount: number;
-  portfolios: PortfolioItem[];
-}
-
-export interface PortfolioCreateRequest {
-  name: string;
-  description: string;
-  accountId: number;
-}
-
-export interface PortfolioCreateResponse {
-  id: number;
-  name: string;
-  description: string;
-  account: {
-    id: number;
-    accountNumber: string;
-    brokerName: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
+import type {
+  PortfolioItem,
+  PortfolioListResponse,
+  PortfolioCreateRequest,
+  PortfolioCreateResponse,
+  PortfolioDetailResponse,
+  StockRegisterRequest,
+  StockRegisterResponse,
+  StockDeleteRequest,
+  StockDeleteResponse
+} from './types';
 
 class PortfolioApi {
   private apiClient: ApiClient;
@@ -50,6 +26,32 @@ class PortfolioApi {
 
   createPortfolio = async (requestData: PortfolioCreateRequest): Promise<Result<PortfolioCreateResponse, AppError>> => {
     return this.apiClient.post<PortfolioCreateResponse>('/api/v1/portfolios', requestData);
+  }
+
+  getPortfolioDetail = async (portfolioId: number): Promise<Result<PortfolioDetailResponse, AppError>> => {
+    console.log("=== 포트폴리오 상세 조회 API 요청 ===");
+    console.log("포트폴리오 ID:", portfolioId);
+    console.log("요청 URL:", `/api/v1/portfolios/${portfolioId}`);
+
+    return this.apiClient.get<PortfolioDetailResponse>(`/api/v1/portfolios/${portfolioId}`);
+  }
+
+  registerStock = async (portfolioId: number, requestData: StockRegisterRequest): Promise<Result<StockRegisterResponse, AppError>> => {
+    console.log("=== 주식 등록 API 요청 ===");
+    console.log("포트폴리오 ID:", portfolioId);
+    console.log("요청 데이터:", requestData);
+    console.log("요청 URL:", `/api/v1/portfolios/${portfolioId}/stocks`);
+
+    return this.apiClient.post<StockRegisterResponse>(`/api/v1/portfolios/${portfolioId}/stocks`, requestData);
+  }
+
+  deleteStock = async (portfolioId: number, requestData: StockDeleteRequest): Promise<Result<StockDeleteResponse, AppError>> => {
+    console.log("=== 주식 삭제 API 요청 ===");
+    console.log("포트폴리오 ID:", portfolioId);
+    console.log("요청 데이터:", requestData);
+    console.log("요청 URL:", `/api/v1/portfolios/${portfolioId}/stocks`);
+
+    return this.apiClient.delete<StockDeleteResponse>(`/api/v1/portfolios/${portfolioId}/stocks`, requestData);
   }
 }
 

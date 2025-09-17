@@ -36,14 +36,18 @@ export default function AccountRegisterModal({
   const { mutate: registerAccount, isPending: isRegistering } = useApiMutation({
     apiFunction: accountApi.registerAccount,
     onSuccess: (data) => {
-      console.log('계좌 등록 성공:', data);
+      console.log('=== 계좌 등록 뮤테이션 성공 ===');
+      console.log('성공 데이터:', JSON.stringify(data, null, 2));
       alert('계좌가 성공적으로 등록되었습니다.');
       resetForm();
       onClose();
       onSuccess?.(); // 부모에게 성공 알림 (필요한 경우)
     },
     onError: (error) => {
-      console.error('계좌 등록 실패:', error);
+      console.error('=== 계좌 등록 뮤테이션 실패 ===');
+      console.error('에러 상세:', JSON.stringify(error, null, 2));
+      console.error('에러 타입:', typeof error);
+      console.error('에러 메시지:', error?.message || '알 수 없는 에러');
       alert('계좌 등록에 실패했습니다. 입력 정보를 확인해주세요.');
     }
   });
@@ -65,15 +69,28 @@ export default function AccountRegisterModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("=== 계좌 등록 폼 제출 ===");
 
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      console.log("폼 검증 실패");
+      return;
+    }
 
-    registerAccount({
-      accountNumber,
+    const requestData = {
+      accountNumber: accountNumber.replace(/-/g, ''),
       appKey,
       appSecret: secretKey,
       accountType: accountType.toUpperCase() as 'MOCK' | 'REAL'
+    };
+
+    console.log("제출할 데이터:", {
+      accountNumber: requestData.accountNumber,
+      appKey: appKey ? `${appKey.substring(0, 8)}...` : '',
+      appSecret: secretKey ? `${secretKey.substring(0, 8)}...` : '',
+      accountType: requestData.accountType
     });
+
+    registerAccount(requestData);
   };
 
   const handleKeyRegistrationGuide = () => {

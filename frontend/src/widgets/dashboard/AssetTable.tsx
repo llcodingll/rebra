@@ -3,32 +3,95 @@ import styles from './AssetTable.module.css';
 import { useModalState, useConfirmModal } from '../../hooks/useModalState';
 import StockSettingModal from '../../features/modal/StockSettingModal';
 import ConfirmModal from '../../shared/ui/modal/ConfirmModal';
-
-interface Stock {
-  name: string;
-  code: string;
-  buyPrice: string;
-  currentPrice: string;
-  quantity: string;
-  value: string;
-  return: string;
-  returnAmount: string;
-  currentWeight: string;
-  targetWeight: string;
-  weight: string;
-  threshold: string;
-  type: 'registered' | 'unregistered';
-}
+import { useApiMutation } from '../../shared/hook/useApi';
+import { portfolioApi } from '../../features/portfolio/api/portfolioApi';
+import type { Stock } from '../../entities/portfolio';
 
 interface AssetTableProps {
   title: string;
   type: 'registered' | 'unregistered';
   data: Stock[];
+  portfolioId?: number;
+  onStockRegistered?: () => void; // 주식 등록 성공 시 콜백
+  onStockRemoved?: () => void; // 주식 삭제 성공 시 콜백
 }
 
-export default function AssetTable({ title, type, data }: AssetTableProps) {
+export default function AssetTable({ title, type, data, portfolioId, onStockRegistered, onStockRemoved }: AssetTableProps) {
   const { isOpen: isStockSettingModalOpen, open: openStockSettingModal, close: closeStockSettingModal } = useModalState();
+
+  // 숫자 포맷팅 함수들
+  const formatNumber = (num: number): string => {
+    return new Intl.NumberFormat('ko-KR').format(num);
+  };
+
+  const formatPrice = (price: number): string => {
+    return `${formatNumber(price)}`;
+  };
+
+  const formatQuantity = (quantity: number): string => {
+    return `${quantity}주`;
+  };
+
+  const formatValue = (value: number): string => {
+    return `${formatNumber(value)}원`;
+  };
+
+  const formatReturn = (rate: number): string => {
+    return `${rate >= 0 ? '+' : ''}${rate.toFixed(1)}%`;
+  };
+
+  const formatReturnAmount = (amount: number): string => {
+    return `(${amount >= 0 ? '+' : ''}${formatNumber(amount)}원)`;
+  };
+
+  const formatWeight = (weight: number): string => {
+    return `${weight.toFixed(1)}%`;
+  };
+
   const { confirmState, showConfirm, hideConfirm } = useConfirmModal();
+
+  // 주식 등록 mutation
+  const { mutate: registerStock, isPending: isRegistering } = useApiMutation({
+    apiFunction: (stockCode: string) => {
+      if (!portfolioId) {
+        return Promise.reject('포트폴리오 ID가 없습니다.');
+      }
+      return portfolioApi.registerStock(portfolioId, { stockCode });
+    },
+    onSuccess: (data) => {
+      console.log('=== 주식 등록 성공 ===');
+      console.log('등록된 주식:', data);
+      alert(`${data.stockName} 주식이 포트폴리오에 등록되었습니다.`);
+      onStockRegistered?.(); // 성공 시 콜백 호출
+    },
+    onError: (error) => {
+      console.error('=== 주식 등록 실패 ===');
+      console.error('에러:', error);
+      alert('주식 등록에 실패했습니다. 다시 시도해주세요.');
+    }
+  });
+
+  // 주식 삭제 mutation
+  const { mutate: deleteStock, isPending: isDeleting } = useApiMutation({
+    apiFunction: (stockCode: string) => {
+      if (!portfolioId) {
+        return Promise.reject('포트폴리오 ID가 없습니다.');
+      }
+      return portfolioApi.deleteStock(portfolioId, { stockCode });
+    },
+    onSuccess: (response, stockCode) => {
+      console.log('=== 주식 삭제 성공 ===');
+      console.log('삭제 응답:', response);
+      const stockName = data.find(stock => stock.code === stockCode)?.name || '해당 주식';
+      alert(`${stockName}이 포트폴리오에서 제거되었습니다.`);
+      onStockRemoved?.(); // 성공 시 콜백 호출
+    },
+    onError: (error) => {
+      console.error('=== 주식 삭제 실패 ===');
+      console.error('에러:', error);
+      alert('주식 삭제에 실패했습니다. 다시 시도해주세요.');
+    }
+  });
 
   const handleSaveSettings = (updatedStocks: Stock[]) => {
     console.log('주식 설정 저장:', updatedStocks);
@@ -36,24 +99,39 @@ export default function AssetTable({ title, type, data }: AssetTableProps) {
   };
 
   const handleAddStock = (stock: Stock) => {
+    if (!portfolioId) {
+      alert('포트폴리오 정보가 없습니다.');
+      return;
+    }
+
     showConfirm({
       title: '주식 추가',
       message: `${stock.name}(${stock.code})을 포트폴리오에 추가하시겠습니까?`,
       onConfirm: () => {
-        console.log('주식 추가:', stock);
-        // TODO: 실제 주식 추가 로직 구현
+        console.log('주식 추가 확인:', stock);
+        registerStock(stock.code);
       },
       type: 'default'
     });
   };
 
   const handleRemoveStock = (stock: Stock) => {
+    console.log('=== handleRemoveStock 호출됨 ===');
+    console.log('stock:', stock);
+    console.log('portfolioId:', portfolioId);
+
+    if (!portfolioId) {
+      alert('포트폴리오 정보가 없습니다.');
+      return;
+    }
+
+    console.log('확인 모달 표시');
     showConfirm({
       title: '주식 삭제',
       message: `${stock.name}(${stock.code})을 포트폴리오에서 제거하시겠습니까?`,
       onConfirm: () => {
-        console.log('주식 삭제:', stock);
-        // TODO: 실제 주식 삭제 로직 구현
+        console.log('주식 삭제 확인:', stock);
+        deleteStock(stock.code);
       },
       type: 'danger'
     });
@@ -103,14 +181,14 @@ export default function AssetTable({ title, type, data }: AssetTableProps) {
                   </td>
                   <td className={styles.dataCell}>
                     <div className={styles.priceInfo}>
-                      <span className={styles.buyPrice}>{stock.buyPrice}</span>
-                      <span className={styles.currentPrice}>{stock.currentPrice}</span>
+                      <span className={styles.buyPrice}>{formatPrice(stock.averagePrice)}</span>
+                      <span className={styles.currentPrice}>{formatPrice(stock.currentPrice)}</span>
                     </div>
                   </td>
                   <td className={styles.dataCell}>
                     <div className={styles.quantityInfo}>
-                      <span className={styles.quantity}>{stock.quantity}</span>
-                      <span className={styles.value}>{stock.value}</span>
+                      <span className={styles.quantity}>{formatQuantity(stock.quantity)}</span>
+                      <span className={styles.value}>{formatValue(stock.totalValue)}</span>
                     </div>
                   </td>
                   <td className={styles.dataCell}>
@@ -119,21 +197,21 @@ export default function AssetTable({ title, type, data }: AssetTableProps) {
                         <svg width="12.591" height="12.591" viewBox="0 0 13 7" fill="none">
                           <path d="M11.4922 1L7.03302 5.45919L4.40997 2.83614L1 6.24611" stroke="#155DFC" strokeWidth="1.04922" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
-                        <span className={styles.returnPercent}>{stock.return}</span>
+                        <span className={styles.returnPercent}>{formatReturn(stock.profitLossRate)}</span>
                       </div>
-                      <span className={styles.returnAmount}>{stock.returnAmount}</span>
+                      <span className={styles.returnAmount}>{formatReturnAmount(stock.profitLoss)}</span>
                     </div>
                   </td>
                   {type === 'registered' && (
                     <>
                       <td className={styles.dataCell}>
-                        <span>{stock.currentWeight}</span>
+                        <span>{formatWeight(stock.currentWeight)}</span>
                       </td>
                       <td className={styles.dataCell}>
                         <span>{stock.targetWeight}</span>
                       </td>
                       <td className={styles.dataCell}>
-                        <span>{stock.threshold}</span>
+                        <span>{stock.thresholdPercentage}</span>
                       </td>
                       <td className={styles.dataCell}>
                         <button

@@ -4,21 +4,7 @@ import styles from './AssetPortfolioChart.module.css';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { TrendingUp, TrendingDown, BarChart3, Target, AlertCircle } from 'lucide-react';
 
-interface Stock {
-  name: string;
-  code: string;
-  buyPrice: string;
-  currentPrice: string;
-  quantity: string;
-  value: string;
-  return: string;
-  returnAmount: string;
-  currentWeight: string;
-  targetWeight: string;
-  weight: string;
-  threshold: string;
-  type: 'registered' | 'unregistered';
-}
+import type { Stock } from '../../entities/portfolio';
 
 interface AssetPortfolioChartProps {
   data: Stock[];
@@ -81,14 +67,12 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
 
   // 총 평가액 계산
   const totalValue = data.reduce((sum, stock) => {
-    const value = parseInt(stock.value.replace(/[^0-9]/g, ''));
-    return sum + value;
+    return sum + stock.totalValue;
   }, 0);
 
-  // 총 수익 계산 
+  // 총 수익 계산
   const totalReturn = data.reduce((sum, stock) => {
-    const returnAmount = parseInt(stock.returnAmount.replace(/[^0-9+-]/g, ''));
-    return sum + returnAmount;
+    return sum + stock.profitLoss;
   }, 0);
 
   const totalReturnPercent = ((totalReturn / (totalValue - totalReturn)) * 100).toFixed(1);
@@ -98,7 +82,7 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
   const chartData = data.map((stock, index) => ({
     name: stock.name,
     code: stock.code,
-    value: parseFloat(stock.currentWeight.replace('%', '')),
+    value: stock.currentWeight,
     color: `hsl(${index * 60}, 70%, 50%)`
   }));
 
@@ -207,11 +191,11 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                       <span className={styles.legendCode}>{stock.code}</span>
                     </div>
                     <div className={styles.legendValues}>
-                      <span className={styles.legendWeight}>{stock.currentWeight}</span>
+                      <span className={styles.legendWeight}>{stock.currentWeight.toFixed(1)}%</span>
                       <span className={`${styles.legendReturn} ${
-                        stock.return.startsWith('+') ? styles.positive : styles.negative
+                        stock.profitLossRate >= 0 ? styles.positive : styles.negative
                       }`}>
-                        {stock.return}
+                        {stock.profitLossRate >= 0 ? '+' : ''}{stock.profitLossRate.toFixed(1)}%
                       </span>
                     </div>
                   </motion.div>
@@ -276,7 +260,7 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                   <span className={styles.stockCode}>{selectedStock.code}</span>
                 </div>
                 <div className={styles.stockPrice}>
-                  <span className={styles.currentPrice}>{selectedStock.currentPrice}</span>
+                  <span className={styles.currentPrice}>{selectedStock.currentPrice.toLocaleString()}원</span>
                 </div>
               </div>
 
@@ -284,11 +268,11 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                 <div className={styles.metricRow}>
                   <div className={styles.metric}>
                     <span className={styles.metricLabel}>보유 수량</span>
-                    <span className={styles.metricValue}>{selectedStock.quantity}</span>
+                    <span className={styles.metricValue}>{selectedStock.quantity}주</span>
                   </div>
                   <div className={styles.metric}>
                     <span className={styles.metricLabel}>평가 금액</span>
-                    <span className={styles.metricValue}>{selectedStock.value}</span>
+                    <span className={styles.metricValue}>{selectedStock.totalValue.toLocaleString()}원</span>
                   </div>
                 </div>
                 
@@ -296,18 +280,18 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                   <div className={styles.metric}>
                     <span className={styles.metricLabel}>수익률</span>
                     <span className={`${styles.metricValue} ${
-                      selectedStock.return.startsWith('+') ? styles.positive : styles.negative
+                      selectedStock.profitLossRate >= 0 ? styles.positive : styles.negative
                     }`}>
-                      {selectedStock.return}
+                      {selectedStock.profitLossRate >= 0 ? '+' : ''}{selectedStock.profitLossRate.toFixed(1)}%
                     </span>
                   </div>
                   <div className={styles.metric}>
                     <span className={styles.metricLabel}>현재 비중</span>
-                    <span className={styles.metricValue}>{selectedStock.currentWeight}</span>
+                    <span className={styles.metricValue}>{selectedStock.currentWeight.toFixed(1)}%</span>
                   </div>
                 </div>
               </div>
-              <span className={styles.thresholdValue}>10%</span>
+              <span className={styles.thresholdValue}>{selectedStock?.thresholdPercentage || 0}%</span>
 
             <div className={styles.targetInfo}>
               <div className={styles.targetLabel}>목표 비중</div>
@@ -320,13 +304,13 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                 <div className={styles.weightItem}>
                   <div className={styles.weightHeader}>
                     <span className={styles.weightLabel}>임계값</span>
-                    <span className={styles.weightValue}>{selectedStock.threshold}%</span>
+                    <span className={styles.weightValue}>{selectedStock.thresholdPercentage}%</span>
                   </div>
                   <div className={styles.weightBar}>
-                    <div 
+                    <div
                       className={styles.weightFill}
-                      style={{ 
-                        width: `${selectedStock.threshold}%`,
+                      style={{
+                        width: `${selectedStock.thresholdPercentage}%`,
                         backgroundColor: '#ef4444'
                       }}
                     />
@@ -340,7 +324,7 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                   <span>리밸런싱 필요량</span>
                 </div>
                 <div className={styles.rebalancingValue}>
-                  {(parseFloat(selectedStock.currentWeight) - parseFloat(selectedStock.targetWeight)).toFixed(1)}%
+                  {(selectedStock.currentWeight - selectedStock.targetWeight).toFixed(1)}%
                 </div>
               </div>
             </motion.div>

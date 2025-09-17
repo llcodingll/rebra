@@ -7,21 +7,7 @@ import { rebalancingHistoryData } from '../../mocks/rebalancingHistory';
 import { tradesByRebalanceId } from '../../mocks/rebalancingTrades';
 import { chartApiData } from '../../mocks/chartData';
 
-interface Stock {
-  name: string;
-  code: string;
-  buyPrice: string;
-  currentPrice: string;
-  quantity: string;
-  value: string;
-  return: string;
-  returnAmount: string;
-  currentWeight: string;
-  targetWeight: string;
-  weight: string;
-  threshold: string;
-  type: 'registered' | 'unregistered';
-}
+import type { Stock } from '../../entities/portfolio';
 
 interface ProfitPortfolioChartProps {
   data: Stock[];
@@ -69,14 +55,12 @@ export default function ProfitPortfolioChart({ data }: ProfitPortfolioChartProps
 
   // 총 평가액 계산
   const totalValue = data.reduce((sum, stock) => {
-    const value = parseInt(stock.value.replace(/[^0-9]/g, ''));
-    return sum + value;
+    return sum + stock.totalValue;
   }, 0);
 
-  // 총 수익 계산 
+  // 총 수익 계산
   const totalReturn = data.reduce((sum, stock) => {
-    const returnAmount = parseInt(stock.returnAmount.replace(/[^0-9+-]/g, ''));
-    return sum + returnAmount;
+    return sum + stock.profitLoss;
   }, 0);
 
   const totalReturnPercent = ((totalReturn / (totalValue - totalReturn)) * 100).toFixed(1);

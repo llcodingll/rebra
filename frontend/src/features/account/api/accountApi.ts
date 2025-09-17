@@ -40,8 +40,23 @@ class AccountApi {
   }
 
   registerAccount = async (requestData: AccountRegisterRequest): Promise<Result<AccountRegisterResponse, AppError>> => {
-    console.log("registerAccount called with:", requestData);
-    return this.apiClient.post<AccountRegisterResponse>('/api/v1/accounts/register', requestData);
+    console.log("=== 계좌 등록 API 요청 시작 ===");
+    console.log("요청 데이터:", JSON.stringify(requestData, null, 2));
+    console.log("요청 URL:", '/api/v1/accounts/register');
+    console.log("요청 시간:", new Date().toISOString());
+
+    try {
+      const result = await this.apiClient.post<AccountRegisterResponse>('/api/v1/accounts/register', requestData);
+      console.log("=== 계좌 등록 API 응답 ===");
+      console.log("응답 결과:", JSON.stringify(result, null, 2));
+      console.log("응답 시간:", new Date().toISOString());
+      return result;
+    } catch (error) {
+      console.error("=== 계좌 등록 API 에러 ===");
+      console.error("에러 상세:", error);
+      console.error("에러 시간:", new Date().toISOString());
+      throw error;
+    }
   }
 
   getAccountList = async (): Promise<Result<AccountListResponse, AppError>> => {
