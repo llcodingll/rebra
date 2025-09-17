@@ -1,5 +1,6 @@
 package com.rebra.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.rebra.entity.BacktestRecord;
 import com.rebra.entity.BacktestStock;
 import lombok.Builder;
@@ -27,8 +28,9 @@ public class BacktestResultResponse {
     // 요약 결과
     private BacktestSummaryResponse summary;
 
-    // 기간별 상세 결과
-    private List<BacktestDetailResponse> details;
+    // 기간별 상세 결과 (JSON 문자열로 직접 반환)
+    @JsonRawValue
+    private String details;
 
     // 포트폴리오 구성 종목
     private List<BacktestStockResponse> portfolioStocks;
@@ -110,7 +112,7 @@ public class BacktestResultResponse {
         }
     }
 
-    public static BacktestResultResponse from(BacktestRecord record, List<BacktestDetailResponse> details, List<BacktestStock> portfolioStocks) {
+    public static BacktestResultResponse from(BacktestRecord record, String detailsJson, List<BacktestStock> portfolioStocks) {
         return BacktestResultResponse.builder()
                 .id(record.getId())
                 .testName(record.getTestName())
@@ -122,7 +124,7 @@ public class BacktestResultResponse {
                 .createdAt(record.getCreatedAt())
                 .errorMessage(record.getErrorMessage())
                 .summary(record.hasResults() ? BacktestSummaryResponse.from(record) : null)
-                .details(details)
+                .details(detailsJson)
                 .portfolioStocks(portfolioStocks != null ? portfolioStocks.stream()
                         .map(BacktestStockResponse::from)
                         .toList() : null)

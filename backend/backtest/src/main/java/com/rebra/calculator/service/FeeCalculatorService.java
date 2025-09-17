@@ -34,8 +34,8 @@ public class FeeCalculatorService {
         double fee = calculateBuyFee(tradeAmount);
         double totalCost = tradeAmount + fee;
         
-        log.debug("매수 비용 계산 - 수량: {}, 가격: {:.0f}, 거래금액: {:.0f}, 수수료: {:.0f}, 총비용: {:.0f}", 
-                quantity, price, tradeAmount, fee, totalCost);
+        log.debug("매수 비용 계산 - 수량: {}, 가격: {}, 거래금액: {}, 수수료: {}, 총비용: {}", 
+                quantity, String.format("%.0f", price), String.format("%.0f", tradeAmount), String.format("%.0f", fee), String.format("%.0f", totalCost));
         
         return roundAmount(totalCost);
     }
@@ -57,8 +57,8 @@ public class FeeCalculatorService {
         double tax = calculateSecuritiesTransactionTax(tradeAmount);
         double netProceeds = tradeAmount - fee - tax;
         
-        log.debug("매도 수익 계산 - 수량: {}, 가격: {:.0f}, 거래금액: {:.0f}, 수수료: {:.0f}, 세금: {:.0f}, 순수익: {:.0f}", 
-                quantity, price, tradeAmount, fee, tax, netProceeds);
+        log.debug("매도 수익 계산 - 수량: {}, 가격: {}, 거래금액: {}, 수수료: {}, 세금: {}, 순수익: {}", 
+                quantity, String.format("%.0f", price), String.format("%.0f", tradeAmount), String.format("%.0f", fee), String.format("%.0f", tax), String.format("%.0f", netProceeds));
         
         return roundAmount(netProceeds);
     }
@@ -131,8 +131,8 @@ public class FeeCalculatorService {
         
         double dailyInterest = borrowingAmount * DAILY_BORROWING_RATE;
         
-        log.debug("일일 차입 이자 계산 - 차입금: {:.0f}, 이자율: {:.6f}, 일일이자: {:.0f}", 
-                borrowingAmount, DAILY_BORROWING_RATE, dailyInterest);
+        log.debug("일일 차입 이자 계산 - 차입금: {}, 이자율: {}, 일일이자: {}", 
+                String.format("%.0f", borrowingAmount), String.format("%.6f", DAILY_BORROWING_RATE), String.format("%.0f", dailyInterest));
         
         return roundAmount(dailyInterest);
     }
@@ -180,8 +180,8 @@ public class FeeCalculatorService {
         
         double periodInterest = borrowingAmount * DAILY_BORROWING_RATE * days;
         
-        log.debug("기간별 차입 이자 계산 - 차입금: {:.0f}, 기간: {}일, 이자율: {:.6f}, 총이자: {:.0f}", 
-                borrowingAmount, days, DAILY_BORROWING_RATE, periodInterest);
+        log.debug("기간별 차입 이자 계산 - 차입금: {}, 기간: {}일, 이자율: {}, 총이자: {}", 
+                String.format("%.0f", borrowingAmount), days, String.format("%.6f", DAILY_BORROWING_RATE), String.format("%.0f", periodInterest));
         
         return roundAmount(periodInterest);
     }
@@ -236,8 +236,8 @@ public class FeeCalculatorService {
         
         double totalCost = buyFee + sellFee + tax;
         
-        log.debug("리밸런싱 비용 추정 - 총거래금액: {:.0f}, 매수비용: {:.0f}, 매도비용: {:.0f}, 세금: {:.0f}, 총비용: {:.0f}", 
-                totalTradeAmount, buyFee, sellFee, tax, totalCost);
+        log.debug("리밸런싱 비용 추정 - 총거래금액: {}, 매수비용: {}, 매도비용: {}, 세금: {}, 총비용: {}", 
+                String.format("%.0f", totalTradeAmount), String.format("%.0f", buyFee), String.format("%.0f", sellFee), String.format("%.0f", tax), String.format("%.0f", totalCost));
         
         return roundAmount(totalCost);
     }
@@ -270,8 +270,8 @@ public class FeeCalculatorService {
         double profit = sellProceeds - buyCost;
         double returnRate = profit / buyCost;
         
-        log.debug("거래 수익률 계산 - 매수비용: {:.0f}, 매도수익: {:.0f}, 순이익: {:.0f}, 수익률: {:.2f}%", 
-                buyCost, sellProceeds, profit, returnRate * 100);
+        log.debug("거래 수익률 계산 - 매수비용: {}, 매도수익: {}, 순이익: {}, 수익률: {}%", 
+                String.format("%.0f", buyCost), String.format("%.0f", sellProceeds), String.format("%.0f", profit), String.format("%.2f", returnRate * 100));
         
         return returnRate;
     }

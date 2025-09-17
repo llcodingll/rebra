@@ -248,7 +248,7 @@ public class Stock {
      * @return 임계값 백분율
      */
     public double getThresholdPercentage() {
-        return thresholdPercentage * 100.0;
+        return thresholdPercentage;
     }
 
     /**

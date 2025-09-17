@@ -38,8 +38,9 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
         }
 
         try {
-            // 컨텍스트에서 종목 정보 가져오기
-            List<Stock> stocks = context.getStocks();
+            // 포트폴리오에서 종목 정보 가져오기 (업데이트된 targetWeight 포함)
+            Map<String, Stock> targetStocksMap = portfolio.getTargetStocks();
+            List<Stock> stocks = new ArrayList<>(targetStocksMap.values());
             
             if (stocks == null || stocks.isEmpty()) {
                 return false;
@@ -76,11 +77,15 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
                 
                 // Stock의 targetWeight 필드 사용 (Portfolio에서 이미 업데이트됨)
                 if (stock.exceedsThreshold(currentWeight)) {
-                    log.debug("종목 {} 임계값 초과 - 현재비중: {:.2f}%, 목표비중: {:.2f}%, 임계값: {:.2f}%", 
+                    double relativeThreshold = stock.getTargetWeight() * stock.getThresholdPercentage();
+                    double deviation = Math.abs(currentWeight - stock.getTargetWeight());
+                    log.debug("종목 {} 임계값 초과 - 현재비중: {}%, 목표비중: {}%, 임계값: {}%, 상대임계값: {}%, 편차: {}%", 
                             stockCode, 
-                            currentWeight * 100, 
-                            stock.getTargetWeight() * 100, 
-                            stock.getThresholdPercentage() * 100);
+                            String.format("%.2f", currentWeight * 100), 
+                            String.format("%.2f", stock.getTargetWeight() * 100), 
+                            String.format("%.2f", stock.getThresholdPercentage() * 100),
+                            String.format("%.2f", relativeThreshold * 100),
+                            String.format("%.2f", deviation * 100));
                     return true;
                 }
             }
@@ -104,8 +109,9 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
         }
 
         try {
-            // 이미 위에서 가져온 가격 정보 사용
-            List<Stock> stocks = context.getStocks();
+            // 포트폴리오에서 종목 정보 가져오기 (업데이트된 targetWeight 포함)
+            Map<String, Stock> targetStocksMap = portfolio.getTargetStocks();
+            List<Stock> stocks = new ArrayList<>(targetStocksMap.values());
             
             if (stocks == null || currentPrices == null) {
                 return "DATA_NOT_AVAILABLE";
@@ -188,8 +194,9 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
         }
 
         try {
-            // 컨텍스트에서 종목 정보와 현재 가격 가져오기 (최신 날짜 기준)
-            List<Stock> stocks = context.getStocks();
+            // 포트폴리오에서 종목 정보 가져오기 (업데이트된 targetWeight 포함)
+            Map<String, Stock> targetStocksMap = portfolio.getTargetStocks();
+            List<Stock> stocks = new ArrayList<>(targetStocksMap.values());
             LocalDate currentDate = context.getLastDate();
             Map<String, Double> currentPrices = context.getPricesForDate(currentDate);
             
@@ -264,18 +271,18 @@ public class ThresholdRebalancingStrategy implements RebalancingStrategy {
 
                 // 임계값 검증
                 if (stock.getThresholdPercentage() <= 0 || stock.getThresholdPercentage() > 1.0) {
-                    log.error("종목 {}의 임계값이 잘못되었습니다: {:.2f}%", 
-                            stock.getStockCode(), stock.getThresholdPercentage() * 100);
+                    log.error("종목 {}의 임계값이 잘못되었습니다: {}%", 
+                            stock.getStockCode(), String.format("%.2f", stock.getThresholdPercentage() * 100));
                     return false;
                 }
 
                 // 임계값이 목표 비중(계산된)보다 크면 경고
                 double targetWeight = (double) stock.getOriginalWeight() / totalOriginalWeight;
                 if (stock.getThresholdPercentage() > targetWeight) {
-                    log.warn("종목 {}의 임계값({:.2f}%)이 목표비중({:.2f}%)보다 큽니다", 
+                    log.warn("종목 {}의 임계값({}%)이 목표비중({}%)보다 큽니다", 
                             stock.getStockCode(), 
-                            stock.getThresholdPercentage() * 100, 
-                            targetWeight * 100);
+                            String.format("%.2f", stock.getThresholdPercentage() * 100), 
+                            String.format("%.2f", targetWeight * 100));
                 }
             }
 

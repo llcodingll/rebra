@@ -546,7 +546,7 @@ public class Portfolio {
             return;
         }
         
-        log.info("현재 비중 기반 정규화 시작 - 현재 총 비중: {:.2f}%", totalWeight * 100);
+        log.info("현재 비중 기반 정규화 시작 - 현재 총 비중: {}%", String.format("%.2f", totalWeight * 100));
         
         // 각 종목의 비중을 정규화
         for (Stock stock : targetStocks.values()) {
@@ -555,8 +555,8 @@ public class Portfolio {
             
             stock.setTargetWeight(normalizedWeight);
             
-            log.debug("종목 {} 비중 정규화: {:.2f}% → {:.2f}%", 
-                    stock.getStockCode(), currentWeight * 100, normalizedWeight * 100);
+            log.debug("종목 {} 비중 정규화: {}% → {}%", 
+                    stock.getStockCode(), String.format("%.2f", currentWeight * 100), String.format("%.2f", normalizedWeight * 100));
         }
         
         log.info("현재 비중 기반 정규화 완료 - 종목수: {}", targetStocks.size());
@@ -649,12 +649,12 @@ public class Portfolio {
                 // 유효한 종목: 정규화된 목표 비중 계산
                 double normalizedWeight = (double) stock.getOriginalWeight() / totalValidWeight;
                 stock.setTargetWeight(normalizedWeight);
-                log.trace(String.format("종목 %s 목표 비중 업데이트: %.2f%%", 
+                log.debug(String.format("종목 %s 목표 비중 업데이트: %.2f%%", 
                         stock.getStockCode(), normalizedWeight * 100));
             } else {
                 // 유효하지 않은 종목: 목표 비중 0
                 stock.setTargetWeight(0.0);
-                log.trace("종목 {} 목표 비중 업데이트: 0.0% (가격 정보 없음)", stock.getStockCode());
+                log.debug("종목 {} 목표 비중 업데이트: 0.0% (가격 정보 없음)", stock.getStockCode());
             }
         }
         
