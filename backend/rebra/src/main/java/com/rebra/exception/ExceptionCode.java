@@ -29,6 +29,7 @@ public enum ExceptionCode {
     EXPIRED_TEMP_TOKEN(8002, "만료된 임시 토큰입니다.", HttpStatus.UNAUTHORIZED),
     INVALID_TOKEN_TYPE(8003, "잘못된 토큰 타입입니다.", HttpStatus.BAD_REQUEST),
     TEMP_TOKEN_PARSING_FAILED(8004, "임시 토큰 파싱에 실패했습니다.", HttpStatus.UNAUTHORIZED),
+    INVALID_TOKEN(8005, "유효하지 않은 토큰입니다.", HttpStatus.UNAUTHORIZED),
     REFRESH_TOKEN_NOT_FOUND(8007, "리프레시 토큰을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     REFRESH_TOKEN_EXPIRED(8008, "리프레시 토큰이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
     TOKEN_GENERATION_FAILED(8009, "토큰 생성에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
@@ -87,7 +88,12 @@ public enum ExceptionCode {
         // ==== External API 관련 ====
     EXTERNAL_API_ERROR(15001, "외부 API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
     EXTERNAL_API_TIMEOUT(15002, "외부 API 응답 시간이 초과되었습니다.", HttpStatus.GATEWAY_TIMEOUT),
-    EXTERNAL_API_SERVICE_UNAVAILABLE(15003, "외부 API 서비스를 사용할 수 없습니다.", HttpStatus.SERVICE_UNAVAILABLE);
+    EXTERNAL_API_SERVICE_UNAVAILABLE(15003, "외부 API 서비스를 사용할 수 없습니다.", HttpStatus.SERVICE_UNAVAILABLE),
+
+    // ==== Rebalancing 관련 ====
+    REBALANCING_ORDER_NOT_FOUND(15001, "리밸런싱 주문을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    REBALANCING_ACCESS_DENIED(15002, "리밸런싱 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    TRADE_RECORD_NOT_FOUND(15003, "거래 기록을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
 
     private final int code;
     private final String message;
