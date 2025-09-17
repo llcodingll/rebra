@@ -6,6 +6,7 @@ import com.rebra.dto.request.StockTradeRequest;
 import com.rebra.dto.response.PageResponse;
 import com.rebra.dto.response.StockChartResponse;
 import com.rebra.dto.response.StockDetailResponse;
+import com.rebra.dto.response.StockHistoricalDataResponse;
 import com.rebra.dto.response.StockSearchResponse;
 import com.rebra.dto.response.StockTradeResponse;
 import com.rebra.service.StockService;
@@ -20,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,9 +42,9 @@ public class StockController {
     private final StockService stockService;
     private final StockTradingService stockTradingService;
 
-    @Operation(summary = "종목명으로 주식 검색", description = "종목명에 포함된 문자열로 주식을 검색합니다. (활성 상태인 주식만)")
+    @Operation(summary = "종목명으로 주식 검색", description = "FSS API를 통해 종목명에 포함된 문자열로 주식을 검색합니다. (최근 영업일 기준)")
     @GetMapping("/search")
-    public ResponseEntity<CommonApiResponse<PageResponse<StockSearchResponse>>> searchStocks(
+    public ResponseEntity<CommonApiResponse<List<StockHistoricalDataResponse>>> searchStocks(
             @Parameter(description = "검색할 종목명", example = "삼성")
             @RequestParam String stockName,
             @PageableDefault(size = 20, sort = "stockName") Pageable pageable) {
@@ -98,10 +101,11 @@ public class StockController {
             @Parameter(description = "조회할 종목명", example = "삼성전자")
             @RequestParam String stockName) {
 
-        StockSearchResponse stock = stockService.findByStockName(stockName);
+        List<StockHistoricalDataResponse> responses = stockService.searchStocksFromApi(stockName);
 
-        return ResponseEntity.ok(CommonApiResponse.success(stock));
+        return ResponseEntity.ok(CommonApiResponse.success(responses));
     }
+
 
     @Operation(summary = "주식 매수 주문", description = "지정된 종목을 매수합니다.")
     @ApiResponses(value = {

@@ -1,6 +1,9 @@
 package com.rebra.calculator.config;
 
 import com.rebra.calculator.dto.BacktestRequest;
+import com.rebra.calculator.dto.BacktestResponse;
+import io.micrometer.core.instrument.MeterRegistry;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -13,6 +16,8 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.core.MicrometerConsumerListener;
+import org.springframework.kafka.core.MicrometerProducerListener;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
@@ -33,7 +38,10 @@ import java.util.Map;
 @Slf4j
 @Configuration
 @EnableKafka
+@RequiredArgsConstructor
 public class KafkaConfig {
+
+    private final MeterRegistry meterRegistry;
 
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
@@ -43,6 +51,7 @@ public class KafkaConfig {
 
     /**
      * Kafka Consumer 설정을 생성한다
+     * Micrometer 리스너와 Factory 리스너를 포함한다
      * 
      * @return Consumer 설정 맵
      */
@@ -65,9 +74,9 @@ public class KafkaConfig {
         // 성능 및 안정성 설정
         configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"); // 처음부터 읽기
         configProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false); // 수동 커밋
-        configProps.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 30000); // 30초
-        configProps.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 10000); // 10초
-        configProps.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 600000); // 10분 (백테스트 처리 시간 고려)
+        configProps.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 45000); // 45초 (안정성 향상)
+        configProps.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 15000); // 15초 (session timeout의 1/3)
+        configProps.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 300000); // 5분 (rebalancing 빈도 줄임)
         configProps.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1); // 한 번에 하나씩 처리
         
         // 메모리 사용량 제한
@@ -77,7 +86,63 @@ public class KafkaConfig {
         log.info("Kafka Consumer 설정 완료 - BootstrapServers: {}, GroupId: {}", 
                 bootstrapServers, groupId);
         
-        return new DefaultKafkaConsumerFactory<>(configProps);
+        DefaultKafkaConsumerFactory<String, BacktestRequest> factory = 
+                new DefaultKafkaConsumerFactory<>(configProps);
+        
+        // Micrometer 리스너 추가 (메트릭 수집)
+        factory.addListener(new MicrometerConsumerListener<String, BacktestRequest>(meterRegistry));
+        
+        // Factory 리스너 추가 (Consumer 생성/제거 이벤트 모니터링)
+        factory.addListener(new ConsumerFactory.Listener<String, BacktestRequest>() {
+            @Override
+            public void consumerAdded(String id, org.apache.kafka.clients.consumer.Consumer<String, BacktestRequest> consumer) {
+                log.info("Kafka Consumer 생성됨 - ID: {}, Client ID: {}", id, 
+                    consumer.metrics().entrySet().stream()
+                        .filter(entry -> "client-id".equals(entry.getKey().name()))
+                        .findFirst()
+                        .map(entry -> entry.getValue().toString())
+                        .orElse("unknown"));
+            }
+            
+            @Override
+            public void consumerRemoved(String id, org.apache.kafka.clients.consumer.Consumer<String, BacktestRequest> consumer) {
+                log.info("Kafka Consumer 제거됨 - ID: {}", id);
+            }
+        });
+        
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, BacktestResponse> backtestResponseConsumerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        
+        // 기본 연결 설정
+        configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        configProps.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        
+        // JSON 역직렬화 설정
+        configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
+        configProps.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class.getName());
+        configProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE, BacktestResponse.class.getName());
+        configProps.put(JsonDeserializer.TRUSTED_PACKAGES, "com.rebra.calculator.dto");
+        configProps.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        
+        // 성능 및 안정성 설정
+        configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"); // 처음부터 읽기
+        configProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false); // 수동 커밋
+        
+        log.info("Kafka Consumer<BacktestResponse> 설정 완료 - BootstrapServers: {}, GroupId: {}",
+                bootstrapServers, groupId);
+        
+        DefaultKafkaConsumerFactory<String, BacktestResponse> factory =
+                new DefaultKafkaConsumerFactory<>(configProps);
+        
+        // Micrometer 리스너 추가 (메트릭 수집)
+        factory.addListener(new MicrometerConsumerListener<>(meterRegistry));
+        
+        return factory;
     }
 
     /**
@@ -112,7 +177,31 @@ public class KafkaConfig {
         
         log.info("Kafka Producer 설정 완료 - BootstrapServers: {}", bootstrapServers);
         
-        return new DefaultKafkaProducerFactory<>(configProps);
+        DefaultKafkaProducerFactory<String, Object> factory = 
+                new DefaultKafkaProducerFactory<>(configProps);
+        
+        // Micrometer 리스너 추가 (메트릭 수집)
+        factory.addListener(new MicrometerProducerListener<String, Object>(meterRegistry));
+        
+        // Factory 리스너 추가 (Producer 생성/제거 이벤트 모니터링)
+        factory.addListener(new ProducerFactory.Listener<String, Object>() {
+            @Override
+            public void producerAdded(String id, org.apache.kafka.clients.producer.Producer<String, Object> producer) {
+                log.info("Kafka Producer 생성됨 - ID: {}, Client ID: {}", id,
+                    producer.metrics().entrySet().stream()
+                        .filter(entry -> "client-id".equals(entry.getKey().name()))
+                        .findFirst()
+                        .map(entry -> entry.getValue().toString())
+                        .orElse("unknown"));
+            }
+            
+            @Override
+            public void producerRemoved(String id, org.apache.kafka.clients.producer.Producer<String, Object> producer) {
+                log.info("Kafka Producer 제거됨 - ID: {}", id);
+            }
+        });
+        
+        return factory;
     }
 
     /**
@@ -144,8 +233,8 @@ public class KafkaConfig {
         
         factory.setConsumerFactory(consumerFactory());
         
-        // 동시성 설정 (CPU 코어 수만큼 컨슈머 생성)
-        int concurrency = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
+        // 동시성 설정 (백테스트는 CPU 집약적이므로 적은 수의 컨슈머로 안정성 확보)
+        int concurrency = 2;
         factory.setConcurrency(concurrency);
         
         // 수동 ACK 설정
@@ -198,7 +287,7 @@ public class KafkaConfig {
             @Value("${kafka.topics.backtest-request}") String requestTopic,
             @Value("${kafka.topics.backtest-result}") String resultTopic) {
         
-        int numPartitions = Math.max(2, Runtime.getRuntime().availableProcessors()); // 최소 2개 파티션
+        int numPartitions = 4; // Consumer 수와 균형을 맞춘 파티션 수
         short replicationFactor = 1; // 개발환경용
         
         org.apache.kafka.clients.admin.NewTopic requestTopicConfig = 
@@ -223,13 +312,4 @@ public class KafkaConfig {
                 requestTopicConfig, resultTopicConfig);
     }
 
-    /**
-     * 애플리케이션 종료 시 Kafka 리소스를 정리한다
-     */
-    @jakarta.annotation.PreDestroy
-    public void cleanup() {
-        log.info("Kafka 설정 리소스 정리 중...");
-        // 필요시 명시적 리소스 정리 코드 추가
-        log.info("Kafka 설정 리소스 정리 완료");
-    }
 }

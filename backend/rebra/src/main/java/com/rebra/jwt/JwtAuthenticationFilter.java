@@ -46,7 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     log.info("액세스 토큰이 만료됨. 자동 갱신 시도...");
 
                     // 리프레시 토큰으로 자동 갱신 시도
-                    String  newAccessToken = tryAutoRefreshToken(request, response);
+                    String newAccessToken = tryAutoRefreshToken(request, response);
                     if (newAccessToken != null) {
                         log.info("토큰 자동 갱신 성공");
                         setAuthentication(newAccessToken);
@@ -56,6 +56,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         CookieUtil.deleteAccessTokenCookie(response);
                         CookieUtil.deleteRefreshTokenCookie(response);
                     }
+                }
+            } else {
+                // 액세스 토큰이 없는 경우에도 리프레시 토큰으로 갱신 시도
+                log.debug("액세스 토큰이 없음. 리프레시 토큰으로 갱신 시도");
+                String newAccessToken = tryAutoRefreshToken(request, response);
+                if (newAccessToken != null) {
+                    log.info("리프레시 토큰으로 액세스 토큰 자동 발급 성공");
+                    setAuthentication(newAccessToken);
                 }
             }
         } catch (Exception e) {

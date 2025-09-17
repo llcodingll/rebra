@@ -88,7 +88,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - KAFKA_SERVERS=kafka:9092
+      - KAFKA_SERVERS=kafka:29092
       - SERVER_DOMAIN=rebra.site
       - CORS_ALLOWED_ORIGINS=https://rebra.site,https://www.rebra.site
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
@@ -101,6 +101,7 @@ services:
       - GMS_API_KEY=temp-gms-api-key
       - GMS_GPT_URL=https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions
       - SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER=${SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER}
+      - FSS_API_SERVICE_KEY=${FSS_API_SERVICE_KEY}
       - DDL_AUTO=create
     depends_on:
       - postgres
@@ -110,29 +111,36 @@ services:
       - rebra-network
     restart: unless-stopped
 
-  # backtest 서비스는 현재 구현되지 않음 - 임시 주석 처리
-  # backtest:
-  #   image: rebra-calc:latest
-  #   ports:
-  #     - "8081:8080"
-  #   environment:
-  #     - SPRING_PROFILES_ACTIVE=prod
-  #     - DB_HOST=${DB_HOST}
-  #     - DB_PORT=${DB_PORT}
-  #     - DB_NAME=rebra
-  #     - DB_USERNAME=${DB_USERNAME}
-  #     - DB_PASSWORD=${DB_PASSWORD}
-  #     - REDIS_HOST=redis
-  #     - REDIS_PORT=6379
-  #     - REDIS_PASSWORD=${REDIS_PASSWORD}
-  #     - KAFKA_SERVERS=kafka:9092
-  #   depends_on:
-  #     - postgres
-  #     - redis
-  #     - kafka
-  #   networks:
-  #     - rebra-network
-  #   restart: unless-stopped
+  backtest:
+    image: rebra-calc:latest
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=rebra
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - KAFKA_SERVERS=kafka:29092
+      - FSS_API_SERVICE_KEY=${FSS_API_SERVICE_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ACCESS_TOKEN_MINUTE_TIME=300
+      - JWT_REFRESH_TOKEN_MINUTE_TIME=10080
+      - SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER=${SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER}
+      - GMS_API_KEY=temp-gms-api-key
+      - GMS_GPT_URL=https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions
+      - DDL_AUTO=create
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    networks:
+      - rebra-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:

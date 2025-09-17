@@ -36,4 +36,8 @@ public class TokenException extends CustomRuntimeException {
     public static TokenException tempTokenParsingFailed() {
         return new TokenException(ExceptionCode.TEMP_TOKEN_PARSING_FAILED);
     }
+
+    public static TokenException invalidToken() {
+        return new TokenException(ExceptionCode.INVALID_TOKEN);
+    }
 }

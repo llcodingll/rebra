@@ -20,6 +20,12 @@ public interface BacktestRecordRepository extends JpaRepository<BacktestRecord, 
      * 사용자별 백테스트 기록 조회 (페이징)
      */
     Page<BacktestRecord> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
+    
+    /**
+     * 사용자 ID별 백테스트 기록 조회 (페이징)
+     */
+    @Query("SELECT br FROM BacktestRecord br WHERE br.user.id = :userId ORDER BY br.createdAt DESC")
+    Page<BacktestRecord> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
 
     /**
      * 사용자별 백테스트 기록 조회 (전체)
@@ -41,6 +47,12 @@ public interface BacktestRecordRepository extends JpaRepository<BacktestRecord, 
      */
     @Query("SELECT br FROM BacktestRecord br LEFT JOIN FETCH br.user WHERE br.user = :user AND br.id = :id")
     Optional<BacktestRecord> findByUserAndIdWithUser(@Param("user") User user, @Param("id") Long id);
+    
+    /**
+     * 사용자 ID로 백테스트 기록 조회
+     */
+    @Query("SELECT br FROM BacktestRecord br WHERE br.user.id = :userId AND br.id = :id")
+    Optional<BacktestRecord> findByUserIdAndId(@Param("userId") Long userId, @Param("id") Long id);
 
     /**
      * 진행 중인 백테스트 개수 조회

@@ -201,16 +201,16 @@ public class BacktestStockDto {
     }
 
     /**
-     * 종목 정보를 Domain 객체로 변환
+     * 종목 정보를 Domain 객체로 변환 (원본 가중치 기반)
      * 
-     * @param normalizedWeight 정규화된 목표 비중 (0.0 ~ 1.0)
      * @return Stock 도메인 객체
      */
-    public Stock toDomain(double normalizedWeight) {
+    public Stock toDomain() {
         return new Stock(
             getNormalizedStockCode(),
-            normalizedWeight,
-            thresholdPercentage != null ? thresholdPercentage : 0.0
+            weight,  // 원본 가중치
+            thresholdPercentage != null ? thresholdPercentage : 0.0,
+            getSafeShares()  // 초기 보유 수량
         );
     }
 

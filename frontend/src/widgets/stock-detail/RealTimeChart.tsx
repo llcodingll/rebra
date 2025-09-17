@@ -48,7 +48,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
 
   // API 연동 모드 전환 (개발 중 편의를 위한 분기)
-  const USE_API_DATA = false; // true: API 데이터 사용, false: 시뮬레이션 데이터 사용
+  const USE_API_DATA = true; // true: API 데이터 사용, false: 시뮬레이션 데이터 사용
 
   // API에서 차트 데이터 가져오기
   const { data: chartApiData, isLoading, error } = useStockChartData(stockCode, USE_API_DATA);
@@ -419,10 +419,17 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
       priceSeriesRef.current.setData(candleData);
       volumeSeriesRef.current.setData(volumeData);
 
-      // 잠시 후 자동 피팅이 완료되면 동기화 재개
+      // 잠시 후 자동 피팅이 완료되면 동기화 재개 및 시간축 동기화
       setTimeout(() => {
+        if (priceChartRef.current && volumeChartRef.current) {
+          // 가격 차트의 현재 보이는 범위를 거래량 차트에 적용
+          const priceVisibleRange = priceChartRef.current.timeScale().getVisibleLogicalRange();
+          if (priceVisibleRange) {
+            volumeChartRef.current.timeScale().setVisibleLogicalRange(priceVisibleRange);
+          }
+        }
         panSyncingRef.current = false;
-      }, 50);
+      }, 100);
     }
   }, [candleData, volumeData]);
 
