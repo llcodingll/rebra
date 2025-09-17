@@ -1,6 +1,7 @@
 package com.rebra.calculator.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rebra.calculator.enums.RebalancingPeriod;
 import com.rebra.calculator.enums.RebalancingType;
@@ -10,7 +11,11 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 백테스트 계산 요청을 나타내는 DTO 클래스
@@ -69,11 +74,22 @@ public class BacktestRequest {
     private List<BacktestStockDto> stocks;
     
     /**
-     * OHLCV 히스토리 데이터
-     * 백테스트 기간 중 필요한 모든 주가 데이터
+     * 일별 종목 가격 데이터
+     * 날짜별로 각 종목의 가격 정보를 맵 형태로 저장
+     * 키: 날짜 문자열 (yyyy-MM-dd)
+     * 값: 종목코드별 가격 맵 (거래정지/상장폐지 시 null)
      */
-    @JsonProperty("ohlcv_data")
-    private List<OhlcvDataDto> ohlcvData;
+    @JsonProperty("daily_prices")
+    private Map<String, Map<String, Double>> dailyPrices;
+
+    /**
+     * 리밸런싱 수행 날짜 목록
+     * PERIODIC 타입에서만 사용되며, 해당 날짜에만 리밸런싱 실행
+     * THRESHOLD 타입에서는 null (매일 임계값 확인)
+     */
+    @JsonProperty("rebalancing_dates")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private List<LocalDate> rebalancingDates;
 
     /**
      * 요청 데이터의 유효성을 검증한다
@@ -118,26 +134,38 @@ public class BacktestRequest {
                 return false;
             }
             
-            // OHLCV 데이터 검증
-            if (ohlcvData == null || ohlcvData.isEmpty()) {
+            // 일별 가격 데이터 검증
+            if (dailyPrices == null || dailyPrices.isEmpty()) {
                 return false;
             }
             
-            // 모든 종목의 OHLCV 데이터가 있는지 확인
+            // 백테스트 기간 내에 가격 데이터가 있는지 확인 (시작일/종료일 정확히 매칭할 필요 없음)
+            boolean hasDataInPeriod = dailyPrices.entrySet().stream()
+                .anyMatch(entry -> {
+                    try {
+                        LocalDate date = LocalDate.parse(entry.getKey());
+                        return !date.isBefore(startDate) && !date.isAfter(endDate);
+                    } catch (Exception e) {
+                        return false; // 잘못된 날짜 형식 무시
+                    }
+                });
+            
+            if (!hasDataInPeriod) {
+                return false; // 기간 내 데이터가 전혀 없음
+            }
+            
+            // 모든 종목의 최소 데이터 존재 여부 확인
             List<String> stockCodes = stocks.stream()
                     .map(BacktestStockDto::getStockCode)
                     .distinct()
                     .toList();
             
-            List<String> ohlcvStockCodes = ohlcvData.stream()
-                    .map(OhlcvDataDto::getStockCode)
-                    .distinct()
-                    .toList();
+            boolean hasMinimumData = dailyPrices.values().stream()
+                    .anyMatch(dayPrices -> stockCodes.stream()
+                            .anyMatch(stockCode -> dayPrices.containsKey(stockCode) && dayPrices.get(stockCode) != null));
             
-            for (String stockCode : stockCodes) {
-                if (!ohlcvStockCodes.contains(stockCode)) {
-                    return false; // 누락된 종목이 있음
-                }
+            if (!hasMinimumData) {
+                return false; // 어떤 날짜에도 유효한 종목 데이터가 없음
             }
             
             return true;
@@ -156,41 +184,54 @@ public class BacktestRequest {
         if (startDate == null || endDate == null) {
             return 0;
         }
-        return startDate.until(endDate).getDays() + 1;
+        return ChronoUnit.DAYS.between(startDate, endDate) + 1;
     }
 
     /**
-     * 특정 종목의 OHLCV 데이터를 필터링하여 반환한다
+     * 특정 종목의 가격 데이터를 날짜순으로 정렬하여 반환한다
      * 
      * @param stockCode 종목 코드
-     * @return 해당 종목의 OHLCV 데이터 리스트
+     * @return 해당 종목의 날짜별 가격 맵 (날짜 오름차순)
      */
-    public List<OhlcvDataDto> getOhlcvDataForStock(String stockCode) {
-        if (ohlcvData == null || stockCode == null) {
-            return List.of();
+    @JsonIgnore
+    public Map<LocalDate, Double> getPricesForStock(String stockCode) {
+        if (dailyPrices == null || stockCode == null) {
+            return Map.of();
         }
         
-        return ohlcvData.stream()
-                .filter(data -> stockCode.equals(data.getStockCode()))
-                .sorted((a, b) -> a.getTradeDate().compareTo(b.getTradeDate()))
-                .toList();
+        return dailyPrices.entrySet().stream()
+                .filter(entry -> entry.getValue().containsKey(stockCode))
+                .filter(entry -> entry.getValue().get(stockCode) != null)
+                .collect(Collectors.toMap(
+                        entry -> LocalDate.parse(entry.getKey()),
+                        entry -> entry.getValue().get(stockCode),
+                        (existing, replacement) -> existing
+                ))
+                .entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        java.util.LinkedHashMap::new
+                ));
     }
 
     /**
      * 백테스트 기간 내의 모든 거래일을 반환한다
-     * OHLCV 데이터에서 거래일 목록을 추출
+     * dailyPrices 맵에서 날짜 키를 추출하여 정렬
      * 
      * @return 정렬된 거래일 리스트
      */
+    @JsonIgnore
     public List<LocalDate> getTradingDates() {
-        if (ohlcvData == null) {
+        if (dailyPrices == null) {
             return List.of();
         }
         
-        return ohlcvData.stream()
-                .map(OhlcvDataDto::getTradeDate)
+        return dailyPrices.keySet().stream()
+                .map(LocalDate::parse)
                 .filter(date -> !date.isBefore(startDate) && !date.isAfter(endDate))
-                .distinct()
                 .sorted()
                 .toList();
     }
@@ -199,20 +240,16 @@ public class BacktestRequest {
      * 특정 날짜의 모든 종목 가격 정보를 맵 형태로 반환한다
      * 
      * @param date 조회할 날짜
-     * @return 종목코드 -> 종가 매핑
+     * @return 종목코드 -> 종가 매핑 (null 값 포함)
      */
-    public java.util.Map<String, Double> getPricesForDate(LocalDate date) {
-        if (ohlcvData == null || date == null) {
-            return java.util.Map.of();
+    @JsonIgnore
+    public Map<String, Double> getPricesForDate(LocalDate date) {
+        if (dailyPrices == null || date == null) {
+            return Map.of();
         }
         
-        return ohlcvData.stream()
-                .filter(data -> date.equals(data.getTradeDate()))
-                .collect(java.util.stream.Collectors.toMap(
-                        OhlcvDataDto::getStockCode,
-                        OhlcvDataDto::getClosePrice,
-                        (existing, replacement) -> existing // 중복 시 기존 값 유지
-                ));
+        String dateStr = date.toString();
+        return dailyPrices.getOrDefault(dateStr, Map.of());
     }
 
     /**
@@ -231,6 +268,7 @@ public class BacktestRequest {
      * 
      * @return 정규화된 종목별 목표 비중 맵 (종목코드 -> 비중)
      */
+    @JsonIgnore
     public java.util.Map<String, Double> getNormalizedWeights() {
         if (stocks == null || stocks.isEmpty()) {
             return java.util.Map.of();
@@ -260,8 +298,37 @@ public class BacktestRequest {
      * @param stockCode 종목 코드
      * @return 정규화된 목표 비중 (0.0 ~ 1.0)
      */
+    @JsonIgnore
     public double getNormalizedWeight(String stockCode) {
         return getNormalizedWeights().getOrDefault(stockCode, 0.0);
+    }
+
+    /**
+     * 특정 날짜가 리밸런싱 날짜인지 확인한다
+     * 
+     * @param date 확인할 날짜
+     * @return 리밸런싱 날짜이면 true
+     */
+    public boolean isRebalancingDate(LocalDate date) {
+        if (rebalancingDates == null || date == null) {
+            return false;
+        }
+        return rebalancingDates.contains(date);
+    }
+
+    /**
+     * 리밸런싱 날짜 목록을 반환한다 (정렬된 상태)
+     * 
+     * @return 정렬된 리밸런싱 날짜 리스트
+     */
+    @JsonIgnore
+    public List<LocalDate> getSortedRebalancingDates() {
+        if (rebalancingDates == null) {
+            return List.of();
+        }
+        return rebalancingDates.stream()
+                .sorted()
+                .toList();
     }
 
     /**
@@ -269,6 +336,7 @@ public class BacktestRequest {
      * 
      * @return 상세 정보 문자열
      */
+    @JsonIgnore
     public String getDetailedInfo() {
         StringBuilder sb = new StringBuilder();
         sb.append(getSummary()).append("\n");
@@ -285,10 +353,97 @@ public class BacktestRequest {
             );
         }
         
-        if (ohlcvData != null) {
-            sb.append(String.format("OHLCV 데이터: 총 %d건\n", ohlcvData.size()));
+        if (dailyPrices != null) {
+            int totalDataPoints = dailyPrices.values().stream()
+                    .mapToInt(dayPrices -> (int) dayPrices.values().stream().filter(java.util.Objects::nonNull).count())
+                    .sum();
+            sb.append(String.format("일별 가격 데이터: %d일, 총 %d개 데이터포인트\n", 
+                    dailyPrices.size(), totalDataPoints));
         }
         
         return sb.toString();
+    }
+
+    /**
+     * 날짜 순서를 보장하는 정렬된 날짜 키 목록을 반환한다
+     * 
+     * @return 정렬된 날짜 문자열 리스트
+     */
+    @JsonIgnore
+    public List<String> getSortedDateKeys() {
+        if (dailyPrices == null) {
+            return List.of();
+        }
+        
+        return dailyPrices.keySet().stream()
+                .sorted()
+                .toList();
+    }
+
+    /**
+     * 특정 날짜에 유효한 가격이 있는 종목들만 필터링하여 반환한다
+     * 
+     * @param date 조회할 날짜
+     * @return 유효한 가격을 가진 종목코드 -> 가격 맵
+     */
+    @JsonIgnore
+    public Map<String, Double> getValidPricesForDate(LocalDate date) {
+        if (dailyPrices == null || date == null) {
+            return Map.of();
+        }
+        
+        String dateStr = date.toString();
+        Map<String, Double> dayPrices = dailyPrices.get(dateStr);
+        
+        if (dayPrices == null) {
+            return Map.of();
+        }
+        
+        return dayPrices.entrySet().stream()
+                .filter(entry -> entry.getValue() != null && entry.getValue() > 0)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (existing, replacement) -> existing
+                ));
+    }
+
+    /**
+     * 전체 기간에서 특정 종목이 거래된 일수를 계산한다
+     * 
+     * @param stockCode 종목 코드
+     * @return 거래된 일수
+     */
+    @JsonIgnore
+    public long getTradingDaysForStock(String stockCode) {
+        if (dailyPrices == null || stockCode == null) {
+            return 0;
+        }
+        
+        return dailyPrices.values().stream()
+                .filter(dayPrices -> dayPrices.containsKey(stockCode))
+                .filter(dayPrices -> dayPrices.get(stockCode) != null && dayPrices.get(stockCode) > 0)
+                .count();
+    }
+
+    /**
+     * 각 날짜별로 유효한 가격을 가진 종목 개수를 반환한다
+     * 
+     * @return 날짜별 유효 종목 개수 맵
+     */
+    @JsonIgnore
+    public Map<LocalDate, Integer> getValidStockCountByDate() {
+        if (dailyPrices == null) {
+            return Map.of();
+        }
+        
+        return dailyPrices.entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> LocalDate.parse(entry.getKey()),
+                        entry -> (int) entry.getValue().values().stream()
+                                .filter(price -> price != null && price > 0)
+                                .count(),
+                        (existing, replacement) -> existing
+                ));
     }
 }

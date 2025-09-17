@@ -56,6 +56,9 @@ public class BacktestCreateRequest {
 
         private Double thresholdPercentage;
 
+        @NotNull(message = "초기 보유 주식 수는 필수입니다")
+        private Integer shares;
+
     }
 
     // 유효성 검사 메서드

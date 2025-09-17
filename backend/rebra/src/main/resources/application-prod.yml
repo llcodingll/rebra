@@ -23,7 +23,8 @@ spring:
         format_sql: false
         use_sql_comments: false
         jdbc:
-          batch_size: 20
+          batch_size: 100
+          batch_versioned_data: true
         order_inserts: true
         order_updates: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -81,6 +82,15 @@ management:
   health:
     db:
       enabled: true
+
+# 금융위원회 api
+fss:
+  api:
+    base-url: "https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService"
+    service-key: "${FSS_API_SERVICE_KEY:}"
+    timeout: 30000
+    max-retries: 3
+    retry-delay: 1000
 
 # 로깅 설정
 logging:
