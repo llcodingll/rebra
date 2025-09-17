@@ -27,7 +27,7 @@ public class SwaggerConfig {
         return GroupedOpenApi.builder()
                 .group("rebra-api")
                 .pathsToMatch("/**")
-                .packagesToScan("com.rebra.controller")
+                .packagesToScan("com.rebra.controller", "com.rebra.dummy.controller")
                 .build();
     }
 

@@ -1,9 +1,11 @@
 package com.rebra.repository;
 
 import com.rebra.entity.Portfolio;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -61,4 +63,11 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
      * 계좌 ID로 포트폴리오 삭제
      */
     void deleteByAccountId(Long accountId);
+
+    /**
+     * 특정 포트폴리오의 생성일시 업데이트
+     */
+    @Modifying
+    @Query("UPDATE Portfolio p SET p.createdAt = :createdAt WHERE p.id = :portfolioId")
+    int updateCreatedAtById(@Param("portfolioId") Long portfolioId, @Param("createdAt") LocalDateTime createdAt);
 }

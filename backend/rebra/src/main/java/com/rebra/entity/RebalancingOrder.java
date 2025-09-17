@@ -1,8 +1,12 @@
 package com.rebra.entity;
 
 import com.rebra.common.BaseEntity;
+import com.rebra.enums.ExecutionType;
+import com.rebra.enums.TransactionStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -37,23 +41,34 @@ public class RebalancingOrder extends BaseEntity {
     @Column(name = "total_sell_amount", nullable = false)
     private BigDecimal totalSellAmount;
 
-    @Column(name = "execution_status", nullable = false)
-    private String executionStatus;
-
     @Column(name = "rebalancing_date", nullable = false)
     private LocalDateTime rebalancingDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private TransactionStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "execution_type", nullable = false)
+    private ExecutionType executionType;
+
+    @Column(name = "cumulative_return")
+    private BigDecimal cumulativeReturn; // 누적 수익률 (기준: 100%)
+
+    @Column(name = "total_portfolio_value")
+    private BigDecimal totalPortfolioValue; // 리밸런싱 시점의 포트폴리오 총 평가액
 
     @Builder
     public RebalancingOrder(Portfolio portfolio, BigDecimal totalBuyAmount, BigDecimal totalSellAmount,
-                            String executionStatus, LocalDateTime rebalancingDate, String status) {
+                            LocalDateTime rebalancingDate, TransactionStatus status, ExecutionType executionType,
+                            BigDecimal cumulativeReturn, BigDecimal totalPortfolioValue) {
         this.portfolio = portfolio;
         this.totalBuyAmount = totalBuyAmount;
         this.totalSellAmount = totalSellAmount;
-        this.executionStatus = executionStatus;
         this.rebalancingDate = rebalancingDate;
         this.status = status;
+        this.executionType = executionType;
+        this.cumulativeReturn = cumulativeReturn;
+        this.totalPortfolioValue = totalPortfolioValue;
     }
 }
