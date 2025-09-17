@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import com.rebra.dto.response.TokenRefreshResponse;
 import com.rebra.entity.RefreshToken;
 import com.rebra.entity.User;
+import com.rebra.exception.token.TokenException;
 import com.rebra.jwt.Token;
 import com.rebra.jwt.TokenProvider;
 import com.rebra.repository.RefreshTokenRepository;
@@ -120,6 +121,7 @@ class TokenServiceImplTest {
         Token newAccessToken = new Token("new-access-token");
         Token newRefreshToken = new Token("new-refresh-token");
 
+        given(tokenProvider.validateToken(oldRefreshTokenValue)).willReturn(true); // JWT 서명 검증 추가
         given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
         given(refreshTokenRepository.findByRefreshToken(oldRefreshTokenValue))
                 .willReturn(Optional.of(refreshTokenEntity));
@@ -148,12 +150,14 @@ class TokenServiceImplTest {
                 .user(testUser)
                 .expirationDate(LocalDateTime.now().minusDays(1)) // 이미 만료됨
                 .build();
-        
+
+        given(tokenProvider.validateToken(expiredTokenValue)).willReturn(true); // JWT 서명 검증 추가
+
         given(refreshTokenRepository.findByRefreshToken(expiredTokenValue))
                 .willReturn(Optional.of(expiredToken));
 
         // when & then
-        assertThrows(RuntimeException.class, 
+        assertThrows(TokenException.class,
                 () -> tokenService.refreshTokensWithRotation(expiredTokenValue));
     }
 
@@ -162,11 +166,12 @@ class TokenServiceImplTest {
     void refreshTokensWithRotation_TokenNotFound_ThrowsException() {
         // given
         String nonExistentToken = "non-existent-token";
+        given(tokenProvider.validateToken(nonExistentToken)).willReturn(true); // JWT 서명 검증 추가
         given(refreshTokenRepository.findByRefreshToken(nonExistentToken))
                 .willReturn(Optional.empty());
 
         // when & then
-        assertThrows(RuntimeException.class, 
+        assertThrows(TokenException.class,
                 () -> tokenService.refreshTokensWithRotation(nonExistentToken));
     }
 
