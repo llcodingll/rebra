@@ -6,6 +6,7 @@ import com.rebra.dto.DecryptedAccountCredentials;
 import com.rebra.dto.external.FssStockPriceResponse;
 import com.rebra.dto.response.PageResponse;
 import com.rebra.dto.response.StockChartResponse;
+import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockHistoricalDataResponse;
 import com.rebra.dto.response.StockSearchResponse;
 import com.rebra.entity.Account;
@@ -16,6 +17,7 @@ import com.rebra.repository.AccountRepository;
 import com.rebra.repository.StockRepository;
 import com.rebra.util.AccountEncryptionUtil;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult;
+import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -45,6 +47,12 @@ public class StockServiceImpl implements StockService {
     // Redis 캐싱 제거 - 프론트엔드에서 실시간 데이터 관리
     // 실시간 데이터는 WebSocket을 통해 직접 클라이언트로 전달
 
+    @Override
+    public StockSearchResponse findByStockCode(String stockCode) {
+        return stockRepository.findByStockCodeAndIsActiveTrue(stockCode)
+                .map(StockSearchResponse::from)
+                .orElseThrow(StockException::stockCodeNotFound);
+    }
 
     @Override
     public PageResponse<StockSearchResponse> searchStocks(String stockName, Pageable pageable) {
@@ -63,7 +71,7 @@ public class StockServiceImpl implements StockService {
 
         for (int i = 0; i < 10; i++) {
             log.info("FSS API 조회 시도 - 날짜: {}, 시도 횟수: {}", searchDate, i + 1);
-            
+
             try {
                 apiResults = fssApiClient.getStockPriceByNameAndDate(stockName, searchDate);
                 if (!apiResults.isEmpty()) {
@@ -73,7 +81,7 @@ public class StockServiceImpl implements StockService {
             } catch (Exception e) {
                 log.warn("FSS API 호출 실패 - 날짜: {}, 오류: {}", searchDate, e.getMessage());
             }
-            
+
             searchDate = searchDate.minusDays(1);
         }
 
@@ -84,7 +92,7 @@ public class StockServiceImpl implements StockService {
 
         // API 결과를 StockHistoricalDataResponse로 변환
         List<StockHistoricalDataResponse> responses = new ArrayList<>();
-        
+
         for (FssStockPriceResponse.StockItem item : apiResults) {
             try {
                 // 종목명이 요청한 종목명을 포함하는지 확인
@@ -94,18 +102,18 @@ public class StockServiceImpl implements StockService {
 
                 // StockPrice 객체 생성 (메모리에서만 사용, DB 저장 안 함)
                 StockPrice stockPrice = convertToStockPrice(item);
-                
+
                 // 응답 리스트에 추가
                 responses.add(StockHistoricalDataResponse.from(stockPrice));
-                
+
             } catch (Exception e) {
                 log.error("주식 데이터 변환 실패 - 종목: {}, 오류: {}", item.getItmsNm(), e.getMessage());
                 // 개별 항목 실패는 전체 처리를 중단하지 않음
             }
         }
-        
+
         log.info("FSS API 주식 검색 완료 - 요청 종목명: {}, 응답 건수: {}", stockName, responses.size());
-        
+
         return responses;
     }
 
@@ -122,7 +130,7 @@ public class StockServiceImpl implements StockService {
                     .volume(parseLong(item.getTrqu())) // 거래량
                     .changeRate(parseChangeRate(item.getFltRt())) // 등락률
                     .build();
-                    
+
         } catch (Exception e) {
             log.error("StockPrice 변환 실패 - 종목: {}, 오류: {}", item.getItmsNm(), e.getMessage());
             throw new RuntimeException("주식 데이터 변환 중 오류가 발생했습니다");
@@ -217,7 +225,8 @@ public class StockServiceImpl implements StockService {
         StockChartResponse.StockSummary summary = null;
 
         if (kisResult != null && kisResult.containsKey("output2")) {
-            InquireDailyItemchartpriceResult.Output2[] output2 = (InquireDailyItemchartpriceResult.Output2[]) kisResult.get("output2");
+            InquireDailyItemchartpriceResult.Output2[] output2 = (InquireDailyItemchartpriceResult.Output2[]) kisResult.get(
+                    "output2");
 
             for (InquireDailyItemchartpriceResult.Output2 item : output2) {
                 chartData.add(StockChartResponse.ChartDataPoint.builder()
@@ -235,7 +244,8 @@ public class StockServiceImpl implements StockService {
             }
 
             if (kisResult.containsKey("output1")) {
-                InquireDailyItemchartpriceResult.Output1 output1 = (InquireDailyItemchartpriceResult.Output1) kisResult.get("output1");
+                InquireDailyItemchartpriceResult.Output1 output1 = (InquireDailyItemchartpriceResult.Output1) kisResult.get(
+                        "output1");
                 summary = StockChartResponse.StockSummary.builder()
                         .currentPrice(output1.getStckPrpr())         // 주식 현재가
                         .priceChange(output1.getPrdyVrss())          // 전일 대비
@@ -266,5 +276,90 @@ public class StockServiceImpl implements StockService {
                 .chartData(chartData)
                 .summary(summary)
                 .build();
+    }
+
+    @Override
+    public StockDetailResponse getStockDetail(String stockCode, boolean includeHolding, Long userId) {
+        try {
+            log.info("종목 상세 정보 조회 시작 - UserId: {}, StockCode: {}, IncludeHolding: {}",
+                    userId, stockCode, includeHolding);
+
+            // 1. 종목 기본 정보 조회
+            Stock stock = stockRepository.findByStockCodeAndIsActiveTrue(stockCode)
+                    .orElseThrow(StockException::stockCodeNotFound);
+
+            // 2. 보유 정보 조회 (옵션)
+            StockDetailResponse.HoldingInfo holdingInfo = null;
+            if (includeHolding) {
+                holdingInfo = getHoldingInfo(stockCode, userId);
+            }
+
+            // 3. 응답 생성
+            return StockDetailResponse.ofWithHoldingInfo(stock, userId, stockCode, holdingInfo);
+
+        } catch (Exception e) {
+            log.error("종목 상세 정보 조회 실패 - UserId: {}, StockCode: {}, ErrorType: {}, Message: {}",
+                    userId, stockCode, e.getClass().getSimpleName(), e.getMessage(), e);
+
+            String detailedMessage = "종목 상세 정보 조회에 실패했습니다";
+            if (e.getMessage() != null) {
+                if (e.getMessage().contains("활성화된 계좌")) {
+                    detailedMessage = "활성화된 계좌를 찾을 수 없습니다. 계좌를 연결해주세요.";
+                } else if (e.getMessage().contains("복호화")) {
+                    detailedMessage = "계좌 정보 복호화에 실패했습니다.";
+                } else if (e.getMessage().contains("KIS")) {
+                    detailedMessage = "KIS API 연동에 실패했습니다. 잠시 후 다시 시도해주세요.";
+                } else {
+                    detailedMessage = "종목 상세 정보 조회 실패: " + e.getMessage();
+                }
+            }
+
+            throw new RuntimeException(detailedMessage, e);
+        }
+    }
+
+    private StockDetailResponse.HoldingInfo getHoldingInfo(String stockCode, Long userId) {
+        try {
+            // 1. 활성화된 계좌 조회
+            Account account = accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true)
+                    .orElseThrow(() -> new RuntimeException("활성화된 계좌를 찾을 수 없습니다."));
+
+            // 2. 계좌 복호화
+            DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+            kisApiComponent.ensureUserCredentials(userId, account.getId(), account.getAccountType(), credentials);
+
+            // 3. KIS API로 잔고 조회
+            InquireBalanceResult balanceResult = kisApiComponent.getUserBalance(
+                    userId, account.getId(), account.getAccountType(), credentials);
+
+            // 4. 해당 종목의 보유 정보 찾기
+            if (balanceResult.getOutput1() != null && balanceResult.getOutput1().length > 0) {
+                for (InquireBalanceResult.Output1 holding : balanceResult.getOutput1()) {
+                    if (stockCode.equals(holding.getPdno())) {
+                        // 보유 수량이 0이 아닌 경우만 반환
+                        if (!"0".equals(holding.getHldgQty())) {
+                            return StockDetailResponse.HoldingInfo.builder()
+                                    .holdingQuantity(holding.getHldgQty())
+                                    .purchaseAmount(holding.getPchsAmt())
+                                    .averagePrice(holding.getPchsAvgPric())
+                                    .currentValue(holding.getEvluAmt())
+                                    .profitLoss(holding.getEvluPflsAmt())
+                                    .profitLossRate(holding.getEvluPflsRt())
+                                    .build();
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // 보유하지 않은 경우 null 반환
+            return null;
+
+        } catch (Exception e) {
+            log.warn("보유 정보 조회 실패 (종목은 정상 조회됨) - UserId: {}, StockCode: {}, Error: {}",
+                    userId, stockCode, e.getMessage());
+            // 보유 정보 조회 실패시에도 종목 기본 정보는 제공
+            return null;
+        }
     }
 }

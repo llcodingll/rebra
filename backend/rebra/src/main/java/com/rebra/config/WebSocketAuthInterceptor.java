@@ -28,54 +28,65 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                    WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
-        
+
+        log.info("🔗 WebSocket 핸드셰이크 시작 - URI: {}", request.getURI());
+        log.info("🔗 요청 헤더: {}", request.getHeaders());
+
         try {
             String token = extractTokenFromRequest(request);
             Long userId = null;
             String username = null;
-            
+
+            log.info("🔑 추출된 토큰: {}", token != null ?
+                "토큰 길이 " + token.length() + ", 앞 20자: " + token.substring(0, Math.min(20, token.length())) + "..." :
+                "토큰 없음");
+
             if (token != null) {
                 try {
+                    log.info("🔍 JWT 토큰 검증 시작...");
                     // JWT 토큰 유효성 검증
                     if (tokenProvider.validateToken(token)) {
                         userId = tokenProvider.getUserIdFromToken(token);
                         username = tokenProvider.getUsernameFromToken(token);
-                        
-                        log.info("WebSocket 인증 성공 - UserId: {}, Username: {}", userId, username);
-                        
+
+                        log.info("✅ WebSocket 인증 성공 - UserId: {}, Username: {}", userId, username);
+
                         // 세션에 사용자 정보 저장
                         attributes.put("userId", userId);
                         attributes.put("username", username);
                         attributes.put("authenticated", true);
                     } else {
-                        log.warn("WebSocket 토큰 검증 실패");
+                        log.warn("❌ WebSocket 토큰 검증 실패");
                         attributes.put("authenticated", false);
                     }
                 } catch (Exception e) {
-                    log.warn("WebSocket JWT 처리 중 오류: {}", e.getMessage());
+                    log.warn("❌ WebSocket JWT 처리 중 오류: {} - {}", e.getClass().getSimpleName(), e.getMessage());
+                    log.debug("JWT 처리 상세 오류", e);
                     attributes.put("authenticated", false);
                 }
             } else {
-                log.info("WebSocket 연결 시 토큰 없음 - 게스트 모드로 허용");
-                attributes.put("authenticated", false);
+                log.warn("❌ WebSocket 연결 거부 - 토큰이 제공되지 않았습니다");
+                return false;
             }
-            
+
             // 기본 정보 저장
             attributes.put("connectTime", System.currentTimeMillis());
             attributes.put("remoteAddress", request.getRemoteAddress());
-            
-            // 연결 허용 (인증되지 않은 사용자도 테스트를 위해 허용)
-            log.info("WebSocket 연결 허용 - URI: {}, Authenticated: {}, UserId: {}", 
-                    request.getURI(), attributes.get("authenticated"), userId);
-            
-            return true;
-            
+
+            // 인증된 사용자만 연결 허용
+            boolean authenticated = (Boolean) attributes.getOrDefault("authenticated", false);
+            if (authenticated) {
+                log.info("🎯 WebSocket 연결 허용 - URI: {}, UserId: {}", request.getURI(), userId);
+                return true;
+            } else {
+                log.warn("❌ WebSocket 연결 거부 - 인증 실패");
+                return false;
+            }
+
         } catch (Exception e) {
-            log.error("WebSocket 핸드셰이크 중 예외 발생: {}", e.getMessage(), e);
-            // 예외 발생 시에도 연결 허용 (테스트를 위해)
-            attributes.put("authenticated", false);
-            attributes.put("connectTime", System.currentTimeMillis());
-            return true;
+            log.error("💥 WebSocket 핸드셰이크 중 예외 발생: {} - {}", e.getClass().getSimpleName(), e.getMessage(), e);
+            log.warn("❌ WebSocket 연결 거부 - 핸드셰이크 처리 중 예외 발생");
+            return false;
         }
     }
 
@@ -93,29 +104,42 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
      * 요청에서 JWT 토큰 추출
      */
     private String extractTokenFromRequest(ServerHttpRequest request) {
+        log.info("🔍 토큰 추출 시작...");
+
         // 1. Authorization 헤더에서 토큰 추출
         String authHeader = request.getHeaders().getFirst("Authorization");
+        log.info("🔑 Authorization 헤더: {}", authHeader);
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
+            String token = authHeader.substring(7);
+            log.info("✅ Authorization 헤더에서 토큰 추출 성공 (길이: {})", token.length());
+            return token;
         }
-        
+
         // 2. 쿼리 파라미터에서 토큰 추출
         String query = request.getURI().getQuery();
+        log.info("🔍 쿼리 파라미터: {}", query);
         if (query != null && query.contains("token=")) {
             String[] params = query.split("&");
             for (String param : params) {
                 if (param.startsWith("token=")) {
-                    return param.substring(6);
+                    String token = param.substring(6);
+                    log.info("✅ 쿼리 파라미터에서 토큰 추출 성공 (길이: {})", token.length());
+                    return token;
                 }
             }
         }
-        
+
         // 3. 쿠키에서 토큰 추출
         if (request instanceof ServletServerHttpRequest) {
             HttpServletRequest servletRequest = ((ServletServerHttpRequest) request).getServletRequest();
-            return extractTokenFromCookie(servletRequest);
+            String cookieToken = extractTokenFromCookie(servletRequest);
+            if (cookieToken != null) {
+                log.info("✅ 쿠키에서 토큰 추출 성공 (길이: {})", cookieToken.length());
+                return cookieToken;
+            }
         }
-        
+
+        log.warn("❌ 모든 방법으로 토큰 추출 실패");
         return null;
     }
 

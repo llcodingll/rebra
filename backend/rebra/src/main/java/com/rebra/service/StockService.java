@@ -2,14 +2,19 @@ package com.rebra.service;
 
 import com.rebra.dto.response.PageResponse;
 import com.rebra.dto.response.StockChartResponse;
+import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockHistoricalDataResponse;
 import com.rebra.dto.response.StockSearchResponse;
-import org.springframework.data.domain.Pageable;
-
 import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 public interface StockService {
 
+
+    /**
+     * 종목 코드로 주식 조회
+     */
+    StockSearchResponse findByStockCode(String stockCode);
 
     /**
      * 주식 검색 (종목명 부분 일치, 활성 상태만)
@@ -26,4 +31,9 @@ public interface StockService {
      */
     StockChartResponse getStockChartData(String stockCode, String startDate, String endDate, String periodType,
                                          Long userId);
+
+    /**
+     * 종목 상세 정보 조회 (보유 정보 포함 옵션)
+     */
+    StockDetailResponse getStockDetail(String stockCode, boolean includeHolding, Long userId);
 }
