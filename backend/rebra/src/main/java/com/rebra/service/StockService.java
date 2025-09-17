@@ -2,6 +2,7 @@ package com.rebra.service;
 
 import com.rebra.dto.response.PageResponse;
 import com.rebra.dto.response.StockChartResponse;
+import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockSearchResponse;
 import org.springframework.data.domain.Pageable;
 
@@ -27,4 +28,9 @@ public interface StockService {
      */
     StockChartResponse getStockChartData(String stockCode, String startDate, String endDate, String periodType,
                                          Long userId);
+
+    /**
+     * 종목 상세 정보 조회 (보유 정보 포함 옵션)
+     */
+    StockDetailResponse getStockDetail(String stockCode, boolean includeHolding, Long userId);
 }
