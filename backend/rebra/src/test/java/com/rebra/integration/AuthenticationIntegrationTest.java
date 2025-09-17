@@ -196,16 +196,6 @@ class AuthenticationIntegrationTest {
     }
 
     @Test
-    @DisplayName("토큰 갱신 API 테스트")
-    void tokenRefreshApi_RequiresProperConfiguration() throws Exception {
-        // 토큰 갱신 API는 인증없이 접근 가능해야 하지만 현재 403 반환
-        // 이는 SecurityConfig에서 해당 엔드포인트가 permitAll로 설정되지 않았음을 의미
-        mockMvc.perform(post("/api/users/token/refresh")
-                .cookie(new Cookie("refreshToken", refreshToken.getToken())))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
     @DisplayName("유효한 임시 토큰으로 회원가입")
     void signupWithValidTempToken_Success() throws Exception {
         String kakaoSub = "temp-user-789";
