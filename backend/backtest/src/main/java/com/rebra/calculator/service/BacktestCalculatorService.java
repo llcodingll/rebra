@@ -344,6 +344,21 @@ public class BacktestCalculatorService {
         detail.setTotalBuyAmount(totalBuyAmount);
         detail.setTotalSellAmount(totalSellAmount);
         
+        // Buy-and-hold 수익률 계산 (매일)
+        // Portfolio의 targetStocks에서 초기 수량 가져오기
+        Map<String, Stock> targetStocks = portfolio.getTargetStocks();
+        double buyHoldValue = targetStocks.values().stream()
+                .mapToDouble(stock -> {
+                    String stockCode = stock.getStockCode();
+                    int initialQty = stock.getInitialQuantity();
+                    Double price = currentPrices.get(stockCode);
+                    return (price != null && price > 0) 
+                        ? initialQty * price : 0.0;
+                })
+                .sum();
+        double buyHoldReturn = (buyHoldValue - portfolio.getInitialValue()) / portfolio.getInitialValue();
+        detail.setBuyHoldReturn(buyHoldReturn);
+        
         result.getDetails().add(detail);
     }
 

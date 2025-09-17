@@ -54,7 +54,7 @@ management:
 # 로깅 설정
 logging:
   level:
-    com.rebra.calculator: INFO
+    com.rebra.calculator: DEBUG
     org.springframework.kafka: WARN
     org.apache.kafka: WARN
   pattern:

@@ -49,7 +49,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class BacktestServiceImpl implements BacktestService {
 
     private final BacktestRecordRepository backtestRecordRepository;
@@ -65,6 +64,7 @@ public class BacktestServiceImpl implements BacktestService {
     private final ObjectMapper objectMapper;
 
     @Override
+    @Transactional(readOnly = true)
     public BacktestValidationResponse validateBacktestRequest(Long userId, BacktestCreateRequest request) {
         try {
             // 1. 기본 유효성 검사
@@ -131,37 +131,14 @@ public class BacktestServiceImpl implements BacktestService {
         }
     }
 
-    @Override
-    public Long createBacktest(Long userId, BacktestCreateRequest request) {
+    @Transactional
+    protected Long createInitialBacktestRecord(Long userId, BacktestCreateRequest request) {
         // 1. 요청 데이터 유효성 검사
         if (!request.isValid()) {
             throw BacktestException.invalidRequest();
         }
 
-        // 2. 종목별 데이터 확보 (스마트 캐싱)
-        List<String> tickers = request.getStocks().stream()
-                .map(BacktestCreateRequest.BacktestStockRequest::getTicker)
-                .toList();
-
-        log.info("백테스트 데이터 확보 시작 - 종목 수: {}, 기간: {} ~ {}", 
-            tickers.size(), request.getStartDate(), request.getEndDate());
-
-        try {
-            smartStockDataService.ensureBatchDataAvailable(
-                tickers, 
-                request.getStartDate(), 
-                request.getEndDate()
-            );
-            log.info("백테스트 데이터 확보 완료");
-        } catch (Exception e) {
-            log.error("백테스트 데이터 확보 실패", e);
-            throw BacktestException.invalidRequest();
-        }
-
-        // 3. 데이터 가용성 최종 검증 (선택적)
-        validateDataAvailability(tickers, request.getStartDate(), request.getEndDate());
-
-        // 4. BacktestRecord 생성 및 저장
+        // 2. BacktestRecord 생성 및 저장 (PENDING 상태)
         User userProxy = userRepository.getReferenceById(userId);
         BacktestRecord backtestRecord = BacktestRecord.builder()
                 .user(userProxy)
@@ -175,27 +152,86 @@ public class BacktestServiceImpl implements BacktestService {
 
         backtestRecord = backtestRecordRepository.save(backtestRecord);
 
-        // 5. 백테스트 종목 정보 저장
+        // 3. 백테스트 종목 정보 저장
         saveBacktestStocks(backtestRecord, request);
 
-        // 6. Kafka로 백테스트 요청 전송
+        log.info("백테스트 레코드 생성 완료: backtestId={}, status=PENDING", backtestRecord.getId());
+        return backtestRecord.getId();
+    }
+
+    @Override
+    public Long createBacktest(Long userId, BacktestCreateRequest request) {
         try {
+            // 1단계: BacktestRecord 생성 및 즉시 커밋 (PENDING 상태)
+            Long backtestId = createInitialBacktestRecord(userId, request);
+            
+            // 2단계: 별도 트랜잭션에서 데이터 처리 및 Kafka 전송 (PROCESSING 상태로 변경)
+            // 이 단계에서 실패해도 backtestId는 반환되어 사용자가 상태를 확인할 수 있음
+            processBacktestData(backtestId, request);
+            
+            return backtestId;
+            
+        } catch (Exception e) {
+            log.error("백테스트 생성 실패: userId={}", userId, e);
+            // 초기 레코드 생성 실패 시에만 예외 던짐
+            throw e;
+        }
+    }
+
+    @Transactional
+    protected void processBacktestData(Long backtestId, BacktestCreateRequest request) {
+        // 1. BacktestRecord 조회
+        BacktestRecord backtestRecord = backtestRecordRepository.findById(backtestId)
+                .orElseThrow(() -> BacktestException.notFound());
+
+        try {
+            // 2. 종목별 데이터 확보 (스마트 캐싱)
+            List<String> tickers = request.getStocks().stream()
+                    .map(BacktestCreateRequest.BacktestStockRequest::getTicker)
+                    .toList();
+
+            log.info("백테스트 데이터 확보 시작 - backtestId={}, 종목 수: {}, 기간: {} ~ {}", 
+                backtestId, tickers.size(), request.getStartDate(), request.getEndDate());
+
+            smartStockDataService.ensureBatchDataAvailable(
+                tickers, 
+                request.getStartDate(), 
+                request.getEndDate()
+            );
+            log.info("백테스트 데이터 확보 완료 - backtestId={}", backtestId);
+
+            // 3. 데이터 가용성 최종 검증
+            validateDataAvailability(tickers, request.getStartDate(), request.getEndDate());
+
+            // 4. Kafka로 백테스트 요청 전송
             BacktestRequest backtestRequest = createBacktestRequest(backtestRecord, request, tickers, null);
             kafkaTemplate.send("backtest-request", backtestRecord.getId().toString(), backtestRequest);
             log.info("백테스트 요청 전송 완료: backtestId={}", backtestRecord.getId());
 
-            // 상태를 PROCESSING으로 변경
+            // 5. 상태를 PROCESSING으로 변경
             backtestRecord.updateStatus(BacktestRecord.BacktestStatus.PROCESSING);
             backtestRecordRepository.save(backtestRecord);
+            log.info("백테스트 상태 변경: backtestId={}, status=PROCESSING", backtestId);
 
         } catch (Exception e) {
-            log.error("백테스트 요청 전송 실패: backtestId={}", backtestRecord.getId(), e);
-            backtestRecord.updateStatus(BacktestRecord.BacktestStatus.FAILED, "요청 전송 실패: " + e.getMessage());
+            log.error("백테스트 데이터 처리 실패: backtestId={}", backtestId, e);
+            
+            String errorMessage;
+            if (e.getMessage() != null && e.getMessage().contains("데이터")) {
+                errorMessage = "주식 데이터 수집 실패: " + e.getMessage();
+            } else if (e.getMessage() != null && e.getMessage().contains("kafka") || 
+                       e.getMessage() != null && e.getMessage().toLowerCase().contains("kafka")) {
+                errorMessage = "백테스트 요청 전송 실패: " + e.getMessage();
+            } else {
+                errorMessage = "백테스트 처리 중 오류 발생: " + e.getMessage();
+            }
+            
+            backtestRecord.updateStatus(BacktestRecord.BacktestStatus.FAILED, errorMessage);
             backtestRecordRepository.save(backtestRecord);
-            throw BacktestException.failed();
+            
+            // 예외를 다시 던지지 않고 로그만 남김 (사용자에게는 backtestId 반환)
+            log.warn("백테스트 처리 실패했지만 ID는 반환됨: backtestId={}, error={}", backtestId, errorMessage);
         }
-
-        return backtestRecord.getId();
     }
 
     @Override
@@ -212,13 +248,21 @@ public class BacktestServiceImpl implements BacktestService {
         BacktestRecord record = backtestRecordRepository.findByUserIdAndId(userId, backtestId)
                 .orElseThrow(() -> BacktestException.notFound());
 
-        List<BacktestDetailResponse> details = record.getDetails(); // JSON에서 로드
+        // 디버그 로그 추가
+        log.info("백테스트 조회: id={}, status={}, hasDetails={}, detailsJson 길이={}", 
+                backtestId, record.getStatus(), record.hasDetails(), 
+                record.getDetailsJson() != null ? record.getDetailsJson().length() : 0);
+
+        String detailsJson = record.getDetailsJson(); // JSON 문자열 직접 사용
+        log.info("백테스트 상세 정보 JSON 직접 반환: 길이={}", detailsJson != null ? detailsJson.length() : 0);
+        
         List<BacktestStock> portfolioStocks = backtestStockRepository.findByBacktestRecordWithStock(record);
 
-        return BacktestResultResponse.from(record, details, portfolioStocks);
+        return BacktestResultResponse.from(record, detailsJson, portfolioStocks);
     }
 
     @Override
+    @Transactional
     public void deleteBacktest(Long userId, Long backtestId) {
         BacktestRecord record = backtestRecordRepository.findByUserIdAndId(userId, backtestId)
                 .orElseThrow(() -> BacktestException.notFound());
@@ -247,6 +291,7 @@ public class BacktestServiceImpl implements BacktestService {
     }
 
     @Override
+    @Transactional
     public void processBacktestResult(Map<String, Object> responseMap) {
         try {
             // 이미 Map으로 받아왔으므로 변환 불필요
@@ -393,32 +438,25 @@ public class BacktestServiceImpl implements BacktestService {
                 rebalancingCount, totalFee, totalBorrowingCost, maxBorrowingAmount, minCashBalance,
                 maxDrawdown, volatility, sharpeRatio, timeWeightedReturn);
 
-        // 상세 정보를 BacktestDetailResponse 리스트로 변환하여 JSON으로 저장
-        List<BacktestDetailResponse> details = detailsList.stream()
-                .map(detailMap -> BacktestDetailResponse.builder()
-                        .periodDate(LocalDate.parse(detailMap.get("period_date").toString()))
-                        .portfolioValue(new BigDecimal(detailMap.get("portfolio_value").toString()))
-                        .periodReturn(new BigDecimal(detailMap.get("period_return").toString()))
-                        .isRebalanced(Boolean.valueOf(detailMap.get("is_rebalanced").toString()))
-                        .cashBalance(detailMap.get("cash_balance") != null ?
-                                new BigDecimal(detailMap.get("cash_balance").toString()) : null)
-                        .dailyBorrowingInterest(detailMap.get("daily_borrowing_interest") != null ?
-                                new BigDecimal(detailMap.get("daily_borrowing_interest").toString()) : null)
-                        .cumulativeReturn(detailMap.get("cumulative_return") != null ?
-                                new BigDecimal(detailMap.get("cumulative_return").toString()) : null)
-                        .buyHoldReturn(detailMap.get("buy_hold_return") != null ?
-                                new BigDecimal(detailMap.get("buy_hold_return").toString()) : null)
-                        .totalBuyAmount(detailMap.get("total_buy_amount") != null ?
-                                new BigDecimal(detailMap.get("total_buy_amount").toString()) : null)
-                        .totalSellAmount(detailMap.get("total_sell_amount") != null ?
-                                new BigDecimal(detailMap.get("total_sell_amount").toString()) : null)
-                        .build())
-                .toList();
+        // 백테스트 서버의 상세 정보를 그대로 JSON으로 저장 (파싱하지 않음)
+        try {
+            String detailsJson = objectMapper.writeValueAsString(detailsList);
+            record.setDetailsJson(detailsJson);
+            log.info("백테스트 상세 정보 JSON 저장 완료: backtestId={}, 상세 기록 수={}", 
+                    record.getId(), detailsList.size());
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            log.error("백테스트 상세 정보 JSON 변환 실패: backtestId={}", record.getId(), e);
+            throw new RuntimeException("백테스트 상세 정보 JSON 변환 실패", e);
+        }
         
-        // JSON으로 저장
-        record.setDetails(details);
-        log.info("백테스트 상세 정보 JSON 저장 완료: backtestId={}, 상세 기록 수={}", 
-                record.getId(), details.size());
+        // 저장 검증 로그
+        if (record.hasDetails()) {
+            log.info("백테스트 상세 정보 검증 성공: backtestId={}, detailsJson 길이={}", 
+                    record.getId(), record.getDetailsJson().length());
+        } else {
+            log.warn("백테스트 상세 정보 검증 실패: backtestId={}, detailsJson이 비어있음", 
+                    record.getId());
+        }
     }
 
     /**

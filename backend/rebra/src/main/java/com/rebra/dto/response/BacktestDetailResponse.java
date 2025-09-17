@@ -53,6 +53,16 @@ public class BacktestDetailResponse {
     @JsonProperty("total_sell_amount")
     private BigDecimal totalSellAmount;
 
+    // 추가된 percentage 필드들 (백테스트 계산 서버에서 계산된 퍼센트 값)
+    @JsonProperty("buy_hold_return_percentage")
+    private BigDecimal buyHoldReturnPercentage;
+
+    @JsonProperty("cumulative_return_percentage")
+    private BigDecimal cumulativeReturnPercentage;
+
+    @JsonProperty("period_return_percentage")
+    private BigDecimal periodReturnPercentage;
+
     // 헬퍼 메서드들 (기존 BacktestDetail과 동일)
     public BigDecimal getPeriodReturnPercentage() {
         return periodReturn != null ? periodReturn.multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
