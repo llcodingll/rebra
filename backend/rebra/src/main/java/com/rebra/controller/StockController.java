@@ -3,11 +3,9 @@ package com.rebra.controller;
 import com.rebra.annotation.LoginUser;
 import com.rebra.common.CommonApiResponse;
 import com.rebra.dto.request.StockTradeRequest;
-import com.rebra.dto.response.PageResponse;
 import com.rebra.dto.response.StockChartResponse;
 import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockHistoricalDataResponse;
-import com.rebra.dto.response.StockSearchResponse;
 import com.rebra.dto.response.StockTradeResponse;
 import com.rebra.service.StockService;
 import com.rebra.service.StockTradingService;
@@ -17,12 +15,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-
-import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,27 +41,11 @@ public class StockController {
     @GetMapping("/search")
     public ResponseEntity<CommonApiResponse<List<StockHistoricalDataResponse>>> searchStocks(
             @Parameter(description = "검색할 종목명", example = "삼성")
-            @RequestParam String stockName,
-            @PageableDefault(size = 20, sort = "stockName") Pageable pageable) {
+            @RequestParam String stockName) {
 
-        PageResponse<StockSearchResponse> responses = stockService.searchStocks(stockName, pageable);
+        List<StockHistoricalDataResponse> responses = stockService.searchStocksFromApi(stockName);
 
         return ResponseEntity.ok(CommonApiResponse.success(responses));
-    }
-
-    @Operation(summary = "종목 코드로 주식 조회", description = "정확한 종목 코드로 주식 정보를 조회합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "조회 성공"),
-            @ApiResponse(responseCode = "404", description = "주식을 찾을 수 없음")
-    })
-    @GetMapping("/code")
-    public ResponseEntity<CommonApiResponse<StockSearchResponse>> getStockByCode(
-            @Parameter(description = "조회할 종목 코드", example = "005930")
-            @RequestParam String stockCode) {
-
-        StockSearchResponse stock = stockService.findByStockCode(stockCode);
-
-        return ResponseEntity.ok(CommonApiResponse.success(stock));
     }
 
     @Operation(summary = "종목 상세 정보 조회", description = "종목 기본 정보와 보유 정보를 조회합니다. (보유 정보는 옵션)")
@@ -89,21 +68,6 @@ public class StockController {
         StockDetailResponse response = stockService.getStockDetail(stockCode, includeHolding, userId);
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
-    }
-
-    @Operation(summary = "종목명으로 주식 조회", description = "정확한 종목명으로 주식 정보를 조회합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "조회 성공"),
-            @ApiResponse(responseCode = "404", description = "주식을 찾을 수 없음")
-    })
-    @GetMapping("/name")
-    public ResponseEntity<CommonApiResponse<StockSearchResponse>> getStockByName(
-            @Parameter(description = "조회할 종목명", example = "삼성전자")
-            @RequestParam String stockName) {
-
-        List<StockHistoricalDataResponse> responses = stockService.searchStocksFromApi(stockName);
-
-        return ResponseEntity.ok(CommonApiResponse.success(responses));
     }
 
 
