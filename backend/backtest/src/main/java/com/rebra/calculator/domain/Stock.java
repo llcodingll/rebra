@@ -26,12 +26,6 @@ public class Stock {
     private String stockCode;
     
     
-    /**
-     * 목표 비중 (0.0 ~ 1.0)
-     * 포트폴리오에서 이 종목이 차지해야 할 목표 비중
-     * 예: 0.3 = 30%
-     */
-    private double targetWeight;
     
     /**
      * 임계값 비율 (0.0 ~ 1.0)
@@ -39,38 +33,66 @@ public class Stock {
      * 예: 0.05 = 5% (목표 30%에서 35% 또는 25%가 되면 리밸런싱)
      */
     private double thresholdPercentage;
+    
+    /**
+     * 원본 가중치 (정수, 필수)
+     * 사용자가 설정한 원본 가중치로, 비중 재계산의 기준이 됨
+     * 예: 3 (전체 가중치 합에서 3/10 = 30%의 비중을 가짐)
+     */
+    private int originalWeight;
+    
+    /**
+     * 초기 보유 수량
+     * 백테스트 시작 시점에서의 보유 주식 수량
+     */
+    private int initialQuantity;
+    
+    /**
+     * 목표 비중 (0.0 ~ 1.0)
+     * 리밸런싱 시 달성하고자 하는 목표 비중
+     * 유효한 종목들로만 재계산된 정규화된 비중
+     */
+    private double targetWeight;
 
+    
     /**
      * Stock 생성자
      * 
      * @param stockCode 종목 코드
-     * @param targetWeight 목표 비중 (0.0 ~ 1.0)
+     * @param originalWeight 원본 가중치 (정수, 양수)
      * @param thresholdPercentage 임계값 비율 (0.0 ~ 1.0)
+     * @param initialQuantity 초기 보유 수량 (0 이상)
      * @throws IllegalArgumentException 잘못된 매개변수가 전달된 경우
      */
-    public Stock(String stockCode, double targetWeight, double thresholdPercentage) {
-        validateParameters(stockCode, targetWeight, thresholdPercentage);
+    public Stock(String stockCode, int originalWeight, double thresholdPercentage, int initialQuantity) {
+        validateParameters(stockCode, thresholdPercentage);
+        
+        if (originalWeight <= 0) {
+            throw new IllegalArgumentException("원본 가중치는 양수여야 합니다: " + originalWeight);
+        }
+        
+        if (initialQuantity < 0) {
+            throw new IllegalArgumentException("초기 보유 수량은 0 이상이어야 합니다: " + initialQuantity);
+        }
         
         this.stockCode = stockCode.trim().toUpperCase();
-        this.targetWeight = normalizeWeight(targetWeight);
+        this.originalWeight = originalWeight;
         this.thresholdPercentage = normalizeWeight(thresholdPercentage);
+        this.initialQuantity = initialQuantity;
+        this.targetWeight = 0.0; // 초기값, 리밸런싱 시 재계산됨
     }
+    
 
     /**
      * 매개변수 유효성 검증
      * 
      * @param stockCode 종목 코드
-     * @param targetWeight 목표 비중
      * @param thresholdPercentage 임계값 비율
      * @throws IllegalArgumentException 유효하지 않은 매개변수
      */
-    private void validateParameters(String stockCode, double targetWeight, double thresholdPercentage) {
+    private void validateParameters(String stockCode, double thresholdPercentage) {
         if (stockCode == null || stockCode.trim().isEmpty()) {
             throw new IllegalArgumentException("종목 코드는 필수입니다.");
-        }
-        
-        if (targetWeight < 0.0 || targetWeight > 1.0) {
-            throw new IllegalArgumentException("목표 비중은 0.0과 1.0 사이여야 합니다: " + targetWeight);
         }
         
         if (thresholdPercentage < 0.0 || thresholdPercentage > 1.0) {
@@ -98,25 +120,42 @@ public class Stock {
     }
 
     /**
-     * 현재 비중이 목표 비중에서 임계값을 초과했는지 확인
+     * 현재 비중이 목표 비중에서 임계값을 초과했는지 확인 (내부 targetWeight 사용)
      * 리밸런싱 필요 여부를 판단하는 데 사용
-     * 임계값은 목표 비중의 상대적 비율로 계산됨
-     * 예: 목표 30%, 임계값 5% → 허용 범위 28.5%~31.5% (30% ± 30%×5%)
      * 
      * @param currentWeight 현재 비중 (0.0 ~ 1.0)
      * @return 임계값을 초과했으면 true
      * @throws IllegalArgumentException 현재 비중이 유효하지 않은 경우
      */
     public boolean exceedsThreshold(double currentWeight) {
+        return exceedsThreshold(currentWeight, this.targetWeight);
+    }
+
+    /**
+     * 현재 비중이 목표 비중에서 임계값을 초과했는지 확인
+     * 리밸런싱 필요 여부를 판단하는 데 사용
+     * 임계값은 목표 비중의 상대적 비율로 계산됨
+     * 
+     * @param currentWeight 현재 비중 (0.0 ~ 1.0)
+     * @param targetWeight 목표 비중 (0.0 ~ 1.0)
+     * @return 임계값을 초과했으면 true
+     * @throws IllegalArgumentException 현재 비중이나 목표 비중이 유효하지 않은 경우
+     */
+    public boolean exceedsThreshold(double currentWeight, double targetWeight) {
         if (currentWeight < 0.0 || currentWeight > 1.0) {
             throw new IllegalArgumentException("현재 비중이 유효하지 않습니다: " + currentWeight);
         }
         
+        if (targetWeight < 0.0 || targetWeight > 1.0) {
+            throw new IllegalArgumentException("목표 비중이 유효하지 않습니다: " + targetWeight);
+        }
+        
         double normalizedCurrentWeight = normalizeWeight(currentWeight);
-        double deviation = Math.abs(normalizedCurrentWeight - this.targetWeight);
+        double normalizedTargetWeight = normalizeWeight(targetWeight);
+        double deviation = Math.abs(normalizedCurrentWeight - normalizedTargetWeight);
         
         // 상대적 임계값 계산 (목표 비중 × 임계값 비율)
-        double relativeThreshold = this.targetWeight * this.thresholdPercentage;
+        double relativeThreshold = normalizedTargetWeight * this.thresholdPercentage;
         
         return deviation > relativeThreshold;
     }
@@ -126,46 +165,55 @@ public class Stock {
      * 양수면 목표보다 높음, 음수면 목표보다 낮음
      * 
      * @param currentWeight 현재 비중 (0.0 ~ 1.0)
+     * @param targetWeight 목표 비중 (0.0 ~ 1.0)
      * @return 비중 편차 (-1.0 ~ 1.0)
-     * @throws IllegalArgumentException 현재 비중이 유효하지 않은 경우
+     * @throws IllegalArgumentException 현재 비중이나 목표 비중이 유효하지 않은 경우
      */
-    public double getWeightDeviation(double currentWeight) {
+    public double getWeightDeviation(double currentWeight, double targetWeight) {
         if (currentWeight < 0.0 || currentWeight > 1.0) {
             throw new IllegalArgumentException("현재 비중이 유효하지 않습니다: " + currentWeight);
         }
         
+        if (targetWeight < 0.0 || targetWeight > 1.0) {
+            throw new IllegalArgumentException("목표 비중이 유효하지 않습니다: " + targetWeight);
+        }
+        
         double normalizedCurrentWeight = normalizeWeight(currentWeight);
-        return normalizedCurrentWeight - this.targetWeight;
+        double normalizedTargetWeight = normalizeWeight(targetWeight);
+        return normalizedCurrentWeight - normalizedTargetWeight;
     }
 
     /**
      * 비중 편차의 절댓값을 반환
      * 
      * @param currentWeight 현재 비중 (0.0 ~ 1.0)
+     * @param targetWeight 목표 비중 (0.0 ~ 1.0)
      * @return 비중 편차의 절댓값 (0.0 ~ 1.0)
      */
-    public double getAbsoluteWeightDeviation(double currentWeight) {
-        return Math.abs(getWeightDeviation(currentWeight));
+    public double getAbsoluteWeightDeviation(double currentWeight, double targetWeight) {
+        return Math.abs(getWeightDeviation(currentWeight, targetWeight));
     }
 
     /**
      * 현재 비중이 목표 비중보다 높은지 확인
      * 
      * @param currentWeight 현재 비중 (0.0 ~ 1.0)
+     * @param targetWeight 목표 비중 (0.0 ~ 1.0)
      * @return 현재 비중이 목표보다 높으면 true
      */
-    public boolean isOverWeight(double currentWeight) {
-        return getWeightDeviation(currentWeight) > 0;
+    public boolean isOverWeight(double currentWeight, double targetWeight) {
+        return getWeightDeviation(currentWeight, targetWeight) > 0;
     }
 
     /**
      * 현재 비중이 목표 비중보다 낮은지 확인
      * 
      * @param currentWeight 현재 비중 (0.0 ~ 1.0)
+     * @param targetWeight 목표 비중 (0.0 ~ 1.0)
      * @return 현재 비중이 목표보다 낮으면 true
      */
-    public boolean isUnderWeight(double currentWeight) {
-        return getWeightDeviation(currentWeight) < 0;
+    public boolean isUnderWeight(double currentWeight, double targetWeight) {
+        return getWeightDeviation(currentWeight, targetWeight) < 0;
     }
 
     /**
@@ -175,16 +223,23 @@ public class Stock {
      * @return Stock 객체의 복사본
      */
     public Stock copy() {
-        return new Stock(this.stockCode, this.targetWeight, this.thresholdPercentage);
+        Stock newStock = new Stock(this.stockCode, this.originalWeight, this.thresholdPercentage, this.initialQuantity);
+        newStock.setTargetWeight(this.targetWeight);
+        return newStock;
     }
 
     /**
-     * 목표 비중을 백분율로 반환
+     * 원본 가중치를 대상 가중치로 계산하여 목표 비중을 백분율로 반환
      * 
+     * @param totalWeight 전체 가중치 합계
      * @return 목표 비중 백분율
+     * @throws IllegalArgumentException 전체 가중치가 0 이하인 경우
      */
-    public double getTargetWeightPercentage() {
-        return targetWeight * 100.0;
+    public double getTargetWeightPercentage(int totalWeight) {
+        if (totalWeight <= 0) {
+            throw new IllegalArgumentException("전체 가중치는 양수여야 합니다: " + totalWeight);
+        }
+        return ((double) originalWeight / totalWeight) * 100.0;
     }
 
     /**
@@ -195,6 +250,91 @@ public class Stock {
     public double getThresholdPercentage() {
         return thresholdPercentage * 100.0;
     }
+
+    /**
+     * 목표 비중을 계산하여 반환한다
+     * 원본 가중치와 전체 가중치 합을 기반으로 계산
+     * 
+     * @param totalWeight 전체 가중치 합계
+     * @return 목표 비중 (0.0 ~ 1.0)
+     * @throws IllegalArgumentException 전체 가중치가 0 이하인 경우
+     */
+    public double getTargetWeight(int totalWeight) {
+        if (totalWeight <= 0) {
+            throw new IllegalArgumentException("전체 가중치는 양수여야 합니다: " + totalWeight);
+        }
+        return normalizeWeight((double) originalWeight / totalWeight);
+    }
+
+    /**
+     * 임계값을 설정한다
+     * 
+     * @param thresholdPercentage 새로운 임계값 (0.0 ~ 1.0)
+     * @throws IllegalArgumentException 임계값이 유효하지 않은 경우
+     */
+    public void setThresholdPercentage(double thresholdPercentage) {
+        if (thresholdPercentage < 0.0 || thresholdPercentage > 1.0) {
+            throw new IllegalArgumentException("임계값은 0.0과 1.0 사이여야 합니다: " + thresholdPercentage);
+        }
+        
+        this.thresholdPercentage = normalizeWeight(thresholdPercentage);
+    }
+
+    /**
+     * 원본 가중치를 반환한다
+     * 
+     * @return 원본 가중치
+     */
+    public int getOriginalWeight() {
+        return originalWeight;
+    }
+
+    /**
+     * 원본 가중치를 설정한다
+     * 
+     * @param originalWeight 새로운 원본 가중치 (양수여야 함)
+     * @throws IllegalArgumentException 원본 가중치가 유효하지 않은 경우
+     */
+    public void setOriginalWeight(int originalWeight) {
+        if (originalWeight <= 0) {
+            throw new IllegalArgumentException("원본 가중치는 양수여야 합니다: " + originalWeight);
+        }
+        
+        this.originalWeight = originalWeight;
+    }
+
+    /**
+     * 원본 가중치가 설정되었는지 확인한다
+     * 
+     * @return 원본 가중치가 설정되었으면 true
+     */
+    public boolean hasOriginalWeight() {
+        return originalWeight > 0;
+    }
+
+    /**
+     * 목표 비중을 반환한다
+     * 
+     * @return 목표 비중 (0.0 ~ 1.0)
+     */
+    public double getTargetWeight() {
+        return targetWeight;
+    }
+
+    /**
+     * 목표 비중을 설정한다
+     * 
+     * @param targetWeight 새로운 목표 비중 (0.0 ~ 1.0)
+     * @throws IllegalArgumentException 목표 비중이 유효하지 않은 경우
+     */
+    public void setTargetWeight(double targetWeight) {
+        if (targetWeight < 0.0 || targetWeight > 1.0) {
+            throw new IllegalArgumentException("목표 비중은 0.0과 1.0 사이여야 합니다: " + targetWeight);
+        }
+        
+        this.targetWeight = normalizeWeight(targetWeight);
+    }
+
 
     @Override
     public boolean equals(Object obj) {
@@ -213,10 +353,11 @@ public class Stock {
     /**
      * 상세 정보를 포함한 문자열 표현
      * 
+     * @param totalWeight 전체 가중치 합계
      * @return 상세 정보 문자열
      */
-    public String toDetailedString() {
-        return String.format("Stock{code='%s', targetWeight=%.2f%%, threshold=%.2f%%}", 
-                stockCode, getTargetWeightPercentage(), getThresholdPercentage());
+    public String toDetailedString(int totalWeight) {
+        return String.format("Stock{code='%s', originalWeight=%d, targetWeight=%.2f%%, threshold=%.2f%%}", 
+                stockCode, originalWeight, getTargetWeightPercentage(totalWeight), getThresholdPercentage());
     }
 }

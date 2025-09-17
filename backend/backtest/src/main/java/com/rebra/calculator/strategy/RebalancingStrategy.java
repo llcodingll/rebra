@@ -1,5 +1,6 @@
 package com.rebra.calculator.strategy;
 
+import com.rebra.calculator.context.BacktestContext;
 import com.rebra.calculator.domain.Portfolio;
 import com.rebra.calculator.domain.Stock;
 
@@ -17,42 +18,39 @@ public interface RebalancingStrategy {
      * 리밸런싱이 필요한지 판단한다
      * 각 전략의 고유한 조건에 따라 리밸런싱 필요 여부를 결정
      * 
+     * @param context 백테스트 컨텍스트 (전략, 종목, 가격 정보 포함)
      * @param currentDate 현재 날짜
      * @param portfolio 현재 포트폴리오 상태
-     * @param stocks 종목 목록 (목표 비중 포함)
-     * @param currentPrices 현재 주가 정보
      * @param lastRebalancingDate 마지막 리밸런싱 실행 날짜 (null이면 최초)
      * @return 리밸런싱이 필요하면 true
      */
-    boolean shouldRebalance(LocalDate currentDate, Portfolio portfolio, List<Stock> stocks,
-                          Map<String, Double> currentPrices, LocalDate lastRebalancingDate);
+    boolean shouldRebalance(Map<String, Double> currentPrices, BacktestContext context, LocalDate currentDate, Portfolio portfolio,
+                          LocalDate lastRebalancingDate);
 
     /**
      * 리밸런싱 필요 사유를 반환한다
      * 왜 리밸런싱이 필요한지에 대한 설명을 제공
      * 
+     * @param context 백테스트 컨텍스트 (전략, 종목, 가격 정보 포함)
      * @param currentDate 현재 날짜
      * @param portfolio 현재 포트폴리오 상태
-     * @param stocks 종목 목록
-     * @param currentPrices 현재 주가 정보
      * @param lastRebalancingDate 마지막 리밸런싱 실행 날짜
      * @return 리밸런싱 사유 (영문)
      */
-    String getRebalancingReason(LocalDate currentDate, Portfolio portfolio, List<Stock> stocks,
-                               Map<String, Double> currentPrices, LocalDate lastRebalancingDate);
+    String getRebalancingReason(BacktestContext context, LocalDate currentDate, Portfolio portfolio,
+                               LocalDate lastRebalancingDate);
 
     /**
      * 리밸런싱 사유를 한국어로 반환한다
      * 
+     * @param context 백테스트 컨텍스트 (전략, 종목, 가격 정보 포함)
      * @param currentDate 현재 날짜
      * @param portfolio 현재 포트폴리오 상태
-     * @param stocks 종목 목록
-     * @param currentPrices 현재 주가 정보
      * @param lastRebalancingDate 마지막 리밸런싱 실행 날짜
      * @return 리밸런싱 사유 (한국어)
      */
-    String getRebalancingReasonKorean(LocalDate currentDate, Portfolio portfolio, List<Stock> stocks,
-                                     Map<String, Double> currentPrices, LocalDate lastRebalancingDate);
+    String getRebalancingReasonKorean(BacktestContext context, LocalDate currentDate, Portfolio portfolio,
+                                     LocalDate lastRebalancingDate);
 
     /**
      * 전략의 이름을 반환한다
@@ -72,13 +70,11 @@ public interface RebalancingStrategy {
      * 리밸런싱 필요 종목을 식별한다
      * 전체 종목 중에서 실제로 리밸런싱이 필요한 종목들만 필터링
      * 
+     * @param context 백테스트 컨텍스트 (전략, 종목, 가격 정보 포함)
      * @param portfolio 현재 포트폴리오 상태
-     * @param stocks 종목 목록
-     * @param currentPrices 현재 주가 정보
      * @return 리밸런싱이 필요한 종목 목록
      */
-    List<Stock> getStocksNeedingRebalancing(Portfolio portfolio, List<Stock> stocks,
-                                          Map<String, Double> currentPrices);
+    List<Stock> getStocksNeedingRebalancing(BacktestContext context, Portfolio portfolio);
 
     /**
      * 다음 리밸런싱 예정일을 계산한다

@@ -12,9 +12,14 @@ spring:
       properties:
         spring.json.trusted.packages: com.rebra.calculator.dto
         spring.json.type.mapping: BacktestRequest:com.rebra.calculator.dto.BacktestRequest
+        # Micrometer 메트릭 활성화
+        micrometer.observation.enabled: true
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        # Micrometer 메트릭 활성화
+        micrometer.observation.enabled: true
 
   # Jackson 설정 (날짜 타입 처리)
   jackson:
@@ -25,7 +30,7 @@ spring:
 
 # 애플리케이션 설정
 server:
-  port: 8081
+  port: 8082
 
 # 액추에이터 설정
 management:
@@ -36,12 +41,22 @@ management:
   endpoint:
     health:
       show-details: always
+  # Micrometer 메트릭 설정
+  metrics:
+    tags:
+      service: backtest-calculator
+      version: '@project.version@'
+  # 추적 설정 (선택사항)
+  tracing:
+    sampling:
+      probability: 0.1  # 10% 샘플링
 
 # 로깅 설정
 logging:
   level:
     com.rebra.calculator: INFO
-    org.springframework.kafka: INFO
+    org.springframework.kafka: WARN
+    org.apache.kafka: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
