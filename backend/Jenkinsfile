@@ -25,7 +25,7 @@ environment {
 
         // JWT 설정 - Jenkins Credentials에서 보안 관리
         JWT_SECRET_KEY = credentials('jwt-secret-key')  // Jenkins Secret 사용
-        JWT_ACCESS_TOKEN_MINUTE_TIME = "30"
+        JWT_ACCESS_TOKEN_MINUTE_TIME = "300"
         JWT_REFRESH_TOKEN_MINUTE_TIME = "10080"
 
         // Kakao OAuth2 설정 - Jenkins Credentials에서 보안 관리
@@ -35,6 +35,8 @@ environment {
         KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token"
 
         SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER = credentials('security-encryption-account-hash-pepper')
+
+        FSS_API_SERVICE_KEY = credentials('fss-api-service-key')
 
         // 배포 환경 설정
         SPRING_PROFILES_ACTIVE = "prod"

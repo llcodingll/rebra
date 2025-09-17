@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useBlocker, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { TrendingUp } from 'lucide-react';
 import styles from './BacktestCreationPage.module.css';
@@ -104,11 +104,13 @@ const calculateValue = (buyPrice: string, quantity: number): number => {
 };
 
 export default function BacktestCreationPage({ onBack }: BacktestCreationPageProps = {}) {
+  const navigate = useNavigate();
   const [selectedPortfolio, setSelectedPortfolio] = useState('');
   const [backtestName, setBacktestName] = useState('');
   const [rebalancingPeriod] = useState('월간');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [isBacktestExecuted, setIsBacktestExecuted] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -140,7 +142,7 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
     setPortfolioItems(portfolioItems.filter((item) => item.code !== code));
   };
 
-  const handleRunBacktest = () => {
+  const handleRunBacktest = async () => {
     console.log('백테스트 실행:', {
       name: backtestName,
       period: rebalancingPeriod,
@@ -148,6 +150,13 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
       endDate,
       portfolio: portfolioItems,
     });
+
+    setIsBacktestExecuted(true);
+    // 실제 API 호출로 교체할 예정
+  };
+
+  const handleNavigateToBacktestList = () => {
+    navigate('/backtest');
   };
 
   const totalValue = portfolioItems.reduce((sum, item) => {
@@ -158,6 +167,7 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
     ({ currentLocation, nextLocation }) =>
       currentLocation.pathname.includes('/backtest/create') &&
       currentLocation.pathname !== nextLocation.pathname &&
+      !isBacktestExecuted &&
       !window.confirm('변경사항이 저장되지 않습니다. 정말로 페이지를 떠나시겠습니까?')
   );
 
@@ -174,6 +184,7 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
           setEndDate={setEndDate}
           onRunBacktest={handleRunBacktest}
           isRunDisabled={!backtestName || !startDate || !endDate || portfolioItems.length === 0}
+          onNavigateToBacktestList={handleNavigateToBacktestList}
         />
 
         <div className={styles.contentGrid}>

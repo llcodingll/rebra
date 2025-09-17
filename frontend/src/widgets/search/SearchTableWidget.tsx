@@ -4,7 +4,7 @@ import { stockListData } from './stockListData';
 import TableLayoutContainer from './components/TableLayoutContainer';
 
 interface SearchTableWidgetProps {
-  onStockSelect: (stockCode: string) => void;
+  onStockSelect: (stock: { code: string; name: string }) => void;
 }
 
 export default function SearchTableWidget({ onStockSelect }: SearchTableWidgetProps) {
@@ -97,7 +97,7 @@ export default function SearchTableWidget({ onStockSelect }: SearchTableWidgetPr
                 <div
                   key={stock.rank}
                   className={`${styles.stockRow} ${index % 2 === 0 ? styles.evenRow : ''}`}
-                  onClick={() => onStockSelect(stock.code)}
+                  onClick={() => onStockSelect({ code: stock.code, name: stock.name })}
                 >
                   <div className={styles.stockInfo}>
                     <div className={styles.favoriteIcon} onClick={(e) => toggleFavorite(stock.code, e)}>
@@ -141,7 +141,7 @@ export default function SearchTableWidget({ onStockSelect }: SearchTableWidgetPr
                 <div
                   key={stock.rank}
                   className={`${styles.stockRow} ${index % 2 === 0 ? styles.evenRow : ''}`}
-                  onClick={() => onStockSelect(stock.code)}
+                  onClick={() => onStockSelect({ code: stock.code, name: stock.name })}
                 >
                   <div className={styles.stockInfo}>
                     <div className={styles.favoriteIcon} onClick={(e) => toggleFavorite(stock.code, e)}>

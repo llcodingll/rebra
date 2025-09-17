@@ -1,5 +1,7 @@
 import { motion } from 'motion/react';
 import { Play, AlertTriangle } from 'lucide-react';
+import { useConfirmModal } from '../../hooks/useModalState';
+import ConfirmModal from '../../shared/ui/modal/ConfirmModal';
 import styles from './BacktestSettings.module.css';
 
 interface BacktestSettingsProps {
@@ -12,6 +14,7 @@ interface BacktestSettingsProps {
   setEndDate: (date: string) => void;
   onRunBacktest: () => void;
   isRunDisabled: boolean;
+  onNavigateToBacktestList?: () => void;
 }
 
 export default function BacktestSettings({
@@ -23,8 +26,10 @@ export default function BacktestSettings({
   endDate,
   setEndDate,
   onRunBacktest,
-  isRunDisabled
+  isRunDisabled,
+  onNavigateToBacktestList
 }: BacktestSettingsProps) {
+  const { confirmState, showConfirm, hideConfirm } = useConfirmModal();
   // 현재 날짜 정보
   const currentDate = new Date();
   const currentDateStr = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
@@ -32,10 +37,15 @@ export default function BacktestSettings({
   // 최소 날짜는 2020년 9월 1일
   const minDate = "2020-09-01";
 
-  // 어제 날짜 (시작일 최대값)
+  // 어제 날짜 (종료일 최대값)
   const yesterday = new Date(currentDate);
   yesterday.setDate(yesterday.getDate() - 1);
-  const maxStartDate = yesterday.toISOString().split('T')[0];
+  const maxEndDate = yesterday.toISOString().split('T')[0];
+
+  // 어제 전날 (시작일 최대값)
+  const dayBeforeYesterday = new Date(currentDate);
+  dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 2);
+  const maxStartDate = dayBeforeYesterday.toISOString().split('T')[0];
 
   // 한국 고정 공휴일 목록 (월-일 형식)
   const koreanFixedHolidays = [
@@ -95,6 +105,28 @@ export default function BacktestSettings({
     
     setEndDate(newEndDate);
   };
+
+  const handleRunBacktest = () => {
+    showConfirm({
+      title: '백테스트 실행',
+      message: '백테스트를 실행하시겠습니까?\n계산이 완료될 때까지 잠시 기다려주세요.',
+      type: 'default',
+      confirmText: '실행',
+      cancelText: '취소',
+      onConfirm: async () => {
+        try {
+          await onRunBacktest();
+
+          if (onNavigateToBacktestList) {
+            onNavigateToBacktestList();
+          }
+        } catch (error) {
+          console.error('백테스트 실행 중 오류 발생:', error);
+        }
+      }
+    });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -161,7 +193,7 @@ export default function BacktestSettings({
               value={endDate}
               onChange={handleEndDateChange}
               min={startDate ? getNextDay(startDate) : minDate}
-              max={currentDateStr}
+              max={maxEndDate}
               className={styles.dateInput}
             />
             <div className={styles.warningContainer}>
@@ -178,14 +210,25 @@ export default function BacktestSettings({
         </div>
       </div>
 
-      <button 
+      <button
         className={styles.runButton}
-        onClick={onRunBacktest}
+        onClick={handleRunBacktest}
         disabled={isRunDisabled}
       >
         <Play className={styles.runIcon} />
         백테스트 실행
       </button>
+
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        type={confirmState.type}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        onConfirm={confirmState.onConfirm}
+        onCancel={hideConfirm}
+      />
     </motion.div>
   );
 }

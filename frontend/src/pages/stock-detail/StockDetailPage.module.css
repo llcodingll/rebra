@@ -172,16 +172,129 @@
   }
 }
 
+/* STOMP 디버깅 패널 */
+.debugPanel {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  margin: 20px;
+  padding: 16px;
+  font-size: 14px;
+}
+
+.debugHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.debugHeader h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #495057;
+}
+
+.debugControls {
+  display: flex;
+  gap: 8px;
+}
+
+.disconnectBtn, .reconnectBtn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.disconnectBtn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.disconnectBtn:hover:not(:disabled) {
+  background-color: #c82333;
+}
+
+.reconnectBtn {
+  background-color: #28a745;
+  color: white;
+}
+
+.reconnectBtn:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.disconnectBtn:disabled, .reconnectBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.debugContent {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.debugRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.debugLabel {
+  font-weight: 500;
+  color: #495057;
+}
+
+.debugValue {
+  color: #6c757d;
+  font-family: monospace;
+}
+
+.statusOk {
+  color: #28a745;
+  font-weight: 500;
+}
+
+.statusError {
+  color: #dc3545;
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 0 12px;
   }
-  
+
   .stockInfoSection {
     padding: 0;
   }
-  
+
   .mainContent {
     padding: 0;
+  }
+
+  .debugPanel {
+    margin: 12px;
+    padding: 12px;
+  }
+
+  .debugControls {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .debugContent {
+    grid-template-columns: 1fr;
   }
 }

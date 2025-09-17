@@ -78,10 +78,16 @@ public enum ExceptionCode {
     INVALID_ORDER_PRICE(13005, "잘못된 주문 가격입니다.", HttpStatus.BAD_REQUEST),
     TRADING_HOURS_VIOLATION(13006, "거래 시간이 아닙니다.", HttpStatus.BAD_REQUEST),
 
-    // ==== External API 관련 ====
-    EXTERNAL_API_ERROR(14001, "외부 API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
-    EXTERNAL_API_TIMEOUT(14002, "외부 API 응답 시간이 초과되었습니다.", HttpStatus.GATEWAY_TIMEOUT),
-    EXTERNAL_API_SERVICE_UNAVAILABLE(14003, "외부 API 서비스를 사용할 수 없습니다.", HttpStatus.SERVICE_UNAVAILABLE);
+    // ==== PortfolioStock 관련 ====
+    PORTFOLIO_STOCK_NOT_FOUND(14001, "포트폴리오에서 해당 주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    PORTFOLIO_STOCK_ALREADY_EXISTS(14002, "이미 포트폴리오에 등록된 주식입니다.", HttpStatus.CONFLICT),
+    PORTFOLIO_STOCK_ACCESS_DENIED(14003, "포트폴리오 주식 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    TARGET_WEIGHT_SUM_EXCEEDED(14004, "목표 비중의 합이 100%를 초과할 수 없습니다.", HttpStatus.BAD_REQUEST);
+
+        // ==== External API 관련 ====
+    EXTERNAL_API_ERROR(15001, "외부 API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
+    EXTERNAL_API_TIMEOUT(15002, "외부 API 응답 시간이 초과되었습니다.", HttpStatus.GATEWAY_TIMEOUT),
+    EXTERNAL_API_SERVICE_UNAVAILABLE(15003, "외부 API 서비스를 사용할 수 없습니다.", HttpStatus.SERVICE_UNAVAILABLE);
 
     private final int code;
     private final String message;

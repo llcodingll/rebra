@@ -4,7 +4,7 @@ import { stockListData } from './stockListData';
 import TableLayoutContainer from './components/TableLayoutContainer';
 
 interface RankingTableWidgetProps {
-  onStockSelect: (stockCode: string) => void;
+  onStockSelect: (stock: { code: string; name: string }) => void;
 }
 
 type SortType = 'volume' | 'rising' | 'falling';
@@ -97,7 +97,7 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
           <div
             key={stock.rank}
             className={`${styles.stockRow} ${index % 2 === 0 ? styles.evenRow : ''}`}
-            onClick={() => onStockSelect(stock.code)}
+            onClick={() => onStockSelect({ code: stock.code, name: stock.name })}
           >
             <div className={styles.stockInfo}>
               <div className={styles.favoriteIcon}>

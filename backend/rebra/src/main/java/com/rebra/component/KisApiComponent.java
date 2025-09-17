@@ -7,13 +7,17 @@ import com.youhogeon.finance.kis_api.api.realtime.H0STASP0Api;
 import com.youhogeon.finance.kis_api.api.realtime.H0STASP0Data;
 import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Api;
 import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Data;
+import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceApi;
+import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceApi;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import com.youhogeon.finance.kis_api.client.socket.SubscribableApiResult;
 import com.youhogeon.finance.kis_api.config.Configuration;
 import com.youhogeon.finance.kis_api.config.Credentials;
+import com.youhogeon.finance.kis_api.exception.KisClientException;
 import jakarta.annotation.PostConstruct;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -157,14 +161,18 @@ public class KisApiComponent {
      */
     public void verifyAccount(String accountNumber, String appKey, String appSecret, AccountType accountType) {
         try {
-            log.info("KIS API 연결 테스트 시작 - 계좌번호: {}", accountNumber);
+            log.info("KIS API 연결 테스트 시작 - 계좌번호: {}, 계좌타입: {}", accountNumber, accountType);
 
-            Credentials credentials = new Credentials(appKey, appSecret, accountNumber, accountNumber);
+            // 계좌번호를 앞 8자리, 뒤 2자리로 분리 (실무 표준)
+            String accountPre = accountNumber.length() >= 8 ? accountNumber.substring(0, 8) : accountNumber;
+            String accountPost = accountNumber.length() > 8 ? accountNumber.substring(8) : "01"; // 일반계좌 기본값
+
+            Credentials credentials = new Credentials(appKey, appSecret, accountPre, accountPost);
 
             Configuration config = new Configuration();
             config.addCredentials(credentials);
 
-            // 모의투자와 실계좌에 따른 trId 설정
+            // 계좌 타입에 따른 HTTP 호스트 설정
             if (accountType == AccountType.MOCK) {
                 config.setHttpHost("https://openapivts.koreainvestment.com:29443");
             }
@@ -174,20 +182,21 @@ public class KisApiComponent {
             // 잔고조회 API로 연결 테스트
             InquireBalanceApi req = new InquireBalanceApi();
 
-            // 모의투자와 실계좌에 따른 trId 설정
+            // 계좌 타입에 따른 TR ID 설정
             if (accountType == AccountType.MOCK) {
-                req.setTrId("VTTC8434R");
+                req.setTrId("VTTC8434R");  // 모의투자 잔고조회
             }
 
             InquireBalanceResult result = client.execute(req);
 
-            if (result == null) {
-                throw new RuntimeException("KIS API 연결 실패: 응답 데이터 없음");
+            if (!result.getRtCd().equals("0")) {
+                throw new RuntimeException("KIS API 인증 실패");
             }
+
         } catch (Exception e) {
-            log.error("KIS API 연결 테스트 중 예외 발생 - 계좌번호: {}, 오류: {}",
-                    accountNumber, e.getMessage(), e);
-            throw new RuntimeException("KIS API 연결 실패", e);
+            log.error("KIS API 연결 테스트 중 예외 발생 - 계좌번호: {}, 계좌타입: {}, 오류: {}",
+                    accountNumber, accountType, e.getMessage(), e);
+            throw new RuntimeException("KIS API 연결 실패: " + e.getMessage(), e);
         }
     }
 
@@ -204,10 +213,10 @@ public class KisApiComponent {
 
 
     /**
-     * 등록된 사용자 Credentials로 잔고 조회
-     * ensureUserCredentials()를 통해 Credentials가 없으면 자동으로 등록
+     * 등록된 사용자 Credentials로 잔고 조회 ensureUserCredentials()를 통해 Credentials가 없으면 자동으로 등록
      */
-    public InquireBalanceResult getUserBalance(Long userId, Long accountId, AccountType accountType, DecryptedAccountCredentials credentials) {
+    public InquireBalanceResult getUserBalance(Long userId, Long accountId, AccountType accountType,
+                                               DecryptedAccountCredentials credentials) {
         try {
             log.info("사용자 잔고 조회 시작 - 사용자ID: {}, 계좌ID: {}, 계좌타입: {}", userId, accountId, accountType);
 
@@ -229,6 +238,11 @@ public class KisApiComponent {
             }
 
             InquireBalanceResult result = client.execute(req, credentialsName);
+
+            // rtCd가 "0"이 아니면 실패 (KIS API 표준)
+            if (!result.getRtCd().equals("0")) {
+                throw new RuntimeException("KIS API 잔고조회 실패");
+            }
 
             return result;
         } catch (Exception e) {
@@ -386,15 +400,6 @@ public class KisApiComponent {
     }
 
     /**
-     * 활성 구독 상태 확인
-     */
-    public boolean isSubscribed(Long userId, String stockCode, String dataType) {
-        String subscriptionKey = generateSubscriptionKey(userId, stockCode, dataType);
-        return subscriptionCount.containsKey(subscriptionKey) &&
-                subscriptionCount.get(subscriptionKey).get() > 0;
-    }
-
-    /**
      * 실시간 체결가 데이터 처리 백그라운드 스레드 시작
      */
     private void startRealtimePriceProcessing(SubscribableApiResult subscription,
@@ -409,10 +414,10 @@ public class KisApiComponent {
                 try {
                     if (data instanceof H0STCNT0Data) {
                         H0STCNT0Data priceData = (H0STCNT0Data) data;
-                        
-                        log.debug("실시간 체결가 데이터 수신 - StockCode: {}, Price: {}", 
+
+                        log.debug("실시간 체결가 데이터 수신 - StockCode: {}, Price: {}",
                                 stockCode, priceData.getStckPrpr());
-                        
+
                         // 데이터 핸들러를 통해 KisRealtimeService로 데이터 전달
                         dataHandler.accept(priceData);
                     }
@@ -444,10 +449,10 @@ public class KisApiComponent {
                 try {
                     if (data instanceof H0STASP0Data) {
                         H0STASP0Data orderbookData = (H0STASP0Data) data;
-                        
-                        log.debug("실시간 호가 데이터 수신 - StockCode: {}, AskPrice1: {}, BidPrice1: {}", 
+
+                        log.debug("실시간 호가 데이터 수신 - StockCode: {}, AskPrice1: {}, BidPrice1: {}",
                                 stockCode, orderbookData.getAskp1(), orderbookData.getBidp1());
-                        
+
                         // 데이터 핸들러를 통해 KisRealtimeService로 데이터 전달
                         dataHandler.accept(orderbookData);
                     }
@@ -463,4 +468,179 @@ public class KisApiComponent {
             throw new RuntimeException("실시간 호가 데이터 처리 실패", e);
         }
     }
+
+    /**
+     * 주식 매수 주문 실행
+     */
+    public com.youhogeon.finance.kis_api.api.rest.trading.OrderCashResult executeBuyOrder(
+            Long userId, Long accountId, AccountType accountType,
+            String stockCode, String orderType, int quantity, Long price) {
+
+        try {
+            String credentialsName = getUserCredentialsName(userId, accountId);
+            if (credentialsName == null) {
+                throw new RuntimeException("등록된 Credentials를 찾을 수 없음");
+            }
+
+            KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
+
+            com.youhogeon.finance.kis_api.api.rest.trading.OrderCashApi orderApi =
+                    new com.youhogeon.finance.kis_api.api.rest.trading.OrderCashApi();
+
+            // TR ID 설정
+            if (accountType == AccountType.MOCK) {
+                orderApi.setTrId("VTTC0012U");  // 모의투자 매수
+            } else {
+                orderApi.setTrId("TTTC0012U");  // 실거래 매수
+            }
+
+            // 주문 파라미터 설정
+            orderApi.setPdno(stockCode);
+            orderApi.setOrdDvsn(orderType);
+            orderApi.setOrdQty(String.valueOf(quantity));
+            orderApi.setOrdUnpr(price != null ? String.valueOf(price) : "0");
+            orderApi.setExcgIdDvsnCd("KRX");
+
+            // KIS API 실행 (credentialsName으로 자동 인증)
+            com.youhogeon.finance.kis_api.api.rest.trading.OrderCashResult result =
+                    client.execute(orderApi, credentialsName);
+
+            log.info("주식 매수 주문 완료 - UserId: {}, StockCode: {}", userId, stockCode);
+            return result;
+
+        } catch (Exception e) {
+            log.error("주식 매수 주문 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
+            throw new RuntimeException("주식 매수 주문 실패", e);
+        }
+    }
+
+    /**
+     * 주식 매도 주문 실행
+     */
+    public com.youhogeon.finance.kis_api.api.rest.trading.OrderCashResult executeSellOrder(
+            Long userId, Long accountId, AccountType accountType,
+            String stockCode, String orderType, int quantity, Long price) {
+
+        try {
+            String credentialsName = getUserCredentialsName(userId, accountId);
+            if (credentialsName == null) {
+                throw new RuntimeException("등록된 Credentials를 찾을 수 없음");
+            }
+
+            KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
+
+            com.youhogeon.finance.kis_api.api.rest.trading.OrderCashApi orderApi =
+                    new com.youhogeon.finance.kis_api.api.rest.trading.OrderCashApi();
+
+            // TR ID 설정
+            if (accountType == AccountType.MOCK) {
+                orderApi.setTrId("VTTC0011U");  // 모의투자 매도
+            } else {
+                orderApi.setTrId("TTTC0011U");  // 실거래 매도
+            }
+
+            // 주문 파라미터 설정
+            orderApi.setPdno(stockCode);
+            orderApi.setOrdDvsn(orderType);
+            orderApi.setOrdQty(String.valueOf(quantity));
+            orderApi.setOrdUnpr(price != null ? String.valueOf(price) : "0");
+            orderApi.setExcgIdDvsnCd("KRX");
+
+            // KIS API 실행 (credentialsName으로 자동 인증)
+            com.youhogeon.finance.kis_api.api.rest.trading.OrderCashResult result =
+                    client.execute(orderApi, credentialsName);
+
+            log.info("주식 매도 주문 완료 - UserId: {}, StockCode: {}", userId, stockCode);
+            return result;
+
+        } catch (Exception e) {
+            log.error("주식 매도 주문 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
+            throw new RuntimeException("주식 매도 주문 실패", e);
+        }
+    }
+
+    /**
+     * 국내주식기간별시세(일/주/월/년) 조회 KIS API의 FHKST03010100 TR ID 사용
+     */
+    public Map<String, Object> getStockChartData(Long userId, Long accountId, AccountType accountType,
+                                                 String stockCode, String startDate, String endDate,
+                                                 String periodType) {
+        try {
+            String credentialsName = getUserCredentialsName(userId, accountId);
+            if (credentialsName == null) {
+                throw new RuntimeException("등록된 Credentials를 찾을 수 없음");
+            }
+
+            KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
+
+            // 실제 KIS 라이브러리의 InquireDailyItemchartpriceApi 사용
+            InquireDailyItemchartpriceApi chartApi = new InquireDailyItemchartpriceApi();
+
+            // KIS API 파라미터 설정
+            chartApi.setFidCondMrktDivCode("J");      // J:KRX, NX:NXT, UN:통합
+            chartApi.setFidInputIscd(stockCode);       // 종목코드 (ex 005930)
+            chartApi.setFidInputDate1(startDate);      // 조회 시작일자
+            chartApi.setFidInputDate2(endDate);        // 조회 종료일자
+            chartApi.setFidPeriodDivCode(periodType);  // D:일봉 W:주봉, M:월봉, Y:년봉
+            chartApi.setFidOrgAdjPrc("1");             // 0:수정주가 1:원주가
+
+            // P:개인, B:법인
+            chartApi.setCusttype("P");
+
+            log.info("KIS 차트 API 파라미터 설정 완료 - StockCode: {}, StartDate: {}, EndDate: {}, Period: {}, AccountType: {}",
+                    stockCode, startDate, endDate, periodType, accountType);
+
+            // KIS API 실행 (기존 패턴과 동일)
+            InquireDailyItemchartpriceResult result = client.execute(chartApi, credentialsName);
+
+            // 실무 표준: KIS API 응답 코드 검증
+            if (result == null) {
+                throw new RuntimeException("KIS API 응답이 null입니다.");
+            }
+
+            // rtCd가 "0"이 아니면 실패 (KIS API 표준)
+            if (!"0".equals(result.getRtCd())) {
+                String errorMsg = String.format("KIS 차트 API 실패 - 응답코드: %s, 메시지: %s",
+                        result.getRtCd(), result.getMsg1());
+                log.error("차트 데이터 조회 실패 - UserId: {}, StockCode: {}, {}", userId, stockCode, errorMsg);
+                throw new RuntimeException(errorMsg);
+            }
+
+            if (result != null) {
+                Map<String, Object> responseData = new ConcurrentHashMap<>();
+
+                // output1 (종목 요약 정보)
+                if (result.getOutput1() != null) {
+                    responseData.put("output1", result.getOutput1());
+                }
+
+                // output2 (차트 데이터 배열) - 원본 배열 그대로 사용
+                if (result.getOutput2() != null) {
+                    responseData.put("output2", result.getOutput2());
+                }
+
+                log.info("주식 차트 데이터 조회 완료 (KIS API) - UserId: {}, StockCode: {}, Period: {}",
+                        userId, stockCode, periodType);
+
+                return responseData;
+            } else {
+                log.error("KIS API 응답이 null - UserId: {}, StockCode: {}, Period: {}", userId, stockCode, periodType);
+                throw new RuntimeException("KIS API에서 차트 데이터를 가져올 수 없습니다. 잠시 후 다시 시도해주세요.");
+            }
+
+        } catch (KisClientException e) {
+            // KIS 라이브러리 전용 예외 처리
+            log.error("KIS API 클라이언트 오류 - UserId: {}, StockCode: {}, Period: {}, 오류: {}",
+                    userId, stockCode, periodType, e.getMessage(), e);
+            throw new RuntimeException("KIS API 연결 오류: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("주식 차트 데이터 조회 실패 - UserId: {}, StockCode: {}, Period: {}, Error: {}, StackTrace: {}",
+                    userId, stockCode, periodType, e.getMessage(), e.getClass().getSimpleName(), e);
+
+            // KIS API 호출 실패 시 예외를 다시 던져서 상위 레이어에서 처리하도록 함
+            throw new RuntimeException("KIS API 차트 데이터 조회 실패: " + e.getMessage(), e);
+        }
+    }
+
+
 }
