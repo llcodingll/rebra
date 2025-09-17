@@ -1,14 +1,13 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Search, Upload, Plus } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import styles from './BacktestSearchWidget.module.css';
 
 interface BacktestSearchWidgetProps {
-  onPortfolioModalOpen?: () => void;
   onDirectCreation?: () => void;
 }
 
-export default function BacktestSearchWidget({ onPortfolioModalOpen, onDirectCreation }: BacktestSearchWidgetProps) {
+export default function BacktestSearchWidget({ onDirectCreation }: BacktestSearchWidgetProps) {
   return (
     <motion.div 
       className={styles.searchSection}
@@ -43,16 +42,8 @@ export default function BacktestSearchWidget({ onPortfolioModalOpen, onDirectCre
 
           {/* 생성 버튼들 */}
           <div className={styles.createButtons}>
-            <button 
-              className={styles.createFromPortfolio} 
-              onClick={onPortfolioModalOpen}
-            >
-              <Upload className={styles.buttonIcon} />
-              내 포트폴리오에서 가져오기
-            </button>
-            
-            <button 
-              className={styles.createDirect} 
+            <button
+              className={styles.createDirect}
               onClick={onDirectCreation}
             >
               <Plus className={styles.buttonIcon} />
