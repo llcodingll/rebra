@@ -1,18 +1,31 @@
 package com.rebra.controller;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rebra.common.CommonApiResponse;
 import com.rebra.config.resolver.LoginUserArgumentResolver;
 import com.rebra.dto.response.StockChartResponse;
-import com.rebra.exception.CustomRuntimeException;
-import com.rebra.exception.ExceptionCode;
+import com.rebra.dto.response.StockChartResponse.ChartDataPoint;
+import com.rebra.dto.response.StockChartResponse.PeriodType;
+import com.rebra.dto.response.StockChartResponse.StockSummary;
 import com.rebra.exception.stock.StockException;
 import com.rebra.service.StockService;
 import com.rebra.service.StockTradingService;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.core.MethodParameter;
@@ -20,15 +33,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(StockController.class)
 @DisplayName("StockController 차트 API 테스트")
@@ -50,8 +54,8 @@ class StockControllerChartTest {
     private LoginUserArgumentResolver loginUserArgumentResolver;
 
     private StockChartResponse createMockChartResponse(String periodType) {
-        List<StockChartResponse.ChartDataPoint> chartData = new ArrayList<>();
-        chartData.add(StockChartResponse.ChartDataPoint.builder()
+        List<ChartDataPoint> chartData = new ArrayList<>();
+        chartData.add(ChartDataPoint.builder()
                 .tradingDate("20241215")
                 .openPrice("70000")
                 .highPrice("72000")
@@ -64,7 +68,7 @@ class StockControllerChartTest {
                 .changeRate("1.43")
                 .build());
 
-        StockChartResponse.StockSummary summary = StockChartResponse.StockSummary.builder()
+        StockSummary summary = StockSummary.builder()
                 .currentPrice("71000")
                 .priceChange("1000")
                 .changeRate("1.43")
@@ -73,13 +77,19 @@ class StockControllerChartTest {
                 .marketCap("425000000000000")
                 .per("12.5")
                 .pbr("0.8")
+                .previousClosePrice("70000")
+                .upperLimit("91000")
+                .lowerLimit("49000")
+                .askPrice("71100")
+                .bidPrice("70900")
+                .eps("5680")
+                .listedShares("5969782550")
+                .capital("778047")
                 .build();
 
         return StockChartResponse.builder()
-                .stockCode("005930")
-                .stockName("삼성전자")
                 .periodType(periodType)
-                .periodDescription(StockChartResponse.PeriodType.fromCode(periodType).getDescription())
+                .periodDescription(PeriodType.fromCode(periodType).getDescription())
                 .startDate("20240101")
                 .endDate("20241231")
                 .chartData(chartData)
@@ -110,8 +120,6 @@ class StockControllerChartTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data.stockCode").value("005930"))
-                .andExpect(jsonPath("$.data.stockName").value("삼성전자"))
                 .andExpect(jsonPath("$.data.periodType").value("D"))
                 .andExpect(jsonPath("$.data.periodDescription").value("일봉"))
                 .andExpect(jsonPath("$.data.chartData").isArray())
@@ -120,7 +128,8 @@ class StockControllerChartTest {
                 .andExpect(jsonPath("$.data.chartData[0].closePrice").value("71000"))
                 .andExpect(jsonPath("$.data.summary.currentPrice").value("71000"));
 
-        verify(stockService, times(1)).getStockChartData(eq(stockCode), eq("20240101"), eq("20241231"), eq("D"), eq(1L));
+        verify(stockService, times(1)).getStockChartData(eq(stockCode), eq("20240101"), eq("20241231"), eq("D"),
+                eq(1L));
     }
 
     @Test
@@ -144,7 +153,98 @@ class StockControllerChartTest {
                 .andDo(print())
                 .andExpect(status().isNotFound());
 
-        verify(stockService, times(1)).getStockChartData(eq(nonExistentStockCode), eq("20240101"), eq("20241231"), eq("D"), eq(1L));
+        verify(stockService, times(1)).getStockChartData(eq(nonExistentStockCode), eq("20240101"), eq("20241231"),
+                eq("D"), eq(1L));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("주봉 차트 데이터 조회 성공")
+    void getWeeklyChart_Success() throws Exception {
+        // Mock LoginUserArgumentResolver to return userId 1L
+        when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+        when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
+
+        // Given
+        String stockCode = "005930";
+        StockChartResponse mockResponse = createMockChartResponse("W");
+        when(stockService.getStockChartData(eq(stockCode), eq("20230101"), eq("20241231"), eq("W"), eq(1L)))
+                .thenReturn(mockResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/stocks/{stockCode}/chart/weekly", stockCode)
+                        .param("startDate", "20230101")
+                        .param("endDate", "20241231")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.periodType").value("W"))
+                .andExpect(jsonPath("$.data.periodDescription").value("주봉"));
+
+        verify(stockService, times(1)).getStockChartData(eq(stockCode), eq("20230101"), eq("20241231"), eq("W"),
+                eq(1L));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("월봉 차트 데이터 조회 성공")
+    void getMonthlyChart_Success() throws Exception {
+        // Mock LoginUserArgumentResolver to return userId 1L
+        when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+        when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
+
+        // Given
+        String stockCode = "005930";
+        StockChartResponse mockResponse = createMockChartResponse("M");
+        when(stockService.getStockChartData(eq(stockCode), eq("20170101"), eq("20241231"), eq("M"), eq(1L)))
+                .thenReturn(mockResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/stocks/{stockCode}/chart/monthly", stockCode)
+                        .param("startDate", "20170101")
+                        .param("endDate", "20241231")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.periodType").value("M"))
+                .andExpect(jsonPath("$.data.periodDescription").value("월봉"));
+
+        verify(stockService, times(1)).getStockChartData(eq(stockCode), eq("20170101"), eq("20241231"), eq("M"),
+                eq(1L));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("년봉 차트 데이터 조회 성공")
+    void getYearlyChart_Success() throws Exception {
+        // Mock LoginUserArgumentResolver to return userId 1L
+        when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+        when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
+
+        // Given
+        String stockCode = "005930";
+        StockChartResponse mockResponse = createMockChartResponse("Y");
+        when(stockService.getStockChartData(eq(stockCode), eq("19250101"), eq("20241231"), eq("Y"), eq(1L)))
+                .thenReturn(mockResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/stocks/{stockCode}/chart/yearly", stockCode)
+                        .param("startDate", "19250101")
+                        .param("endDate", "20241231")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.periodType").value("Y"))
+                .andExpect(jsonPath("$.data.periodDescription").value("년봉"));
+
+        verify(stockService, times(1)).getStockChartData(eq(stockCode), eq("19250101"), eq("20241231"), eq("Y"),
+                eq(1L));
     }
 
     @Test

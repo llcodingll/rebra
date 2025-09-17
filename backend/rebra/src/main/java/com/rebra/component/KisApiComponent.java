@@ -7,20 +7,18 @@ import com.youhogeon.finance.kis_api.api.realtime.H0STASP0Api;
 import com.youhogeon.finance.kis_api.api.realtime.H0STASP0Data;
 import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Api;
 import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Data;
-import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceApi;
-import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
-import com.youhogeon.finance.kis_api.api.rest.trading.OrderCashApi;
-import com.youhogeon.finance.kis_api.api.rest.trading.OrderCashResult;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceApi;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult;
+import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceApi;
+import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import com.youhogeon.finance.kis_api.client.socket.SubscribableApiResult;
 import com.youhogeon.finance.kis_api.config.Configuration;
 import com.youhogeon.finance.kis_api.config.Credentials;
+import com.youhogeon.finance.kis_api.exception.KisClientException;
 import jakarta.annotation.PostConstruct;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -163,14 +161,18 @@ public class KisApiComponent {
      */
     public void verifyAccount(String accountNumber, String appKey, String appSecret, AccountType accountType) {
         try {
-            log.info("KIS API 연결 테스트 시작 - 계좌번호: {}", accountNumber);
+            log.info("KIS API 연결 테스트 시작 - 계좌번호: {}, 계좌타입: {}", accountNumber, accountType);
 
-            Credentials credentials = new Credentials(appKey, appSecret, accountNumber, accountNumber);
+            // 계좌번호를 앞 8자리, 뒤 2자리로 분리 (실무 표준)
+            String accountPre = accountNumber.length() >= 8 ? accountNumber.substring(0, 8) : accountNumber;
+            String accountPost = accountNumber.length() > 8 ? accountNumber.substring(8) : "01"; // 일반계좌 기본값
+
+            Credentials credentials = new Credentials(appKey, appSecret, accountPre, accountPost);
 
             Configuration config = new Configuration();
             config.addCredentials(credentials);
 
-            // 모의투자와 실계좌에 따른 trId 설정
+            // 계좌 타입에 따른 HTTP 호스트 설정
             if (accountType == AccountType.MOCK) {
                 config.setHttpHost("https://openapivts.koreainvestment.com:29443");
             }
@@ -180,20 +182,21 @@ public class KisApiComponent {
             // 잔고조회 API로 연결 테스트
             InquireBalanceApi req = new InquireBalanceApi();
 
-            // 모의투자와 실계좌에 따른 trId 설정
+            // 계좌 타입에 따른 TR ID 설정
             if (accountType == AccountType.MOCK) {
-                req.setTrId("VTTC8434R");
+                req.setTrId("VTTC8434R");  // 모의투자 잔고조회
             }
 
             InquireBalanceResult result = client.execute(req);
 
-            if (result == null) {
-                throw new RuntimeException("KIS API 연결 실패: 응답 데이터 없음");
+            if (!result.getRtCd().equals("0")) {
+                throw new RuntimeException("KIS API 인증 실패");
             }
+
         } catch (Exception e) {
-            log.error("KIS API 연결 테스트 중 예외 발생 - 계좌번호: {}, 오류: {}",
-                    accountNumber, e.getMessage(), e);
-            throw new RuntimeException("KIS API 연결 실패", e);
+            log.error("KIS API 연결 테스트 중 예외 발생 - 계좌번호: {}, 계좌타입: {}, 오류: {}",
+                    accountNumber, accountType, e.getMessage(), e);
+            throw new RuntimeException("KIS API 연결 실패: " + e.getMessage(), e);
         }
     }
 
@@ -210,10 +213,10 @@ public class KisApiComponent {
 
 
     /**
-     * 등록된 사용자 Credentials로 잔고 조회
-     * ensureUserCredentials()를 통해 Credentials가 없으면 자동으로 등록
+     * 등록된 사용자 Credentials로 잔고 조회 ensureUserCredentials()를 통해 Credentials가 없으면 자동으로 등록
      */
-    public InquireBalanceResult getUserBalance(Long userId, Long accountId, AccountType accountType, DecryptedAccountCredentials credentials) {
+    public InquireBalanceResult getUserBalance(Long userId, Long accountId, AccountType accountType,
+                                               DecryptedAccountCredentials credentials) {
         try {
             log.info("사용자 잔고 조회 시작 - 사용자ID: {}, 계좌ID: {}, 계좌타입: {}", userId, accountId, accountType);
 
@@ -235,6 +238,11 @@ public class KisApiComponent {
             }
 
             InquireBalanceResult result = client.execute(req, credentialsName);
+
+            // rtCd가 "0"이 아니면 실패 (KIS API 표준)
+            if (!result.getRtCd().equals("0")) {
+                throw new RuntimeException("KIS API 잔고조회 실패");
+            }
 
             return result;
         } catch (Exception e) {
@@ -389,15 +397,6 @@ public class KisApiComponent {
      */
     private String generateSubscriptionKey(Long userId, String stockCode, String dataType) {
         return userId + ":" + stockCode + ":" + dataType;
-    }
-
-    /**
-     * 활성 구독 상태 확인
-     */
-    public boolean isSubscribed(Long userId, String stockCode, String dataType) {
-        String subscriptionKey = generateSubscriptionKey(userId, stockCode, dataType);
-        return subscriptionCount.containsKey(subscriptionKey) &&
-                subscriptionCount.get(subscriptionKey).get() > 0;
     }
 
     /**
@@ -561,11 +560,11 @@ public class KisApiComponent {
     }
 
     /**
-     * 국내주식기간별시세(일/주/월/년) 조회
-     * KIS API의 FHKST03010100 TR ID 사용
+     * 국내주식기간별시세(일/주/월/년) 조회 KIS API의 FHKST03010100 TR ID 사용
      */
     public Map<String, Object> getStockChartData(Long userId, Long accountId, AccountType accountType,
-                                                 String stockCode, String startDate, String endDate, String periodType) {
+                                                 String stockCode, String startDate, String endDate,
+                                                 String periodType) {
         try {
             String credentialsName = getUserCredentialsName(userId, accountId);
             if (credentialsName == null) {
@@ -577,7 +576,7 @@ public class KisApiComponent {
             // 실제 KIS 라이브러리의 InquireDailyItemchartpriceApi 사용
             InquireDailyItemchartpriceApi chartApi = new InquireDailyItemchartpriceApi();
 
-            // KIS API 파라미터 설정 (MCP에서 확인한 정확한 파라미터명)
+            // KIS API 파라미터 설정
             chartApi.setFidCondMrktDivCode("J");      // J:KRX, NX:NXT, UN:통합
             chartApi.setFidInputIscd(stockCode);       // 종목코드 (ex 005930)
             chartApi.setFidInputDate1(startDate);      // 조회 시작일자
@@ -585,11 +584,27 @@ public class KisApiComponent {
             chartApi.setFidPeriodDivCode(periodType);  // D:일봉 W:주봉, M:월봉, Y:년봉
             chartApi.setFidOrgAdjPrc("1");             // 0:수정주가 1:원주가
 
-            // TR ID 설정 (실전/모의 동일)
-            chartApi.setTrId("FHKST03010100");
+            // P:개인, B:법인
+            chartApi.setCusttype("P");
+
+            log.info("KIS 차트 API 파라미터 설정 완료 - StockCode: {}, StartDate: {}, EndDate: {}, Period: {}, AccountType: {}",
+                    stockCode, startDate, endDate, periodType, accountType);
 
             // KIS API 실행 (기존 패턴과 동일)
             InquireDailyItemchartpriceResult result = client.execute(chartApi, credentialsName);
+
+            // 실무 표준: KIS API 응답 코드 검증
+            if (result == null) {
+                throw new RuntimeException("KIS API 응답이 null입니다.");
+            }
+
+            // rtCd가 "0"이 아니면 실패 (KIS API 표준)
+            if (!"0".equals(result.getRtCd())) {
+                String errorMsg = String.format("KIS 차트 API 실패 - 응답코드: %s, 메시지: %s",
+                        result.getRtCd(), result.getMsg1());
+                log.error("차트 데이터 조회 실패 - UserId: {}, StockCode: {}, {}", userId, stockCode, errorMsg);
+                throw new RuntimeException(errorMsg);
+            }
 
             if (result != null) {
                 Map<String, Object> responseData = new ConcurrentHashMap<>();
@@ -599,7 +614,7 @@ public class KisApiComponent {
                     responseData.put("output1", result.getOutput1());
                 }
 
-                // output2 (차트 데이터 배열)
+                // output2 (차트 데이터 배열) - 원본 배열 그대로 사용
                 if (result.getOutput2() != null) {
                     responseData.put("output2", result.getOutput2());
                 }
@@ -609,67 +624,23 @@ public class KisApiComponent {
 
                 return responseData;
             } else {
-                log.warn("KIS API 응답이 null, 기본 데이터 반환 - StockCode: {}", stockCode);
-                return getDefaultChartData(stockCode, startDate, endDate, periodType);
+                log.error("KIS API 응답이 null - UserId: {}, StockCode: {}, Period: {}", userId, stockCode, periodType);
+                throw new RuntimeException("KIS API에서 차트 데이터를 가져올 수 없습니다. 잠시 후 다시 시도해주세요.");
             }
 
+        } catch (KisClientException e) {
+            // KIS 라이브러리 전용 예외 처리
+            log.error("KIS API 클라이언트 오류 - UserId: {}, StockCode: {}, Period: {}, 오류: {}",
+                    userId, stockCode, periodType, e.getMessage(), e);
+            throw new RuntimeException("KIS API 연결 오류: " + e.getMessage(), e);
         } catch (Exception e) {
-            log.error("주식 차트 데이터 조회 실패 - UserId: {}, StockCode: {}, Period: {}",
-                    userId, stockCode, periodType, e);
+            log.error("주식 차트 데이터 조회 실패 - UserId: {}, StockCode: {}, Period: {}, Error: {}, StackTrace: {}",
+                    userId, stockCode, periodType, e.getMessage(), e.getClass().getSimpleName(), e);
 
-            // 예외 발생 시 기본 데이터 반환 (개발 단계에서 안정성 확보)
-            return getDefaultChartData(stockCode, startDate, endDate, periodType);
+            // KIS API 호출 실패 시 예외를 다시 던져서 상위 레이어에서 처리하도록 함
+            throw new RuntimeException("KIS API 차트 데이터 조회 실패: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * 차트 API 개발/테스트용 기본 데이터
-     */
-    private Map<String, Object> getDefaultChartData(String stockCode, String startDate, String endDate, String periodType) {
-        Map<String, Object> result = new ConcurrentHashMap<>();
-
-        // KIS API 응답 구조에 맞는 기본 데이터
-        Map<String, String> output1 = new ConcurrentHashMap<>();
-        output1.put("stck_prpr", "71000");         // 현재가
-        output1.put("prdy_vrss", "1000");          // 전일대비
-        output1.put("prdy_ctrt", "1.43");          // 전일대비율
-        output1.put("prdy_vrss_sign", "2");        // 전일대비부호
-        output1.put("acml_vol", "15000000");       // 누적거래량
-        output1.put("hts_avls", "425000000000000"); // 시가총액
-        output1.put("per", "12.5");                // PER
-        output1.put("pbr", "0.8");                 // PBR
-
-        List<Map<String, String>> output2 = new ArrayList<>();
-
-        // 여러 날짜의 차트 데이터 생성 (기간별로 다르게)
-        int dataPoints = "D".equals(periodType) ? 30 : "W".equals(periodType) ? 12 : "M".equals(periodType) ? 6 : 3;
-
-        for (int i = 0; i < dataPoints; i++) {
-            Map<String, String> chartPoint = new ConcurrentHashMap<>();
-
-            // 가상의 가격 변동 (70000 기준으로 ±5% 범위)
-            int basePrice = 70000;
-            int variation = (int) (basePrice * 0.05 * (Math.random() - 0.5) * 2);
-            int dayPrice = basePrice + variation;
-
-            chartPoint.put("stck_bsop_date", String.format("2024121%d", Math.max(1, 15 - i)));
-            chartPoint.put("stck_oprc", String.valueOf(dayPrice - 500));       // 시가
-            chartPoint.put("stck_hgpr", String.valueOf(dayPrice + 1000));      // 고가
-            chartPoint.put("stck_lwpr", String.valueOf(dayPrice - 1000));      // 저가
-            chartPoint.put("stck_clpr", String.valueOf(dayPrice));             // 종가
-            chartPoint.put("acml_vol", String.valueOf(15000000 + i * 1000000)); // 거래량
-            chartPoint.put("acml_tr_pbmn", String.valueOf((long) dayPrice * (15000000 + i * 1000000))); // 거래대금
-            chartPoint.put("prdy_vrss", String.valueOf(variation));            // 전일대비
-            chartPoint.put("prdy_vrss_sign", variation >= 0 ? "2" : "5");      // 전일대비부호
-            chartPoint.put("prdy_ctrt", String.format("%.2f", (double) variation / basePrice * 100)); // 전일대비율
-
-            output2.add(chartPoint);
-        }
-
-        result.put("output1", output1);
-        result.put("output2", output2);
-
-        return result;
-    }
 
 }

@@ -10,8 +10,13 @@ export default function SearchPage() {
   const [activeSubTab, setActiveSubTab] = useState<'ranking' | 'search' | 'holdings' | 'holdings-v2'>('ranking');
   const navigate = useNavigate();
 
-  const handleStockSelect = (stockCode: string) => {
-    navigate(`/search/stocks/${stockCode}`);
+  const handleStockSelect = (stock: { code: string; name: string }) => {
+    navigate(`/search/stocks/${stock.code}`, {
+      state: {
+        stockCode: stock.code,
+        stockName: stock.name
+      }
+    });
   };
 
   const renderContent = () => {

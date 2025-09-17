@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createChart, ColorType, CandlestickSeries, HistogramSeries, CrosshairMode } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import type { RealtimePriceMessage } from '../../features/stock-search/api/types';
+import { useStockChartData } from '../../features/stock-search/hooks/useStockChartData';
+import { transformChartData } from '../../features/stock-search/utils/chartDataTransform';
 import styles from './RealTimeChart.module.css';
 
 interface RealTimeChartProps {
@@ -28,6 +30,7 @@ interface VolumeData {
 export default function RealTimeChart({ stockCode, stockName, realtimeData, onPriceUpdate }: RealTimeChartProps) {
   const priceChartContainerRef = useRef<HTMLDivElement>(null);
   const volumeChartContainerRef = useRef<HTMLDivElement>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
   const priceChartRef = useRef<IChartApi | null>(null);
   const volumeChartRef = useRef<IChartApi | null>(null);
   const priceSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
@@ -35,6 +38,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
   const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const panSyncingRef = useRef<boolean>(false); // 줌/드래그 동기화용
   const crosshairSyncingRef = useRef<boolean>(false); // 크로스헤어 동기화용
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   const [selectedPeriod, setSelectedPeriod] = useState<string>('일');
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
@@ -42,6 +46,12 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
   const [volume, setVolume] = useState<number | null>(null);
   const [candleData, setCandleData] = useState<CandleData[]>([]);
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
+
+  // API 연동 모드 전환 (개발 중 편의를 위한 분기)
+  const USE_API_DATA = false; // true: API 데이터 사용, false: 시뮬레이션 데이터 사용
+
+  // API에서 차트 데이터 가져오기
+  const { data: chartApiData, isLoading, error } = useStockChartData(stockCode, USE_API_DATA);
 
   // 종목별 초기 가격 설정
   const getInitialPrice = (code: string) => {
@@ -162,12 +172,23 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
     }
   }, [realtimeData]);
 
+  // 차트 크기 동기화 함수
+  const resizeCharts = () => {
+    if (!chartContainerRef.current || !priceChartRef.current || !volumeChartRef.current) return;
+
+    // 차트 컨테이너의 실제 클라이언트 너비 사용 (padding 제외)
+    const containerWidth = chartContainerRef.current.clientWidth;
+
+    priceChartRef.current.applyOptions({ width: containerWidth });
+    volumeChartRef.current.applyOptions({ width: containerWidth });
+  };
+
   // 차트 초기화
   useEffect(() => {
-    if (!priceChartContainerRef.current || !volumeChartContainerRef.current) return;
+    if (!priceChartContainerRef.current || !volumeChartContainerRef.current || !chartContainerRef.current) return;
 
-    // 두 차트의 width를 완전히 동일하게 설정
-    const containerWidth = priceChartContainerRef.current.clientWidth || 800;
+    // 초기 차트 컨테이너 크기 계산
+    const containerWidth = chartContainerRef.current.clientWidth || 800;
     const priceHeight = priceChartContainerRef.current.clientHeight || 240;
     const volumeHeight = volumeChartContainerRef.current.clientHeight || 160;
 
@@ -185,12 +206,14 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
         horzLines: { color: '#f0f0f0' },
       },
       rightPriceScale: {
+        visible: true,
         borderColor: '#cccccc',
         scaleMargins: { top: 0.1, bottom: 0.1 },
+        minimumWidth: 80,
       },
       timeScale: {
         visible: false,
-        rightOffset: 12,
+        rightOffset: 36, // timeScale 높이(약 24px) 보정
         barSpacing: 6,
         minBarSpacing: 0.5,
         shiftVisibleRangeOnNewBar: false,
@@ -234,8 +257,10 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
         horzLines: { color: '#f0f0f0' },
       },
       rightPriceScale: {
+        visible: true,
         borderColor: '#cccccc',
         scaleMargins: { top: 0.1, bottom: 0.1 },
+        minimumWidth: 80,
       },
       timeScale: {
         visible: true,
@@ -309,7 +334,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
               mode: CrosshairMode.Normal,
               vertLine: { width: 1, color: '#9598A1', style: 0 },
               horzLine: { width: 1, color: '#9598A1', style: 0 },
-            }
+            },
           });
         } else {
           // 수직선만 (비활성 차트)
@@ -318,7 +343,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
               mode: CrosshairMode.Normal,
               vertLine: { width: 1, color: '#9598A1', style: 0 },
               horzLine: { visible: false },
-            }
+            },
           });
         }
         chart.setCrosshairPosition(dataPoint.value, dataPoint.time, series);
@@ -364,9 +389,23 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
       panSyncingRef.current = false;
     });
 
+    // ResizeObserver 설정
+    if (chartContainerRef.current) {
+      resizeObserverRef.current = new ResizeObserver(() => {
+        resizeCharts();
+      });
+      resizeObserverRef.current.observe(chartContainerRef.current);
+    }
+
     return () => {
       priceChart.remove();
       volumeChart.remove();
+
+      // ResizeObserver 정리
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      }
     };
   }, []);
 
@@ -387,11 +426,41 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
     }
   }, [candleData, volumeData]);
 
-  // 시뮬레이션 시작
+  // API 데이터를 차트 데이터로 변환
   useEffect(() => {
-    const basePrice = getInitialPrice(stockCode);
-    generateHistoricalData(basePrice);
-  }, [stockCode]);
+    if (USE_API_DATA && chartApiData) {
+      const { candleData, volumeData, summary } = transformChartData(chartApiData);
+
+      setCandleData(candleData);
+      setVolumeData(volumeData);
+
+      // 현재 가격 정보 설정
+      const currentPrice = Number(summary.currentPrice);
+      const priceChange = Number(summary.priceChange);
+      const changeRate = Number(summary.changeRate);
+
+      setCurrentPrice(currentPrice);
+      setPriceChange({
+        amount: priceChange,
+        rate: changeRate,
+      });
+
+      if (onPriceUpdate) {
+        onPriceUpdate(currentPrice, {
+          amount: priceChange,
+          rate: changeRate,
+        });
+      }
+    }
+  }, [USE_API_DATA, chartApiData, onPriceUpdate]);
+
+  // 시뮬레이션 시작 (API 모드가 아닐 때만)
+  useEffect(() => {
+    if (!USE_API_DATA) {
+      const basePrice = getInitialPrice(stockCode);
+      generateHistoricalData(basePrice);
+    }
+  }, [USE_API_DATA, stockCode]);
 
   const periods = ['일', '주', '월', '년'];
 
@@ -413,7 +482,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
       </div>
 
       {/* 차트 컨테이너 */}
-      <div className={styles.chartContainer}>
+      <div ref={chartContainerRef} className={styles.chartContainer}>
         <div ref={priceChartContainerRef} className={styles.priceChart} />
         <div ref={volumeChartContainerRef} className={styles.volumeChart} />
       </div>

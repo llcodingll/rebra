@@ -1,5 +1,4 @@
 import { useState, React } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { Check, TrendingUp, Calendar, Layers3 } from 'lucide-react';
 import styles from './PortfolioSelectionModal.module.css';
 
@@ -50,24 +49,17 @@ export default function PortfolioSelectionModal({ isOpen, onClose, onSelect, por
     });
   };
 
+  if (!isOpen) return null;
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className={styles.backdrop}
-          onClick={handleBackdropClick}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", duration: 0.5 }}
-            className={styles.modal}
-            onClick={(e) => e.stopPropagation()}
-          >
+    <div
+      className={styles.backdrop}
+      onClick={handleBackdropClick}
+    >
+      <div
+        className={styles.modal}
+        onClick={(e) => e.stopPropagation()}
+      >
             {/* Header */}
             <div className={styles.header}>
               <h2 className={styles.title}>포트폴리오 선택</h2>
@@ -77,12 +69,9 @@ export default function PortfolioSelectionModal({ isOpen, onClose, onSelect, por
             {/* Portfolio Grid */}
             <div className={styles.portfolioGrid}>
               <div className={styles.gridContainer}>
-                {portfolios.map((portfolio, index) => (
-                  <motion.div
+                {portfolios.map((portfolio) => (
+                  <div
                     key={portfolio.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
                     className={`${styles.portfolioCard} ${
                       selectedPortfolioId === portfolio.id ? styles.selected : ''
                     }`}
@@ -100,25 +89,15 @@ export default function PortfolioSelectionModal({ isOpen, onClose, onSelect, por
                           </p>
                         )}
                       </div>
-                      <motion.div
-                        initial={false}
-                        animate={{
-                          scale: selectedPortfolioId === portfolio.id ? 1 : 0.9,
-                        }}
+                      <div
                         className={`${styles.checkbox} ${
                           selectedPortfolioId === portfolio.id ? styles.checked : ''
                         }`}
                       >
                         {selectedPortfolioId === portfolio.id && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: "spring", duration: 0.3 }}
-                          >
-                            <Check className={styles.checkIcon} />
-                          </motion.div>
+                          <Check className={styles.checkIcon} />
                         )}
-                      </motion.div>
+                      </div>
                     </div>
 
                     {/* Performance */}
@@ -150,7 +129,7 @@ export default function PortfolioSelectionModal({ isOpen, onClose, onSelect, por
                         </div>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -188,9 +167,7 @@ export default function PortfolioSelectionModal({ isOpen, onClose, onSelect, por
                 </button>
               </div>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </div>
+        </div>
   );
 }

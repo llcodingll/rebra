@@ -30,35 +30,30 @@ public class PortfolioStock extends BaseEntity {
     @JoinColumn(name = "portfolio_id", nullable = false)
     private Portfolio portfolio;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "stock_id", nullable = false)
-    private Stock stock;
+    @Column(name = "stock_code", nullable = false)
+    private String stockCode;
 
-    @Column(name = "target_weight", nullable = false)
+    @Column(name = "target_weight")
     private BigDecimal targetWeight;
 
-    @Column(name = "threshold_percentage", nullable = false)
+    @Column(name = "threshold_percentage")
     private BigDecimal thresholdPercentage;
 
-    @Column(name = "min_weight", nullable = false)
-    private BigDecimal minWeight;
-
-    @Column(name = "max_weight", nullable = false)
-    private BigDecimal maxWeight;
-
-    @Column(nullable = false)
+    @Column
     private String status;
 
     @Builder
-    public PortfolioStock(Portfolio portfolio, Stock stock, BigDecimal targetWeight,
-                          BigDecimal thresholdPercentage, BigDecimal minWeight,
-                          BigDecimal maxWeight, String status) {
+    public PortfolioStock(Portfolio portfolio, String stockCode, BigDecimal targetWeight,
+                          BigDecimal thresholdPercentage, String status) {
         this.portfolio = portfolio;
-        this.stock = stock;
+        this.stockCode = stockCode;
         this.targetWeight = targetWeight;
         this.thresholdPercentage = thresholdPercentage;
-        this.minWeight = minWeight;
-        this.maxWeight = maxWeight;
         this.status = status;
+    }
+
+    public void updateSettings(BigDecimal targetWeight, BigDecimal thresholdPercentage) {
+        this.targetWeight = targetWeight;
+        this.thresholdPercentage = thresholdPercentage;
     }
 }

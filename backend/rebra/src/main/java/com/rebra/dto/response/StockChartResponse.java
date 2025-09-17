@@ -1,12 +1,11 @@
 package com.rebra.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Getter
 @Builder
@@ -14,12 +13,6 @@ import java.util.List;
 @AllArgsConstructor
 @Schema(description = "주식 차트 데이터 응답")
 public class StockChartResponse {
-
-    @Schema(description = "종목코드", example = "005930")
-    private String stockCode;
-
-    @Schema(description = "종목명", example = "삼성전자")
-    private String stockName;
 
     @Schema(description = "차트 기간 타입", example = "D")
     private String periodType;
@@ -107,6 +100,30 @@ public class StockChartResponse {
 
         @Schema(description = "PBR", example = "0.8")
         private String pbr;
+
+        @Schema(description = "전일 종가", example = "70000")
+        private String previousClosePrice;
+
+        @Schema(description = "상한가", example = "91000")
+        private String upperLimit;
+
+        @Schema(description = "하한가", example = "49000")
+        private String lowerLimit;
+
+        @Schema(description = "매도호가", example = "71100")
+        private String askPrice;
+
+        @Schema(description = "매수호가", example = "70900")
+        private String bidPrice;
+
+        @Schema(description = "EPS", example = "5680")
+        private String eps;
+
+        @Schema(description = "상장주수", example = "5969782550")
+        private String listedShares;
+
+        @Schema(description = "자본금", example = "778047")
+        private String capital;
     }
 
     @Schema(description = "차트 기간 타입 열거형")
