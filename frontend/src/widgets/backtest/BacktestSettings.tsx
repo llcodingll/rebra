@@ -15,6 +15,7 @@ interface BacktestSettingsProps {
   onRunBacktest: () => void;
   isRunDisabled: boolean;
   onNavigateToBacktestList?: () => void;
+  isCreating?: boolean;
 }
 
 export default function BacktestSettings({
@@ -27,7 +28,8 @@ export default function BacktestSettings({
   setEndDate,
   onRunBacktest,
   isRunDisabled,
-  onNavigateToBacktestList
+  onNavigateToBacktestList,
+  isCreating
 }: BacktestSettingsProps) {
   const { confirmState, showConfirm, hideConfirm } = useConfirmModal();
   // 현재 날짜 정보
@@ -216,7 +218,7 @@ export default function BacktestSettings({
         disabled={isRunDisabled}
       >
         <Play className={styles.runIcon} />
-        백테스트 실행
+        {isCreating ? '백테스트 생성 중...' : '백테스트 실행'}
       </button>
 
       <ConfirmModal

@@ -30,6 +30,9 @@ interface CumulativeReturnsChartProps {
   chartMax: number;
   chartRange: number;
   yAxisLabels: string[];
+  portfolioFinalReturn?: number;
+  buyHoldFinalReturn?: number;
+  kospiFinalReturn?: number;
 }
 
 export default function CumulativeReturnsChart({
@@ -40,7 +43,10 @@ export default function CumulativeReturnsChart({
   chartMin,
   chartMax,
   chartRange,
-  yAxisLabels
+  yAxisLabels,
+  portfolioFinalReturn,
+  buyHoldFinalReturn,
+  kospiFinalReturn
 }: CumulativeReturnsChartProps) {
   const [hoveredPoint, setHoveredPoint] = useState<TooltipData | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
@@ -226,17 +232,32 @@ export default function CumulativeReturnsChart({
           <div className={styles.legendItem}>
             <div className={`${styles.legendDot} ${styles.portfolio}`}></div>
             <span>리밸런싱 전략</span>
-            <span className={styles.legendValue}>+35.2%</span>
+            <span className={styles.legendValue}>
+              {portfolioFinalReturn !== undefined
+                ? `${portfolioFinalReturn >= 0 ? '+' : ''}${portfolioFinalReturn.toFixed(1)}%`
+                : '+0.0%'
+              }
+            </span>
           </div>
           <div className={styles.legendItem}>
             <div className={`${styles.legendDot} ${styles.buyhold}`}></div>
             <span>Buy & Hold</span>
-            <span className={styles.legendValue}>+28.9%</span>
+            <span className={styles.legendValue}>
+              {buyHoldFinalReturn !== undefined
+                ? `${buyHoldFinalReturn >= 0 ? '+' : ''}${buyHoldFinalReturn.toFixed(1)}%`
+                : '+0.0%'
+              }
+            </span>
           </div>
           <div className={styles.legendItem}>
             <div className={`${styles.legendDot} ${styles.kospi}`}></div>
             <span>KOSPI</span>
-            <span className={styles.legendValue}>+22.1%</span>
+            <span className={styles.legendValue}>
+              {kospiFinalReturn !== undefined
+                ? `${kospiFinalReturn >= 0 ? '+' : ''}${kospiFinalReturn.toFixed(1)}%`
+                : '+0.0%'
+              }
+            </span>
           </div>
         </div>
       </div>

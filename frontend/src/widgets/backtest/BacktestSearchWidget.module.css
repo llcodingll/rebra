@@ -97,7 +97,6 @@
   gap: 12px;
 }
 
-.createFromPortfolio,
 .createDirect {
   flex: 1;
   background: #f8f9fb;
@@ -115,7 +114,6 @@
   gap: 8px;
 }
 
-.createFromPortfolio:hover,
 .createDirect:hover {
   background: #030213;
   color: white;

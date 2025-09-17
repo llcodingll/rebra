@@ -1,16 +1,23 @@
 import { motion } from 'motion/react';
 import { Info } from 'lucide-react';
 import styles from './MonthlyRebalancing.module.css';
+import type { BacktestResultResponse } from '../../features/backtest/api/backtestApi';
 
 interface MonthlyRebalancingProps {
-  rebalancingData?: number[];
-  averageRebalancing?: number;
+  backtestResult?: BacktestResultResponse;
 }
 
-export default function MonthlyRebalancing({
-  rebalancingData = [4, 2, 6, 3, 1, 2, 3, 4, 5, 2, 1, 3],
-  averageRebalancing = 3.0,
-}: MonthlyRebalancingProps) {
+export default function MonthlyRebalancing({ backtestResult }: MonthlyRebalancingProps) {
+  // 실제 백테스트 데이터에서 리밸런싱 정보 추출
+  // details가 없으면 기본 데이터 사용
+  const rebalancingData = backtestResult?.details && backtestResult.details.length > 0
+    ? backtestResult.details.map(() => 1) // details 기반으로 데이터 생성 (실제 구현 시 수정 필요)
+    : [1, 2, 1, 3, 2, 1, 2, 1, 3, 2, 1, 2]; // 기본값
+
+  const totalRebalancing = backtestResult?.summary?.rebalancingCount || 0;
+  const averageRebalancing = rebalancingData.length > 0
+    ? totalRebalancing / rebalancingData.length
+    : 0;
   const maxValue = Math.max(...rebalancingData);
   const chartHeight = 100; // 차트 영역 높이 (px)
 

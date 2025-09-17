@@ -137,13 +137,9 @@
 .headerRow th:nth-child(1) { width: 200px; } /* 전략명 */
 .headerRow th:nth-child(2) { width: 100px; } /* 실행일자 */
 .headerRow th:nth-child(3) { width: 140px; } /* 분석기간 */
-.headerRow th:nth-child(4) { width: 130px; } /* 누적수익률 */
-.headerRow th:nth-child(5) { width: 110px; } /* 최대낙폭 */
-.headerRow th:nth-child(6) { width: 80px; } /* 샤프지수 */
-.headerRow th:nth-child(7) { width: 80px; } /* 변동성 */
-.headerRow th:nth-child(8) { width: 60px; } /* 승률 */
-.headerRow th:nth-child(9) { width: 80px; text-align: center; } /* 상태 */
-.headerRow th:nth-child(10) { width: 60px; text-align: center; } /* 관리 */
+.headerRow th:nth-child(4) { width: 200px; } /* 백테스트 기간 */
+.headerRow th:nth-child(5) { width: 80px; text-align: center; } /* 상태 */
+.headerRow th:nth-child(6) { width: 60px; text-align: center; } /* 관리 */
 
 /* Empty state */
 .emptyState {

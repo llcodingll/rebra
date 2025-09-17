@@ -29,6 +29,8 @@ interface StockSearchProps {
   onAddToPortfolio: (stock: Stock) => void;
   startDate?: string;
   endDate?: string;
+  isLoading?: boolean;
+  searchError?: Error | null;
 }
 
 export default function StockSearch({
@@ -38,7 +40,9 @@ export default function StockSearch({
   portfolioItems,
   onAddToPortfolio,
   startDate,
-  endDate
+  endDate,
+  isLoading,
+  searchError
 }: StockSearchProps) {
   const isSearchEnabled = startDate && endDate;
   return (
@@ -72,39 +76,61 @@ export default function StockSearch({
       </div>
 
       <div className={`${styles.stockList} ${!isSearchEnabled ? styles.disabled : ''}`}>
-        {isSearchEnabled ? filteredStocks.map((stock, index) => (
-          <div
-            key={stock.code}
-            className={styles.stockItem}
-          >
-            <div className={styles.stockInfo}>
-              <div className={styles.stockHeader}>
-                <span className={styles.stockName}>{stock.name}</span>
-                <span className={styles.stockCode}>{stock.code}</span>
-              </div>
-              <div className={styles.stockPrice}>
-                <span className={styles.price}>{stock.price}</span>
-              </div>
-              <div className={styles.stockDetails}>
-                <span>거래량: {stock.volume}</span>
-              </div>
-            </div>
-
-            <button
-              className={`${styles.addButton} ${
-                portfolioItems.some(item => item.code === stock.code) ? styles.added : ''
-              }`}
-              onClick={() => onAddToPortfolio(stock)}
-              disabled={portfolioItems.some(item => item.code === stock.code)}
-            >
-              <Plus className={styles.addIcon} />
-              {portfolioItems.some(item => item.code === stock.code) ? '추가됨' : '추가'}
-            </button>
-          </div>
-        )) : (
+        {!isSearchEnabled ? (
           <div className={styles.emptyState}>
             <p>백테스트 기간을 설정하면 해당 기간의 주식 데이터를 검색할 수 있습니다.</p>
           </div>
+        ) : isLoading ? (
+          <div className={styles.emptyState}>
+            <p>검색 중...</p>
+          </div>
+        ) : searchError ? (
+          <div className={styles.emptyState}>
+            <p>검색 중 오류가 발생했습니다: {searchError.message}</p>
+          </div>
+        ) : !searchTerm.trim() ? (
+          <div className={styles.emptyState}>
+            <p>종목명 또는 종목코드를 입력해주세요.</p>
+          </div>
+        ) : filteredStocks.length === 0 ? (
+          <div className={styles.emptyState}>
+            <p>검색 결과가 없습니다.</p>
+          </div>
+        ) : (
+          filteredStocks.map((stock, index) => {
+            const isAdded = portfolioItems.some(item => item.code === stock.code);
+            return (
+              <div
+                key={stock.code}
+                className={styles.stockItem}
+              >
+                <div className={styles.stockInfo}>
+                  <div className={styles.stockHeader}>
+                    <span className={styles.stockName}>{stock.name}</span>
+                    <span className={styles.stockCode}>{stock.code}</span>
+                  </div>
+                  <div className={styles.stockPrice}>
+                    <span className={styles.price}>{stock.price}</span>
+                    <span className={`${styles.change} ${styles[stock.changeType]}`}>
+                      {stock.change}
+                    </span>
+                  </div>
+                  <div className={styles.stockDetails}>
+                    <span>거래량: {stock.volume}</span>
+                  </div>
+                </div>
+
+                <button
+                  className={`${styles.addButton} ${isAdded ? styles.added : ''}`}
+                  onClick={() => onAddToPortfolio(stock)}
+                  disabled={isAdded}
+                >
+                  <Plus className={styles.addIcon} />
+                  {isAdded ? '추가됨' : '추가'}
+                </button>
+              </div>
+            );
+          })
         )}
       </div>
     </motion.div>
