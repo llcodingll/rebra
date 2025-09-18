@@ -36,6 +36,15 @@ export default function MyPortfolio({
   calculateValue,
   rebalancingType = 'THRESHOLD'
 }: MyPortfolioProps) {
+
+  // 억 단위 이상 간소화 포맷팅
+  const formatCompactPrice = (price: number): string => {
+    if (price >= 100000000) { // 1억 이상
+      const eok = price / 100000000;
+      return `${eok.toFixed(1)}억원`;
+    }
+    return formatPrice(price);
+  };
   const [warningVisible, setWarningVisible] = useState<{ [key: string]: boolean }>({});
   const [tooltipPosition, setTooltipPosition] = useState<{ [key: string]: { x: number; y: number } }>({});
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
@@ -184,13 +193,15 @@ export default function MyPortfolio({
                     type="number"
                     value={item.quantity}
                     onChange={(e) => {
+                      const value = parseInt(e.target.value) || 0;
+                      const limitedValue = Math.min(Math.max(value, 1), 9999); // 1~9999 사이로 제한
                       const newItems = [...portfolioItems];
-                      newItems[index].quantity = parseInt(e.target.value) || 0;
+                      newItems[index].quantity = limitedValue;
                       setPortfolioItems(newItems);
-
                     }}
                     className={styles.numberInput}
                     min="1"
+                    max="9999"
                   />
                   <span className={styles.unit}>주</span>
                 </div>
@@ -215,7 +226,7 @@ export default function MyPortfolio({
                 </div>
                 <div className={styles.tableCell}>
                   <span className={styles.valueText}>
-                    {formatPrice(calculateValue(item.buyPrice, item.quantity))}
+                    {formatCompactPrice(calculateValue(item.buyPrice, item.quantity))}
                   </span>
                 </div>
                 {rebalancingType === 'THRESHOLD' && (
@@ -280,7 +291,7 @@ export default function MyPortfolio({
             <div className={styles.summaryItem}>
               <span>총 평가금액:</span>
               <span className={styles.summaryValue}>
-                {totalValue.toLocaleString()}원
+                {formatCompactPrice(totalValue)}
               </span>
             </div>
             <div className={styles.summaryItem}>

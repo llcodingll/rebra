@@ -47,14 +47,23 @@ export default function ResultsHeader({
     ? Math.round(backtestResult.summary.finalValue / (1 + backtestResult.summary.totalReturn))
     : 0;
 
+  // 억 단위 이상 간소화 포맷팅
+  const formatCompactPrice = (price: number): string => {
+    if (price >= 100000000) { // 1억 이상
+      const eok = price / 100000000;
+      return `${eok.toFixed(1)}억원`;
+    }
+    return `${price.toLocaleString()}원`;
+  };
+
   const summaryCards: SummaryCardData[] = backtestResult?.summary ? [
     {
       label: '초기 자본',
-      value: `${initialCapital.toLocaleString()}원`
+      value: formatCompactPrice(initialCapital)
     },
     {
       label: '최종 평가액',
-      value: `${backtestResult.summary.finalValue.toLocaleString()}원`,
+      value: formatCompactPrice(backtestResult.summary.finalValue),
       highlight: true
     },
     {

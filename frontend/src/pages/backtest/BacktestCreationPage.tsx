@@ -138,8 +138,38 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
     onSuccess: (result) => {
       if (result.success) {
         console.log('생성된 백테스트 ID:', result.data);
-        // 백테스트 목록 캐시 무효화하여 새로 생성된 데이터가 바로 보이도록 함
-        queryClient.invalidateQueries({ queryKey: ['backtestList'] });
+
+        // 새로 생성된 백테스트 데이터 구성
+        const newBacktest = {
+          id: result.data,
+          testName: backtestName,
+          startDate,
+          endDate,
+          rebalancingType: rebalancingType,
+          status: 'PROCESSING',
+          createdAt: new Date().toISOString()
+        };
+
+        // 첫 페이지 캐시에 새 항목 추가 (즉시 반영)
+        const firstPageKey = ['backtestList', 0, 10]; // 첫 페이지 키
+        queryClient.setQueryData(firstPageKey, (oldData: any) => {
+          if (oldData) {
+            return {
+              ...oldData,
+              content: [newBacktest, ...oldData.content.slice(0, 9)], // 맨 앞에 추가, 기존 항목은 9개만
+              totalElements: oldData.totalElements + 1
+            };
+          }
+          return oldData;
+        });
+
+        // 백테스트 목록 캐시 무효화하여 서버 데이터와 동기화 (즉시 refetch)
+        queryClient.invalidateQueries({
+          queryKey: ['backtestList'],
+          exact: false,
+          refetchType: 'active' // 활성 쿼리만 즉시 refetch
+        });
+
         // 성공 시 백테스트 목록 페이지로 이동
         navigate('/backtest');
       } else {
