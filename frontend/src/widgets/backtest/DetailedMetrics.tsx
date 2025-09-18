@@ -47,6 +47,25 @@ export default function DetailedMetrics({ backtestResult }: DetailedMetricsProps
       label: '거래 비용',
       value: `-${(backtestResult.summary.totalFee || 0).toLocaleString()}원`,
       isNegative: true
+    },
+    {
+      label: '대출 비용',
+      value: `-${(backtestResult.summary.totalBorrowingCost || 0).toLocaleString()}원`,
+      isNegative: true
+    },
+    {
+      label: '초과 수익률',
+      value: `${backtestResult.summary.excessReturnPercentage?.toFixed(2) || 0}%`,
+      isNegative: (backtestResult.summary.excessReturnPercentage || 0) < 0
+    },
+    {
+      label: '최대 대출금액',
+      value: `${(backtestResult.summary.maxBorrowingAmount || 0).toLocaleString()}원`
+    },
+    {
+      label: '최소 현금잔고',
+      value: `${(backtestResult.summary.minCashBalance || 0).toLocaleString()}원`,
+      isNegative: (backtestResult.summary.minCashBalance || 0) < 0
     }
   ] : [
     { label: 'CAGR', value: '데이터 없음' },
@@ -55,7 +74,11 @@ export default function DetailedMetrics({ backtestResult }: DetailedMetricsProps
     { label: '샤프 비율', value: '데이터 없음' },
     { label: '총 수익률', value: '데이터 없음' },
     { label: '리밸런싱 횟수', value: '데이터 없음' },
-    { label: '거래 비용', value: '데이터 없음' }
+    { label: '거래 비용', value: '데이터 없음' },
+    { label: '대출 비용', value: '데이터 없음' },
+    { label: '초과 수익률', value: '데이터 없음' },
+    { label: '최대 대출금액', value: '데이터 없음' },
+    { label: '최소 현금잔고', value: '데이터 없음' }
   ];
   return (
     <motion.div

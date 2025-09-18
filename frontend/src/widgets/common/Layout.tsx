@@ -16,9 +16,9 @@ export default function Layout() {
     return 'dashboard';
   }, [location.pathname]);
 
-  // 백테스트 페이지에서만 스크롤 맨 위로 이동
+  // 페이지 간 이동 시에만 스크롤 맨 위로 이동 (같은 페이지 내 상태 변경 제외)
   useLayoutEffect(() => {
-    if (location.pathname.startsWith('/backtest')) {
+    const scrollToTop = () => {
       window.scrollTo({ top: 0, behavior: 'instant' });
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
@@ -28,24 +28,10 @@ export default function Layout() {
 
       const main = document.querySelector('main');
       if (main) main.scrollTop = 0;
-    }
-  }, [location.pathname]);
+    };
 
-  useEffect(() => {
-    if (location.pathname.startsWith('/backtest')) {
-      const timer = setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'instant' });
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-
-        const root = document.getElementById('root');
-        if (root) root.scrollTop = 0;
-
-        const main = document.querySelector('main');
-        if (main) main.scrollTop = 0;
-      }, 100);
-      return () => clearTimeout(timer);
-    }
+    // 실제 페이지 경로가 변경될 때만 스크롤 (쿼리 파라미터나 해시 변경 제외)
+    scrollToTop();
   }, [location.pathname]);
 
   const handleTabChange = (tab: DashboardTab) => {

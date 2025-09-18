@@ -7,6 +7,8 @@ import styles from './BacktestSettings.module.css';
 interface BacktestSettingsProps {
   backtestName: string;
   setBacktestName: (name: string) => void;
+  rebalancingType: 'THRESHOLD' | 'PERIODIC';
+  setRebalancingType: (type: 'THRESHOLD' | 'PERIODIC') => void;
   rebalancingPeriod: string;
   startDate: string;
   setStartDate: (date: string) => void;
@@ -16,11 +18,14 @@ interface BacktestSettingsProps {
   isRunDisabled: boolean;
   onNavigateToBacktestList?: () => void;
   isCreating?: boolean;
+  portfolioCount?: number;
 }
 
 export default function BacktestSettings({
   backtestName,
   setBacktestName,
+  rebalancingType,
+  setRebalancingType,
   rebalancingPeriod,
   startDate,
   setStartDate,
@@ -29,7 +34,8 @@ export default function BacktestSettings({
   onRunBacktest,
   isRunDisabled,
   onNavigateToBacktestList,
-  isCreating
+  isCreating,
+  portfolioCount = 0
 }: BacktestSettingsProps) {
   const { confirmState, showConfirm, hideConfirm } = useConfirmModal();
   // 현재 날짜 정보
@@ -77,13 +83,41 @@ export default function BacktestSettings({
   const isNonTradingDay = (dateStr: string) => {
     return isWeekend(dateStr) || isHoliday(dateStr);
   };
-  
+
   // 다음 날 계산 함수
   const getNextDay = (dateStr: string) => {
     if (!dateStr) return "";
     const date = new Date(dateStr);
     date.setDate(date.getDate() + 1);
     return date.toISOString().split('T')[0];
+  };
+
+  // 백테스트 기간 검증 (최소 30일)
+  const validatePeriod = () => {
+    if (!startDate || !endDate) return { isValid: true, daysDiff: 0 };
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = end.getTime() - start.getTime();
+    const daysDiff = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return {
+      isValid: daysDiff >= 30,
+      daysDiff
+    };
+  };
+
+  const periodValidation = validatePeriod();
+
+  // 실행 버튼 상태 메시지 생성
+  const getButtonMessage = () => {
+    if (isCreating) return '백테스트 생성 중...';
+    if (!backtestName) return '테스트 이름을 입력하세요';
+    if (!startDate) return '시작 날짜를 설정하세요';
+    if (!endDate) return '종료 날짜를 설정하세요';
+    if (!periodValidation.isValid) return '최소 30일 이상 설정하세요';
+    if (portfolioCount === 0) return '종목을 추가하세요';
+    return '백테스트 실행';
   };
 
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,9 +189,32 @@ export default function BacktestSettings({
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="rebalancing-period">리밸런싱 주기</label>
-          <div className={styles.fixedValue}>
-            <span>{rebalancingPeriod}</span>
+          <label htmlFor="rebalancing-type">리밸런싱 방식</label>
+          <div className={styles.radioGroup}>
+            <label className={styles.radioOption}>
+              <input
+                type="radio"
+                name="rebalancingType"
+                value="THRESHOLD"
+                checked={rebalancingType === 'THRESHOLD'}
+                onChange={(e) => setRebalancingType(e.target.value as 'THRESHOLD' | 'PERIODIC')}
+                className={styles.radioInput}
+              />
+              <span className={styles.radioLabel}>임계값 기반</span>
+              <span className={styles.radioDescription}>목표 비중 대비 임계값 초과 시 리밸런싱</span>
+            </label>
+            <label className={styles.radioOption}>
+              <input
+                type="radio"
+                name="rebalancingType"
+                value="PERIODIC"
+                checked={rebalancingType === 'PERIODIC'}
+                onChange={(e) => setRebalancingType(e.target.value as 'THRESHOLD' | 'PERIODIC')}
+                className={styles.radioInput}
+              />
+              <span className={styles.radioLabel}>주기적 (월간)</span>
+              <span className={styles.radioDescription}>매월 말 정기적으로 리밸런싱</span>
+            </label>
           </div>
         </div>
 
@@ -199,11 +256,11 @@ export default function BacktestSettings({
               className={styles.dateInput}
             />
             <div className={styles.warningContainer}>
-              {endDate && isNonTradingDay(endDate) && (
+              {startDate && endDate && !periodValidation.isValid && (
                 <div className={styles.warningMessage}>
                   <AlertTriangle className={styles.warningIcon} />
                   <span>
-                    {isWeekend(endDate) ? '주말' : '공휴일'}은 거래일이 아닙니다. 데이터 검색이 제한될 수 있습니다.
+                    백테스트 기간이 너무 짧습니다. 최소 30일 이상 설정해주세요. (현재: {periodValidation.daysDiff}일)
                   </span>
                 </div>
               )}
@@ -212,14 +269,25 @@ export default function BacktestSettings({
         </div>
       </div>
 
-      <button
-        className={styles.runButton}
-        onClick={handleRunBacktest}
-        disabled={isRunDisabled}
-      >
-        <Play className={styles.runIcon} />
-        {isCreating ? '백테스트 생성 중...' : '백테스트 실행'}
-      </button>
+      <div className={styles.runButtonContainer}>
+        <button
+          className={styles.runButton}
+          onClick={handleRunBacktest}
+          disabled={isRunDisabled || !periodValidation.isValid}
+        >
+          <Play className={styles.runIcon} />
+          {getButtonMessage()}
+        </button>
+        {isRunDisabled && !isCreating && (
+          <p className={styles.runButtonHint}>
+            {!backtestName && '1단계: 테스트 이름을 입력하세요'}
+            {backtestName && !startDate && '2단계: 시작 날짜를 설정하세요'}
+            {backtestName && startDate && !endDate && '3단계: 종료 날짜를 설정하세요'}
+            {backtestName && startDate && endDate && !periodValidation.isValid && '백테스트 기간이 너무 짧습니다 (최소 30일)'}
+            {backtestName && startDate && endDate && periodValidation.isValid && portfolioCount === 0 && '4단계: 왼쪽에서 종목을 검색하여 포트폴리오에 추가하세요'}
+          </p>
+        )}
+      </div>
 
       <ConfirmModal
         isOpen={confirmState.isOpen}
