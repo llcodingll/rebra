@@ -3,19 +3,72 @@ import styles from './ProfitPortfolioChart.module.css';
 import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import DashboardChart from './CumulativeReturnsChart';
 import { useState } from 'react';
-import { rebalancingHistoryData } from '../../mocks/rebalancingHistory';
-import { tradesByRebalanceId } from '../../mocks/rebalancingTrades';
-import { chartApiData } from '../../mocks/chartData';
+import { useApi } from '../../shared/hook/useApi';
+import { portfolioApi } from '../../features/portfolio/api/portfolioApi';
+import { transformRebalancingHistoryToChart, transformRebalancingHistoryToPercents } from '../../features/portfolio/utils/portfolioTransform';
+import HistoryPagination from './HistoryPagination';
 
 import type { Stock } from '../../entities/portfolio';
 
 interface ProfitPortfolioChartProps {
   data: Stock[];
+  portfolioId?: number;
 }
 
 
-export default function ProfitPortfolioChart({ data }: ProfitPortfolioChartProps) {
+export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfolioChartProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // 리밸런싱 히스토리 API 호출 (그래프용)
+  const { data: chartHistoryData, isLoading: isHistoryLoading, error: historyError } = useApi({
+    queryKey: ['rebalancing-history', portfolioId],
+    apiFunction: () => portfolioId ? portfolioApi.getRebalancingHistory(portfolioId) : Promise.reject('No portfolio ID'),
+    enabled: !!portfolioId,
+  });
+
+  // 리밸런싱 히스토리 테이블 API 호출
+  const { data: tableHistoryData, isLoading: isTableLoading, error: tableError } = useApi({
+    queryKey: ['rebalancing-history-table', portfolioId, currentPage, itemsPerPage],
+    apiFunction: () => portfolioId ? portfolioApi.getRebalancingHistoryTable(portfolioId, currentPage - 1, itemsPerPage) : Promise.reject('No portfolio ID'),
+    enabled: !!portfolioId,
+  });
+
+  // 선택된 리밸런싱 상세 조회 API 호출
+  const { data: selectedHistoryDetail, isLoading: isDetailLoading, error: detailError } = useApi({
+    queryKey: ['rebalancing-history-detail', portfolioId, selectedId],
+    apiFunction: () => portfolioId && selectedId ? portfolioApi.getRebalancingHistoryDetail(portfolioId, selectedId) : Promise.reject('No portfolio ID or selected ID'),
+    enabled: !!portfolioId && !!selectedId,
+  });
+
+    // API 데이터 확인용 로깅
+  console.log('===  선택된 리밸런싱 상세 조회 API 데이터 ===' , selectedHistoryDetail);
+
+
+  // API 데이터 확인용 로깅
+  console.log('=== ProfitPortfolioChart API 데이터 ===');
+  console.log('portfolioId:', portfolioId);
+  console.log('isHistoryLoading:', isHistoryLoading);
+  console.log('historyError:', historyError);
+  console.log('chartHistoryData:', chartHistoryData);
+  console.log('chartHistoryData?.data:', chartHistoryData?.data);
+  console.log('실제 사용할 데이터:', chartHistoryData?.data || chartHistoryData);
+
+  // 테이블 데이터 및 페이지네이션 정보 (API 또는 mock 데이터)
+  const historyTableItems = tableHistoryData?.content?.histories || [];
+  const pageInfo = tableHistoryData?.pageInfo;
+  const totalPages = pageInfo?.totalPages || 0;
+
+  console.log('=== 테이블 API 데이터 ===');
+  console.log('tableHistoryData:', tableHistoryData);
+  console.log('historyTableItems:', historyTableItems);
+  console.log('pageInfo:', pageInfo);
+  console.log('totalPages:', totalPages);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   // 등록된 주식이 없는 경우 빈 상태 표시
   if (data.length === 0) {
@@ -30,7 +83,7 @@ export default function ProfitPortfolioChart({ data }: ProfitPortfolioChartProps
           <div className={styles.header}>
             <div className={styles.headerLeft}>
               <DollarSign className={styles.headerIcon} />
-              <h2 className={styles.title}>수익률 분석</h2>
+              <h2 className={styles.title}>히스토리</h2>
             </div>
           </div>
           
@@ -66,32 +119,60 @@ export default function ProfitPortfolioChart({ data }: ProfitPortfolioChartProps
   const totalReturnPercent = ((totalReturn / (totalValue - totalReturn)) * 100).toFixed(1);
   const isPositiveReturn = totalReturn >= 0;
 
-  // import된 mock 데이터 사용
-  const rebalanceHistoryData = rebalancingHistoryData;
-
-  // 현재 선택된 ID의 거래 내역 가져오기
+  // 현재 선택된 ID의 거래 내역 가져오기 (API 데이터 사용)
   const getCurrentTrades = () => {
-    if (!selectedId) return [];
-    console.log('Looking for trades for ID:', selectedId);
-    console.log('Available IDs:', Object.keys(tradesByRebalanceId));
-    const trades = tradesByRebalanceId[selectedId] || [];
-    console.log('Found trades:', trades);
-    return trades;
+    if (!selectedHistoryDetail?.trades) return [];
+    console.log('API 거래 내역:', selectedHistoryDetail.trades);
+    return selectedHistoryDetail.trades;
   };
 
-  // import된 mock 차트 데이터 사용
+  // API 데이터가 로딩 중이거나 없는 경우 처리
+  if (isHistoryLoading) {
+    return (
+      <div className={styles.chartContainer}>
+        <div className={styles.chartCard}>
+          <div className={styles.header}>
+            <div className={styles.headerLeft}>
+              <DollarSign className={styles.headerIcon} />
+              <h2 className={styles.title}>히스토리</h2>
+            </div>
+          </div>
+          <div className={styles.content}>
+            <div>리밸런싱 히스토리를 불러오는 중...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  // 차트 데이터 변환
-  const chartData = chartApiData.map((item) => ({
-    id: item.id,
-    date: new Date(item.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'short' }),
-    cumulativeReturn: item.cumulativeReturn,
-    totalValue: item.totalValue
-  }));
+  if (historyError) {
+    return (
+      <div className={styles.chartContainer}>
+        <div className={styles.chartCard}>
+          <div className={styles.header}>
+            <div className={styles.headerLeft}>
+              <DollarSign className={styles.headerIcon} />
+              <h2 className={styles.title}>히스토리</h2>
+            </div>
+          </div>
+          <div className={styles.content}>
+            <div>리밸런싱 히스토리를 불러오는데 실패했습니다.</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 실제 히스토리 데이터 추출 (API 응답 구조에 따라)
+  const actualHistoryData = chartHistoryData?.data || chartHistoryData || [];
+  console.log('실제 히스토리 데이터:', actualHistoryData);
+
+  // 차트 데이터 변환 (transform 함수 사용)
+  const chartData = transformRebalancingHistoryToChart(actualHistoryData);
 
   // 성과 데이터 계산
-  const portfolioPercents = chartApiData.map((item) => 100 + item.cumulativeReturn);
-  const kospiValues = chartApiData.map((_, i) => 100 + i * 1.8);
+  const portfolioPercents = transformRebalancingHistoryToPercents(actualHistoryData);
+  const kospiValues = actualHistoryData?.map((_, i) => 100 + i * 1.8) || [];
   const kospiPercents = kospiValues;
 
   // 차트 스케일 계산
@@ -133,7 +214,7 @@ export default function ProfitPortfolioChart({ data }: ProfitPortfolioChartProps
         <div className={styles.header}>
           <div className={styles.headerLeft}>
             <DollarSign className={styles.headerIcon} />
-            <h2 className={styles.title}>수익률 분석</h2>
+            <h2 className={styles.title}>히스토리</h2>
           </div>
           <div className={styles.headerBadge}>
             <span>총 {data.length}개 종목</span>
@@ -144,15 +225,15 @@ export default function ProfitPortfolioChart({ data }: ProfitPortfolioChartProps
         <div className={styles.content}>
           {/* 좌측 컬럼 */}
           <div className={styles.leftColumn}>
-            {/* 총 수익률 정보 */}
-            <motion.div 
+            {/* 총 평가액 정보 */}
+            <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               className={styles.totalValueSection}
             >
               <div className={styles.totalValueHeader}>
-                <h3>총 수익률</h3>
+                <h3>총 평가액</h3>
                 <div className={styles.returnIcon}>
                   {isPositiveReturn ? (
                     <TrendingUp className={styles.iconPositive} />
@@ -161,19 +242,19 @@ export default function ProfitPortfolioChart({ data }: ProfitPortfolioChartProps
                   )}
                 </div>
               </div>
-              <div className={styles.amount}>{isPositiveReturn ? '+' : ''}{totalReturnPercent}%</div>
+              <div className={styles.amount}>{totalValue.toLocaleString()}원</div>
               <div className={`${styles.returnInfo} ${isPositiveReturn ? styles.positive : styles.negative}`}>
                 <span className={styles.returnAmount}>
                   {totalReturn >= 0 ? '+' : ''}{totalReturn.toLocaleString()}원
                 </span>
                 <span className={styles.returnPercent}>
-                  (총 평가액: {totalValue.toLocaleString()}원)
+                  ({totalReturn >= 0 ? '+' : ''}{totalReturnPercent}%)
                 </span>
               </div>
             </motion.div>
 
             {/* 거래 내역 */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
@@ -182,32 +263,39 @@ export default function ProfitPortfolioChart({ data }: ProfitPortfolioChartProps
               <h3 className={styles.tradesTitle}>
                 {selectedId ? `거래 내역 (ID: ${selectedId})` : '거래 내역을 보려면 차트나 히스토리를 클릭하세요'}
               </h3>
-              {getCurrentTrades().length > 0 ? (
-                getCurrentTrades().map((trade) => (
-                  <div key={trade.id} className={`${styles.tradeItem} ${trade.tradeType === 'BUY' ? styles.buyTrade : styles.sellTrade}`}>
-                    <div className={styles.tradeHeader}>
-                      <div className={styles.stockInfo}>
-                        <span className={styles.stockName}>{trade.stockName}</span>
-                        <span className={`${styles.tradeTypeBadge} ${trade.tradeType === 'BUY' ? styles.buyBadge : styles.sellBadge}`}>
-                          {trade.tradeType === 'BUY' ? '매수' : '매도'}
-                        </span>
-                      </div>
-                      {trade.tradeType === 'SELL' && (
-                        <div className={styles.tradeResult}>
-                          <span className={trade.profitAmount >= 0 ? styles.profit : styles.loss}>
-                            손익 {trade.profitAmount >= 0 ? '+' : ''}{trade.profitAmount.toLocaleString()}원
-                          </span>
-                          <span className={trade.profitRate >= 0 ? styles.profitRate : styles.lossRate}>
-                            {trade.profitRate >= 0 ? '+' : ''}{trade.profitRate}%
+              {isDetailLoading ? (
+                <div className={styles.noTrades}>거래 내역을 불러오는 중...</div>
+              ) : getCurrentTrades().length > 0 ? (
+                <div className={styles.tradesScrollContainer}>
+                  {getCurrentTrades().map((trade) => (
+                    <div key={trade.tradeId} className={`${styles.tradeItem} ${trade.tradeType === 'BUY' ? styles.buyTrade : styles.sellTrade}`}>
+                      <div className={styles.tradeHeader}>
+                        <div className={styles.stockInfo}>
+                          <span className={styles.stockName}>{trade.stockName}</span>
+                          <span className={`${styles.tradeTypeBadge} ${trade.tradeType === 'BUY' ? styles.buyBadge : styles.sellBadge}`}>
+                            {trade.tradeType === 'BUY' ? '매수' : '매도'}
                           </span>
                         </div>
-                      )}
+                        {trade.tradeType === 'SELL' && (
+                          <div className={styles.tradeResult}>
+                            <span className={trade.profitAmount >= 0 ? styles.profit : styles.loss}>
+                              손익 {trade.profitAmount >= 0 ? '+' : ''}{trade.profitAmount.toLocaleString()}원
+                            </span>
+                            <span className={trade.profitRate >= 0 ? styles.profitRate : styles.lossRate}>
+                              {trade.profitRate >= 0 ? '+' : ''}{trade.profitRate}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <span className={styles.tradeDetail}>
+                        {trade.executedShares}주({(trade.executedShares * trade.price).toLocaleString()}원)
+                      </span>
+                      <div className={styles.tradeReason}>
+                        {trade.reason}
+                      </div>
                     </div>
-                    <span className={styles.tradeDetail}>
-                      {trade.executedShares}주({(trade.executedShares * trade.price).toLocaleString()}원)
-                    </span>
-                  </div>
-                ))
+                  ))}
+                </div>
               ) : selectedId ? (
                 <div className={styles.noTrades}>해당 리밸런싱에 거래 내역이 없습니다.</div>
               ) : (
@@ -257,13 +345,13 @@ export default function ProfitPortfolioChart({ data }: ProfitPortfolioChartProps
               </div>
 
               <div className={styles.historyTableBody}>
-                {rebalanceHistoryData.data.content.map((item) => (
-                  <div 
-                    key={item.id} 
+                {historyTableItems.map((item) => (
+                  <div
+                    key={item.orderId}
                     className={styles.historyRow}
                     onClick={() => {
-                      console.log('History clicked ID:', item.id);
-                      setSelectedId(item.id);
+                      console.log('History clicked ID:', item.orderId);
+                      setSelectedId(item.orderId);
                     }}
                   >
                     <div className={styles.historyCell}>
@@ -285,6 +373,13 @@ export default function ProfitPortfolioChart({ data }: ProfitPortfolioChartProps
                 ))}
               </div>
             </div>
+
+            {/* 페이지네이션 */}
+            <HistoryPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
           </motion.div>
         </div>
         </div>

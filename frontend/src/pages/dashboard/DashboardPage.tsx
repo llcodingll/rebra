@@ -108,7 +108,7 @@ export default function DashboardPage() {
       case 'assets':
         return <AssetPortfolioChart data={registeredStocks} />;
       case 'profit':
-        return <ProfitPortfolioChart data={registeredStocks} />;
+        return <ProfitPortfolioChart data={registeredStocks} portfolioId={selectedPortfolio ? Number(selectedPortfolio.id) : undefined} />;
       default:
         return null;
     }
@@ -168,7 +168,15 @@ export default function DashboardPage() {
             onPortfolioLinkClick={handlePortfolioLinkClick}
           />
 
-          <DashBoardSettingsTab />
+          <DashBoardSettingsTab
+            portfolioId={selectedPortfolio ? Number(selectedPortfolio.id) : undefined}
+            initialAutoRebalancing={portfolioDetailData?.portfolio?.autoRebalance || false}
+            isLoadingSettings={isDetailLoading}
+            onAutoRebalancingChanged={() => {
+              // 자동 리밸런싱 설정 변경 시 포트폴리오 상세 정보 새로고침
+              refetchPortfolioDetail();
+            }}
+          />
 
           {/* 탭 헤더 */}
           <div className={styles.tabHeader}>
@@ -182,7 +190,7 @@ export default function DashboardPage() {
               className={`${styles.tab} ${activeSubTab === 'profit' ? styles.active : ''}`}
               onClick={() => setActiveSubTab('profit')}
             >
-              수익률 현황
+              히스토리
             </button>
           </div>
 

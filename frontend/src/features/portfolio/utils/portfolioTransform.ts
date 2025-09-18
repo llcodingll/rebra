@@ -1,5 +1,5 @@
 import type { Portfolio, Stock } from '../../../entities/portfolio';
-import type { PortfolioItem, PortfolioDetailResponse } from '../api/types';
+import type { PortfolioItem, PortfolioDetailResponse, RebalancingHistoryItem, ChartDataPoint } from '../api/types';
 
 export const transformPortfolioData = (apiPortfolios: PortfolioItem[]): Portfolio[] => {
   return apiPortfolios.map(item => ({
@@ -77,4 +77,51 @@ export const transformPortfolioDetailToStocks = (portfolioDetailData: PortfolioD
   console.log("미등록 주식 개수:", unregisteredStocks.length);
 
   return result;
+};
+
+// 리밸런싱 히스토리를 차트 데이터로 변환
+export const transformRebalancingHistoryToChart = (historyData: RebalancingHistoryItem[]): ChartDataPoint[] => {
+  console.log("=== transformRebalancingHistoryToChart 시작 ===");
+  console.log("입력 데이터:", historyData);
+
+  if (!historyData || historyData.length === 0) {
+    console.log("히스토리 데이터가 없음");
+    return [];
+  }
+
+  const chartData = historyData.map((item, index) => {
+    const transformedItem = {
+      id: item.orderId ?? index, // null인 경우 index를 사용
+      date: new Date(item.executedAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'short' }),
+      cumulativeReturn: Number((item.cumulativeReturn - 100).toFixed(2)) // API는 100 기준, 차트는 0 기준, 소수점 2자리
+    };
+
+    console.log(`${index}번째 항목:`, {
+      원본: item,
+      변환결과: transformedItem
+    });
+
+    return transformedItem;
+  });
+
+  console.log("=== 변환 완료 ===");
+  console.log("최종 차트 데이터:", chartData);
+
+  return chartData;
+};
+
+// 포트폴리오 퍼센트 데이터 변환
+export const transformRebalancingHistoryToPercents = (historyData: RebalancingHistoryItem[]): number[] => {
+  console.log("=== transformRebalancingHistoryToPercents 시작 ===");
+  console.log("입력 데이터:", historyData);
+
+  if (!historyData || historyData.length === 0) {
+    console.log("히스토리 데이터가 없어서 빈 배열 반환");
+    return [];
+  }
+
+  const percents = historyData.map((item) => item.cumulativeReturn);
+  console.log("변환된 퍼센트 데이터:", percents);
+
+  return percents;
 };

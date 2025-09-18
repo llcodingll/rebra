@@ -12,7 +12,12 @@ import type {
   StockDeleteRequest,
   StockDeleteResponse,
   StockUpdateRequest,
-  StockUpdateResponse
+  StockUpdateResponse,
+  RebalancingHistoryResponse,
+  RebalancingHistoryTableResponse,
+  RebalancingHistoryDetailResponse,
+  AutoRebalancingRequest,
+  AutoRebalancingResponse
 } from './types';
 
 class PortfolioApi {
@@ -63,6 +68,42 @@ class PortfolioApi {
     console.log("요청 URL:", `/api/v1/portfolios/${portfolioId}/stocks/batch`);
 
     return this.apiClient.put<StockUpdateResponse>(`/api/v1/portfolios/${portfolioId}/stocks/batch`, requestData);
+  }
+
+  getRebalancingHistory = async (portfolioId: number): Promise<Result<RebalancingHistoryResponse, AppError>> => {
+    console.log("=== 리밸런싱 히스토리 API 요청 ===");
+    console.log("포트폴리오 ID:", portfolioId);
+    console.log("요청 URL:", `/api/v1/portfolios/${portfolioId}/rebalancing-history/all`);
+
+    return this.apiClient.get<RebalancingHistoryResponse>(`/api/v1/portfolios/${portfolioId}/rebalancing-history/all`);
+  }
+
+  getRebalancingHistoryTable = async (portfolioId: number, page: number, size: number): Promise<Result<RebalancingHistoryTableResponse, AppError>> => {
+    console.log("=== 리밸런싱 히스토리 테이블 API 요청 ===");
+    console.log("포트폴리오 ID:", portfolioId);
+    console.log("페이지:", page);
+    console.log("사이즈:", size);
+    console.log("요청 URL:", `/api/v1/portfolios/${portfolioId}/rebalancing-history?page=${page}&size=${size}`);
+
+    return this.apiClient.get<RebalancingHistoryTableResponse>(`/api/v1/portfolios/${portfolioId}/rebalancing-history?page=${page}&size=${size}`);
+  }
+
+  getRebalancingHistoryDetail = async (portfolioId: number, orderId: number): Promise<Result<RebalancingHistoryDetailResponse, AppError>> => {
+    console.log("=== 리밸런싱 히스토리 상세 조회 API 요청 ===");
+    console.log("포트폴리오 ID:", portfolioId);
+    console.log("주문 ID:", orderId);
+    console.log("요청 URL:", `/api/v1/portfolios/${portfolioId}/rebalancing-history/${orderId}`);
+
+    return this.apiClient.get<RebalancingHistoryDetailResponse>(`/api/v1/portfolios/${portfolioId}/rebalancing-history/${orderId}`);
+  }
+
+  setAutoRebalancing = async (portfolioId: number, requestData: AutoRebalancingRequest): Promise<Result<AutoRebalancingResponse, AppError>> => {
+    console.log("=== 자동 리밸런싱 설정 API 요청 ===");
+    console.log("포트폴리오 ID:", portfolioId);
+    console.log("요청 데이터:", requestData);
+    console.log("요청 URL:", `/api/v1/portfolios/${portfolioId}/auto-rebalancing`);
+
+    return this.apiClient.put<AutoRebalancingResponse>(`/api/v1/portfolios/${portfolioId}/auto-rebalancing`, requestData);
   }
 }
 

@@ -123,3 +123,127 @@ export interface StockUpdateResponse {
   errorData?: string;
   timestamp: string;
 }
+
+export interface RebalancingHistoryItem {
+  orderId: number | null;
+  executedAt: string;
+  cumulativeReturn: number;
+}
+
+export interface RebalancingHistoryResponse {
+  success: boolean;
+  status: number;
+  data: RebalancingHistoryItem[];
+  errorCode?: string;
+  errorMessage?: string;
+  errorData?: string;
+  timestamp: string;
+}
+
+export interface ChartDataPoint {
+  id: number;
+  date: string;
+  cumulativeReturn: number;
+}
+
+export interface RebalancingHistoryTableItem {
+  orderId: number;
+  executionType: 'AUTO' | 'MANUAL';
+  totalStocks: number;
+  totalBuyAmount: number;
+  totalSellAmount: number;
+  totalPortfolioValue: number;
+  status: string;
+  executedAt: string;
+}
+
+export interface RebalancingHistorySummary {
+  period: {
+    startDate: string;
+    endDate: string;
+  };
+  totalRebalances: number;
+  totalBuyAmount: number;
+  totalSellAmount: number;
+  autoRebalances: number;
+  manualRebalances: number;
+}
+
+export interface PageInfo {
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+}
+
+export interface RebalancingHistoryTableResponse {
+  success: boolean;
+  status: number;
+  data: {
+    success: boolean;
+    message: string;
+    content: {
+      histories: RebalancingHistoryTableItem[];
+      summary: RebalancingHistorySummary;
+    };
+    pageInfo: PageInfo;
+    timestamp: string;
+  };
+  errorCode?: string;
+  errorMessage?: string;
+  errorData?: string;
+  timestamp: string;
+}
+
+export interface TradeDetail {
+  tradeId: number;
+  stockCode: string;
+  stockName: string;
+  tradeType: string;
+  executedShares: number;
+  price: number;
+  fee: number;
+  profitAmount: number;
+  profitRate: number;
+  reason: string;
+  tradeDate: string;
+}
+
+export interface RebalancingHistoryDetailResponse {
+  success: boolean;
+  status: number;
+  data: {
+    orderId: number;
+    executionType: 'AUTO' | 'MANUAL';
+    executedAt: string;
+    cumulativeReturn: number;
+    totalPortfolioValue: number;
+    trades: TradeDetail[];
+  };
+  errorCode?: string;
+  errorMessage?: string;
+  errorData?: string;
+  timestamp: string;
+}
+
+export interface AutoRebalancingRequest {
+  autoRebalancing: boolean;
+}
+
+export interface AutoRebalancingResponse {
+  success: boolean;
+  status: number;
+  data: {
+    portfolioId: number;
+    name: string;
+    description: string;
+    message: string;
+    updatedAt: string;
+  };
+  errorCode?: string;
+  errorMessage?: string;
+  errorData?: string;
+  timestamp: string;
+}

@@ -103,6 +103,28 @@
   color: #155dfc;
 }
 
+.toggle.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.toggle.loading .toggleTrack {
+  background-color: #e2e8f0;
+}
+
+.toggle.loading .toggleThumb {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 .periodButtons {
   display: flex;
   align-items: center;
