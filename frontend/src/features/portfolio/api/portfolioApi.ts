@@ -10,7 +10,9 @@ import type {
   StockRegisterRequest,
   StockRegisterResponse,
   StockDeleteRequest,
-  StockDeleteResponse
+  StockDeleteResponse,
+  StockUpdateRequest,
+  StockUpdateResponse
 } from './types';
 
 class PortfolioApi {
@@ -52,6 +54,15 @@ class PortfolioApi {
     console.log("요청 URL:", `/api/v1/portfolios/${portfolioId}/stocks`);
 
     return this.apiClient.delete<StockDeleteResponse>(`/api/v1/portfolios/${portfolioId}/stocks`, requestData);
+  }
+
+  updateStocks = async (portfolioId: number, requestData: StockUpdateRequest): Promise<Result<StockUpdateResponse, AppError>> => {
+    console.log("=== 주식 설정 업데이트 API 요청 ===");
+    console.log("포트폴리오 ID:", portfolioId);
+    console.log("요청 데이터:", requestData);
+    console.log("요청 URL:", `/api/v1/portfolios/${portfolioId}/stocks/batch`);
+
+    return this.apiClient.put<StockUpdateResponse>(`/api/v1/portfolios/${portfolioId}/stocks/batch`, requestData);
   }
 }
 

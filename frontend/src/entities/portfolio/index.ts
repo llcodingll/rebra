@@ -11,9 +11,10 @@ export interface Stock {
   profitLoss: number;
   profitLossRate: number;
   type: 'registered' | 'unregistered';
-  targetWeight: number;
-  currentWeight: number;
-  thresholdPercentage: number;
+  targetWeight: number; // 목표 가중치 (서버에서 받은 원본 값)
+  targetPercentage: number; // 목표 비중 (가중치 기반 계산된 %)
+  currentPercentage: number; // 현재 비중 (현재가 기반 계산된 %)
+  thresholdPercentage: number | null;
 }
 
 export interface Portfolio {

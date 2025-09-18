@@ -60,7 +60,7 @@ export interface PortfolioDetailResponse {
     quantity: number;
     currentPrice: number;
     targetWeight: number;
-    thresholdPercentage: number;
+    thresholdPercentage: number | null;
     status: string;
   }>;
   unregisteredStocks: Array<{
@@ -94,5 +94,32 @@ export interface StockDeleteRequest {
 export interface StockDeleteResponse {
   success: boolean;
   status: number;
+  timestamp: string;
+}
+
+export interface StockUpdateRequest {
+  stocks: Array<{
+    stockCode: string;
+    targetWeight: number;
+    thresholdPercentage: number;
+  }>;
+}
+
+export interface StockUpdateResponse {
+  success: boolean;
+  status: number;
+  data: Array<{
+    portfolioStockId: number;
+    portfolioId: number;
+    stockCode: string;
+    stockName: string;
+    targetWeight: number;
+    thresholdPercentage: number;
+    status: string;
+    createdAt: string;
+  }>;
+  errorCode?: string;
+  errorMessage?: string;
+  errorData?: string;
   timestamp: string;
 }

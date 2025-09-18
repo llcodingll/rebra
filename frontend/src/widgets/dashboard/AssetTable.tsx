@@ -14,9 +14,10 @@ interface AssetTableProps {
   portfolioId?: number;
   onStockRegistered?: () => void; // 주식 등록 성공 시 콜백
   onStockRemoved?: () => void; // 주식 삭제 성공 시 콜백
+  onStockSettingsUpdated?: () => void; // 주식 설정 업데이트 성공 시 콜백
 }
 
-export default function AssetTable({ title, type, data, portfolioId, onStockRegistered, onStockRemoved }: AssetTableProps) {
+export default function AssetTable({ title, type, data, portfolioId, onStockRegistered, onStockRemoved, onStockSettingsUpdated }: AssetTableProps) {
   const { isOpen: isStockSettingModalOpen, open: openStockSettingModal, close: closeStockSettingModal } = useModalState();
 
   // 숫자 포맷팅 함수들
@@ -44,7 +45,10 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
     return `(${amount >= 0 ? '+' : ''}${formatNumber(amount)}원)`;
   };
 
-  const formatWeight = (weight: number): string => {
+  const formatWeight = (weight: number | null): string => {
+    if (weight === null || weight === undefined) {
+      return '-';
+    }
     return `${weight.toFixed(1)}%`;
   };
 
@@ -93,9 +97,40 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
     }
   });
 
+  // 주식 설정 업데이트 mutation
+  const { mutate: updateStocks, isPending: isUpdating } = useApiMutation({
+    apiFunction: (stocks: Stock[]) => {
+      if (!portfolioId) {
+        return Promise.reject('포트폴리오 ID가 없습니다.');
+      }
+
+      const requestData = {
+        stocks: stocks.map(stock => ({
+          stockCode: stock.code,
+          targetWeight: stock.targetWeight || 0,
+          thresholdPercentage: stock.thresholdPercentage || 0
+        }))
+      };
+
+      return portfolioApi.updateStocks(portfolioId, requestData);
+    },
+    onSuccess: (data) => {
+      console.log('=== 주식 설정 업데이트 성공 ===');
+      console.log('업데이트 결과:', data);
+      alert('주식 설정이 성공적으로 업데이트되었습니다.');
+      closeStockSettingModal();
+      onStockSettingsUpdated?.(); // 주식 설정 업데이트 전용 콜백 호출
+    },
+    onError: (error) => {
+      console.error('=== 주식 설정 업데이트 실패 ===');
+      console.error('에러:', error);
+      alert('주식 설정 업데이트에 실패했습니다. 다시 시도해주세요.');
+    }
+  });
+
   const handleSaveSettings = (updatedStocks: Stock[]) => {
     console.log('주식 설정 저장:', updatedStocks);
-    // TODO: 실제 데이터 업데이트 로직 구현
+    updateStocks(updatedStocks);
   };
 
   const handleAddStock = (stock: Stock) => {
@@ -138,7 +173,7 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
   };
 
   const registeredColumns = [
-    '종목명', '매수가/현재가', '수량/평가금액', '수익률', '현재 비중(%)', '목표 비중(%)', '임계값 비중(%)', '제외'
+    '종목명', '매수가/현재가', '수량/평가금액', '수익률', '현재 비중(%)', '가중치', '목표 비중(%)', '임계값 비중(%)', '제외'
   ];
 
   const unregisteredColumns = [
@@ -205,13 +240,16 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
                   {type === 'registered' && (
                     <>
                       <td className={styles.dataCell}>
-                        <span>{formatWeight(stock.currentWeight)}</span>
+                        <span>{formatWeight(stock.currentPercentage)}</span>
                       </td>
                       <td className={styles.dataCell}>
                         <span>{stock.targetWeight}</span>
                       </td>
                       <td className={styles.dataCell}>
-                        <span>{stock.thresholdPercentage}</span>
+                        <span>{formatWeight(stock.targetPercentage)}</span>
+                      </td>
+                      <td className={styles.dataCell}>
+                        <span>{formatWeight(stock.thresholdPercentage)}</span>
                       </td>
                       <td className={styles.dataCell}>
                         <button
@@ -250,6 +288,7 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
         onClose={closeStockSettingModal}
         stocks={data}
         onSaveSettings={handleSaveSettings}
+        isSaving={isUpdating}
       />
 
       <ConfirmModal

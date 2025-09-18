@@ -82,7 +82,7 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
   const chartData = data.map((stock, index) => ({
     name: stock.name,
     code: stock.code,
-    value: stock.currentWeight,
+    value: stock.currentPercentage,
     color: `hsl(${index * 60}, 70%, 50%)`
   }));
 
@@ -191,7 +191,7 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                       <span className={styles.legendCode}>{stock.code}</span>
                     </div>
                     <div className={styles.legendValues}>
-                      <span className={styles.legendWeight}>{stock.currentWeight.toFixed(1)}%</span>
+                      <span className={styles.legendWeight}>{stock.currentPercentage.toFixed(1)}%</span>
                       <span className={`${styles.legendReturn} ${
                         stock.profitLossRate >= 0 ? styles.positive : styles.negative
                       }`}>
@@ -287,7 +287,7 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                   </div>
                   <div className={styles.metric}>
                     <span className={styles.metricLabel}>현재 비중</span>
-                    <span className={styles.metricValue}>{selectedStock.currentWeight.toFixed(1)}%</span>
+                    <span className={styles.metricValue}>{selectedStock.currentPercentage.toFixed(1)}%</span>
                   </div>
                 </div>
               </div>
@@ -324,7 +324,7 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                   <span>리밸런싱 필요량</span>
                 </div>
                 <div className={styles.rebalancingValue}>
-                  {(selectedStock.currentWeight - selectedStock.targetWeight).toFixed(1)}%
+                  {(selectedStock.currentPercentage - selectedStock.targetPercentage).toFixed(1)}%
                 </div>
               </div>
             </motion.div>

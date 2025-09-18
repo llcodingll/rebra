@@ -29,7 +29,7 @@ export default function DashboardPage() {
   });
 
   // 선택된 포트폴리오의 상세 정보 조회
-  const { data: portfolioDetailData, isLoading: isDetailLoading, error: detailError } = useApi({
+  const { data: portfolioDetailData, isLoading: isDetailLoading, error: detailError, refetch: refetchPortfolioDetail } = useApi({
     queryKey: ['portfolio-detail', selectedPortfolio?.id],
     apiFunction: () => selectedPortfolio ? portfolioApi.getPortfolioDetail(Number(selectedPortfolio.id)) : Promise.reject('No portfolio selected'),
     enabled: !!selectedPortfolio?.id,
@@ -198,7 +198,11 @@ export default function DashboardPage() {
             portfolioId={selectedPortfolio ? Number(selectedPortfolio.id) : undefined}
             onStockRemoved={() => {
               // 주식 삭제 성공 시 포트폴리오 상세 정보 새로고침
-              window.location.reload(); // 임시로 페이지 새로고침, 추후 개선 필요
+              refetchPortfolioDetail();
+            }}
+            onStockSettingsUpdated={() => {
+              // 주식 설정 업데이트 성공 시 포트폴리오 상세 정보 새로고침
+              refetchPortfolioDetail();
             }}
           />
           <AssetTable
@@ -208,7 +212,7 @@ export default function DashboardPage() {
             portfolioId={selectedPortfolio ? Number(selectedPortfolio.id) : undefined}
             onStockRegistered={() => {
               // 주식 등록 성공 시 포트폴리오 상세 정보 새로고침
-              window.location.reload(); // 임시로 페이지 새로고침, 추후 개선 필요
+              refetchPortfolioDetail();
             }}
           />
         </div>

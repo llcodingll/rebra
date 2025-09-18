@@ -160,3 +160,52 @@ DELETE api/v1/portfolios/{portfolioId}/stocks
   "status": 200,
   "timestamp": "2025-09-17T14:26:48.1949179"
 }
+
+
+
+리벨런싱 주식 설정 업데이트
+PUT /api/v1/portfolios/{portfolioId}/stocks/batch
+
+request
+{
+  "stocks": [
+    {
+      "stockCode": "03123",
+      "targetWeight": 40.3,
+      "thresholdPercentage": 20
+    },
+
+    {
+      "stockCode": "05462",
+      "targetWeight": 49.7,
+      "thresholdPercentage": 20
+    }
+  ]
+}
+
+위와 같이 
+모든 주식 코드 / 비중 / 임계치를 받는다.
+
+
+응답
+{
+  "success": true,
+  "status": 0,
+  "data": [
+    {
+      "portfolioStockId": 0,
+      "portfolioId": 0,
+      "stockCode": "string",
+      "stockName": "string",
+      "targetWeight": 0,
+      "thresholdPercentage": 0,
+      "status": "string",
+      "createdAt": "2025-09-18T01:07:28.330Z"
+    }
+  ],
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-18T01:07:28.330Z"
+}
+이런식으로 결과가 나옴 이건 성공 실패만 보면 됨
