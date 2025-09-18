@@ -263,31 +263,33 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
           portfolioCount={portfolioItems.length}
         />
 
-        <div className={styles.contentGrid}>
-          <StockSearch
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            filteredStocks={filteredStocks}
-            portfolioItems={portfolioItems}
-            onAddToPortfolio={handleAddToPortfolio}
-            startDate={startDate}
-            endDate={endDate}
-            isLoading={isSearchLoading}
-            searchError={searchError}
-          />
+        {startDate && endDate && (
+          <div className={styles.contentGrid}>
+            <StockSearch
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              filteredStocks={filteredStocks}
+              portfolioItems={portfolioItems}
+              onAddToPortfolio={handleAddToPortfolio}
+              startDate={startDate}
+              endDate={endDate}
+              isLoading={isSearchLoading}
+              searchError={searchError}
+            />
 
-          <MyPortfolio
-            portfolioItems={portfolioItems}
-            setPortfolioItems={setPortfolioItems}
-            selectedPortfolio={selectedPortfolio}
-            totalValue={totalValue}
-            onRemoveFromPortfolio={handleRemoveFromPortfolio}
-            parsePrice={parsePrice}
-            formatPrice={formatPrice}
-            calculateValue={calculateValue}
-            rebalancingType={rebalancingType}
-          />
-        </div>
+            <MyPortfolio
+              portfolioItems={portfolioItems}
+              setPortfolioItems={setPortfolioItems}
+              selectedPortfolio={selectedPortfolio}
+              totalValue={totalValue}
+              onRemoveFromPortfolio={handleRemoveFromPortfolio}
+              parsePrice={parsePrice}
+              formatPrice={formatPrice}
+              calculateValue={calculateValue}
+              rebalancingType={rebalancingType}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
