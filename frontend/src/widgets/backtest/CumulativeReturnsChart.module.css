@@ -64,7 +64,7 @@
 /* 차트 래퍼 */
 .chartWrapper {
   position: relative;
-  height: 500px;
+  height: 720px;
   width: 100%;
 }
 
@@ -72,7 +72,7 @@
 .chartContainer {
   width: 100%;
   min-width: 800px;
-  height: 400px;
+  height: 700px;
   margin-top: 20px;
 }
 

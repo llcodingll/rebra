@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { DollarSign } from 'lucide-react';
 import { createChart, ColorType, LineSeries } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import styles from './CumulativeReturnsChart.module.css';
@@ -10,6 +9,9 @@ interface TradeData {
   buyAmount: number;
   sellAmount: number;
   portfolioValue: number;
+  cashBalance: number;
+  dailyBorrowingInterest: number;
+  buyHoldValue: number;
 }
 
 interface TooltipData {
@@ -19,6 +21,8 @@ interface TooltipData {
   buyAmount: number;
   sellAmount: number;
   portfolioValue: number;
+  cashBalance: number;
+  dailyBorrowingInterest: number;
 }
 
 interface CumulativeReturnsChartProps {
@@ -33,6 +37,8 @@ interface CumulativeReturnsChartProps {
   portfolioFinalReturn?: number;
   buyHoldFinalReturn?: number;
   kospiFinalReturn?: number;
+  rebalancingDates?: string[];
+  showKospi?: boolean;
 }
 
 export default function CumulativeReturnsChart({
@@ -46,7 +52,9 @@ export default function CumulativeReturnsChart({
   yAxisLabels,
   portfolioFinalReturn,
   buyHoldFinalReturn,
-  kospiFinalReturn
+  kospiFinalReturn,
+  rebalancingDates = [],
+  showKospi = true
 }: CumulativeReturnsChartProps) {
   const [hoveredPoint, setHoveredPoint] = useState<TooltipData | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
@@ -62,7 +70,7 @@ export default function CumulativeReturnsChart({
     try {
       const chart = createChart(chartRef.current, {
         width: chartRef.current.clientWidth || 800,
-        height: 400,
+        height: 700,
         layout: {
           background: { type: ColorType.Solid, color: 'transparent' },
           textColor: '#374151',
@@ -103,7 +111,6 @@ export default function CumulativeReturnsChart({
 
       chartInstanceRef.current = chart;
 
-      // Use v5 API with LineSeries
       const portfolioSeries = chart.addSeries(LineSeries, {
         color: '#2563eb',
         lineWidth: 3,
@@ -114,10 +121,10 @@ export default function CumulativeReturnsChart({
         lineWidth: 2,
       });
 
-      const kospiSeries = chart.addSeries(LineSeries, {
+      const kospiSeries = showKospi ? chart.addSeries(LineSeries, {
         color: '#6b7280',
         lineWidth: 2,
-      });
+      }) : null;
 
       portfolioSeriesRef.current = portfolioSeries;
       buyHoldSeriesRef.current = buyHoldSeries;
@@ -125,9 +132,7 @@ export default function CumulativeReturnsChart({
 
       const formatDataForLightweight = (values: number[], dates: string[]) => {
         return values.map((value, index) => {
-          // dates는 이제 "2023-01-01" 형식이므로 그대로 사용
           const dateStr = dates[index];
-
           return {
             time: dateStr as any,
             value: value,
@@ -142,9 +147,38 @@ export default function CumulativeReturnsChart({
 
       portfolioSeries.setData(portfolioData);
       buyHoldSeries.setData(buyHoldData);
-      kospiSeries.setData(kospiData);
+      if (showKospi && kospiSeries) {
+        kospiSeries.setData(kospiData);
+      }
 
-      // 전체 데이터가 보이도록 시간 범위 설정
+      // 리밸런싱 마커 추가
+      if (rebalancingDates.length > 0) {
+        const rebalancingMarkers = rebalancingDates.map(date => {
+          const dataIndex = dates.findIndex(d => d === date);
+          if (dataIndex >= 0) {
+            return {
+              time: date as any,
+              position: 'inBar' as const,
+              color: '#2563eb',
+              shape: 'circle' as const,
+              text: '🔵',
+              size: 2
+            };
+          }
+          return null;
+        }).filter(marker => marker !== null);
+
+
+        if (rebalancingMarkers.length > 0) {
+          try {
+            if (typeof portfolioSeries.setMarkers === 'function') {
+              portfolioSeries.setMarkers(rebalancingMarkers);
+            }
+          } catch (error) {
+          }
+        }
+      }
+
       chart.timeScale().fitContent();
 
       chart.subscribeCrosshairMove((param: any) => {
@@ -153,11 +187,9 @@ export default function CumulativeReturnsChart({
           return;
         }
 
-        // Convert time back to original format for comparison
         const paramTime = param.time;
         let matchingDataIndex = -1;
 
-        // Find matching data by comparing formatted dates
         for (let i = 0; i < portfolioData.length; i++) {
           if (portfolioData[i].time === paramTime) {
             matchingDataIndex = i;
@@ -175,6 +207,8 @@ export default function CumulativeReturnsChart({
             buyAmount: data.buyAmount,
             sellAmount: data.sellAmount,
             portfolioValue: data.portfolioValue,
+            cashBalance: data.cashBalance,
+            dailyBorrowingInterest: data.dailyBorrowingInterest,
           });
         }
       });
@@ -194,7 +228,7 @@ export default function CumulativeReturnsChart({
         chart.remove();
       };
     } catch (error) {
-      console.error('Error creating chart:', error);
+      // Chart creation failed
     }
   }, [tradeData, portfolioPercents, buyHoldPercents, kospiPercents]);
 
@@ -249,16 +283,18 @@ export default function CumulativeReturnsChart({
               }
             </span>
           </div>
-          <div className={styles.legendItem}>
-            <div className={`${styles.legendDot} ${styles.kospi}`}></div>
-            <span>KOSPI</span>
-            <span className={styles.legendValue}>
-              {kospiFinalReturn !== undefined
-                ? `${kospiFinalReturn >= 0 ? '+' : ''}${kospiFinalReturn.toFixed(1)}%`
-                : '+0.0%'
-              }
-            </span>
-          </div>
+          {showKospi && (
+            <div className={styles.legendItem}>
+              <div className={`${styles.legendDot} ${styles.kospi}`}></div>
+              <span>KOSPI</span>
+              <span className={styles.legendValue}>
+                {kospiFinalReturn !== undefined
+                  ? `${kospiFinalReturn >= 0 ? '+' : ''}${kospiFinalReturn.toFixed(1)}%`
+                  : '+0.0%'
+                }
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -272,23 +308,31 @@ export default function CumulativeReturnsChart({
             className={styles.tooltip}
             style={{
               left: hoveredPoint.x - 250,
-              top: hoveredPoint.y - 120,
+              top: hoveredPoint.y - 160,
             }}
           >
             <div className={styles.tooltipDate}>{hoveredPoint.date}</div>
             <div className={styles.tooltipContent}>
               <div className={styles.tooltipRow}>
-                <DollarSign className={styles.tooltipIcon} />
-                <span>매수액: +{hoveredPoint.buyAmount.toLocaleString()}원</span>
+                <span>매수액: {hoveredPoint.buyAmount.toLocaleString()}원</span>
               </div>
               <div className={styles.tooltipRow}>
-                <DollarSign className={styles.tooltipIcon} />
-                <span>매도액: -{hoveredPoint.sellAmount.toLocaleString()}원</span>
+                <span>매도액: {hoveredPoint.sellAmount.toLocaleString()}원</span>
               </div>
               <div className={styles.tooltipDivider}></div>
               <div className={styles.tooltipRow}>
                 <span className={styles.tooltipValue}>
                   포트폴리오 가치: {hoveredPoint.portfolioValue.toLocaleString()}원
+                </span>
+              </div>
+              <div className={styles.tooltipRow}>
+                <span className={styles.tooltipValue}>
+                  현금 잔고: {hoveredPoint.cashBalance.toLocaleString()}원
+                </span>
+              </div>
+              <div className={styles.tooltipRow}>
+                <span className={styles.tooltipValue}>
+                  일일 대출 이자: {hoveredPoint.dailyBorrowingInterest.toLocaleString()}원
                 </span>
               </div>
             </div>

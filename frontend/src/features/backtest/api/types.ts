@@ -54,7 +54,7 @@ export interface BacktestResultResponse {
   testName: string;
   startDate: string;
   endDate: string;
-  rebalancingType: 'MANUAL' | 'PERIODIC';
+  rebalancingType: 'THRESHOLD' | 'PERIODIC';
   rebalancingPeriod: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
   status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
   createdAt: string;

@@ -28,7 +28,7 @@ export default function BacktestHistoryWidget({
   // API 응답 데이터를 UI용 형태로 변환
   const transformBacktestData = (backtest: BacktestListResponse) => {
     const statusMap = {
-      'PENDING': '대기 중',
+      'PENDING': '계산 중',
       'PROCESSING': '계산 중',
       'COMPLETED': '완료',
       'FAILED': '실패'
@@ -55,9 +55,12 @@ export default function BacktestHistoryWidget({
     };
   };
 
+  if (isLoading) {
+    return null;
+  }
+
   return (
     <div className={styles.historySection}>
-
       <div className={styles.historyCard}>
         <div className={styles.cardHeader}>
           <div className={styles.cardTitle}>
@@ -68,7 +71,7 @@ export default function BacktestHistoryWidget({
             포트폴리오 전략별 백테스트 결과 및 위험조정 수익률 분석
           </p>
         </div>
-        
+
         <div className={styles.tableWrapper}>
           <table className={styles.table}>
             <thead>
@@ -82,15 +85,7 @@ export default function BacktestHistoryWidget({
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className={styles.emptyState}>
-                    <div className={styles.emptyContent}>
-                      <p className={styles.emptyTitle}>로딩 중...</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : error ? (
+              {error ? (
                 <tr>
                   <td colSpan={6} className={styles.emptyState}>
                     <div className={styles.emptyContent}>

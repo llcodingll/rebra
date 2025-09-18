@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Calendar, TrendingUp } from 'lucide-react';
+import { Calendar, BarChart3 } from 'lucide-react';
 import styles from './ResultsHeader.module.css';
 import type { BacktestResultResponse } from '../../features/backtest/api/backtestApi';
 
@@ -17,7 +17,6 @@ interface ResultsHeaderProps {
 export default function ResultsHeader({
   backtestResult
 }: ResultsHeaderProps) {
-  // 실제 백테스트 데이터에서 값 추출
   const title = backtestResult?.testName || '백테스트 결과';
 
   const formatDate = (dateStr: string) => {
@@ -32,11 +31,18 @@ export default function ResultsHeader({
     ? `${formatDate(backtestResult.startDate)} ~ ${formatDate(backtestResult.endDate)}`
     : '기간 정보 없음';
 
-  const totalReturn = backtestResult?.summary?.totalReturnPercentage
-    ? `${backtestResult.summary.totalReturnPercentage >= 0 ? '+' : ''}${backtestResult.summary.totalReturnPercentage.toFixed(2)}%`
-    : '수익률 정보 없음';
+  const getRebalancingTypeLabel = (type: string) => {
+    switch (type) {
+      case 'THRESHOLD':
+        return '임계값 기반';
+      case 'PERIODIC':
+        return '주기적 (월간)';
+      default:
+        return type;
+    }
+  };
 
-  // 초기 자본 계산 (최종값에서 수익률로 역산)
+
   const initialCapital = backtestResult?.summary?.finalValue && backtestResult?.summary?.totalReturn
     ? Math.round(backtestResult.summary.finalValue / (1 + backtestResult.summary.totalReturn))
     : 0;
@@ -53,7 +59,7 @@ export default function ResultsHeader({
     },
     {
       label: '최종 수익률',
-      value: totalReturn,
+      value: `${backtestResult.summary.totalReturnPercentage >= 0 ? '+' : ''}${backtestResult.summary.totalReturnPercentage.toFixed(2)}%`,
       highlight: true
     },
     {
@@ -79,10 +85,12 @@ export default function ResultsHeader({
               <Calendar className={styles.periodIcon} />
               <span className={styles.period}>{period}</span>
             </div>
-            <div className={styles.returnBadge}>
-              <TrendingUp className={styles.returnIcon} />
-              {totalReturn}
-            </div>
+            {backtestResult?.rebalancingType && (
+              <div className={styles.rebalancingBadge}>
+                <BarChart3 className={styles.rebalancingIcon} />
+                <span>{getRebalancingTypeLabel(backtestResult.rebalancingType)}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
