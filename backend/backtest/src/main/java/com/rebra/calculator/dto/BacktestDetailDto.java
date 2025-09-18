@@ -81,6 +81,13 @@ public class BacktestDetailDto {
     @JsonProperty("buy_hold_return")
     private Double buyHoldReturn;
     
+    /**
+     * 바이앤홀드 포트폴리오 가치 (원)
+     * 동일 기간 바이앤홀드 전략의 포트폴리오 가치 (비교용)
+     */
+    @JsonProperty("buy_hold_value")
+    private Double buyHoldValue;
+    
     
     /**
      * 총 매수 금액 (원)
