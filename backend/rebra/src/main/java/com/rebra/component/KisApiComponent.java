@@ -105,6 +105,7 @@ public class KisApiComponent {
 
             // 프론트에서 받은 계좌 타입에 따라 적절한 Configuration에 추가
             if (accountType == AccountType.MOCK) {
+                credentials.setRestLimitPerSecond(1);
                 mockConfig.addCredentials(credentialsName, credentials);
                 mockClient = new KisClient(mockConfig);
             } else {
