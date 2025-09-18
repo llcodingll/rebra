@@ -31,7 +31,10 @@ export default function BacktestPage() {
   const deleteMutation = useMutation({
     mutationFn: deleteBacktest,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['backtestList'] });
+      queryClient.invalidateQueries({
+        queryKey: ['backtestList'],
+        exact: false  // 하위 키들도 모두 무효화
+      });
     },
   });
 

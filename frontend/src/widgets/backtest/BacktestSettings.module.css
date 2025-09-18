@@ -25,6 +25,82 @@
   font-size: 14px;
 }
 
+.progressiveForm {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin-bottom: 40px;
+}
+
+.formStep {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 24px;
+  background: #f8f9fb;
+}
+
+.stepHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stepNumber {
+  width: 32px;
+  height: 32px;
+  background: #030213;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.stepHeader h3 {
+  margin: 0;
+  color: #030213;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.nextButton {
+  background: #030213;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 16px;
+  width: fit-content;
+}
+
+.nextButton:hover {
+  background: #1a1a2e;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(3, 2, 19, 0.2);
+}
+
+.nextIcon {
+  width: 16px;
+  height: 16px;
+}
+
+.dateStepGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
 .settingsGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -313,5 +389,24 @@
   .settingsGrid {
     grid-template-columns: 1fr;
     gap: 20px;
+  }
+
+  .dateStepGrid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .formStep {
+    padding: 20px;
+  }
+
+  .stepHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .stepHeader h3 {
+    font-size: 16px;
   }
 }

@@ -57,6 +57,15 @@ export default function CumulativeReturnsChart({
   showKospi = true
 }: CumulativeReturnsChartProps) {
   const [hoveredPoint, setHoveredPoint] = useState<TooltipData | null>(null);
+
+  // 억 단위 이상 간소화 포맷팅
+  const formatCompactPrice = (price: number): string => {
+    if (price >= 100000000) { // 1억 이상
+      const eok = price / 100000000;
+      return `${eok.toFixed(1)}억원`;
+    }
+    return `${price.toLocaleString()}원`;
+  };
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<IChartApi | null>(null);
   const portfolioSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
@@ -314,25 +323,25 @@ export default function CumulativeReturnsChart({
             <div className={styles.tooltipDate}>{hoveredPoint.date}</div>
             <div className={styles.tooltipContent}>
               <div className={styles.tooltipRow}>
-                <span>매수액: {hoveredPoint.buyAmount.toLocaleString()}원</span>
+                <span>매수액: {formatCompactPrice(hoveredPoint.buyAmount)}</span>
               </div>
               <div className={styles.tooltipRow}>
-                <span>매도액: {hoveredPoint.sellAmount.toLocaleString()}원</span>
+                <span>매도액: {formatCompactPrice(hoveredPoint.sellAmount)}</span>
               </div>
               <div className={styles.tooltipDivider}></div>
               <div className={styles.tooltipRow}>
                 <span className={styles.tooltipValue}>
-                  포트폴리오 가치: {hoveredPoint.portfolioValue.toLocaleString()}원
+                  포트폴리오 가치: {formatCompactPrice(hoveredPoint.portfolioValue)}
                 </span>
               </div>
               <div className={styles.tooltipRow}>
                 <span className={styles.tooltipValue}>
-                  현금 잔고: {hoveredPoint.cashBalance.toLocaleString()}원
+                  현금 잔고: {formatCompactPrice(hoveredPoint.cashBalance)}
                 </span>
               </div>
               <div className={styles.tooltipRow}>
                 <span className={styles.tooltipValue}>
-                  일일 대출 이자: {hoveredPoint.dailyBorrowingInterest.toLocaleString()}원
+                  일일 대출 이자: {formatCompactPrice(hoveredPoint.dailyBorrowingInterest)}
                 </span>
               </div>
             </div>
