@@ -26,10 +26,8 @@ public class KisRealtimeService {
             log.info("▶️ 체결가 구독 시작 - userId={}, stockCode={}, sessionId={}", userId, stockCode, sessionId);
 
             kisApiComponent.startPriceSubscription(
-                    userId,
-                    account.getId(),
+                    account,
                     stockCode,
-                    account.getAccountType(),
                     data -> webSocketHelper.broadcastPriceData(userId, stockCode, data)
             );
 
@@ -48,10 +46,8 @@ public class KisRealtimeService {
             log.info("▶️ 호가 구독 시작 - userId={}, stockCode={}, sessionId={}", userId, stockCode, sessionId);
 
             kisApiComponent.startOrderbookSubscription(
-                    userId,
-                    account.getId(),
+                    account,
                     stockCode,
-                    account.getAccountType(),
                     data -> webSocketHelper.broadcastOrderbookData(userId, stockCode, data)
             );
 

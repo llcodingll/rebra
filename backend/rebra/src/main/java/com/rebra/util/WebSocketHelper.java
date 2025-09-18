@@ -23,8 +23,8 @@ public class WebSocketHelper {
     private final SimpMessagingTemplate messagingTemplate;
 
     // WebSocket 채널 상수 - 자원 분리로 경로 단순화
-    private static final String STOCK_PRICE_QUEUE = "/queue/stock/price";
-    private static final String STOCK_ORDERBOOK_QUEUE = "/queue/stock/orderbook";
+    private static final String STOCK_PRICE_QUEUE = "/queue/stock/${stockCode}/price";
+    private static final String STOCK_ORDERBOOK_QUEUE = "/queue/stock/${stockCode}/orderbook";
     private static final String USER_QUEUE = "/queue/user";
 
     // ==================== 주식 실시간 데이터 전송 ====================
