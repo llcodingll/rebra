@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -27,13 +26,13 @@ public class RebalancingExecutionResponse {
     private LocalDateTime executionTime;
 
     @Schema(description = "총 매수 금액")
-    private BigDecimal totalBuyAmount;
+    private Long totalBuyAmount;
 
     @Schema(description = "총 매도 금액")
-    private BigDecimal totalSellAmount;
+    private Long totalSellAmount;
 
     @Schema(description = "전체 포트폴리오 평가액")
-    private BigDecimal totalPortfolioValue;
+    private Long totalPortfolioValue;
 
     @Schema(description = "개별 주문 결과")
     private List<OrderResult> orderResults;
@@ -61,7 +60,7 @@ public class RebalancingExecutionResponse {
         private Integer quantity;
 
         @Schema(description = "주문 가격")
-        private BigDecimal price;
+        private Long price;
 
         @Schema(description = "주문 성공 여부")
         private boolean success;
@@ -73,8 +72,8 @@ public class RebalancingExecutionResponse {
         private String errorMessage;
     }
 
-    public static RebalancingExecutionResponse success(Long rebalancingOrderId, BigDecimal totalBuyAmount,
-                                                       BigDecimal totalSellAmount, BigDecimal totalPortfolioValue,
+    public static RebalancingExecutionResponse success(Long rebalancingOrderId, Long totalBuyAmount,
+                                                       Long totalSellAmount, Long totalPortfolioValue,
                                                        List<OrderResult> orderResults) {
         return RebalancingExecutionResponse.builder()
                 .success(true)

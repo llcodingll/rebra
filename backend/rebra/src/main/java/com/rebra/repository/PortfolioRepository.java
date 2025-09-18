@@ -1,6 +1,7 @@
 package com.rebra.repository;
 
 import com.rebra.entity.Portfolio;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +38,16 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
      * 자동 리밸런싱이 활성화된 포트폴리오 목록 조회
      */
     List<Portfolio> findByAutoRebalancingTrueOrderByNextRebalanceDateAsc();
+
+    /**
+     * 오늘 리밸런싱 체크 대상 포트폴리오 조회
+     * nextRebalanceDate가 오늘 이하인 자동 리밸런싱 활성화 포트폴리오
+     */
+    @Query("SELECT p FROM Portfolio p " +
+           "WHERE p.autoRebalancing = true " +
+           "AND p.nextRebalanceDate <= :today " +
+           "ORDER BY p.nextRebalanceDate ASC")
+    List<Portfolio> findByAutoRebalancingTrueAndNextRebalanceDateLessThanEqual(@Param("today") LocalDate today);
 
     /**
      * 사용자별 자동 리밸런싱 활성화된 포트폴리오 개수

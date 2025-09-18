@@ -46,16 +46,16 @@ public class RebalancingCheckResponse {
         private String stockName;
 
         @Schema(description = "목표 비중")
-        private BigDecimal targetWeight;
+        private Double targetWeight;
 
         @Schema(description = "현재 비중")
-        private BigDecimal currentWeight;
+        private Double currentWeight;
 
         @Schema(description = "비중 차이")
-        private BigDecimal weightDifference;
+        private Double weightDifference;
 
         @Schema(description = "임계값")
-        private BigDecimal threshold;
+        private Double threshold;
 
         @Schema(description = "리밸런싱 필요 여부")
         private boolean needsRebalancing;
@@ -64,10 +64,10 @@ public class RebalancingCheckResponse {
         private Integer currentQuantity;
 
         @Schema(description = "현재 주가")
-        private BigDecimal currentPrice;
+        private Long currentPrice;
 
         @Schema(description = "현재 평가액")
-        private BigDecimal currentValue;
+        private Long currentValue;
     }
 
     public static RebalancingCheckResponse notNeeded(String rebalancingType, LocalDate nextRebalanceDate) {
@@ -86,6 +86,26 @@ public class RebalancingCheckResponse {
                 .rebalancingType(rebalancingType)
                 .checkReason(reason)
                 .stockInfos(stockInfos)
+                .build();
+    }
+    
+    /**
+     * RebalancingCalculation.StockRebalancingDetail을 사용하여 StockRebalancingInfo 생성
+     * 내부 비율을 퍼센트로 변환하여 반환
+     */
+    public static StockRebalancingInfo fromStockDetail(com.rebra.service.RebalancingCalculation.StockRebalancingDetail detail, 
+                                                      String stockName) {
+        return StockRebalancingInfo.builder()
+                .stockCode(detail.getStockCode())
+                .stockName(stockName)
+                .targetWeight(detail.getNormalizedTargetWeightAsPercent())
+                .currentWeight(detail.getCurrentWeightAsPercent())
+                .weightDifference(detail.getWeightDifferenceAsPercent())
+                .threshold(detail.getThresholdAsPercent())
+                .needsRebalancing(detail.isNeedsRebalancing())
+                .currentQuantity(detail.getCurrentQuantity())
+                .currentPrice(detail.getCurrentPrice())
+                .currentValue(detail.getCurrentValue())
                 .build();
     }
 }

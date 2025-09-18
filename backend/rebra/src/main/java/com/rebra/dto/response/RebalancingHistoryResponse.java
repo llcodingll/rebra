@@ -16,9 +16,9 @@ public class RebalancingHistoryResponse {
     private Long orderId;
     private ExecutionType executionType;
     private Integer totalStocks;
-    private BigDecimal totalBuyAmount;
-    private BigDecimal totalSellAmount;
-    private BigDecimal totalPortfolioValue;
+    private Long totalBuyAmount;
+    private Long totalSellAmount;
+    private Long totalPortfolioValue;
     private TransactionStatus status;
     private LocalDateTime executedAt;
 
