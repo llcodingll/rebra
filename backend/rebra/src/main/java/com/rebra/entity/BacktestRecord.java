@@ -130,7 +130,7 @@ public class BacktestRecord extends BaseEntity {
     private BigDecimal timeWeightedReturn;
 
     // 일별 상세 정보를 JSON으로 저장
-    @Column(columnDefinition = "MEDIUMTEXT")
+    @Column(columnDefinition = "TEXT")
     private String detailsJson;
 
     // 런타임 캐시

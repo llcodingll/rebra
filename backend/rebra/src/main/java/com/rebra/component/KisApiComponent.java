@@ -1,7 +1,9 @@
 package com.rebra.component;
 
 import com.rebra.dto.DecryptedAccountCredentials;
+import com.rebra.entity.Account;
 import com.rebra.entity.AccountType;
+import com.rebra.util.AccountEncryptionUtil;
 import com.youhogeon.finance.kis_api.KisClient;
 import com.youhogeon.finance.kis_api.api.realtime.H0STASP0Api;
 import com.youhogeon.finance.kis_api.api.realtime.H0STASP0Data;
@@ -137,6 +139,7 @@ public class KisApiComponent {
                 accountType);
     }
 
+
     /**
      * 사용자 Credentials 제거
      */
@@ -231,6 +234,15 @@ public class KisApiComponent {
 
 
     /**
+     * 사용자 잔고 조회 (Account 객체 사용)
+     */
+    public InquireBalanceResult getUserBalance(Account account) {
+        Long userId = account.getUser().getId();
+        DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+        return getUserBalance(userId, account.getId(), account.getAccountType(), credentials);
+    }
+
+    /**
      * 등록된 사용자 Credentials로 잔고 조회 ensureUserCredentials()를 통해 Credentials가 없으면 자동으로 등록
      */
     public InquireBalanceResult getUserBalance(Long userId, Long accountId, AccountType accountType,
@@ -271,15 +283,26 @@ public class KisApiComponent {
     }
 
     /**
+     * 실시간 체결가 구독 시작 (Account 객체 사용)
+     */
+    public void startPriceSubscription(Account account, String stockCode, Consumer<H0STCNT0Data> dataHandler) {
+        Long userId = account.getUser().getId();
+        DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+        startPriceSubscription(userId, account.getId(), stockCode, account.getAccountType(), credentials, dataHandler);
+    }
+
+    /**
      * 실시간 체결가 구독 시작 (공유 연결 사용)
      */
     public void startPriceSubscription(Long userId, Long accountId, String stockCode,
-                                       AccountType accountType, Consumer<H0STCNT0Data> dataHandler) {
+                                       AccountType accountType, DecryptedAccountCredentials credentials,
+                                       Consumer<H0STCNT0Data> dataHandler) {
         String subscriptionKey = generateSubscriptionKey(userId, stockCode, "price");
 
+        ensureUserCredentials(userId, accountId, accountType, credentials);
         try {
             // 공유 WebSocket 연결 획득
-            SubscribableApiResult sharedConnection = getOrCreateConnection(userId, accountId, accountType, stockCode);
+            SubscribableApiResult sharedConnection = getOrCreateConnection(userId, accountId, accountType, stockCode, credentials);
 
             // 구독 참조 카운트 증가
             int count = subscriptionCount.computeIfAbsent(subscriptionKey, k -> new AtomicInteger(0)).incrementAndGet();
@@ -310,15 +333,26 @@ public class KisApiComponent {
     }
 
     /**
+     * 실시간 호가 구독 시작 (Account 객체 사용)
+     */
+    public void startOrderbookSubscription(Account account, String stockCode, Consumer<H0STASP0Data> dataHandler) {
+        Long userId = account.getUser().getId();
+        DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+        startOrderbookSubscription(userId, account.getId(), stockCode, account.getAccountType(), credentials, dataHandler);
+    }
+
+    /**
      * 실시간 호가 구독 시작 (공유 연결 사용)
      */
     public void startOrderbookSubscription(Long userId, Long accountId, String stockCode,
-                                           AccountType accountType, Consumer<H0STASP0Data> dataHandler) {
+                                           AccountType accountType, DecryptedAccountCredentials credentials,
+                                           Consumer<H0STASP0Data> dataHandler) {
         String subscriptionKey = generateSubscriptionKey(userId, stockCode, "orderbook");
 
+        ensureUserCredentials(userId, accountId, accountType, credentials);
         try {
             // 공유 WebSocket 연결 획득
-            SubscribableApiResult sharedConnection = getOrCreateConnection(userId, accountId, accountType, stockCode);
+            SubscribableApiResult sharedConnection = getOrCreateConnection(userId, accountId, accountType, stockCode, credentials);
 
             // 구독 참조 카운트 증가
             int count = subscriptionCount.computeIfAbsent(subscriptionKey, k -> new AtomicInteger(0)).incrementAndGet();
@@ -418,12 +452,17 @@ public class KisApiComponent {
     /**
      * 공유 WebSocket 연결 획득 또는 생성
      */
-    private SubscribableApiResult getOrCreateConnection(Long userId, Long accountId, AccountType accountType, String stockCode) {
+    private SubscribableApiResult getOrCreateConnection(Long userId, Long accountId, AccountType accountType,
+                                                        String stockCode, DecryptedAccountCredentials credentials) {
         String connectionKey = generateConnectionKey(userId, accountId);
-        String credentialsName = getUserCredentialsName(userId, accountId);
 
+        // Credentials가 Config에 없으면 자동으로 등록
+        ensureUserCredentials(userId, accountId, accountType, credentials);
+
+        String credentialsName = getUserCredentialsName(userId, accountId);
         if (credentialsName == null) {
-            throw new RuntimeException("등록된 Credentials를 찾을 수 없음");
+            log.error("ensureUserCredentials 후에도 Credentials를 찾을 수 없음 - 사용자ID: {}, 계좌ID: {}", userId, accountId);
+            throw new RuntimeException("Credentials 등록 실패");
         }
 
         // 연결별 락 획득
@@ -783,6 +822,17 @@ public class KisApiComponent {
     }
 
     /**
+     * 주식 매수 주문 실행 (Account 객체 사용)
+     */
+    public com.youhogeon.finance.kis_api.api.rest.trading.OrderCashResult executeBuyOrder(
+            Account account, String stockCode, String orderType, int quantity, Long price) {
+        Long userId = account.getUser().getId();
+        DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+        ensureUserCredentials(userId, account.getId(), account.getAccountType(), credentials);
+        return executeBuyOrder(userId, account.getId(), account.getAccountType(), stockCode, orderType, quantity, price);
+    }
+
+    /**
      * 주식 매수 주문 실행
      */
     public com.youhogeon.finance.kis_api.api.rest.trading.OrderCashResult executeBuyOrder(
@@ -828,6 +878,17 @@ public class KisApiComponent {
     }
 
     /**
+     * 주식 매도 주문 실행 (Account 객체 사용)
+     */
+    public com.youhogeon.finance.kis_api.api.rest.trading.OrderCashResult executeSellOrder(
+            Account account, String stockCode, String orderType, int quantity, Long price) {
+        Long userId = account.getUser().getId();
+        DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+        ensureUserCredentials(userId, account.getId(), account.getAccountType(), credentials);
+        return executeSellOrder(userId, account.getId(), account.getAccountType(), stockCode, orderType, quantity, price);
+    }
+
+    /**
      * 주식 매도 주문 실행
      */
     public com.youhogeon.finance.kis_api.api.rest.trading.OrderCashResult executeSellOrder(
@@ -870,6 +931,17 @@ public class KisApiComponent {
             log.error("주식 매도 주문 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
             throw new RuntimeException("주식 매도 주문 실패", e);
         }
+    }
+
+    /**
+     * 국내주식기간별시세(일/주/월/년) 조회 (Account 객체 사용)
+     */
+    public Map<String, Object> getStockChartData(Account account, String stockCode, String startDate, String endDate,
+                                                 String periodType) {
+        Long userId = account.getUser().getId();
+        DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+        ensureUserCredentials(userId, account.getId(), account.getAccountType(), credentials);
+        return getStockChartData(userId, account.getId(), account.getAccountType(), stockCode, startDate, endDate, periodType);
     }
 
     /**

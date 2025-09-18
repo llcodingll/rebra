@@ -24,13 +24,16 @@ public class RealtimeController {
 
     /**
      * 체결가 구독 요청
-     * 클라이언트: SEND("/app/subscribe/{userId}/{stockCode}/price")
+     * 클라이언트: SEND("/app/subscribe/{stockCode}/price")
      */
-    @MessageMapping("/subscribe/{userId}/{stockCode}/price")
-    public void subscribePriceRequest(@DestinationVariable Long userId,
-                                      @DestinationVariable String stockCode,
+    @MessageMapping("/subscribe/{stockCode}/price")
+    public void subscribePriceRequest(@DestinationVariable String stockCode,
                                       SimpMessageHeaderAccessor headerAccessor) {
         String sessionId = headerAccessor.getSessionId();
+
+        // 세션에서 userId 추출
+        Long userId = webSocketHelper.getAuthenticatedUserId(headerAccessor);
+
         log.info("📡 체결가 구독 요청 - userId={}, stockCode={}, sessionId={}", userId, stockCode, sessionId);
 
         try {
@@ -82,13 +85,21 @@ public class RealtimeController {
 
     /**
      * 호가 구독 요청
-     * 클라이언트: SEND("/app/subscribe/{userId}/{stockCode}/orderbook")
+     * 클라이언트: SEND("/app/subscribe/{stockCode}/orderbook")
      */
-    @MessageMapping("/subscribe/{userId}/{stockCode}/orderbook")
-    public void subscribeOrderbookRequest(@DestinationVariable Long userId,
-                                          @DestinationVariable String stockCode,
+    @MessageMapping("/subscribe/{stockCode}/orderbook")
+    public void subscribeOrderbookRequest(@DestinationVariable String stockCode,
                                           SimpMessageHeaderAccessor headerAccessor) {
         String sessionId = headerAccessor.getSessionId();
+
+        // 세션에서 userId 추출
+        Long userId = webSocketHelper.getAuthenticatedUserId(headerAccessor);
+        if (userId == null) {
+            log.warn("Websocket 세션에 userId 없음 - sessionId: {}", sessionId);
+            webSocketHelper.sendStockError(null, stockCode, "price", "인증 실패", "로그인 필요");
+            return;
+        }
+
         log.info("📡 호가 구독 요청 - userId={}, stockCode={}, sessionId={}", userId, stockCode, sessionId);
 
         try {
@@ -138,15 +149,23 @@ public class RealtimeController {
 
     /**
      * 구독 해제 요청
-     * 클라이언트: SEND("/app/unsubscribe/{userId}/{stockCode}") with payload="price" or "orderbook"
+     * 클라이언트: SEND("/app/unsubscribe/{stockCode}") with payload="price" or "orderbook"
      */
-    @MessageMapping("/unsubscribe/{userId}/{stockCode}")
-    public void unsubscribe(@DestinationVariable Long userId,
-                            @DestinationVariable String stockCode,
+    @MessageMapping("/unsubscribe/{stockCode}")
+    public void unsubscribe(@DestinationVariable String stockCode,
                             String dataType,
                             SimpMessageHeaderAccessor headerAccessor) {
 
         String sessionId = headerAccessor.getSessionId();
+
+        // 세션에서 userId 추출
+        Long userId = webSocketHelper.requireAuthenticatedUserId(headerAccessor);
+        if (userId == null) {
+            log.warn("Websocket 세션에 userId 없음 - sessionId: {}", sessionId);
+            webSocketHelper.sendStockError(null, stockCode, "price", "인증 실패", "로그인 필요");
+            return;
+        }
+
         log.info("🔌 구독 해제 요청 - userId={}, stockCode={}, type={}, sessionId={}", userId, stockCode, dataType, sessionId);
 
         if ("price".equals(dataType)) {

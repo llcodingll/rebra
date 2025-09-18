@@ -2,7 +2,6 @@ package com.rebra.service;
 
 import com.rebra.client.FssApiClient;
 import com.rebra.component.KisApiComponent;
-import com.rebra.dto.DecryptedAccountCredentials;
 import com.rebra.dto.external.FssStockPriceResponse;
 import com.rebra.dto.response.PageResponse;
 import com.rebra.dto.response.StockChartResponse;
@@ -15,7 +14,6 @@ import com.rebra.entity.StockPrice;
 import com.rebra.exception.stock.StockException;
 import com.rebra.repository.AccountRepository;
 import com.rebra.repository.StockRepository;
-import com.rebra.util.AccountEncryptionUtil;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import java.math.BigDecimal;
@@ -186,12 +184,8 @@ public class StockServiceImpl implements StockService {
             Account account = accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true)
                     .orElseThrow(() -> new RuntimeException("활성화된 계좌를 찾을 수 없습니다."));
 
-            DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
-            kisApiComponent.ensureUserCredentials(userId, account.getId(), account.getAccountType(), credentials);
-
             Map<String, Object> kisResult = kisApiComponent.getStockChartData(
-                    userId, account.getId(), account.getAccountType(),
-                    stockCode, startDate, endDate, periodType
+                    account, stockCode, startDate, endDate, periodType
             );
 
             return buildStockChartResponse(stockCode, kisResult, startDate, endDate, periodType);
@@ -324,13 +318,8 @@ public class StockServiceImpl implements StockService {
             Account account = accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true)
                     .orElseThrow(() -> new RuntimeException("활성화된 계좌를 찾을 수 없습니다."));
 
-            // 2. 계좌 복호화
-            DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
-            kisApiComponent.ensureUserCredentials(userId, account.getId(), account.getAccountType(), credentials);
-
-            // 3. KIS API로 잔고 조회
-            InquireBalanceResult balanceResult = kisApiComponent.getUserBalance(
-                    userId, account.getId(), account.getAccountType(), credentials);
+            // 2. KIS API로 잔고 조회
+            InquireBalanceResult balanceResult = kisApiComponent.getUserBalance(account);
 
             // 4. 해당 종목의 보유 정보 찾기
             if (balanceResult.getOutput1() != null && balanceResult.getOutput1().length > 0) {
