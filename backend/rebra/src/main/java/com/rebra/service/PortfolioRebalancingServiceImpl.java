@@ -46,7 +46,7 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
     @Override
     @Transactional(readOnly = true)
     public RebalancingCheckResponse checkRebalancingNeeded(Long portfolioId) {
-        Portfolio portfolio = portfolioRepository.findById(portfolioId)
+        Portfolio portfolio = portfolioRepository.findByIdWithPortfolioStocks(portfolioId)
                 .orElseThrow(() -> new RuntimeException("포트폴리오를 찾을 수 없습니다"));
 
         if (!portfolio.getAutoRebalancing()) {
@@ -61,7 +61,7 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
             Map<String, HoldingInfo> currentHoldings = getCurrentHoldings(portfolio);
             
             // 포트폴리오 목표 종목 정보 조회
-            List<PortfolioStock> targetStocks = portfolioStockRepository.findByPortfolioId(portfolioId);
+            List<PortfolioStock> targetStocks = portfolio.getPortfolioStocks();
             
             // 리밸런싱 필요 여부 체크
             boolean needsRebalancing = false;
@@ -101,7 +101,7 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
     @Override
     @Transactional
     public RebalancingExecutionResponse executeAutoRebalancing(Long portfolioId) {
-        Portfolio portfolio = portfolioRepository.findById(portfolioId)
+        Portfolio portfolio = portfolioRepository.findByIdWithPortfolioStocks(portfolioId)
                 .orElseThrow(() -> new RuntimeException("포트폴리오를 찾을 수 없습니다"));
 
         if (!portfolio.getAutoRebalancing()) {
@@ -114,7 +114,7 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
     @Override
     @Transactional
     public RebalancingExecutionResponse executeManualRebalancing(Long userId, Long portfolioId) {
-        Portfolio portfolio = portfolioRepository.findByIdAndUserId(portfolioId, userId)
+        Portfolio portfolio = portfolioRepository.findByIdAndUserIdWithPortfolioStocks(portfolioId, userId)
                 .orElseThrow(() -> new RuntimeException("포트폴리오를 찾을 수 없습니다"));
 
         return executeRebalancing(portfolio, ExecutionType.MANUAL);
@@ -153,7 +153,7 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
             Map<String, HoldingInfo> currentHoldings = getCurrentHoldings(portfolio);
             
             // 목표 종목 정보 조회
-            List<PortfolioStock> targetStocks = portfolioStockRepository.findByPortfolioId(portfolio.getId());
+            List<PortfolioStock> targetStocks = portfolio.getPortfolioStocks();
 
             // 리밸런싱 주문 계산
             List<RebalancingOrderData> orders = calculateRebalancingOrders(currentHoldings, targetStocks, portfolio);
@@ -262,11 +262,12 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
                                             List<RebalancingCheckResponse.StockRebalancingInfo> stockInfos) {
         
         BigDecimal totalValue = calculateTotalValue(currentHoldings);
+        BigDecimal totalTargetWeight = calculateTotalTargetWeight(targetStocks);
         boolean needsRebalancing = false;
 
         for (PortfolioStock targetStock : targetStocks) {
             String stockCode = targetStock.getStockCode();
-            BigDecimal targetWeight = targetStock.getTargetWeight();
+            BigDecimal normalizedTargetWeight = calculateNormalizedTargetWeight(targetStock, totalTargetWeight);
             BigDecimal threshold = targetStock.getThresholdPercentage();
             
             HoldingInfo holding = currentHoldings.get(stockCode);
@@ -282,7 +283,7 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
                 currentPrice = holding.getCurrentPrice();
             }
 
-            BigDecimal weightDifference = currentWeight.subtract(targetWeight).abs();
+            BigDecimal weightDifference = currentWeight.subtract(normalizedTargetWeight).abs();
             boolean stockNeedsRebalancing = weightDifference.compareTo(threshold) > 0;
             
             if (stockNeedsRebalancing) {
@@ -291,7 +292,7 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
 
             stockInfos.add(RebalancingCheckResponse.StockRebalancingInfo.builder()
                     .stockCode(stockCode)
-                    .targetWeight(targetWeight)
+                    .targetWeight(normalizedTargetWeight)
                     .currentWeight(currentWeight)
                     .weightDifference(weightDifference)
                     .threshold(threshold)
@@ -321,10 +322,11 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
                                    List<RebalancingCheckResponse.StockRebalancingInfo> stockInfos) {
         
         BigDecimal totalValue = calculateTotalValue(currentHoldings);
+        BigDecimal totalTargetWeight = calculateTotalTargetWeight(targetStocks);
 
         for (PortfolioStock targetStock : targetStocks) {
             String stockCode = targetStock.getStockCode();
-            BigDecimal targetWeight = targetStock.getTargetWeight();
+            BigDecimal normalizedTargetWeight = calculateNormalizedTargetWeight(targetStock, totalTargetWeight);
             
             HoldingInfo holding = currentHoldings.get(stockCode);
             BigDecimal currentWeight = BigDecimal.ZERO;
@@ -341,9 +343,9 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
 
             stockInfos.add(RebalancingCheckResponse.StockRebalancingInfo.builder()
                     .stockCode(stockCode)
-                    .targetWeight(targetWeight)
+                    .targetWeight(normalizedTargetWeight)
                     .currentWeight(currentWeight)
-                    .weightDifference(currentWeight.subtract(targetWeight).abs())
+                    .weightDifference(currentWeight.subtract(normalizedTargetWeight).abs())
                     .threshold(targetStock.getThresholdPercentage())
                     .needsRebalancing(true)
                     .currentQuantity(currentQuantity)
@@ -363,16 +365,39 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
         return calculateTotalValue(holdings);
     }
 
+    /**
+     * 전체 targetWeight의 합계를 계산한다
+     */
+    private BigDecimal calculateTotalTargetWeight(List<PortfolioStock> targetStocks) {
+        return targetStocks.stream()
+                .map(PortfolioStock::getTargetWeight)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * targetWeight를 정규화하여 실제 목표 비중(%)을 계산한다
+     * 백테스트 프로젝트와 동일한 방식: targetWeight / totalTargetWeight * 100
+     */
+    private BigDecimal calculateNormalizedTargetWeight(PortfolioStock targetStock, BigDecimal totalTargetWeight) {
+        if (totalTargetWeight.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+        return targetStock.getTargetWeight()
+                .divide(totalTargetWeight, 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100));
+    }
+
     private List<RebalancingOrderData> calculateRebalancingOrders(Map<String, HoldingInfo> currentHoldings,
                                                            List<PortfolioStock> targetStocks,
                                                            Portfolio portfolio) {
         List<RebalancingOrderData> orders = new ArrayList<>();
         BigDecimal totalValue = calculateTotalValue(currentHoldings);
+        BigDecimal totalTargetWeight = calculateTotalTargetWeight(targetStocks);
 
         for (PortfolioStock targetStock : targetStocks) {
             String stockCode = targetStock.getStockCode();
-            BigDecimal targetWeight = targetStock.getTargetWeight();
-            BigDecimal targetValue = totalValue.multiply(targetWeight).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            BigDecimal normalizedTargetWeight = calculateNormalizedTargetWeight(targetStock, totalTargetWeight);
+            BigDecimal targetValue = totalValue.multiply(normalizedTargetWeight).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             
             HoldingInfo holding = currentHoldings.get(stockCode);
             BigDecimal currentValue = BigDecimal.ZERO;

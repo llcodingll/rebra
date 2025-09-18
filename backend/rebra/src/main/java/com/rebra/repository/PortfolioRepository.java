@@ -65,6 +65,18 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
     void deleteByAccountId(Long accountId);
 
     /**
+     * portfolioStocks와 함께 포트폴리오 조회 (fetch join)
+     */
+    @Query("SELECT p FROM Portfolio p LEFT JOIN FETCH p.portfolioStocks WHERE p.id = :id")
+    Optional<Portfolio> findByIdWithPortfolioStocks(@Param("id") Long id);
+
+    /**
+     * 사용자 검증과 함께 portfolioStocks를 포함한 포트폴리오 조회 (fetch join)
+     */
+    @Query("SELECT p FROM Portfolio p LEFT JOIN FETCH p.portfolioStocks WHERE p.id = :id AND p.user.id = :userId")
+    Optional<Portfolio> findByIdAndUserIdWithPortfolioStocks(@Param("id") Long id, @Param("userId") Long userId);
+
+    /**
      * 특정 포트폴리오의 생성일시 업데이트
      */
     @Modifying
