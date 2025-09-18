@@ -26,7 +26,7 @@ interface CustomAxiosInstance extends AxiosInstance {
     config?: InternalAxiosRequestConfig<D>
   ): Promise<R>;
 
-  delete<T = unknown, R = ApiResponse<T>, D = any>(url: string, config?: InternalAxiosRequestConfig<D>): Promise<R>;
+  delete<T = unknown, R = ApiResponse<T>, D = any>(url: string, data?: D, config?: InternalAxiosRequestConfig<D>): Promise<R>;
 }
 
 /**
@@ -130,8 +130,8 @@ export class ApiClient {
     return this.wrapApiCall(() => this.client.put<T>(url, data, config));
   }
 
-  async delete<T>(url: string, config?: InternalAxiosRequestConfig): Promise<Result<T, AppError>> {
-    return this.wrapApiCall(() => this.client.delete<T>(url, config));
+  async delete<T>(url: string, data?: any, config?: InternalAxiosRequestConfig): Promise<Result<T, AppError>> {
+    return this.wrapApiCall(() => this.client.delete<T>(url, { ...config, data }));
   }
 
 }

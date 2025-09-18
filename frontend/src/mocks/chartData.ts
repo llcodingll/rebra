@@ -31,6 +31,6 @@ const chartApiDataWithData: ChartApiData[] = [
 const chartApiDataEmpty: ChartApiData[] = [];
 
 // 현재 사용할 데이터 (개발할 때 이 부분만 변경)
-export const chartApiData = chartApiDataWithData; // chartApiDataEmpty로 변경하면 빈 상태
+export const chartApiData = chartApiDataEmpty; // chartApiDataEmpty로 변경하면 빈 상태
 
 export type { ChartApiData };

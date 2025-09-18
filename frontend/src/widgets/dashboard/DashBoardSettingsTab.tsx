@@ -1,13 +1,51 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './DashBoardSettingsTab.module.css';
 import { useConfirmModal, useModalState } from '../../hooks/useModalState';
 import ConfirmModal from '../../shared/ui/modal/ConfirmModal';
 import RebalancingPeriodModal from './RebalancingPeriodModal';
+import { portfolioApi } from '../../features/portfolio/api/portfolioApi';
+import { useApiMutation } from '../../shared/hook/useApi';
 
-export default function DashBoardSettingsTab() {
+interface DashBoardSettingsTabProps {
+  portfolioId?: number;
+  initialAutoRebalancing?: boolean;
+  isLoadingSettings?: boolean;
+  onAutoRebalancingChanged?: () => void;
+}
+
+export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalancing = false, isLoadingSettings = false, onAutoRebalancingChanged }: DashBoardSettingsTabProps) {
     const { confirmState, showConfirm, hideConfirm } = useConfirmModal();
     const { isOpen: isPeriodModalOpen, open: openPeriodModal, close: closePeriodModal } = useModalState();
-    const [isAutoRebalancingEnabled, setIsAutoRebalancingEnabled] = useState(false);
+    const [isAutoRebalancingEnabled, setIsAutoRebalancingEnabled] = useState(initialAutoRebalancing);
+
+    // API 응답의 autoRebalance 값이 변경될 때 상태 동기화
+    useEffect(() => {
+        setIsAutoRebalancingEnabled(initialAutoRebalancing);
+    }, [initialAutoRebalancing]);
+
+    // 자동 리밸런싱 설정 API 뮤테이션
+    const { mutate: setAutoRebalancing, isPending: isSettingAutoRebalancing } = useApiMutation({
+        apiFunction: (enabled: boolean) => {
+            if (!portfolioId) {
+                return Promise.reject('Portfolio ID가 없습니다.');
+            }
+            return portfolioApi.setAutoRebalancing(portfolioId, { autoRebalancing: enabled });
+        },
+        onSuccess: (data) => {
+            console.log('자동 리밸런싱 설정 성공:', data);
+            // 포트폴리오 상세 정보 새로고침으로 실제 서버 상태 동기화
+            if (onAutoRebalancingChanged) {
+                onAutoRebalancingChanged();
+            }
+        },
+        onError: (error) => {
+            console.error('자동 리밸런싱 설정 실패:', error);
+            // 에러 시에도 서버 상태와 동기화
+            if (onAutoRebalancingChanged) {
+                onAutoRebalancingChanged();
+            }
+        }
+    });
 
     const handleExecuteRebalancing = () => {
         showConfirm({
@@ -37,9 +75,7 @@ export default function DashBoardSettingsTab() {
             confirmText: action,
             cancelText: '취소',
             onConfirm: () => {
-                setIsAutoRebalancingEnabled(newState);
-                console.log(`자동 리밸런싱 ${action} API 호출`, { enabled: newState });
-                // TODO: 자동 리밸런싱 설정 API 호출
+                setAutoRebalancing(newState);
             }
         });
     };
@@ -60,15 +96,27 @@ export default function DashBoardSettingsTab() {
 
                         <div className={styles.controlGroup}>
                             <h3>자동 리밸런싱</h3>
-                            <div className={styles.toggleContainer}>
-                            <div className={`${styles.toggle} ${isAutoRebalancingEnabled ? styles.active : ''}`} onClick={handleToggleAutoRebalancing}>
-                                <div className={styles.toggleTrack}></div>
-                                <div className={styles.toggleThumb}></div>
-                            </div>
-                            <span className={styles.toggleLabel}>
-                                {isAutoRebalancingEnabled ? '활성화' : '비활성화'}
-                            </span>
-                            </div>
+                            {isLoadingSettings ? (
+                                <div className={styles.toggleContainer}>
+                                    <div className={`${styles.toggle} ${styles.loading}`}>
+                                        <div className={styles.toggleTrack}></div>
+                                        <div className={styles.toggleThumb}></div>
+                                    </div>
+                                    <span className={styles.toggleLabel}>
+                                        설정 불러오는 중...
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className={styles.toggleContainer}>
+                                    <div className={`${styles.toggle} ${isAutoRebalancingEnabled ? styles.active : ''}`} onClick={handleToggleAutoRebalancing}>
+                                        <div className={styles.toggleTrack}></div>
+                                        <div className={styles.toggleThumb}></div>
+                                    </div>
+                                    <span className={styles.toggleLabel}>
+                                        {isAutoRebalancingEnabled ? '활성화' : '비활성화'}
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         <div className={styles.controlGroup}>

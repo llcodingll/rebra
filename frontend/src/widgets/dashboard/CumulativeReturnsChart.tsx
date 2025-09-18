@@ -7,7 +7,6 @@ interface TradeData {
   id: number;
   date: string;
   cumulativeReturn: number;
-  totalValue: number;
 }
 
 interface TooltipData {
@@ -16,7 +15,6 @@ interface TooltipData {
   id: number;
   date: string;
   cumulativeReturn: number;
-  totalValue: number;
 }
 
 interface DashboardChartProps {
@@ -57,8 +55,7 @@ export default function DashboardChart({
       y,
       id: data.id,
       date: data.date,
-      cumulativeReturn: data.cumulativeReturn,
-      totalValue: data.totalValue
+      cumulativeReturn: data.cumulativeReturn
     });
   };
 
@@ -74,7 +71,7 @@ export default function DashboardChart({
       className={styles.chartCard}
     >
       <div className={styles.chartHeader}>
-        <h2 className={styles.chartTitle}>누적 수익률 비교</h2>
+        <h2 className={styles.chartTitle}>히스토리 시점 등록 주식 수익률(변경 예정)</h2>
       </div>
       
       <div className={styles.legend}>
@@ -167,14 +164,9 @@ export default function DashboardChart({
             <div className={styles.tooltipContent}>
               <div className={styles.tooltipRow}>
                 <DollarSign className={styles.tooltipIcon} />
-                <span>수익률: {hoveredPoint.cumulativeReturn >= 0 ? '+' : ''}{hoveredPoint.cumulativeReturn}%</span>
+                <span>수익률: {hoveredPoint.cumulativeReturn >= 0 ? '+' : ''}{hoveredPoint.cumulativeReturn.toFixed(2)}%</span>
               </div>
               <div className={styles.tooltipDivider}></div>
-              <div className={styles.tooltipRow}>
-                <span className={styles.tooltipValue}>
-                  총 평가액: {hoveredPoint.totalValue.toLocaleString()}원
-                </span>
-              </div>
             </div>
           </div>
         )}
