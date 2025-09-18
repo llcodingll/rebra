@@ -159,6 +159,6 @@ const tradesByRebalanceIdWithData: { [key: number]: TradeData[] } = {
 const tradesByRebalanceIdEmpty: { [key: number]: TradeData[] } = {};
 
 // 현재 사용할 데이터 (개발할 때 이 부분만 변경)
-export const tradesByRebalanceId = tradesByRebalanceIdWithData; // tradesByRebalanceIdEmpty로 변경하면 빈 상태
+export const tradesByRebalanceId = tradesByRebalanceIdEmpty; // tradesByRebalanceIdEmpty로 변경하면 빈 상태
 
 export type { TradeData };

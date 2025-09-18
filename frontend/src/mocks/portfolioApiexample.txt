@@ -1,0 +1,524 @@
+개발 주소 : localhost8080
+
+1. 포트폴리오 목록 조회
+/api/v1/portfolios
+
+응답 예시
+조회 성공 (200) : 
+
+{
+  "success": true,
+  "status": 0,
+  "data": {
+    "totalCount": 0,
+    "portfolios": [
+      {
+        "portfolioId": 0,
+        "name": "string",
+        "description": "string",
+        "registeredStockCount": 0,
+        "totalReturnRate": 0,
+        "isAccountConnected": true,
+        "createdAt": "2025-09-16T00:11:40.796Z",
+        "accountType": "MOCK"
+      }
+    ]
+  },
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-16T00:11:40.796Z"
+}
+
+인증 실패 (401) 
+{
+  "success": true,
+  "status": 0,
+  "data": {
+    "totalCount": 0,
+    "portfolios": [
+      {
+        "portfolioId": 0,
+        "name": "string",
+        "description": "string",
+        "registeredStockCount": 0,
+        "totalReturnRate": 0,
+        "isAccountConnected": true,
+        "createdAt": "2025-09-16T00:11:40.798Z",
+        "accountType": "MOCK"
+      }
+    ]
+  },
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-16T00:11:40.798Z"
+}
+
+서버오류 (500) : 
+{
+  "success": true,
+  "status": 0,
+  "data": {
+    "totalCount": 0,
+    "portfolios": [
+      {
+        "portfolioId": 0,
+        "name": "string",
+        "description": "string",
+        "registeredStockCount": 0,
+        "totalReturnRate": 0,
+        "isAccountConnected": true,
+        "createdAt": "2025-09-16T00:11:40.801Z",
+        "accountType": "MOCK"
+      }
+    ]
+  },
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-16T00:11:40.801Z"
+}
+
+
+
+2. 포트폴리오 생성
+POST /api/v1/portfolios
+
+request 
+{
+  "name": "string",
+  "description": "string",
+  "accountId": 0
+}
+
+
+Responses
+{
+  "success": true,
+  "status": 0,
+  "data": {
+    "id": 0,
+    "name": "string",
+    "description": "string",
+    "account": {
+      "id": 0,
+      "accountNumber": "string",
+      "brokerName": "string"
+    },
+    "createdAt": "2025-09-16T08:42:24.602Z",
+    "updatedAt": "2025-09-16T08:42:24.602Z"
+  },
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-16T08:42:24.602Z"
+}
+
+
+포트폴리오 주식 등록
+POST api/v1/portfolios/{portfolioId}/stocks
+
+요청
+{
+  "stockCode": "string" // 주식 코드
+}
+
+응답 
+{
+  "success": true,
+  "status": 0,
+  "data": {
+    "portfolioStockId": 0,
+    "portfolioId": 0,
+    "stockCode": "string",
+    "stockName": "string",
+    "targetWeight": 0,
+    "thresholdPercentage": 0,
+    "status": "string",
+    "createdAt": "2025-09-17T05:27:10.970Z"
+  },
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-17T05:27:10.970Z"
+}
+
+
+
+포트폴리오 주식 삭제
+DELETE api/v1/portfolios/{portfolioId}/stocks
+
+요청
+{
+  "stockCode": "string"
+}
+
+응답
+{
+  "success": true,
+  "status": 200,
+  "timestamp": "2025-09-17T14:26:48.1949179"
+}
+
+
+
+리벨런싱 주식 설정 업데이트
+PUT /api/v1/portfolios/{portfolioId}/stocks/batch
+
+request
+{
+  "stocks": [
+    {
+      "stockCode": "03123",
+      "targetWeight": 40.3,
+      "thresholdPercentage": 20
+    },
+
+    {
+      "stockCode": "05462",
+      "targetWeight": 49.7,
+      "thresholdPercentage": 20
+    }
+  ]
+}
+
+위와 같이 
+모든 주식 코드 / 비중 / 임계치를 받는다.
+
+
+응답
+{
+  "success": true,
+  "status": 0,
+  "data": [
+    {
+      "portfolioStockId": 0,
+      "portfolioId": 0,
+      "stockCode": "string",
+      "stockName": "string",
+      "targetWeight": 0,
+      "thresholdPercentage": 0,
+      "status": "string",
+      "createdAt": "2025-09-18T01:07:28.330Z"
+    }
+  ],
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-18T01:07:28.330Z"
+}
+이런식으로 결과가 나옴 이건 성공 실패만 보면 됨
+
+
+리밸런싱 히스토리 전체 조회 (그래프 용)
+
+설명 : 포트폴리오의 모든 리밸런싱 히스토리를 조회합니다. 그래프 그리기 용도로 사용됩니다. 조회 기간은 포트폴리오 생성일부터 마지막 리밸런싱 날짜까지 자동으로 계산되며, 시작점으로 100% 수익률의 더미 데이터가 포함됩니다. 성능 최적화를 위해 거래 내역(trades)은 제외되며, orderId 클릭 시 상세 조회 API를 사용하세요.
+
+/api/v1/portfolios/{portfolioId}/rebalancing-history/all
+
+
+응답
+{
+  "success": true,
+  "status": 0,
+  "data": [
+    {
+      "orderId": 0,
+      "executedAt": "2025-09-18T04:14:14.166Z",
+      "cumulativeReturn": 0
+    }
+  ],
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-18T04:14:14.166Z"
+}
+
+예시
+{
+  "success": true,
+  "status": 200,
+  "data": [
+    {
+      "orderId": null,
+      "executedAt": "2024-09-18T03:18:12.829",
+      "cumulativeReturn": 100
+    },
+    {
+      "orderId": 7,
+      "executedAt": "2025-06-19T17:30:20.499401",
+      "cumulativeReturn": 100
+    },
+    {
+      "orderId": 8,
+      "executedAt": "2025-07-12T22:30:20.500403",
+      "cumulativeReturn": 102.84
+    },
+    {
+      "orderId": 9,
+      "executedAt": "2025-08-04T02:30:20.500403",
+      "cumulativeReturn": 106.85
+    },
+    {
+      "orderId": 10,
+      "executedAt": "2025-08-26T21:30:20.500403",
+      "cumulativeReturn": 108.26
+    }
+  ],
+  "timestamp": "2025-09-18T13:14:14.1291396"
+}
+
+
+
+리밸런싱 히스토리 목록 조회 (페이지네이션)
+
+설명 : 포트폴리오의 리밸런싱 히스토리를 페이지 단위로 조회합니다. 요약 정보도 함께 제공됩니다. 조회 기간은 포트폴리오 생성일부터 마지막 리밸런싱 날짜까지 자동으로 계산됩니다.
+/api/v1/portfolios/{portfolioId}/rebalancing-history
+
+쿼리
+- 페이지 번호(0부터 시작) page(string)
+- 페이지 크기 size(string)
+
+응답 
+{
+  "success": true,
+  "status": 0,
+  "data": {
+    "success": true,
+    "message": "string",
+    "content": {
+      "histories": [
+        {
+          "orderId": 0,
+          "executionType": "AUTO",
+          "totalStocks": 0,
+          "totalBuyAmount": 0,
+          "totalSellAmount": 0,
+          "totalPortfolioValue": 0,
+          "status": "EXECUTING",
+          "executedAt": "2025-09-18T04:22:45.111Z"
+        }
+      ],
+      "summary": {
+        "period": {
+          "startDate": "2025-09-18",
+          "endDate": "2025-09-18"
+        },
+        "totalRebalances": 0,
+        "totalBuyAmount": 0,
+        "totalSellAmount": 0,
+        "autoRebalances": 0,
+        "manualRebalances": 0
+      }
+    },
+    "pageInfo": {
+      "page": 0,
+      "size": 0,
+      "totalElements": 0,
+      "totalPages": 0,
+      "first": true,
+      "last": true
+    },
+    "timestamp": "2025-09-18T04:22:45.111Z"
+  },
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-18T04:22:45.111Z"
+}
+
+예시
+{
+  "success": true,
+  "status": 200,
+  "data": {
+    "success": true,
+    "message": "리밸런싱 히스토리 조회 성공",
+    "content": {
+      "histories": [
+        {
+          "orderId": 10,
+          "executionType": "AUTO",
+          "totalStocks": 5,
+          "totalBuyAmount": 10959108,
+          "totalSellAmount": 6163740,
+          "totalPortfolioValue": 10825693.52,
+          "status": "EXECUTING",
+          "executedAt": "2025-08-26T21:30:20.500403"
+        },
+        {
+          "orderId": 9,
+          "executionType": "MANUAL",
+          "totalStocks": 2,
+          "totalBuyAmount": 36180934,
+          "totalSellAmount": 0,
+          "totalPortfolioValue": 10685463.53,
+          "status": "EXECUTING",
+          "executedAt": "2025-08-04T02:30:20.500403"
+        },
+        {
+          "orderId": 8,
+          "executionType": "MANUAL",
+          "totalStocks": 2,
+          "totalBuyAmount": 6314176,
+          "totalSellAmount": 7482096,
+          "totalPortfolioValue": 10284444.39,
+          "status": "COMPLETED",
+          "executedAt": "2025-07-12T22:30:20.500403"
+        },
+        {
+          "orderId": 7,
+          "executionType": "MANUAL",
+          "totalStocks": 3,
+          "totalBuyAmount": 50063552,
+          "totalSellAmount": 0,
+          "totalPortfolioValue": 10000000,
+          "status": "EXECUTING",
+          "executedAt": "2025-06-19T17:30:20.499401"
+        }
+      ],
+      "summary": {
+        "period": {
+          "startDate": "2024-09-18",
+          "endDate": "2025-09-18"
+        },
+        "totalRebalances": 4,
+        "totalBuyAmount": 103517770,
+        "totalSellAmount": 13645836,
+        "autoRebalances": 1,
+        "manualRebalances": 3
+      }
+    },
+    "pageInfo": {
+      "page": 0,
+      "size": 20,
+      "totalElements": 4,
+      "totalPages": 1,
+      "first": true,
+      "last": true
+    },
+    "timestamp": "2025-09-18T13:22:20.2626185"
+  },
+  "timestamp": "2025-09-18T13:22:20.263619"
+}
+
+
+
+리밸런싱 히스토리 상세 조회
+/api/v1/portfolios/{portfolioId}/rebalancing-history/{orderId}
+특정 리밸런싱 주문의 상세 정보와 거래 내역을 조회합니다.
+
+Response
+{
+  "success": true,
+  "status": 0,
+  "data": {
+    "orderId": 0,
+    "executionType": "AUTO",
+    "executedAt": "2025-09-18T04:24:29.033Z",
+    "cumulativeReturn": 0,
+    "totalPortfolioValue": 0,
+    "trades": [
+      {
+        "tradeId": 0,
+        "stockCode": "string",
+        "stockName": "string",
+        "tradeType": "string",
+        "executedShares": 0,
+        "price": 0,
+        "fee": 0,
+        "profitAmount": 0,
+        "profitRate": 0,
+        "reason": "string",
+        "tradeDate": "2025-09-18T04:24:29.033Z"
+      }
+    ]
+  },
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-18T04:24:29.033Z"
+}
+
+
+예시
+{
+  "success": true,
+  "status": 200,
+  "data": {
+    "orderId": 10,
+    "executionType": "AUTO",
+    "executedAt": "2025-08-26T21:30:20.500403",
+    "cumulativeReturn": 108.26,
+    "totalPortfolioValue": 10825693.52,
+    "trades": [
+      {
+        "tradeId": 10,
+        "stockCode": "000660",
+        "stockName": "SK하이닉스",
+        "tradeType": "BUY",
+        "executedShares": 35,
+        "price": 108465,
+        "fee": 5694.41,
+        "profitAmount": 0,
+        "profitRate": 0,
+        "reason": "목표 비중 미달로 인한 매수",
+        "tradeDate": "2025-07-08T12:26:53.500403"
+      },
+      {
+        "tradeId": 11,
+        "stockCode": "035420",
+        "stockName": "NAVER",
+        "tradeType": "SELL",
+        "executedShares": 4,
+        "price": 196164,
+        "fee": 1176.98,
+        "profitAmount": 39232.8,
+        "profitRate": 5,
+        "reason": "목표 비중 초과로 인한 매도",
+        "tradeDate": "2025-07-15T12:49:03.500403"
+      },
+      {
+        "tradeId": 12,
+        "stockCode": "051910",
+        "stockName": "LG화학",
+        "tradeType": "SELL",
+        "executedShares": 12,
+        "price": 448257,
+        "fee": 8068.63,
+        "profitAmount": 268954.2,
+        "profitRate": 5,
+        "reason": "목표 비중 초과로 인한 매도",
+        "tradeDate": "2025-07-17T13:59:12.500403"
+      },
+      {
+        "tradeId": 8,
+        "stockCode": "035420",
+        "stockName": "NAVER",
+        "tradeType": "BUY",
+        "executedShares": 5,
+        "price": 218775,
+        "fee": 1640.81,
+        "profitAmount": 0,
+        "profitRate": 0,
+        "reason": "목표 비중 미달로 인한 매수",
+        "tradeDate": "2025-07-24T09:20:01.500403"
+      },
+      {
+        "tradeId": 9,
+        "stockCode": "006400",
+        "stockName": "삼성SDI",
+        "tradeType": "BUY",
+        "executedShares": 14,
+        "price": 433497,
+        "fee": 9103.44,
+        "profitAmount": 0,
+        "profitRate": 0,
+        "reason": "목표 비중 미달로 인한 매수",
+        "tradeDate": "2025-08-15T09:55:42.500403"
+      }
+    ]
+  },
+  "timestamp": "2025-09-18T13:24:29.0181949"
+}

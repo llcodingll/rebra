@@ -5,40 +5,28 @@ import styles from './StockSettingModal.module.css';
 import { useConfirmModal } from '../../hooks/useModalState';
 import ConfirmModal from '../../shared/ui/modal/ConfirmModal';
 
-interface Stock {
-  name: string;
-  code: string;
-  buyPrice: string;
-  currentPrice: string;
-  quantity: string;
-  value: string;
-  return: string;
-  returnAmount: string;
-  currentWeight: string;
-  targetWeight: string;
-  weight: string;
-  threshold: string;
-  type: 'registered' | 'unregistered';
-}
+import type { Stock } from '../../entities/portfolio';
 
 interface StockSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   stocks: Stock[];
   onSaveSettings: (updatedStocks: Stock[]) => void;
+  isSaving?: boolean;
 }
 
 interface StockSettings {
   code: string;
-  weight: number;
-  threshold: number;
+  weight: number | '';
+  threshold: number | null;
 }
 
 export default function StockSettingsModal({
   isOpen,
   onClose,
   stocks,
-  onSaveSettings
+  onSaveSettings,
+  isSaving = false
 }: StockSettingsModalProps) {
   const [stockSettings, setStockSettings] = useState<StockSettings[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
@@ -51,8 +39,8 @@ export default function StockSettingsModal({
         .filter(stock => stock.type === 'registered')
         .map(stock => ({
           code: stock.code,
-          weight: parseFloat(stock.weight) || 0,
-          threshold: parseFloat(stock.threshold) || 0
+          weight: stock.targetWeight || 0, // 서버에서 받은 원본 가중치
+          threshold: stock.thresholdPercentage
         }));
       setStockSettings(initialSettings);
       setHasChanges(false);
@@ -61,28 +49,46 @@ export default function StockSettingsModal({
 
   // 목표비중 계산
   const calculateTargetWeights = (settings: StockSettings[]) => {
-    const totalWeight = settings.reduce((sum, setting) => sum + setting.weight, 0);
-    
+    const totalWeight = settings.reduce((sum, setting) => sum + (typeof setting.weight === 'number' ? setting.weight : 0), 0);
+
     if (totalWeight === 0) {
       return settings.map(setting => ({ ...setting, targetWeight: 0 }));
     }
-    
+
     return settings.map(setting => ({
       ...setting,
-      targetWeight: (setting.weight / totalWeight) * 100
+      targetWeight: ((typeof setting.weight === 'number' ? setting.weight : 0) / totalWeight) * 100
     }));
   };
 
   // 설정값 변경 핸들러
-  const handleSettingChange = (code: string, field: 'weight' | 'threshold', value: number) => {
+  const handleSettingChange = (code: string, field: 'weight' | 'threshold', value: number | null | '') => {
     setStockSettings(prev => {
-      const updated = prev.map(setting => 
-        setting.code === code 
-          ? { ...setting, [field]: Math.max(0, value) }
-          : setting
-      );
+      const updated = prev.map(setting => {
+        if (setting.code === code) {
+          if (field === 'weight') {
+            // 가중치는 빈 문자열 허용 (입력 중)
+            return { ...setting, weight: value === '' ? '' : Math.max(0, value || 0) };
+          } else {
+            // 임계값은 null 허용 (사용자가 비우면 null)
+            return { ...setting, threshold: value };
+          }
+        }
+        return setting;
+      });
       setHasChanges(true);
       return updated;
+    });
+  };
+
+  // 가중치 포커스 아웃 핸들러 (빈 값을 0으로 변환)
+  const handleWeightBlur = (code: string) => {
+    setStockSettings(prev => {
+      return prev.map(setting =>
+        setting.code === code && setting.weight === ''
+          ? { ...setting, weight: 0 }
+          : setting
+      );
     });
   };
 
@@ -92,8 +98,8 @@ export default function StockSettingsModal({
       .filter(stock => stock.type === 'registered')
       .map(stock => ({
         code: stock.code,
-        weight: parseFloat(stock.weight) || 0,
-        threshold: parseFloat(stock.threshold) || 0
+        weight: stock.targetWeight || 0, // 서버에서 받은 원본 가중치
+        threshold: stock.thresholdPercentage
       }));
     setStockSettings(initialSettings);
     setHasChanges(false);
@@ -111,22 +117,30 @@ export default function StockSettingsModal({
 
   // 저장
   const handleSave = () => {
-    const settingsWithTargets = calculateTargetWeights(stockSettings);
+    // 임계값이 null인 주식이 있는지 검사
+    const stocksWithNullThreshold = stockSettings.filter(setting => setting.threshold === null);
+    if (stocksWithNullThreshold.length > 0) {
+      const stockNames = stocksWithNullThreshold.map(setting => {
+        const stock = stocks.find(s => s.code === setting.code);
+        return stock?.name || setting.code;
+      }).join(', ');
+      alert(`다음 주식의 임계값을 설정해주세요: ${stockNames}`);
+      return;
+    }
+
     const updatedStocks = stocks.map(stock => {
-      const setting = settingsWithTargets.find(s => s.code === stock.code);
+      const setting = stockSettings.find(s => s.code === stock.code);
       if (setting && stock.type === 'registered') {
         return {
           ...stock,
-          weight: setting.weight.toString(),
-          threshold: setting.threshold.toString(),
-          targetWeight: setting.targetWeight.toFixed(1)
+          targetWeight: typeof setting.weight === 'number' ? setting.weight : 0, // 사용자가 입력한 가중치를 전송
+          thresholdPercentage: setting.threshold
         };
       }
       return stock;
     });
 
     onSaveSettings(updatedStocks);
-    onClose();
     setHasChanges(false);
   };
 
@@ -196,8 +210,7 @@ export default function StockSettingsModal({
                   
                   if (!setting) return null;
 
-                  const returnValue = parseFloat(stock.return.replace('%', ''));
-                  const isPositive = returnValue >= 0;
+                  const isPositive = stock.profitLossRate >= 0;
 
                   return (
                     <div key={stock.code} className={styles.stockItem}>
@@ -213,15 +226,15 @@ export default function StockSettingsModal({
                               className={`${styles.trendIcon} ${isPositive ? styles.positive : styles.negative}`} 
                             />
                             <span className={`${styles.returnText} ${isPositive ? styles.positive : styles.negative}`}>
-                              {stock.return}
+                              {stock.profitLossRate >= 0 ? '+' : ''}{stock.profitLossRate.toFixed(1)}%
                             </span>
                           </div>
                         </div>
                         
                         <div className={styles.stockDetails}>
-                          <span>현재가: {stock.currentPrice}원</span>
-                          <span>보유량: {stock.quantity}</span>
-                          <span>평가액: {stock.value}</span>
+                          <span>현재가: {stock.currentPrice.toLocaleString()}원</span>
+                          <span>보유량: {stock.quantity}주</span>
+                          <span>평가액: {stock.totalValue.toLocaleString()}원</span>
                         </div>
                       </div>
 
@@ -236,7 +249,8 @@ export default function StockSettingsModal({
                             <input
                               type="number"
                               value={setting.weight}
-                              onChange={(e) => handleSettingChange(stock.code, 'weight', parseFloat(e.target.value) || 0)}
+                              onChange={(e) => handleSettingChange(stock.code, 'weight', e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
+                              onBlur={() => handleWeightBlur(stock.code)}
                               className={styles.numberInput}
                               min="0"
                               max="100"
@@ -254,8 +268,9 @@ export default function StockSettingsModal({
                           <div className={styles.inputWrapper}>
                             <input
                               type="number"
-                              value={setting.threshold}
-                              onChange={(e) => handleSettingChange(stock.code, 'threshold', parseFloat(e.target.value) || 0)}
+                              value={setting.threshold ?? ''}
+                              placeholder="임계값 설정 필요"
+                              onChange={(e) => handleSettingChange(stock.code, 'threshold', e.target.value ? parseFloat(e.target.value) : null)}
                               className={styles.numberInput}
                               min="0"
                               max="50"
@@ -302,11 +317,11 @@ export default function StockSettingsModal({
                 </button>
                 <button
                   onClick={handleSaveClick}
-                  disabled={!hasChanges}
+                  disabled={!hasChanges || isSaving}
                   className={styles.saveButton}
                 >
                   <Save size={16} />
-                  설정 저장
+                  {isSaving ? '저장 중...' : '설정 저장'}
                 </button>
               </div>
             </div>
