@@ -23,8 +23,8 @@ public class WebSocketHelper {
     private final SimpMessagingTemplate messagingTemplate;
 
     // WebSocket 채널 상수 - 자원 분리로 경로 단순화
-    private static final String STOCK_PRICE_QUEUE = "/queue/stock/price";
-    private static final String STOCK_ORDERBOOK_QUEUE = "/queue/stock/orderbook";
+    private static final String STOCK_PRICE_QUEUE_TEMPLATE = "/queue/stock/%s/price";
+    private static final String STOCK_ORDERBOOK_QUEUE_TEMPLATE = "/queue/stock/%s/orderbook";
     private static final String USER_QUEUE = "/queue/user";
 
     // ==================== 주식 실시간 데이터 전송 ====================
@@ -34,19 +34,9 @@ public class WebSocketHelper {
      */
     public void broadcastPriceData(Long userId, String stockCode, Object priceData) {
         try {
-            // stockCode를 메시지 내용에 포함
-            PriceUpdateData updateData = PriceUpdateData.builder()
-                    .stockCode(stockCode)
-                    .priceData(priceData)
-                    .timestamp(System.currentTimeMillis())
-                    .build();
+            String queuePath = String.format(STOCK_PRICE_QUEUE_TEMPLATE, stockCode);
+            messagingTemplate.convertAndSendToUser(userId.toString(), queuePath, priceData);
 
-            WebSocketResponse response = WebSocketResponse.of(
-                    WebSocketResponse.MessageType.PRICE_UPDATE,
-                    updateData
-            );
-
-            messagingTemplate.convertAndSendToUser(userId.toString(), STOCK_PRICE_QUEUE, response);
             log.debug("체결가 데이터 개인 전송 - UserId: {}, StockCode: {}", userId, stockCode);
 
         } catch (Exception e) {
@@ -59,19 +49,9 @@ public class WebSocketHelper {
      */
     public void broadcastOrderbookData(Long userId, String stockCode, Object orderbookData) {
         try {
-            // stockCode를 메시지 내용에 포함
-            OrderbookUpdateData updateData = OrderbookUpdateData.builder()
-                    .stockCode(stockCode)
-                    .orderbookData(orderbookData)
-                    .timestamp(System.currentTimeMillis())
-                    .build();
+            String queuePath = String.format(STOCK_ORDERBOOK_QUEUE_TEMPLATE, stockCode);
+            messagingTemplate.convertAndSendToUser(userId.toString(), queuePath, orderbookData);
 
-            WebSocketResponse response = WebSocketResponse.of(
-                    WebSocketResponse.MessageType.ORDERBOOK_UPDATE,
-                    updateData
-            );
-
-            messagingTemplate.convertAndSendToUser(userId.toString(), STOCK_ORDERBOOK_QUEUE, response);
             log.debug("호가 데이터 개인 전송 - UserId: {}, StockCode: {}", userId, stockCode);
 
         } catch (Exception e) {
@@ -84,7 +64,9 @@ public class WebSocketHelper {
      */
     public void sendSubscriptionStarted(Long userId, String stockCode, String dataType) {
         try {
-            String queueDestination = "price".equals(dataType) ? STOCK_PRICE_QUEUE : STOCK_ORDERBOOK_QUEUE;
+            String queueDestination = "price".equals(dataType) ?
+                String.format(STOCK_PRICE_QUEUE_TEMPLATE, stockCode) :
+                String.format(STOCK_ORDERBOOK_QUEUE_TEMPLATE, stockCode);
 
             SubscriptionStatusData statusData = SubscriptionStatusData.builder()
                     .stockCode(stockCode)
@@ -112,7 +94,9 @@ public class WebSocketHelper {
      */
     public void sendSubscriptionStopped(Long userId, String stockCode, String dataType) {
         try {
-            String queueDestination = "price".equals(dataType) ? STOCK_PRICE_QUEUE : STOCK_ORDERBOOK_QUEUE;
+            String queueDestination = "price".equals(dataType) ?
+                String.format(STOCK_PRICE_QUEUE_TEMPLATE, stockCode) :
+                String.format(STOCK_ORDERBOOK_QUEUE_TEMPLATE, stockCode);
 
             SubscriptionStatusData statusData = SubscriptionStatusData.builder()
                     .stockCode(stockCode)
@@ -189,7 +173,9 @@ public class WebSocketHelper {
      */
     public void sendStockError(Long userId, String stockCode, String dataType, String error, String message) {
         try {
-            String queueDestination = "price".equals(dataType) ? STOCK_PRICE_QUEUE : STOCK_ORDERBOOK_QUEUE;
+            String queueDestination = "price".equals(dataType) ?
+                String.format(STOCK_PRICE_QUEUE_TEMPLATE, stockCode) :
+                String.format(STOCK_ORDERBOOK_QUEUE_TEMPLATE, stockCode);
 
             StockErrorData errorResponse = StockErrorData.builder()
                     .error(error)

@@ -38,20 +38,18 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
             String username = null;
 
             log.info("🔑 추출된 토큰: {}", token != null ?
-                "토큰 길이 " + token.length() + ", 앞 20자: " + token.substring(0, Math.min(20, token.length())) + "..." :
-                "토큰 없음");
+                    "토큰 길이 " + token.length() + ", 앞 20자: " + token.substring(0, Math.min(20, token.length())) + "..." :
+                    "토큰 없음");
 
             if (token != null) {
                 try {
                     log.info("🔍 JWT 토큰 검증 시작...");
-                    // JWT 토큰 유효성 검증
                     if (tokenProvider.validateToken(token)) {
                         userId = tokenProvider.getUserIdFromToken(token);
                         username = tokenProvider.getUsernameFromToken(token);
 
                         log.info("✅ WebSocket 인증 성공 - UserId: {}, Username: {}", userId, username);
 
-                        // 세션에 사용자 정보 저장
                         attributes.put("userId", userId);
                         attributes.put("username", username);
                         attributes.put("authenticated", true);
@@ -65,23 +63,23 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
                     attributes.put("authenticated", false);
                 }
             } else {
-                log.warn("❌ WebSocket 연결 거부 - 토큰이 제공되지 않았습니다");
-                return false;
+                // ✅ 수정: 토큰이 없어도 연결 허용 (게스트 모드)
+                log.warn("⚠️ 토큰이 제공되지 않았습니다. 게스트로 연결합니다.");
+                attributes.put("authenticated", false);
             }
 
             // 기본 정보 저장
             attributes.put("connectTime", System.currentTimeMillis());
             attributes.put("remoteAddress", request.getRemoteAddress());
 
-            // 인증된 사용자만 연결 허용
+            // ✅ 인증 여부와 관계없이 연결 허용
             boolean authenticated = (Boolean) attributes.getOrDefault("authenticated", false);
             if (authenticated) {
-                log.info("🎯 WebSocket 연결 허용 - URI: {}, UserId: {}", request.getURI(), userId);
-                return true;
+                log.info("🎯 WebSocket 연결 허용(인증됨) - URI: {}, UserId: {}", request.getURI(), userId);
             } else {
-                log.warn("❌ WebSocket 연결 거부 - 인증 실패");
-                return false;
+                log.info("🎯 WebSocket 연결 허용(게스트) - URI: {}", request.getURI());
             }
+            return true;
 
         } catch (Exception e) {
             log.error("💥 WebSocket 핸드셰이크 중 예외 발생: {} - {}", e.getClass().getSimpleName(), e.getMessage(), e);
@@ -150,7 +148,7 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
         if (request.getCookies() == null) {
             return null;
         }
-        
+
         for (Cookie cookie : request.getCookies()) {
             if (CookieUtil.ACCESS_TOKEN_COOKIE_NAME.equals(cookie.getName())) {
                 return cookie.getValue();

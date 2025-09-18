@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'motion/react';
@@ -70,6 +70,7 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
   const queryClient = useQueryClient();
   const [selectedPortfolio, setSelectedPortfolio] = useState('');
   const [backtestName, setBacktestName] = useState('');
+  const [rebalancingType, setRebalancingType] = useState<'THRESHOLD' | 'PERIODIC'>('THRESHOLD');
   const [rebalancingPeriod] = useState('월간');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -81,20 +82,31 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
   const [searchTerm, setSearchTerm] = useState('');
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
 
-  // API로 주식 검색
-  const { data: stockSearchData, isLoading: isSearchLoading, error: searchError } = useQuery({
-    queryKey: ['stockSearch', searchTerm, startDate],
-    queryFn: async () => {
-      if (!searchTerm.trim() || !startDate) return [];
+  // 디바운스된 검색어 (0.5초 지연)
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
-      const result = await searchStocksForBacktest(searchTerm, startDate);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // API로 주식 검색 (디바운스된 검색어 사용)
+  const { data: stockSearchData, isLoading: isSearchLoading, error: searchError } = useQuery({
+    queryKey: ['stockSearch', debouncedSearchTerm, startDate],
+    queryFn: async () => {
+      if (!debouncedSearchTerm.trim() || !startDate) return [];
+
+      const result = await searchStocksForBacktest(debouncedSearchTerm, startDate);
       if (result.success) {
         return result.data.map(transformApiDataToStock);
       } else {
         throw new Error(result.error.message);
       }
     },
-    enabled: Boolean(searchTerm.trim() && startDate),
+    enabled: Boolean(debouncedSearchTerm.trim() && startDate),
     staleTime: 30000, // 30초
   });
 
@@ -127,7 +139,7 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
       if (result.success) {
         console.log('생성된 백테스트 ID:', result.data);
         // 백테스트 목록 캐시 무효화하여 새로 생성된 데이터가 바로 보이도록 함
-        queryClient.invalidateQueries({ queryKey: ['backtests'] });
+        queryClient.invalidateQueries({ queryKey: ['backtestList'] });
         // 성공 시 백테스트 목록 페이지로 이동
         navigate('/backtest');
       } else {
@@ -146,24 +158,42 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
     setIsBacktestExecuted(true);
 
     // 포트폴리오 아이템들을 백엔드 형식으로 변환
-    const stocks = portfolioItems.map(item => ({
-      ticker: item.code,
-      name: item.name,
-      weight: item.targetWeight,
-      thresholdPercentage: item.threshold / 100, // 임계값을 100으로 나누어서 서버에 전송
-      shares: item.quantity
-    }));
+    // 1. 비중 정규화 (총합을 100%로 맞춤)
+    const totalWeight = portfolioItems.reduce((sum, item) => sum + item.targetWeight, 0);
+
+    const stocks = portfolioItems.map(item => {
+      // 정규화된 비중 계산
+      const normalizedWeight = totalWeight > 0 ? (item.targetWeight / totalWeight) * 100 : 0;
+
+      const stockData: any = {
+        ticker: item.code,
+        name: item.name,
+        weight: normalizedWeight, // 정규화된 비중 사용
+        shares: item.quantity
+      };
+
+      // 임계값 기반 리밸런싱일 때만 thresholdPercentage 추가
+      if (rebalancingType === 'THRESHOLD') {
+        stockData.thresholdPercentage = item.threshold / 100;
+      }
+
+      return stockData;
+    });
 
     const request: BacktestCreateRequest = {
       testName: backtestName,
       startDate,
       endDate,
-      rebalancingType: 'PERIODIC', // 현재는 고정값
-      rebalancingPeriod: 'MONTHLY', // 현재는 고정값 (월간)
+      rebalancingType,
+      rebalancingPeriod: rebalancingType === 'PERIODIC' ? 'MONTHLY' : undefined,
       stocks
     };
 
+    console.log('비중 정규화 결과:');
+    console.log('- 원본 총 비중:', totalWeight);
+    console.log('- 정규화된 비중:', stocks.map(s => ({ name: s.name, weight: s.weight.toFixed(1) + '%' })));
     console.log('백테스트 생성 요청:', request);
+
     createBacktestMutation.mutate(request);
   };
 
@@ -189,6 +219,8 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
         <BacktestSettings
           backtestName={backtestName}
           setBacktestName={setBacktestName}
+          rebalancingType={rebalancingType}
+          setRebalancingType={setRebalancingType}
           rebalancingPeriod={rebalancingPeriod}
           startDate={startDate}
           setStartDate={setStartDate}
@@ -198,6 +230,7 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
           isRunDisabled={!backtestName || !startDate || !endDate || portfolioItems.length === 0 || createBacktestMutation.isPending}
           onNavigateToBacktestList={handleNavigateToBacktestList}
           isCreating={createBacktestMutation.isPending}
+          portfolioCount={portfolioItems.length}
         />
 
         <div className={styles.contentGrid}>
@@ -222,6 +255,7 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
             parsePrice={parsePrice}
             formatPrice={formatPrice}
             calculateValue={calculateValue}
+            rebalancingType={rebalancingType}
           />
         </div>
       </div>

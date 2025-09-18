@@ -41,7 +41,18 @@
 .priceChange {
   display: flex;
   gap: 4px;
-  color: #dc2626;
   font-size: 18px;
   font-weight: 600;
+}
+
+.priceChangePositive {
+  color: #dc2626; /* 빨간색 - 상승 */
+}
+
+.priceChangeNegative {
+  color: #2563eb; /* 파란색 - 하락 */
+}
+
+.priceChangeNeutral {
+  color: #6b7280; /* 회색 - 변동 없음 */
 }

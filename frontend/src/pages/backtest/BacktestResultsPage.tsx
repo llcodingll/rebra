@@ -14,6 +14,9 @@ interface TradeData {
   buyAmount: number;
   sellAmount: number;
   portfolioValue: number;
+  cashBalance: number;
+  dailyBorrowingInterest: number;
+  buyHoldValue: number;
 }
 
 interface TooltipData {
@@ -32,41 +35,27 @@ export default function BacktestResultsPage() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
-  // 백테스트 결과 조회
   const { data: backtestResult, isLoading, error } = useQuery({
     queryKey: ['backtestResult', backtestId],
     queryFn: async () => {
-      console.log('🔍 백테스트 결과 조회 시작 - backtestId:', backtestId);
-
       if (!backtestId) {
-        console.error('❌ 백테스트 ID가 없습니다');
         throw new Error('백테스트 ID가 없습니다.');
       }
 
       const result = await getBacktestResult(parseInt(backtestId));
-      console.log('📊 백테스트 결과 API 응답:', result);
 
       if (result.success) {
-        console.log('✅ 백테스트 결과 데이터:', result.data);
         return result.data;
       } else {
-        console.error('❌ 백테스트 결과 API 에러:', result.error);
         throw new Error(result.error.message);
       }
     },
     enabled: Boolean(backtestId),
-    staleTime: 60000, // 1분
+    staleTime: 60000,
   });
 
-  // 로딩 중이거나 에러가 있는 경우
   if (isLoading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.loading}>
-          <p>백테스트 결과를 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (error) {
@@ -79,7 +68,6 @@ export default function BacktestResultsPage() {
     );
   }
 
-  console.log('🎯 현재 상태:', { backtestId, isLoading, error, backtestResult });
 
   if (!backtestResult) {
     return (
@@ -95,54 +83,49 @@ export default function BacktestResultsPage() {
     );
   }
 
-  // 실제 백테스트 결과에서 차트 데이터 생성
   const tradeData: TradeData[] = backtestResult.details?.map(detail => ({
-    date: detail.date || '',
-    buyAmount: detail.buyAmount || 0,
-    sellAmount: detail.sellAmount || 0,
-    portfolioValue: detail.portfolioValue || 0,
+    date: detail.period_date || '',
+    buyAmount: detail.total_buy_amount || 0,
+    sellAmount: detail.total_sell_amount || 0,
+    portfolioValue: detail.portfolio_value || 0,
+    cashBalance: detail.cash_balance || 0,
+    dailyBorrowingInterest: detail.daily_borrowing_interest || 0,
+    buyHoldValue: detail.buy_hold_value || 0,
   })) || [];
 
-  // 초기 자본 계산 (먼저 계산)
   const initialCapital = backtestResult?.summary?.finalValue && backtestResult?.summary?.totalReturn
     ? Math.round(backtestResult.summary.finalValue / (1 + backtestResult.summary.totalReturn))
-    : 10000000; // 기본값 1천만원
+    : 10000000;
 
-  // details가 없으면 기본 데이터 생성 (시작일과 종료일 기준)
   if (tradeData.length === 0 && backtestResult.summary) {
     const finalValue = backtestResult.summary.finalValue;
+    const buyHoldFinalValue = initialCapital * (1 + (backtestResult.summary.buyHoldReturnPercentage || 0) / 100);
     tradeData.push(
-      { date: backtestResult.startDate, buyAmount: initialCapital, sellAmount: 0, portfolioValue: initialCapital },
-      { date: backtestResult.endDate, buyAmount: 0, sellAmount: 0, portfolioValue: finalValue }
+      { date: backtestResult.startDate, buyAmount: initialCapital, sellAmount: 0, portfolioValue: initialCapital, cashBalance: 0, dailyBorrowingInterest: 0, buyHoldValue: initialCapital },
+      { date: backtestResult.endDate, buyAmount: 0, sellAmount: 0, portfolioValue: finalValue, cashBalance: 0, dailyBorrowingInterest: 0, buyHoldValue: buyHoldFinalValue }
     );
   }
 
-  // 성과 데이터 계산
   const portfolioValues = tradeData.map((d) => d.portfolioValue);
 
-  // 실제 백테스트 수익률 기반으로 Buy & Hold 데이터 계산
-  const totalReturnRate = (backtestResult?.summary?.totalReturnPercentage || 0) / 100;
-  const buyHoldReturnRate = (backtestResult?.summary?.buyHoldReturnPercentage || 0) / 100;
-  const kospiReturnRate = 0.221; // KOSPI 22.1% 임시값
+  const buyHoldValues = tradeData.map((d) => d.buyHoldValue);
 
-  // 기간에 따른 선형 증가로 계산 (단순화)
-  const buyHoldValues = portfolioValues.map((_, i, arr) => {
-    const progress = arr.length > 1 ? i / (arr.length - 1) : 0;
-    return initialCapital * (1 + buyHoldReturnRate * progress);
-  });
+  const kospiReturnRate = 0.221;
 
   const kospiValues = portfolioValues.map((_, i, arr) => {
     const progress = arr.length > 1 ? i / (arr.length - 1) : 0;
     return initialCapital * (1 + kospiReturnRate * progress);
   });
 
-  // 퍼센트로 변환 (초기 자본 기준)
   const portfolioPercents = portfolioValues.map((value) => (value / initialCapital) * 100);
   const buyHoldPercents = buyHoldValues.map((value) => (value / initialCapital) * 100);
   const kospiPercents = kospiValues.map((value) => (value / initialCapital) * 100);
 
-  // 차트 스케일 계산
-  const allValues = [...portfolioPercents, ...buyHoldPercents, ...kospiPercents];
+  const rebalancingDates = backtestResult?.details
+    ?.filter(detail => detail.is_rebalanced && detail.has_actual_trades)
+    .map(detail => detail.period_date) || [];
+
+  const allValues = [...portfolioPercents, ...buyHoldPercents];
   const minValue = Math.min(...allValues);
   const maxValue = Math.max(...allValues);
   const valueRange = maxValue - minValue;
@@ -151,7 +134,6 @@ export default function BacktestResultsPage() {
   const chartMax = maxValue + padding;
   const chartRange = chartMax - chartMin;
 
-  // Y축 라벨 생성 (5개 구간)
   const yAxisLabels: string[] = [];
   for (let i = 0; i <= 4; i++) {
     const value = chartMin + (chartRange / 4) * i;
@@ -177,6 +159,8 @@ export default function BacktestResultsPage() {
             portfolioFinalReturn={backtestResult?.summary?.totalReturnPercentage || 0}
             buyHoldFinalReturn={backtestResult?.summary?.buyHoldReturnPercentage || 0}
             kospiFinalReturn={22.1}
+            rebalancingDates={rebalancingDates}
+            showKospi={false}
           />
         </div>
 

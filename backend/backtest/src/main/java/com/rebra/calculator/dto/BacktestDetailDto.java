@@ -81,6 +81,13 @@ public class BacktestDetailDto {
     @JsonProperty("buy_hold_return")
     private Double buyHoldReturn;
     
+    /**
+     * 바이앤홀드 포트폴리오 가치 (원)
+     * 동일 기간 바이앤홀드 전략의 포트폴리오 가치 (비교용)
+     */
+    @JsonProperty("buy_hold_value")
+    private Double buyHoldValue;
+    
     
     /**
      * 총 매수 금액 (원)
@@ -154,8 +161,22 @@ public class BacktestDetailDto {
      * 
      * @return 리밸런싱되었으면 true
      */
+    @JsonIgnore
     public boolean wasRebalanced() {
         return isRebalanced != null && isRebalanced;
+    }
+
+    /**
+     * 실제 거래가 발생했는지 확인
+     * 리밸런싱 조건을 충족했더라도 실제로 거래가 없었다면 false 반환
+     * 
+     * @return 실제 거래가 발생했으면 true
+     */
+    @JsonProperty("has_actual_trades")
+    public boolean hasActualTrades() {
+        // isRebalanced가 true이고, 매수 또는 매도 금액이 0보다 크면 실제 거래 발생
+        return wasRebalanced() && 
+               (getSafeTotalBuyAmount() > 0 || getSafeTotalSellAmount() > 0);
     }
 
     /**

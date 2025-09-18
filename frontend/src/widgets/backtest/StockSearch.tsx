@@ -44,7 +44,7 @@ export default function StockSearch({
   isLoading,
   searchError
 }: StockSearchProps) {
-  const isSearchEnabled = startDate && endDate;
+  const isSearchEnabled = startDate; // 시작일만 있으면 검색 가능
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -56,7 +56,7 @@ export default function StockSearch({
         <h3>주식 검색</h3>
         {!isSearchEnabled && (
           <p className={styles.disabledMessage}>
-            시작 날짜와 종료 날짜를 먼저 설정해주세요
+            시작 날짜를 먼저 설정해주세요
           </p>
         )}
       </div>
@@ -68,7 +68,7 @@ export default function StockSearch({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={isSearchEnabled ? "종목명 또는 종목코드를 입력하세요" : "시작/종료 날짜를 먼저 설정해주세요"}
+            placeholder={isSearchEnabled ? "종목명 또는 종목코드를 입력하세요" : "시작 날짜를 먼저 설정해주세요"}
             className={`${styles.searchInput} ${!isSearchEnabled ? styles.disabled : ''}`}
             disabled={!isSearchEnabled}
           />
@@ -78,11 +78,7 @@ export default function StockSearch({
       <div className={`${styles.stockList} ${!isSearchEnabled ? styles.disabled : ''}`}>
         {!isSearchEnabled ? (
           <div className={styles.emptyState}>
-            <p>백테스트 기간을 설정하면 해당 기간의 주식 데이터를 검색할 수 있습니다.</p>
-          </div>
-        ) : isLoading ? (
-          <div className={styles.emptyState}>
-            <p>검색 중...</p>
+            <p>시작 날짜를 설정하면 해당 시점의 주식 데이터를 검색할 수 있습니다.</p>
           </div>
         ) : searchError ? (
           <div className={styles.emptyState}>
@@ -90,7 +86,7 @@ export default function StockSearch({
           </div>
         ) : !searchTerm.trim() ? (
           <div className={styles.emptyState}>
-            <p>종목명 또는 종목코드를 입력해주세요.</p>
+            <p>종목명을 입력해주세요.</p>
           </div>
         ) : filteredStocks.length === 0 ? (
           <div className={styles.emptyState}>

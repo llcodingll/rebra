@@ -16,106 +16,57 @@ public class KisRealtimeService {
 
     private final KisApiComponent kisApiComponent;
     private final WebSocketHelper webSocketHelper;
-    
-    // Redis 캐싱 제거 - 프론트엔드에서 실시간 데이터 관리
-    // 실시간 데이터는 WebSocket을 통해 직접 클라이언트로 전달
-
 
     /**
-     * WebSocket을 통한 실시간 체결가 구독 시작
-     * 프론트엔드에서 /topic/stock/{userId}/{stockCode}/price 채널로 데이터 수신
+     * 체결가 구독 시작
      */
     public void startPriceSubscription(Account account, String stockCode, String sessionId) {
+        Long userId = account.getUser().getId();
         try {
-            Long userId = account.getUser().getId();
-            log.info("WebSocket 체결가 구독 시작 - UserId: {}, StockCode: {}, SessionId: {}",
-                    userId, stockCode, sessionId);
+            log.info("▶️ 체결가 구독 시작 - userId={}, stockCode={}, sessionId={}", userId, stockCode, sessionId);
 
-            // KIS API Component를 통해 실시간 체결가 구독 시작
             kisApiComponent.startPriceSubscription(
-                userId,
-                account.getId(),
-                stockCode,
-                account.getAccountType(),
-                data -> broadcastPriceData(userId, stockCode, data)
+                    account,
+                    stockCode,
+                    data -> webSocketHelper.broadcastPriceData(userId, stockCode, data)
             );
 
         } catch (Exception e) {
-            log.error("WebSocket 체결가 구독 실패 - UserId: {}, StockCode: {}",
-                    account.getUser().getId(), stockCode, e);
-            throw new RuntimeException("실시간 체결가 구독에 실패했습니다.", e);
+            log.error("체결가 구독 실패 - userId={}, stockCode={}", userId, stockCode, e);
+            throw new RuntimeException(e);
         }
     }
 
     /**
-     * WebSocket을 통한 실시간 호가 구독 시작
-     * 프론트엔드에서 /topic/stock/{userId}/{stockCode}/orderbook 채널로 데이터 수신
+     * 호가 구독 시작
      */
     public void startOrderbookSubscription(Account account, String stockCode, String sessionId) {
+        Long userId = account.getUser().getId();
         try {
-            Long userId = account.getUser().getId();
-            log.info("WebSocket 호가 구독 시작 - UserId: {}, StockCode: {}, SessionId: {}",
-                    userId, stockCode, sessionId);
+            log.info("▶️ 호가 구독 시작 - userId={}, stockCode={}, sessionId={}", userId, stockCode, sessionId);
 
-            // KIS API Component를 통해 실시간 호가 구독 시작
             kisApiComponent.startOrderbookSubscription(
-                userId,
-                account.getId(),
-                stockCode,
-                account.getAccountType(),
-                data -> broadcastOrderbookData(userId, stockCode, data)
+                    account,
+                    stockCode,
+                    data -> webSocketHelper.broadcastOrderbookData(userId, stockCode, data)
             );
 
         } catch (Exception e) {
-            log.error("WebSocket 호가 구독 실패 - UserId: {}, StockCode: {}",
-                    account.getUser().getId(), stockCode, e);
-            throw new RuntimeException("실시간 호가 구독에 실패했습니다.", e);
+            log.error("호가 구독 실패 - userId={}, stockCode={}", userId, stockCode, e);
+            throw new RuntimeException(e);
         }
     }
 
     /**
-     * WebSocket 구독 해제
+     * 구독 해제
      */
     public void stopPriceSubscription(Long userId, String stockCode, String sessionId) {
-        try {
-            log.info("WebSocket 체결가 구독 해제 - UserId: {}, StockCode: {}, SessionId: {}", 
-                    userId, stockCode, sessionId);
-            
-            // KIS API Component를 통해 구독 해제 (참조 카운팅 자동 처리)
-            kisApiComponent.stopSubscription(userId, stockCode, "price");
-            
-        } catch (Exception e) {
-            log.error("WebSocket 체결가 구독 해제 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
-        }
+        log.info("⏹ 체결가 구독 해제 - userId={}, stockCode={}, sessionId={}", userId, stockCode, sessionId);
+        kisApiComponent.stopSubscription(userId, stockCode, "price");
     }
-    
+
     public void stopOrderbookSubscription(Long userId, String stockCode, String sessionId) {
-        try {
-            log.info("WebSocket 호가 구독 해제 - UserId: {}, StockCode: {}, SessionId: {}", 
-                    userId, stockCode, sessionId);
-            
-            // KIS API Component를 통해 구독 해제 (참조 카운팅 자동 처리)
-            kisApiComponent.stopSubscription(userId, stockCode, "orderbook");
-            
-        } catch (Exception e) {
-            log.error("WebSocket 호가 구독 해제 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
-        }
+        log.info("⏹ 호가 구독 해제 - userId={}, stockCode={}, sessionId={}", userId, stockCode, sessionId);
+        kisApiComponent.stopSubscription(userId, stockCode, "orderbook");
     }
-    
-    /**
-     * KIS WebSocket에서 수신한 체결가 데이터를 프론트엔드로 전달
-     */
-    private void broadcastPriceData(Long userId, String stockCode, H0STCNT0Data data) {
-        // KIS에서 받은 데이터를 그대로 프론트엔드에 전달
-        webSocketHelper.broadcastPriceData(userId, stockCode, data);
-    }
-
-    /**
-     * KIS WebSocket에서 수신한 호가 데이터를 프론트엔드로 전달
-     */
-    private void broadcastOrderbookData(Long userId, String stockCode, H0STASP0Data data) {
-        // KIS에서 받은 데이터를 그대로 프론트엔드에 전달
-        webSocketHelper.broadcastOrderbookData(userId, stockCode, data);
-    }
-
 }
