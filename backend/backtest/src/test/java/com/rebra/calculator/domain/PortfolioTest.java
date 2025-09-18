@@ -5,6 +5,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
@@ -257,4 +259,11 @@ class PortfolioTest {
         assertThat(portfolio.getTotalTradingCost()).isPositive();
         assertThat(portfolio.getTotalBorrowingCost()).isPositive();
     }
+
+
+
+
+
+
+
 }

@@ -4,7 +4,7 @@ spring:
   
   # Kafka 설정
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
     consumer:
       group-id: backtest-calculator
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -12,9 +12,14 @@ spring:
       properties:
         spring.json.trusted.packages: com.rebra.calculator.dto
         spring.json.type.mapping: BacktestRequest:com.rebra.calculator.dto.BacktestRequest
+        # Micrometer 메트릭 활성화
+        micrometer.observation.enabled: true
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        # Micrometer 메트릭 활성화
+        micrometer.observation.enabled: true
 
   # Jackson 설정 (날짜 타입 처리)
   jackson:
@@ -36,12 +41,22 @@ management:
   endpoint:
     health:
       show-details: always
+  # Micrometer 메트릭 설정
+  metrics:
+    tags:
+      service: backtest-calculator
+      version: '@project.version@'
+  # 추적 설정 (선택사항)
+  tracing:
+    sampling:
+      probability: 0.1  # 10% 샘플링
 
 # 로깅 설정
 logging:
   level:
-    com.rebra.calculator: INFO
-    org.springframework.kafka: INFO
+    com.rebra.calculator: DEBUG
+    org.springframework.kafka: WARN
+    org.apache.kafka: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 

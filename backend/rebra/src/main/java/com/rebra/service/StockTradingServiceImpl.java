@@ -1,14 +1,12 @@
 package com.rebra.service;
 
 import com.rebra.component.KisApiComponent;
-import com.rebra.dto.DecryptedAccountCredentials;
 import com.rebra.dto.request.StockTradeRequest;
 import com.rebra.dto.response.StockTradeResponse;
 import com.rebra.entity.Account;
 import com.rebra.exception.CustomRuntimeException;
 import com.rebra.exception.ExceptionCode;
 import com.rebra.repository.AccountRepository;
-import com.rebra.util.AccountEncryptionUtil;
 import com.youhogeon.finance.kis_api.api.rest.trading.OrderCashResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,23 +47,15 @@ public class StockTradingServiceImpl implements StockTradingService {
             Account account = accountRepository.findByIdAndUserId(request.getAccountId(), userId)
                     .orElseThrow(() -> new CustomRuntimeException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
-            // 2. 계좌 인증 정보 복호화
-            DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
-
-            // 3. KIS 클라이언트 초기화 (KisApiComponent 통합 방식)
-            kisApiComponent.ensureUserCredentials(userId, account.getId(), account.getAccountType(), credentials);
-
-            // 4. KisApiComponent를 통한 주문 API 호출
+            // 2. KisApiComponent를 통한 주문 API 호출
             OrderCashResult result;
             if (orderDirection.equals("buy")) {
                 result = kisApiComponent.executeBuyOrder(
-                        userId, account.getId(), account.getAccountType(),
-                        stockCode, request.getOrderType(), request.getQuantity(), request.getPrice()
+                        account, stockCode, request.getOrderType(), request.getQuantity(), request.getPrice()
                 );
             } else {
                 result = kisApiComponent.executeSellOrder(
-                        userId, account.getId(), account.getAccountType(),
-                        stockCode, request.getOrderType(), request.getQuantity(), request.getPrice()
+                        account, stockCode, request.getOrderType(), request.getQuantity(), request.getPrice()
                 );
             }
 

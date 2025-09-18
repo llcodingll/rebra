@@ -1,6 +1,6 @@
 package com.rebra.dto.response;
 
-import com.rebra.entity.BacktestDetail;
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.rebra.entity.BacktestRecord;
 import com.rebra.entity.BacktestStock;
 import lombok.Builder;
@@ -28,8 +28,9 @@ public class BacktestResultResponse {
     // 요약 결과
     private BacktestSummaryResponse summary;
 
-    // 기간별 상세 결과
-    private List<BacktestDetailResponse> details;
+    // 기간별 상세 결과 (JSON 문자열로 직접 반환)
+    @JsonRawValue
+    private String details;
 
     // 포트폴리오 구성 종목
     private List<BacktestStockResponse> portfolioStocks;
@@ -86,43 +87,6 @@ public class BacktestResultResponse {
         }
     }
 
-    @Getter
-    @Builder
-    public static class BacktestDetailResponse {
-        private LocalDate periodDate;
-        private BigDecimal portfolioValue;
-        private BigDecimal periodReturn;
-        private BigDecimal periodReturnPercentage;
-        private Boolean isRebalanced;
-        private BigDecimal cashBalance;
-        private BigDecimal dailyBorrowingInterest;
-        private BigDecimal cumulativeReturn;
-        private BigDecimal buyHoldReturn;
-        private BigDecimal totalBuyAmount;
-        private BigDecimal totalSellAmount;
-        
-        // 퍼센트로 변환된 수치들
-        private BigDecimal cumulativeReturnPercentage;
-        private BigDecimal buyHoldReturnPercentage;
-
-        public static BacktestDetailResponse from(BacktestDetail detail) {
-            return BacktestDetailResponse.builder()
-                    .periodDate(detail.getPeriodDate())
-                    .portfolioValue(detail.getPortfolioValue())
-                    .periodReturn(detail.getPeriodReturn())
-                    .periodReturnPercentage(detail.getPeriodReturnPercentage())
-                    .isRebalanced(detail.getIsRebalanced())
-                    .cashBalance(detail.getCashBalance())
-                    .dailyBorrowingInterest(detail.getDailyBorrowingInterest())
-                    .cumulativeReturn(detail.getCumulativeReturn())
-                    .buyHoldReturn(detail.getBuyHoldReturn())
-                    .totalBuyAmount(detail.getTotalBuyAmount())
-                    .totalSellAmount(detail.getTotalSellAmount())
-                    .cumulativeReturnPercentage(detail.getCumulativeReturnPercentage())
-                    .buyHoldReturnPercentage(detail.getBuyHoldReturnPercentage())
-                    .build();
-        }
-    }
 
     @Getter
     @Builder
@@ -148,7 +112,7 @@ public class BacktestResultResponse {
         }
     }
 
-    public static BacktestResultResponse from(BacktestRecord record, List<BacktestDetail> details, List<BacktestStock> portfolioStocks) {
+    public static BacktestResultResponse from(BacktestRecord record, String detailsJson, List<BacktestStock> portfolioStocks) {
         return BacktestResultResponse.builder()
                 .id(record.getId())
                 .testName(record.getTestName())
@@ -160,9 +124,7 @@ public class BacktestResultResponse {
                 .createdAt(record.getCreatedAt())
                 .errorMessage(record.getErrorMessage())
                 .summary(record.hasResults() ? BacktestSummaryResponse.from(record) : null)
-                .details(details != null ? details.stream()
-                        .map(BacktestDetailResponse::from)
-                        .toList() : null)
+                .details(detailsJson)
                 .portfolioStocks(portfolioStocks != null ? portfolioStocks.stream()
                         .map(BacktestStockResponse::from)
                         .toList() : null)

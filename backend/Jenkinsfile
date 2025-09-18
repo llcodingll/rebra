@@ -57,7 +57,7 @@ environment {
 
                     // 환경변수 초기화
                     env.MAIN_SERVER_CHANGED = 'false'
-                    env.CALC_SERVER_CHANGED = 'false'  
+                    env.CALC_SERVER_CHANGED = 'false'
                     env.SHARED_CHANGED = 'false'
 
                     // Git에서 변경된 파일 목록 가져오기
@@ -84,11 +84,11 @@ environment {
                             env.MAIN_SERVER_CHANGED = 'true'
                             echo "    → 메인 서버 변경 감지: ${file}"
                         }
-                        // 백테스트, 공통 모듈은 현재 미사용으로 주석처리
-                        // if (file.startsWith('backtest/')) {
-                        //     env.CALC_SERVER_CHANGED = 'true'
-                        //     echo "    → 계산 서버 변경 감지"
-                        // }
+                        // 백테스트, 공통 모듈 변경 감지
+                        if (file.startsWith('backend/backtest/') || file.startsWith('backend/Jenkinsfile') || file.startsWith('backend/docker-compose')) {
+                            env.CALC_SERVER_CHANGED = 'true'
+                            echo "    → 계산 서버 변경 감지: ${file}"
+                        }
                         // if (file.startsWith('shared/')) {
                         //     env.SHARED_CHANGED = 'true'
                         //     echo "    → 공통 모듈 변경 감지"
@@ -151,23 +151,23 @@ environment {
                     }
                 }
 
-                // 계산 서버는 현재 구현되지 않음 - 임시 주석 처리
-                /*
                 stage('계산 서버 빌드') {
                     when {
                         environment name: 'CALC_SERVER_CHANGED', value: 'true'
                     }
                     steps {
                         echo '=== 계산 서버 빌드 중 ==='
-                        sh '''
-                            ./gradlew :backtest:clean :backtest:build -x test
-                            echo "빌드된 JAR 파일 확인:"
-                            ls -la backtest/build/libs/
-                        '''
+                        dir('backend/backtest') {
+                            sh '''
+                                chmod +x ./gradlew
+                                ./gradlew clean build -x test
+                                echo "빌드된 JAR 파일 확인:"
+                                ls -la build/libs/
+                            '''
+                        }
                         echo '✅ 계산 서버 빌드 완료'
                     }
                 }
-                */
             }
         }
 
@@ -194,8 +194,6 @@ environment {
                     }
                 }
 
-                // 계산 서버 Docker 빌드는 현재 구현되지 않음 - 임시 주석 처리
-                /*
                 stage('계산 서버 Docker 빌드') {
                     when {
                         environment name: 'CALC_SERVER_CHANGED', value: 'true'
@@ -203,7 +201,7 @@ environment {
                     steps {
                         echo '=== 계산 서버 Docker 이미지 빌드 중 ==='
                         script {
-                            dir('backtest') {
+                            dir('backend/backtest') {
                                 sh """
                                     docker build -t rebra-calc:${BUILD_TAG} .
                                     docker tag rebra-calc:${BUILD_TAG} rebra-calc:latest
@@ -216,7 +214,6 @@ environment {
                         echo '✅ 계산 서버 Docker 이미지 빌드 완료'
                     }
                 }
-                */
             }
         }
 
@@ -321,13 +318,11 @@ environment {
                         '''
                     }
 
-                    // 계산 서버 헬스체크는 현재 구현되지 않음 - 임시 주석 처리
-                    /*
                     if (env.CALC_SERVER_CHANGED == 'true') {
                         echo '=== 계산 서버 헬스체크 ==='
                         sh '''
                             for i in {1..30}; do
-                                if curl -f http://localhost:8081/actuator/health; then
+                                if curl -f http://localhost:8081/; then
                                     echo "✅ 계산 서버가 정상적으로 실행 중입니다 ($i/30)"
                                     break
                                 fi
@@ -336,7 +331,6 @@ environment {
                             done
                         '''
                     }
-                    */
                 }
             }
         }
@@ -347,7 +341,7 @@ environment {
             script {
                 def deployedServices = []
                 if (env.MAIN_SERVER_CHANGED == 'true') deployedServices.add('메인 서버')
-                // if (env.CALC_SERVER_CHANGED == 'true') deployedServices.add('계산 서버') // 임시 주석 처리
+                if (env.CALC_SERVER_CHANGED == 'true') deployedServices.add('계산 서버')
 
                 if (deployedServices.size() > 0) {
                     echo """
@@ -357,7 +351,7 @@ environment {
 
 서비스 확인:
 - 메인 서버: http://13.125.20.43:8080/
-// - 계산 서버: http://13.125.20.43:8081/actuator/health // 임시 주석 처리
+- 계산 서버: http://13.125.20.43:8081/
                     """
                 } else {
                     echo '변경사항이 없어 배포하지 않았습니다.'

@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Calendar, TrendingUp, Edit2, Check, X } from 'lucide-react';
+import { Calendar, BarChart3 } from 'lucide-react';
 import styles from './ResultsHeader.module.css';
+import type { BacktestResultResponse } from '../../features/backtest/api/backtestApi';
 
 interface SummaryCardData {
   label: string;
@@ -11,111 +11,95 @@ interface SummaryCardData {
 }
 
 interface ResultsHeaderProps {
-  title?: string;
-  period?: string;
-  totalReturn?: string;
-  summaryCards?: SummaryCardData[];
-  onTitleChange?: (newTitle: string) => void;
+  backtestResult?: BacktestResultResponse;
 }
 
 export default function ResultsHeader({
-  title = '월간 리밸런싱 전략',
-  period = '2023년 01월 01일 ~ 2023년 12월 31일',
-  totalReturn = '+35.2%',
-  summaryCards = [
-    { label: '초기 자본', value: '10,000,000원' },
-    { label: '최종 평가액', value: '13,540,000원', highlight: true },
-    { label: '최종 수익률', value: '+35.2%', highlight: true },
-    { label: '총 리밸런싱 횟수', value: '36회' }
-  ],
-  onTitleChange
+  backtestResult
 }: ResultsHeaderProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(title);
+  const title = backtestResult?.testName || '백테스트 결과';
 
-  const handleEdit = () => {
-    const confirmEdit = window.confirm('제목을 수정하시겠습니까?');
-    if (confirmEdit) {
-      setIsEditing(true);
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  };
+
+  const period = backtestResult
+    ? `${formatDate(backtestResult.startDate)} ~ ${formatDate(backtestResult.endDate)}`
+    : '기간 정보 없음';
+
+  const getRebalancingTypeLabel = (type: string) => {
+    switch (type) {
+      case 'THRESHOLD':
+        return '임계값 기반';
+      case 'PERIODIC':
+        return '주기적 (월간)';
+      default:
+        return type;
     }
   };
 
-  const handleSave = () => {
-    const confirmSave = window.confirm('변경사항을 저장하시겠습니까?');
-    if (confirmSave && onTitleChange && editedTitle.trim()) {
-      onTitleChange(editedTitle.trim());
-      setIsEditing(false);
-    } else if (confirmSave) {
-      setIsEditing(false);
+
+  const initialCapital = backtestResult?.summary?.finalValue && backtestResult?.summary?.totalReturn
+    ? Math.round(backtestResult.summary.finalValue / (1 + backtestResult.summary.totalReturn))
+    : 0;
+
+  // 억 단위 이상 간소화 포맷팅
+  const formatCompactPrice = (price: number): string => {
+    if (price >= 100000000) { // 1억 이상
+      const eok = price / 100000000;
+      return `${eok.toFixed(1)}억원`;
     }
+    return `${price.toLocaleString()}원`;
   };
 
-  const handleCancel = () => {
-    setEditedTitle(title);
-    setIsEditing(false);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSave();
-    } else if (e.key === 'Escape') {
-      handleCancel();
+  const summaryCards: SummaryCardData[] = backtestResult?.summary ? [
+    {
+      label: '초기 자본',
+      value: formatCompactPrice(initialCapital)
+    },
+    {
+      label: '최종 평가액',
+      value: formatCompactPrice(backtestResult.summary.finalValue),
+      highlight: true
+    },
+    {
+      label: '최종 수익률',
+      value: `${backtestResult.summary.totalReturnPercentage >= 0 ? '+' : ''}${backtestResult.summary.totalReturnPercentage.toFixed(2)}%`,
+      highlight: true
+    },
+    {
+      label: '총 리밸런싱 횟수',
+      value: `${backtestResult.summary.rebalancingCount}회`
     }
-  };
+  ] : [
+    { label: '초기 자본', value: '데이터 없음' },
+    { label: '최종 평가액', value: '데이터 없음' },
+    { label: '최종 수익률', value: '데이터 없음' },
+    { label: '총 리밸런싱 횟수', value: '데이터 없음' }
+  ];
+
   return (
     <>
       <div className={styles.header}>
         <div className={styles.titleSection}>
           <div className={styles.titleContainer}>
-            {isEditing ? (
-              <div className={styles.titleEditWrapper}>
-                <input
-                  type="text"
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  className={styles.titleInput}
-                  autoFocus
-                />
-                <div className={styles.titleEditButtons}>
-                  <button 
-                    onClick={handleSave}
-                    className={styles.saveButton}
-                    title="저장"
-                  >
-                    <Check size={16} />
-                  </button>
-                  <button 
-                    onClick={handleCancel}
-                    className={styles.cancelButton}
-                    title="취소"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className={styles.titleWrapper}>
-                <h1 className={styles.title}>{title}</h1>
-                <button 
-                  onClick={handleEdit}
-                  className={styles.editButton}
-                  title="제목 편집"
-                >
-                  <Edit2 size={20} />
-                </button>
-              </div>
-            )}
+            <h1 className={styles.title}>{title}</h1>
           </div>
           <div className={styles.headerMeta}>
             <div className={styles.periodInfo}>
               <Calendar className={styles.periodIcon} />
               <span className={styles.period}>{period}</span>
             </div>
-            <div className={styles.returnBadge}>
-              <TrendingUp className={styles.returnIcon} />
-              {totalReturn}
-            </div>
+            {backtestResult?.rebalancingType && (
+              <div className={styles.rebalancingBadge}>
+                <BarChart3 className={styles.rebalancingIcon} />
+                <span>{getRebalancingTypeLabel(backtestResult.rebalancingType)}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

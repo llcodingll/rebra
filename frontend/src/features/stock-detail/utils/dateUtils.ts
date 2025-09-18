@@ -15,21 +15,49 @@ export const formatDateToString = (date: Date): string => {
 };
 
 /**
- * 현재일자-1에서 3개월 전까지의 날짜 범위를 구함
+ * 차트 타입별 날짜 범위를 구함
+ */
+export type ChartPeriodType = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+/**
+ * 현재일자에서 4개월 전까지의 날짜 범위를 구함 (일봉용)
  */
 export const getDefaultDateRange = (): { startDate: string; endDate: string } => {
+  return getDateRangeByPeriod('daily');
+};
+
+/**
+ * 차트 타입별 날짜 범위 계산
+ */
+export const getDateRangeByPeriod = (period: ChartPeriodType): { startDate: string; endDate: string } => {
   const today = new Date();
+  const endDate = formatDateToString(today);
 
-  // 전날 (어제)
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  const endDate = formatDateToString(yesterday);
+  const start = new Date(today);
 
-  // 3개월 전
-  const threeMonthsAgo = new Date(yesterday);
-  threeMonthsAgo.setMonth(yesterday.getMonth() - 3);
-  const startDate = formatDateToString(threeMonthsAgo);
+  switch (period) {
+    case 'daily':
+      // 일봉: 최근 4개월
+      start.setMonth(today.getMonth() - 4);
+      break;
+    case 'weekly':
+      // 주봉: 최근 2년
+      start.setFullYear(today.getFullYear() - 2);
+      break;
+    case 'monthly':
+      // 월봉: 최근 8년
+      start.setFullYear(today.getFullYear() - 8);
+      break;
+    case 'yearly':
+      // 연봉: 최근 100년
+      start.setFullYear(today.getFullYear() - 100);
+      break;
+    default:
+      // 기본값: 4개월
+      start.setMonth(today.getMonth() - 4);
+  }
 
+  const startDate = formatDateToString(start);
   return { startDate, endDate };
 };
 

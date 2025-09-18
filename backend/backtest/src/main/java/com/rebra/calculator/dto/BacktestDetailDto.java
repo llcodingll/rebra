@@ -1,6 +1,7 @@
 package com.rebra.calculator.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -80,6 +81,13 @@ public class BacktestDetailDto {
     @JsonProperty("buy_hold_return")
     private Double buyHoldReturn;
     
+    /**
+     * 바이앤홀드 포트폴리오 가치 (원)
+     * 동일 기간 바이앤홀드 전략의 포트폴리오 가치 (비교용)
+     */
+    @JsonProperty("buy_hold_value")
+    private Double buyHoldValue;
+    
     
     /**
      * 총 매수 금액 (원)
@@ -116,6 +124,7 @@ public class BacktestDetailDto {
      * 
      * @return 차입 상태면 true
      */
+    @JsonIgnore
     public boolean isBorrowing() {
         return cashBalance != null && cashBalance < 0;
     }
@@ -152,8 +161,22 @@ public class BacktestDetailDto {
      * 
      * @return 리밸런싱되었으면 true
      */
+    @JsonIgnore
     public boolean wasRebalanced() {
         return isRebalanced != null && isRebalanced;
+    }
+
+    /**
+     * 실제 거래가 발생했는지 확인
+     * 리밸런싱 조건을 충족했더라도 실제로 거래가 없었다면 false 반환
+     * 
+     * @return 실제 거래가 발생했으면 true
+     */
+    @JsonProperty("has_actual_trades")
+    public boolean hasActualTrades() {
+        // isRebalanced가 true이고, 매수 또는 매도 금액이 0보다 크면 실제 거래 발생
+        return wasRebalanced() && 
+               (getSafeTotalBuyAmount() > 0 || getSafeTotalSellAmount() > 0);
     }
 
     /**
@@ -161,6 +184,7 @@ public class BacktestDetailDto {
      * 
      * @return 현금 잔액 (null이면 0.0 반환)
      */
+    @JsonIgnore
     public double getSafeCashBalance() {
         return cashBalance != null ? cashBalance : 0.0;
     }
@@ -170,6 +194,7 @@ public class BacktestDetailDto {
      * 
      * @return 차입 금액 (cashBalance가 음수일 때 절댓값, 아니면 0.0)
      */
+    @JsonIgnore
     public double getSafeBorrowingAmount() {
         return (cashBalance != null && cashBalance < 0) ? Math.abs(cashBalance) : 0.0;
     }
@@ -179,6 +204,7 @@ public class BacktestDetailDto {
      * 
      * @return 일일 차입 이자 (null이면 0.0 반환)
      */
+    @JsonIgnore
     public double getSafeDailyBorrowingInterest() {
         return dailyBorrowingInterest != null ? dailyBorrowingInterest : 0.0;
     }
@@ -188,6 +214,7 @@ public class BacktestDetailDto {
      * 
      * @return 포트폴리오 가치 (null이면 0.0 반환)
      */
+    @JsonIgnore
     public double getSafePortfolioValue() {
         return portfolioValue != null ? portfolioValue : 0.0;
     }
@@ -197,6 +224,7 @@ public class BacktestDetailDto {
      * 
      * @return 주기 수익률 (null이면 0.0 반환)
      */
+    @JsonIgnore
     public double getSafePeriodReturn() {
         return periodReturn != null ? periodReturn : 0.0;
     }
@@ -206,6 +234,7 @@ public class BacktestDetailDto {
      * 
      * @return 누적 수익률 (null이면 0.0 반환)
      */
+    @JsonIgnore
     public double getSafeCumulativeReturn() {
         return cumulativeReturn != null ? cumulativeReturn : 0.0;
     }
@@ -216,6 +245,7 @@ public class BacktestDetailDto {
      * 
      * @return 총 매수 금액 (null이면 0.0 반환)
      */
+    @JsonIgnore
     public double getSafeTotalBuyAmount() {
         return totalBuyAmount != null ? totalBuyAmount : 0.0;
     }
@@ -225,6 +255,7 @@ public class BacktestDetailDto {
      * 
      * @return 총 매도 금액 (null이면 0.0 반환)
      */
+    @JsonIgnore
     public double getSafeTotalSellAmount() {
         return totalSellAmount != null ? totalSellAmount : 0.0;
     }
@@ -234,6 +265,7 @@ public class BacktestDetailDto {
      * 
      * @return 상태 표시 문자열
      */
+    @JsonIgnore
     public String getStatusIcon() {
         StringBuilder status = new StringBuilder();
         
@@ -261,6 +293,7 @@ public class BacktestDetailDto {
      * 
      * @return 성과 등급 (A, B, C, D, F)
      */
+    @JsonIgnore
     public String getPerformanceGrade() {
         if (periodReturn == null) {
             return "N/A";
@@ -320,6 +353,7 @@ public class BacktestDetailDto {
      * 
      * @return 간단한 요약
      */
+    @JsonIgnore
     public String getDailySummary() {
         return String.format("%s: %,.0f원 (%.2f%%) %s", 
                 periodDate, 
@@ -333,6 +367,7 @@ public class BacktestDetailDto {
      * 
      * @return 상세 리포트
      */
+    @JsonIgnore
     public String getDetailedReport() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("=== %s 일일 리포트 ===\n", periodDate));
@@ -360,6 +395,7 @@ public class BacktestDetailDto {
      * 
      * @return CSV 형태 문자열
      */
+    @JsonIgnore
     public String toCsv() {
         return String.format("%s,%.0f,%.6f,%.6f,%.6f,%s,%s,%.0f,%.0f,%.6f,%.0f,%.0f", 
                 periodDate,

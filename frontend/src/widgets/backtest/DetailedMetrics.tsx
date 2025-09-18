@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import styles from './DetailedMetrics.module.css';
+import type { BacktestResultResponse } from '../../features/backtest/api/backtestApi';
 
 interface MetricData {
   label: string;
@@ -8,20 +9,77 @@ interface MetricData {
 }
 
 interface DetailedMetricsProps {
-  metrics?: MetricData[];
+  backtestResult?: BacktestResultResponse;
 }
 
-export default function DetailedMetrics({
-  metrics = [
-    { label: 'CAGR', value: '35.2%' },
-    { label: '변동성', value: '15.6%' },
-    { label: '최대 낙폭', value: '-8.4%', isNegative: true },
-    { label: '샤프 비율', value: '1.42' },
-    { label: '승률', value: '72.2%' },
-    { label: '총 거래횟수', value: '36회' },
-    { label: '거래 비용', value: '-45,000원', isNegative: true }
-  ]
-}: DetailedMetricsProps) {
+export default function DetailedMetrics({ backtestResult }: DetailedMetricsProps) {
+  // 실제 백테스트 결과에서 메트릭 데이터 생성
+  const metrics: MetricData[] = backtestResult?.summary ? [
+    {
+      label: 'CAGR',
+      value: `${backtestResult.summary.annualizedReturnPercentage?.toFixed(2) || 0}%`,
+      isNegative: (backtestResult.summary.annualizedReturnPercentage || 0) < 0
+    },
+    {
+      label: '변동성',
+      value: `${backtestResult.summary.volatilityPercentage?.toFixed(2) || 0}%`
+    },
+    {
+      label: '최대 낙폭',
+      value: `${backtestResult.summary.maxDrawdownPercentage?.toFixed(2) || 0}%`,
+      isNegative: true
+    },
+    {
+      label: '샤프 비율',
+      value: `${backtestResult.summary.sharpeRatio?.toFixed(3) || 0}`,
+      isNegative: (backtestResult.summary.sharpeRatio || 0) < 0
+    },
+    {
+      label: '총 수익률',
+      value: `${backtestResult.summary.totalReturnPercentage?.toFixed(2) || 0}%`,
+      isNegative: (backtestResult.summary.totalReturnPercentage || 0) < 0
+    },
+    {
+      label: '리밸런싱 횟수',
+      value: `${backtestResult.summary.rebalancingCount || 0}회`
+    },
+    {
+      label: '거래 비용',
+      value: `-${(backtestResult.summary.totalFee || 0).toLocaleString()}원`,
+      isNegative: true
+    },
+    {
+      label: '대출 비용',
+      value: `-${(backtestResult.summary.totalBorrowingCost || 0).toLocaleString()}원`,
+      isNegative: true
+    },
+    {
+      label: '초과 수익률',
+      value: `${backtestResult.summary.excessReturnPercentage?.toFixed(2) || 0}%`,
+      isNegative: (backtestResult.summary.excessReturnPercentage || 0) < 0
+    },
+    {
+      label: '최대 대출금액',
+      value: `${(backtestResult.summary.maxBorrowingAmount || 0).toLocaleString()}원`
+    },
+    {
+      label: '최소 현금잔고',
+      value: `${(backtestResult.summary.minCashBalance || 0).toLocaleString()}원`,
+      isNegative: (backtestResult.summary.minCashBalance || 0) < 0
+    }
+  ] : [
+    { label: 'CAGR', value: '데이터 없음' },
+    { label: '변동성', value: '데이터 없음' },
+    { label: '최대 낙폭', value: '데이터 없음' },
+    { label: '샤프 비율', value: '데이터 없음' },
+    { label: '총 수익률', value: '데이터 없음' },
+    { label: '리밸런싱 횟수', value: '데이터 없음' },
+    { label: '거래 비용', value: '데이터 없음' },
+    { label: '대출 비용', value: '데이터 없음' },
+    { label: '초과 수익률', value: '데이터 없음' },
+    { label: '최대 대출금액', value: '데이터 없음' },
+    { label: '최소 현금잔고', value: '데이터 없음' }
+  ];
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}

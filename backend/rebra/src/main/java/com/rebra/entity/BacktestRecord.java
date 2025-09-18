@@ -1,6 +1,12 @@
 package com.rebra.entity;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.rebra.common.BaseEntity;
+import com.rebra.dto.response.BacktestDetailResponse;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,6 +21,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -24,8 +31,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Entity
+@Slf4j
 @Getter
 @Builder
 @AllArgsConstructor
@@ -119,6 +128,25 @@ public class BacktestRecord extends BaseEntity {
 
     @Column(precision = 10, scale = 6)
     private BigDecimal timeWeightedReturn;
+
+    // 일별 상세 정보를 JSON으로 저장
+    @Column(columnDefinition = "TEXT")
+    private String detailsJson;
+
+    // 런타임 캐시
+    @Transient
+    private List<BacktestDetailResponse> detailsCache;
+
+    @Transient
+    private static final ObjectMapper objectMapper = createObjectMapper();
+    
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return mapper;
+    }
 
 
     public enum BacktestStatus {
@@ -265,6 +293,54 @@ public class BacktestRecord extends BaseEntity {
         BigDecimal tradingCost = totalFee != null ? totalFee : BigDecimal.ZERO;
         BigDecimal borrowingCost = totalBorrowingCost != null ? totalBorrowingCost : BigDecimal.ZERO;
         return tradingCost.add(borrowingCost);
+    }
+
+    // JSON 상세 정보 관련 메서드
+    public void setDetailsJson(String detailsJson) {
+        this.detailsJson = detailsJson;
+        this.detailsCache = null; // 캐시 무효화
+    }
+
+    public String getDetailsJson() {
+        return detailsJson;
+    }
+
+    public List<BacktestDetailResponse> getDetails() {
+        if (detailsCache == null && detailsJson != null && !detailsJson.trim().isEmpty()) {
+            try {
+                detailsCache = objectMapper.readValue(detailsJson, new TypeReference<List<BacktestDetailResponse>>() {});
+                log.info("백테스트 상세 정보 역직렬화 성공: 리스트 크기={}", detailsCache.size());
+            } catch (Exception e) {
+                log.error("백테스트 상세 정보 역직렬화 실패: JSON 길이={}, 에러={}", 
+                        detailsJson.length(), e.getMessage(), e);
+                log.debug("파싱 실패한 JSON 시작 부분: {}", 
+                        detailsJson.substring(0, Math.min(200, detailsJson.length())));
+                detailsCache = new ArrayList<>();
+            }
+        }
+        return detailsCache != null ? detailsCache : new ArrayList<>();
+    }
+
+    public void setDetails(List<BacktestDetailResponse> details) {
+        this.detailsCache = details;
+        if (details != null) {
+            try {
+                this.detailsJson = objectMapper.writeValueAsString(details);
+                log.info("백테스트 상세 정보 JSON 직렬화 성공: 리스트 크기={}, JSON 길이={}", 
+                        details.size(), this.detailsJson.length());
+            } catch (Exception e) {
+                log.error("백테스트 상세 정보 JSON 직렬화 실패: 리스트 크기={}", 
+                        details.size(), e);
+                this.detailsJson = null;
+            }
+        } else {
+            this.detailsJson = null;
+        }
+    }
+
+    // 상세 정보 존재 여부 확인
+    public boolean hasDetails() {
+        return detailsJson != null && !detailsJson.trim().isEmpty();
     }
 
 }

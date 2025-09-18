@@ -7,8 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum RebalancingStrategy {
     THRESHOLD("임계값 기반"),
-    PERIODIC("주기적 리밸런싱"),
-    CASHFLOW("캐시플로우 기반");
+    PERIODIC("주기적 리밸런싱");
 
     private final String description;
 }

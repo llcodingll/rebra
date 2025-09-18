@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'motion/react';
 import { TrendingUp } from 'lucide-react';
 import styles from './BacktestCreationPage.module.css';
 import BacktestSettings from '../../widgets/backtest/BacktestSettings';
 import StockSearch from '../../widgets/backtest/StockSearch';
 import MyPortfolio from '../../widgets/backtest/MyPortfolio';
+import { searchStocksForBacktest, createBacktest, type BacktestCreateRequest } from '../../features/backtest/api/backtestApi';
 
 interface Stock {
   name: string;
@@ -26,63 +28,23 @@ interface PortfolioItem {
   threshold: number;
 }
 
-const mockStocks: Stock[] = [
-  {
-    name: '삼성전자',
-    code: '005930',
-    price: '71,400원',
-    change: '+1,200원 (+1.71%)',
-    changeType: 'positive',
-    volume: '12,345,678',
-    sector: '반도체',
-  },
-  {
-    name: 'SK하이닉스',
-    code: '000660',
-    price: '89,100원',
-    change: '+2,100원 (+2.42%)',
-    changeType: 'positive',
-    volume: '8,765,432',
-    sector: '반도체',
-  },
-  {
-    name: '카카오',
-    code: '035720',
-    price: '48,950원',
-    change: '-850원 (-1.71%)',
-    changeType: 'negative',
-    volume: '5,432,109',
-    sector: 'IT서비스',
-  },
-  {
-    name: 'NAVER',
-    code: '035420',
-    price: '189,500원',
-    change: '+3,500원 (+1.88%)',
-    changeType: 'positive',
-    volume: '2,109,876',
-    sector: 'IT서비스',
-  },
-];
+// API에서 받은 데이터를 UI용 Stock 형태로 변환하는 함수
+const transformApiDataToStock = (apiData: any): Stock => {
+  const changeRate = apiData.changeRate || 0;
+  const changeType = changeRate >= 0 ? 'positive' : 'negative';
+  const changeAmount = Math.round(apiData.closePrice * changeRate / 100);
 
-const mockPortfolio: PortfolioItem[] = [
-  {
-    name: '삼성전자',
-    code: '005930',
-    buyPrice: '70,000원',
-    quantity: 10,
-    targetWeight: 40,
-    threshold: 5,
-  },
-  {
-    name: 'SK하이닉스',
-    code: '000660',
-    buyPrice: '85,000원',
-    quantity: 5,
-    targetWeight: 30,
-    threshold: 5,
-  },
-];
+  return {
+    name: apiData.name,
+    code: apiData.ticker,
+    price: `${apiData.closePrice?.toLocaleString() || 0}원`,
+    change: `${changeRate >= 0 ? '+' : ''}${changeAmount.toLocaleString()}원 (${changeRate >= 0 ? '+' : ''}${changeRate.toFixed(2)}%)`,
+    changeType,
+    volume: apiData.volume?.toLocaleString() || '0',
+    sector: '',
+  };
+};
+
 
 interface BacktestCreationPageProps {
   onBack?: () => void;
@@ -105,8 +67,10 @@ const calculateValue = (buyPrice: string, quantity: number): number => {
 
 export default function BacktestCreationPage({ onBack }: BacktestCreationPageProps = {}) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedPortfolio, setSelectedPortfolio] = useState('');
   const [backtestName, setBacktestName] = useState('');
+  const [rebalancingType, setRebalancingType] = useState<'THRESHOLD' | 'PERIODIC'>('THRESHOLD');
   const [rebalancingPeriod] = useState('월간');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -116,11 +80,37 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
   const [searchTerm, setSearchTerm] = useState('');
-  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(mockPortfolio);
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
 
-  const filteredStocks = mockStocks.filter(
-    (stock) => stock.name.toLowerCase().includes(searchTerm.toLowerCase()) || stock.code.includes(searchTerm)
-  );
+  // 디바운스된 검색어 (0.5초 지연)
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // API로 주식 검색 (디바운스된 검색어 사용)
+  const { data: stockSearchData, isLoading: isSearchLoading, error: searchError } = useQuery({
+    queryKey: ['stockSearch', debouncedSearchTerm, startDate],
+    queryFn: async () => {
+      if (!debouncedSearchTerm.trim() || !startDate) return [];
+
+      const result = await searchStocksForBacktest(debouncedSearchTerm, startDate);
+      if (result.success) {
+        return result.data.map(transformApiDataToStock);
+      } else {
+        throw new Error(result.error.message);
+      }
+    },
+    enabled: Boolean(debouncedSearchTerm.trim() && startDate),
+    staleTime: 30000, // 30초
+  });
+
+  const filteredStocks = stockSearchData || [];
 
   const handleAddToPortfolio = (stock: Stock) => {
     const existingItem = portfolioItems.find((item) => item.code === stock.code);
@@ -142,17 +132,99 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
     setPortfolioItems(portfolioItems.filter((item) => item.code !== code));
   };
 
+  // 백테스트 생성 mutation
+  const createBacktestMutation = useMutation({
+    mutationFn: createBacktest,
+    onSuccess: (result) => {
+      if (result.success) {
+        console.log('생성된 백테스트 ID:', result.data);
+
+        // 새로 생성된 백테스트 데이터 구성
+        const newBacktest = {
+          id: result.data,
+          testName: backtestName,
+          startDate,
+          endDate,
+          rebalancingType: rebalancingType,
+          status: 'PROCESSING',
+          createdAt: new Date().toISOString()
+        };
+
+        // 첫 페이지 캐시에 새 항목 추가 (즉시 반영)
+        const firstPageKey = ['backtestList', 0, 10]; // 첫 페이지 키
+        queryClient.setQueryData(firstPageKey, (oldData: any) => {
+          if (oldData) {
+            return {
+              ...oldData,
+              content: [newBacktest, ...oldData.content.slice(0, 9)], // 맨 앞에 추가, 기존 항목은 9개만
+              totalElements: oldData.totalElements + 1
+            };
+          }
+          return oldData;
+        });
+
+        // 백테스트 목록 캐시 무효화하여 서버 데이터와 동기화 (즉시 refetch)
+        queryClient.invalidateQueries({
+          queryKey: ['backtestList'],
+          exact: false,
+          refetchType: 'active' // 활성 쿼리만 즉시 refetch
+        });
+
+        // 성공 시 백테스트 목록 페이지로 이동
+        navigate('/backtest');
+      } else {
+        console.error('백테스트 생성 실패:', result.error.message);
+        setIsBacktestExecuted(false); // 실패 시 다시 블락 활성화
+      }
+    },
+    onError: (error) => {
+      console.error('백테스트 생성 중 오류:', error.message);
+      setIsBacktestExecuted(false); // 에러 시 다시 블락 활성화
+    }
+  });
+
   const handleRunBacktest = async () => {
-    console.log('백테스트 실행:', {
-      name: backtestName,
-      period: rebalancingPeriod,
-      startDate,
-      endDate,
-      portfolio: portfolioItems,
+    // 실행 시작 시 블락 해제
+    setIsBacktestExecuted(true);
+
+    // 포트폴리오 아이템들을 백엔드 형식으로 변환
+    // 1. 비중 정규화 (총합을 100%로 맞춤)
+    const totalWeight = portfolioItems.reduce((sum, item) => sum + item.targetWeight, 0);
+
+    const stocks = portfolioItems.map(item => {
+      // 정규화된 비중 계산
+      const normalizedWeight = totalWeight > 0 ? (item.targetWeight / totalWeight) * 100 : 0;
+
+      const stockData: any = {
+        ticker: item.code,
+        name: item.name,
+        weight: normalizedWeight, // 정규화된 비중 사용
+        shares: item.quantity
+      };
+
+      // 임계값 기반 리밸런싱일 때만 thresholdPercentage 추가
+      if (rebalancingType === 'THRESHOLD') {
+        stockData.thresholdPercentage = item.threshold / 100;
+      }
+
+      return stockData;
     });
 
-    setIsBacktestExecuted(true);
-    // 실제 API 호출로 교체할 예정
+    const request: BacktestCreateRequest = {
+      testName: backtestName,
+      startDate,
+      endDate,
+      rebalancingType,
+      rebalancingPeriod: rebalancingType === 'PERIODIC' ? 'MONTHLY' : undefined,
+      stocks
+    };
+
+    console.log('비중 정규화 결과:');
+    console.log('- 원본 총 비중:', totalWeight);
+    console.log('- 정규화된 비중:', stocks.map(s => ({ name: s.name, weight: s.weight.toFixed(1) + '%' })));
+    console.log('백테스트 생성 요청:', request);
+
+    createBacktestMutation.mutate(request);
   };
 
   const handleNavigateToBacktestList = () => {
@@ -177,14 +249,18 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
         <BacktestSettings
           backtestName={backtestName}
           setBacktestName={setBacktestName}
+          rebalancingType={rebalancingType}
+          setRebalancingType={setRebalancingType}
           rebalancingPeriod={rebalancingPeriod}
           startDate={startDate}
           setStartDate={setStartDate}
           endDate={endDate}
           setEndDate={setEndDate}
           onRunBacktest={handleRunBacktest}
-          isRunDisabled={!backtestName || !startDate || !endDate || portfolioItems.length === 0}
+          isRunDisabled={!backtestName || !startDate || !endDate || portfolioItems.length === 0 || createBacktestMutation.isPending}
           onNavigateToBacktestList={handleNavigateToBacktestList}
+          isCreating={createBacktestMutation.isPending}
+          portfolioCount={portfolioItems.length}
         />
 
         <div className={styles.contentGrid}>
@@ -196,6 +272,8 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
             onAddToPortfolio={handleAddToPortfolio}
             startDate={startDate}
             endDate={endDate}
+            isLoading={isSearchLoading}
+            searchError={searchError}
           />
 
           <MyPortfolio
@@ -207,6 +285,7 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
             parsePrice={parsePrice}
             formatPrice={formatPrice}
             calculateValue={calculateValue}
+            rebalancingType={rebalancingType}
           />
         </div>
       </div>

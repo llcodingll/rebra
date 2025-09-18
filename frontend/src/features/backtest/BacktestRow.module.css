@@ -17,6 +17,11 @@
   border-bottom-color: rgba(3, 2, 19, 0.15);
 }
 
+.dataRow:not(.clickable) {
+  cursor: default;
+  opacity: 0.6;
+}
+
 .dataRow:last-child {
   border-bottom: none;
 }
@@ -72,6 +77,18 @@
   font-size: 12px;
   font-weight: 500;
   border: 1px solid #e5e7eb;
+}
+
+/* Backtest Period Cell */
+.backtestPeriodCell {
+  width: 200px;
+}
+
+.backtestPeriodMain {
+  font-size: 13px;
+  color: #4b5563;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 /* Return Cell */

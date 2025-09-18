@@ -1,110 +1,97 @@
-package com.rebra.entity;
+package com.rebra.dto.response;
 
-import com.rebra.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import lombok.AccessLevel;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Entity
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+/**
+ * 백테스트 일별 상세 정보 응답 DTO
+ * 프론트엔드와의 호환성을 위해 기존 BacktestDetail 엔티티 구조를 유지
+ */
 @Getter
+@Setter
 @Builder
+@NoArgsConstructor
 @AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "backtest_details",
-    indexes = {
-        @Index(name = "idx_detail_record", columnList = "backtest_record_id"),
-        @Index(name = "idx_detail_record_date", columnList = "backtest_record_id, period_date")
-    })
-public class BacktestDetail extends BaseEntity {
+public class BacktestDetailResponse {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "backtest_record_id", nullable = false)
-    private BacktestRecord backtestRecord;
-
-    @Column(nullable = false)
+    @JsonProperty("period_date")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate periodDate;
 
-    @Column(nullable = false, precision = 15, scale = 2)
+    @JsonProperty("portfolio_value")
     private BigDecimal portfolioValue;
 
-    @Column(nullable = false, precision = 10, scale = 6)
+    @JsonProperty("period_return")
     private BigDecimal periodReturn;
 
-    @Column(nullable = false)
+    @JsonProperty("is_rebalanced")
     private Boolean isRebalanced;
 
-    @Column(precision = 15, scale = 2)
+    @JsonProperty("cash_balance")
     private BigDecimal cashBalance;
 
-    @Column(precision = 10, scale = 2)
+    @JsonProperty("daily_borrowing_interest")
     private BigDecimal dailyBorrowingInterest;
 
-    @Column(precision = 10, scale = 6)
+    @JsonProperty("cumulative_return")
     private BigDecimal cumulativeReturn;
 
-    @Column(precision = 10, scale = 6)
+    @JsonProperty("buy_hold_return")
     private BigDecimal buyHoldReturn;
 
-    @Column(precision = 15, scale = 2)
+    @JsonProperty("total_buy_amount")
     private BigDecimal totalBuyAmount;
 
-    @Column(precision = 15, scale = 2)
+    @JsonProperty("total_sell_amount")
     private BigDecimal totalSellAmount;
 
-    // 수익률 관련 헬퍼 메서드
+    // 추가된 percentage 필드들 (백테스트 계산 서버에서 계산된 퍼센트 값)
+    @JsonProperty("buy_hold_return_percentage")
+    private BigDecimal buyHoldReturnPercentage;
+
+    @JsonProperty("cumulative_return_percentage")
+    private BigDecimal cumulativeReturnPercentage;
+
+    @JsonProperty("period_return_percentage")
+    private BigDecimal periodReturnPercentage;
+
+    // 헬퍼 메서드들 (기존 BacktestDetail과 동일)
     public BigDecimal getPeriodReturnPercentage() {
-        return periodReturn.multiply(BigDecimal.valueOf(100));
+        return periodReturn != null ? periodReturn.multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
     }
 
-    // 리밸런싱 여부 확인
     public boolean wasRebalanced() {
         return isRebalanced != null && isRebalanced;
     }
 
-    // 차입 상태 확인
     public boolean isBorrowing() {
         return cashBalance != null && cashBalance.compareTo(BigDecimal.ZERO) < 0;
     }
 
-    // 안전한 현금 잔액 반환
     public BigDecimal getSafeCashBalance() {
         return cashBalance != null ? cashBalance : BigDecimal.ZERO;
     }
 
-    // 차입 금액 계산
     public BigDecimal getBorrowingAmount() {
         return isBorrowing() ? cashBalance.abs() : BigDecimal.ZERO;
     }
 
-    // 누적 수익률 퍼센트
     public BigDecimal getCumulativeReturnPercentage() {
         return cumulativeReturn != null ? cumulativeReturn.multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
     }
 
-    // 바이앤홀드 수익률 퍼센트
     public BigDecimal getBuyHoldReturnPercentage() {
         return buyHoldReturn != null ? buyHoldReturn.multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
     }
 
-    // 기간별 수익 정보 요약
     public String getPeriodSummary() {
         String rebalanceInfo = wasRebalanced() ? " (리밸런싱 실행)" : "";
         String borrowingInfo = isBorrowing() ? String.format(" [차입: %,.0f원]", getBorrowingAmount()) : "";
@@ -115,5 +102,4 @@ public class BacktestDetail extends BaseEntity {
                 rebalanceInfo,
                 borrowingInfo);
     }
-
 }

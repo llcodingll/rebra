@@ -1,5 +1,6 @@
 package com.rebra.repository;
 
+import com.rebra.entity.Stock;
 import com.rebra.entity.StockPrice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,6 +18,11 @@ public interface StockPriceRepository extends JpaRepository<StockPrice, Long> {
      * 특정 종목의 특정 날짜 주가 조회
      */
     Optional<StockPrice> findByTickerAndDate(String ticker, LocalDate date);
+
+    /**
+     * 특정 종목의 특정 날짜 데이터 존재 여부 확인
+     */
+    boolean existsByTickerAndDate(String ticker, LocalDate date);
 
     /**
      * 특정 종목의 기간별 주가 조회 (날짜 오름차순)
@@ -116,5 +122,40 @@ public interface StockPriceRepository extends JpaRepository<StockPrice, Long> {
            "WHERE sp.ticker IN :tickers " +
            "GROUP BY sp.ticker")
     List<Object[]> findDataAvailabilityByTickers(@Param("tickers") List<String> tickers);
+
+    /**
+     * 종목명과 날짜로 주가 조회 (FSS API 백테스트용)
+     */
+    Optional<StockPrice> findByNameAndDate(String name, LocalDate date);
+
+    /**
+     * 종목명 부분 검색과 날짜로 주가 조회 (FSS API 백테스트용)
+     */
+    List<StockPrice> findByNameContainingAndDate(String name, LocalDate date);
+
+    /**
+     * Stock 엔티티 기반 조회 메소드들
+     */
+    Long countByStock(Stock stock);
+
+    List<StockPrice> findByStockAndDateBetweenOrderByDateAsc(
+        Stock stock, LocalDate startDate, LocalDate endDate
+    );
+
+    Optional<StockPrice> findByStockAndDate(Stock stock, LocalDate date);
+
+    /**
+     * Stock별 데이터 존재 여부 확인
+     */
+    boolean existsByStockAndDate(Stock stock, LocalDate date);
+
+    Long countByStockAndDateBetween(Stock stock, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * Stock별 최신/최오래된 데이터 조회
+     */
+    Optional<StockPrice> findTopByStockOrderByDateDesc(Stock stock);
+
+    Optional<StockPrice> findTopByStockOrderByDateAsc(Stock stock);
 
 }

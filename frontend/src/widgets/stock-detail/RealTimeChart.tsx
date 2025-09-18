@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, ColorType, CandlestickSeries, HistogramSeries, CrosshairMode } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
-import type { RealtimePriceMessage } from '../../features/stock-search/api/types';
-import { useStockChartData } from '../../features/stock-search/hooks/useStockChartData';
-import { transformChartData } from '../../features/stock-search/utils/chartDataTransform';
+import type { RealtimePriceMessage } from '../../features/stock-detail/api/types';
+import { useStockChartData } from '../../features/stock-detail/hooks/useStockChartData';
+import type { ChartPeriodType } from '../../features/stock-detail/utils/dateUtils';
+import { transformChartData } from '../../features/stock-detail/utils/chartDataTransform';
 import styles from './RealTimeChart.module.css';
 
 interface RealTimeChartProps {
@@ -40,7 +41,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
   const crosshairSyncingRef = useRef<boolean>(false); // 크로스헤어 동기화용
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('일');
+  const [selectedPeriod, setSelectedPeriod] = useState<ChartPeriodType>('daily');
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [priceChange, setPriceChange] = useState<{ amount: number; rate: number } | null>(null);
   const [volume, setVolume] = useState<number | null>(null);
@@ -48,10 +49,10 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
 
   // API 연동 모드 전환 (개발 중 편의를 위한 분기)
-  const USE_API_DATA = false; // true: API 데이터 사용, false: 시뮬레이션 데이터 사용
+  const USE_API_DATA = true; // true: API 데이터 사용, false: 시뮬레이션 데이터 사용
 
   // API에서 차트 데이터 가져오기
-  const { data: chartApiData, isLoading, error } = useStockChartData(stockCode, USE_API_DATA);
+  const { data: chartApiData, isLoading, error } = useStockChartData(stockCode, selectedPeriod);
 
   // 종목별 초기 가격 설정
   const getInitialPrice = (code: string) => {
@@ -219,9 +220,9 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
         shiftVisibleRangeOnNewBar: false,
       },
       crosshair: {
-        mode: CrosshairMode.Normal,
-        vertLine: { width: 1, color: '#9598A1', style: 0 },
-        horzLine: { width: 1, color: '#9598A1', style: 0 },
+        mode: CrosshairMode.Hidden, // 크로스헤어 완전히 숨기기
+        // vertLine: { width: 1, color: '#9598A1', style: 0 },
+        // horzLine: { width: 1, color: '#9598A1', style: 0 },
       },
       handleScroll: {
         mouseWheel: true,
@@ -271,9 +272,9 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
         shiftVisibleRangeOnNewBar: false,
       },
       crosshair: {
-        mode: CrosshairMode.Normal,
-        vertLine: { width: 1, color: '#9598A1', style: 0 },
-        horzLine: { visible: false }, // 기본적으로 수직선만
+        mode: CrosshairMode.Hidden, // 크로스헤어 완전히 숨기기
+        // vertLine: { width: 1, color: '#9598A1', style: 0 },
+        // horzLine: { visible: false }, // 기본적으로 수직선만
       },
       handleScroll: {
         mouseWheel: true,
@@ -302,6 +303,11 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
       borderVisible: false,
       wickUpColor: '#dc2626',
       wickDownColor: '#2563eb',
+      priceFormat: {
+        type: 'price',
+        precision: 0,
+        minMove: 1,
+      },
     });
 
     const volumeSeries = volumeChart.addSeries(HistogramSeries, {
@@ -314,63 +320,64 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
     priceSeriesRef.current = priceSeries;
     volumeSeriesRef.current = volumeSeries;
 
-    // 공식 TradingView 크로스헤어 동기화
-    const getCrosshairDataPoint = (series: any, param: any) => {
-      if (!param.time) return null;
-      return param.seriesData.get(series) || null;
-    };
+    // 크로스헤어 비활성화로 인해 주석처리
+    // // 공식 TradingView 크로스헤어 동기화
+    // const getCrosshairDataPoint = (series: any, param: any) => {
+    //   if (!param.time) return null;
+    //   return param.seriesData.get(series) || null;
+    // };
 
-    const syncCrosshair = (chart: any, series: any, dataPoint: any, showHorzLine: boolean = false) => {
-      if (crosshairSyncingRef.current) return;
+    // const syncCrosshair = (chart: any, series: any, dataPoint: any, showHorzLine: boolean = false) => {
+    //   if (crosshairSyncingRef.current) return;
 
-      crosshairSyncingRef.current = true;
+    //   crosshairSyncingRef.current = true;
 
-      if (dataPoint) {
-        // 수직선만 또는 완전한 크로스헤어 설정
-        if (showHorzLine) {
-          // 완전한 크로스헤어 (활성 차트)
-          chart.applyOptions({
-            crosshair: {
-              mode: CrosshairMode.Normal,
-              vertLine: { width: 1, color: '#9598A1', style: 0 },
-              horzLine: { width: 1, color: '#9598A1', style: 0 },
-            },
-          });
-        } else {
-          // 수직선만 (비활성 차트)
-          chart.applyOptions({
-            crosshair: {
-              mode: CrosshairMode.Normal,
-              vertLine: { width: 1, color: '#9598A1', style: 0 },
-              horzLine: { visible: false },
-            },
-          });
-        }
-        chart.setCrosshairPosition(dataPoint.value, dataPoint.time, series);
-      } else {
-        chart.clearCrosshairPosition();
-      }
+    //   if (dataPoint) {
+    //     // 수직선만 또는 완전한 크로스헤어 설정
+    //     if (showHorzLine) {
+    //       // 완전한 크로스헤어 (활성 차트)
+    //       chart.applyOptions({
+    //         crosshair: {
+    //           mode: CrosshairMode.Normal,
+    //           vertLine: { width: 1, color: '#9598A1', style: 0 },
+    //           horzLine: { width: 1, color: '#9598A1', style: 0 },
+    //         },
+    //       });
+    //     } else {
+    //       // 수직선만 (비활성 차트)
+    //       chart.applyOptions({
+    //         crosshair: {
+    //           mode: CrosshairMode.Normal,
+    //           vertLine: { width: 1, color: '#9598A1', style: 0 },
+    //           horzLine: { visible: false },
+    //         },
+    //       });
+    //     }
+    //     chart.setCrosshairPosition(dataPoint.value, dataPoint.time, series);
+    //   } else {
+    //     chart.clearCrosshairPosition();
+    //   }
 
-      setTimeout(() => {
-        crosshairSyncingRef.current = false;
-      }, 10);
-    };
+    //   setTimeout(() => {
+    //     crosshairSyncingRef.current = false;
+    //   }, 10);
+    // };
 
-    // Price → Volume 동기화 (수직선만)
-    priceChart.subscribeCrosshairMove((param) => {
-      if (crosshairSyncingRef.current || !volumeChartRef.current || !volumeSeriesRef.current) return;
+    // // Price → Volume 동기화 (수직선만)
+    // priceChart.subscribeCrosshairMove((param) => {
+    //   if (crosshairSyncingRef.current || !volumeChartRef.current || !volumeSeriesRef.current) return;
 
-      const dataPoint = getCrosshairDataPoint(priceSeries, param);
-      syncCrosshair(volumeChartRef.current, volumeSeriesRef.current, dataPoint, false); // 수직선만
-    });
+    //   const dataPoint = getCrosshairDataPoint(priceSeries, param);
+    //   syncCrosshair(volumeChartRef.current, volumeSeriesRef.current, dataPoint, false); // 수직선만
+    // });
 
-    // Volume → Price 동기화 (완전한 크로스헤어)
-    volumeChart.subscribeCrosshairMove((param) => {
-      if (crosshairSyncingRef.current || !priceChartRef.current || !priceSeriesRef.current) return;
+    // // Volume → Price 동기화 (완전한 크로스헤어)
+    // volumeChart.subscribeCrosshairMove((param) => {
+    //   if (crosshairSyncingRef.current || !priceChartRef.current || !priceSeriesRef.current) return;
 
-      const dataPoint = getCrosshairDataPoint(volumeSeries, param);
-      syncCrosshair(priceChartRef.current, priceSeriesRef.current, dataPoint, true); // 완전한 크로스헤어
-    });
+    //   const dataPoint = getCrosshairDataPoint(volumeSeries, param);
+    //   syncCrosshair(priceChartRef.current, priceSeriesRef.current, dataPoint, true); // 완전한 크로스헤어
+    // });
 
     // 단일 논리적 범위 동기화 (줌과 드래그 모두 처리)
     priceChart.timeScale().subscribeVisibleLogicalRangeChange((logicalRange) => {
@@ -419,10 +426,17 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
       priceSeriesRef.current.setData(candleData);
       volumeSeriesRef.current.setData(volumeData);
 
-      // 잠시 후 자동 피팅이 완료되면 동기화 재개
+      // 잠시 후 자동 피팅이 완료되면 동기화 재개 및 시간축 동기화
       setTimeout(() => {
+        if (priceChartRef.current && volumeChartRef.current) {
+          // 가격 차트의 현재 보이는 범위를 거래량 차트에 적용
+          const priceVisibleRange = priceChartRef.current.timeScale().getVisibleLogicalRange();
+          if (priceVisibleRange) {
+            volumeChartRef.current.timeScale().setVisibleLogicalRange(priceVisibleRange);
+          }
+        }
         panSyncingRef.current = false;
-      }, 50);
+      }, 100);
     }
   }, [candleData, volumeData]);
 
@@ -462,7 +476,12 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
     }
   }, [USE_API_DATA, stockCode]);
 
-  const periods = ['일', '주', '월', '년'];
+  const periods: { label: string; value: ChartPeriodType }[] = [
+    { label: '일', value: 'daily' },
+    { label: '주', value: 'weekly' },
+    { label: '월', value: 'monthly' },
+    { label: '년', value: 'yearly' },
+  ];
 
   return (
     <div className={styles.container}>
@@ -471,11 +490,11 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
         <div className={styles.timeSelector}>
           {periods.map((period) => (
             <button
-              key={period}
-              className={`${styles.timeButton} ${selectedPeriod === period ? styles.active : ''}`}
-              onClick={() => setSelectedPeriod(period)}
+              key={period.value}
+              className={`${styles.timeButton} ${selectedPeriod === period.value ? styles.active : ''}`}
+              onClick={() => setSelectedPeriod(period.value)}
             >
-              {period}
+              {period.label}
             </button>
           ))}
         </div>

@@ -1,23 +1,25 @@
 package com.rebra.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rebra.dto.backtest.BacktestRequest;
+import com.rebra.dto.backtest.BacktestStockDto;
 import com.rebra.dto.request.BacktestCreateRequest;
+import com.rebra.dto.response.BacktestDetailResponse;
 import com.rebra.dto.response.BacktestListResponse;
 import com.rebra.dto.response.BacktestResultResponse;
 import com.rebra.dto.response.BacktestValidationResponse;
 import com.rebra.dto.response.PageResponse;
-import com.rebra.entity.BacktestDetail;
 import com.rebra.entity.BacktestRecord;
 import com.rebra.entity.BacktestStock;
 import com.rebra.entity.Stock;
 import com.rebra.entity.StockPrice;
 import com.rebra.entity.User;
 import com.rebra.exception.backtest.BacktestException;
-import com.rebra.repository.BacktestDetailRepository;
 import com.rebra.repository.BacktestRecordRepository;
 import com.rebra.repository.BacktestStockRepository;
 import com.rebra.repository.StockPriceRepository;
 import com.rebra.repository.StockRepository;
+import com.rebra.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -26,29 +28,35 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class BacktestServiceImpl implements BacktestService {
 
     private final BacktestRecordRepository backtestRecordRepository;
-    private final BacktestDetailRepository backtestDetailRepository;
     private final BacktestStockRepository backtestStockRepository;
     private final StockPriceRepository stockPriceRepository;
     private final StockRepository stockRepository;
+    private final UserRepository userRepository;
+    private final SmartStockDataService smartStockDataService;
 
     @Qualifier("backtestRequestKafkaTemplate")
     private final KafkaTemplate<String, Object> kafkaTemplate;
@@ -56,7 +64,8 @@ public class BacktestServiceImpl implements BacktestService {
     private final ObjectMapper objectMapper;
 
     @Override
-    public BacktestValidationResponse validateBacktestRequest(User user, BacktestCreateRequest request) {
+    @Transactional(readOnly = true)
+    public BacktestValidationResponse validateBacktestRequest(Long userId, BacktestCreateRequest request) {
         try {
             // 1. 기본 유효성 검사
             if (!request.isValid()) {
@@ -89,9 +98,20 @@ public class BacktestServiceImpl implements BacktestService {
                     request.getRebalancingType(), request.getRebalancingPeriod(),
                     request.getStartDate(), request.getEndDate());
 
-            if (tradingDates.isEmpty()) {
+            // THRESHOLD가 아닌 경우에만 빈 리스트 검증
+            if (tradingDates.isEmpty() && request.getRebalancingType() != BacktestRecord.RebalancingType.THRESHOLD) {
                 errors.add("지정된 기간에 거래일이 없습니다");
                 return BacktestValidationResponse.failure(errors, stockValidations);
+            }
+
+            // THRESHOLD 타입의 경우 실제 거래일 조회하여 검증 요약 생성
+            if (request.getRebalancingType() == BacktestRecord.RebalancingType.THRESHOLD) {
+                tradingDates = stockPriceRepository.findTradingDatesBetween(
+                        request.getStartDate(), request.getEndDate());
+                if (tradingDates.isEmpty()) {
+                    errors.add("지정된 기간에 거래일이 없습니다");
+                    return BacktestValidationResponse.failure(errors, stockValidations);
+                }
             }
 
             // 6. 검증 요약 정보 생성
@@ -111,32 +131,17 @@ public class BacktestServiceImpl implements BacktestService {
         }
     }
 
-    @Override
-    public Long createBacktest(User user, BacktestCreateRequest request) {
+    @Transactional
+    protected Long createInitialBacktestRecord(Long userId, BacktestCreateRequest request) {
         // 1. 요청 데이터 유효성 검사
         if (!request.isValid()) {
             throw BacktestException.invalidRequest();
         }
 
-        // 2. 종목별 데이터 가용성 검증
-        List<String> tickers = request.getStocks().stream()
-                .map(BacktestCreateRequest.BacktestStockRequest::getTicker)
-                .toList();
-
-        validateDataAvailability(tickers, request.getStartDate(), request.getEndDate());
-
-        // 3. 리밸런싱 주기에 따른 실제 거래일 확인
-        List<LocalDate> tradingDates = getTradingDatesForRebalancing(
-                request.getRebalancingType(), request.getRebalancingPeriod(),
-                request.getStartDate(), request.getEndDate());
-
-        if (tradingDates.isEmpty()) {
-            throw BacktestException.invalidRequest();
-        }
-
-        // 4. BacktestRecord 생성 및 저장
+        // 2. BacktestRecord 생성 및 저장 (PENDING 상태)
+        User userProxy = userRepository.getReferenceById(userId);
         BacktestRecord backtestRecord = BacktestRecord.builder()
-                .user(user)
+                .user(userProxy)
                 .testName(request.getTestName())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
@@ -147,52 +152,119 @@ public class BacktestServiceImpl implements BacktestService {
 
         backtestRecord = backtestRecordRepository.save(backtestRecord);
 
-        // 5. 백테스트 종목 정보 저장
+        // 3. 백테스트 종목 정보 저장
         saveBacktestStocks(backtestRecord, request);
 
-        // 6. Kafka로 백테스트 요청 전송
-        try {
-            Map<String, Object> backtestRequest = createBacktestRequest(backtestRecord, request, tickers, tradingDates);
-            kafkaTemplate.send("backtest-request", backtestRecord.getId().toString(), backtestRequest);
-            log.info("백테스트 요청 전송 완료: backtestId={}", backtestRecord.getId());
-
-            // 상태를 PROCESSING으로 변경
-            backtestRecord.updateStatus(BacktestRecord.BacktestStatus.PROCESSING);
-            backtestRecordRepository.save(backtestRecord);
-
-        } catch (Exception e) {
-            log.error("백테스트 요청 전송 실패: backtestId={}", backtestRecord.getId(), e);
-            backtestRecord.updateStatus(BacktestRecord.BacktestStatus.FAILED, "요청 전송 실패: " + e.getMessage());
-            backtestRecordRepository.save(backtestRecord);
-            throw BacktestException.failed();
-        }
-
+        log.info("백테스트 레코드 생성 완료: backtestId={}, status=PENDING", backtestRecord.getId());
         return backtestRecord.getId();
     }
 
     @Override
+    public Long createBacktest(Long userId, BacktestCreateRequest request) {
+        try {
+            // 1단계: BacktestRecord 생성 및 즉시 커밋 (PENDING 상태)
+            Long backtestId = createInitialBacktestRecord(userId, request);
+            
+            // 2단계: 별도 트랜잭션에서 데이터 처리 및 Kafka 전송 (PROCESSING 상태로 변경)
+            // 이 단계에서 실패해도 backtestId는 반환되어 사용자가 상태를 확인할 수 있음
+            processBacktestData(backtestId, request);
+            
+            return backtestId;
+            
+        } catch (Exception e) {
+            log.error("백테스트 생성 실패: userId={}", userId, e);
+            // 초기 레코드 생성 실패 시에만 예외 던짐
+            throw e;
+        }
+    }
+
+    @Transactional
+    protected void processBacktestData(Long backtestId, BacktestCreateRequest request) {
+        // 1. BacktestRecord 조회
+        BacktestRecord backtestRecord = backtestRecordRepository.findById(backtestId)
+                .orElseThrow(() -> BacktestException.notFound());
+
+        try {
+            // 2. 종목별 데이터 확보 (스마트 캐싱)
+            List<String> tickers = request.getStocks().stream()
+                    .map(BacktestCreateRequest.BacktestStockRequest::getTicker)
+                    .toList();
+
+            log.info("백테스트 데이터 확보 시작 - backtestId={}, 종목 수: {}, 기간: {} ~ {}", 
+                backtestId, tickers.size(), request.getStartDate(), request.getEndDate());
+
+            smartStockDataService.ensureBatchDataAvailable(
+                tickers, 
+                request.getStartDate(), 
+                request.getEndDate()
+            );
+            log.info("백테스트 데이터 확보 완료 - backtestId={}", backtestId);
+
+            // 3. 데이터 가용성 최종 검증
+            validateDataAvailability(tickers, request.getStartDate(), request.getEndDate());
+
+            // 4. Kafka로 백테스트 요청 전송
+            BacktestRequest backtestRequest = createBacktestRequest(backtestRecord, request, tickers, null);
+            kafkaTemplate.send("backtest-request", backtestRecord.getId().toString(), backtestRequest);
+            log.info("백테스트 요청 전송 완료: backtestId={}", backtestRecord.getId());
+
+            // 5. 상태를 PROCESSING으로 변경
+            backtestRecord.updateStatus(BacktestRecord.BacktestStatus.PROCESSING);
+            backtestRecordRepository.save(backtestRecord);
+            log.info("백테스트 상태 변경: backtestId={}, status=PROCESSING", backtestId);
+
+        } catch (Exception e) {
+            log.error("백테스트 데이터 처리 실패: backtestId={}", backtestId, e);
+            
+            String errorMessage;
+            if (e.getMessage() != null && e.getMessage().contains("데이터")) {
+                errorMessage = "주식 데이터 수집 실패: " + e.getMessage();
+            } else if (e.getMessage() != null && e.getMessage().contains("kafka") || 
+                       e.getMessage() != null && e.getMessage().toLowerCase().contains("kafka")) {
+                errorMessage = "백테스트 요청 전송 실패: " + e.getMessage();
+            } else {
+                errorMessage = "백테스트 처리 중 오류 발생: " + e.getMessage();
+            }
+            
+            backtestRecord.updateStatus(BacktestRecord.BacktestStatus.FAILED, errorMessage);
+            backtestRecordRepository.save(backtestRecord);
+            
+            // 예외를 다시 던지지 않고 로그만 남김 (사용자에게는 backtestId 반환)
+            log.warn("백테스트 처리 실패했지만 ID는 반환됨: backtestId={}, error={}", backtestId, errorMessage);
+        }
+    }
+
+    @Override
     @Transactional(readOnly = true)
-    public PageResponse<BacktestListResponse> getBacktestList(User user, Pageable pageable) {
-        Page<BacktestRecord> records = backtestRecordRepository.findByUserOrderByCreatedAtDesc(user, pageable);
+    public PageResponse<BacktestListResponse> getBacktestList(Long userId, Pageable pageable) {
+        Page<BacktestRecord> records = backtestRecordRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
         Page<BacktestListResponse> dtoPage = records.map(BacktestListResponse::from);
         return PageResponse.from(dtoPage);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public BacktestResultResponse getBacktestResult(User user, Long backtestId) {
-        BacktestRecord record = backtestRecordRepository.findByUserAndIdWithUser(user, backtestId)
+    public BacktestResultResponse getBacktestResult(Long userId, Long backtestId) {
+        BacktestRecord record = backtestRecordRepository.findByUserIdAndId(userId, backtestId)
                 .orElseThrow(() -> BacktestException.notFound());
 
-        List<BacktestDetail> details = backtestDetailRepository.findByBacktestRecordOrderByPeriodDateAsc(record);
+        // 디버그 로그 추가
+        log.info("백테스트 조회: id={}, status={}, hasDetails={}, detailsJson 길이={}", 
+                backtestId, record.getStatus(), record.hasDetails(), 
+                record.getDetailsJson() != null ? record.getDetailsJson().length() : 0);
+
+        String detailsJson = record.getDetailsJson(); // JSON 문자열 직접 사용
+        log.info("백테스트 상세 정보 JSON 직접 반환: 길이={}", detailsJson != null ? detailsJson.length() : 0);
+        
         List<BacktestStock> portfolioStocks = backtestStockRepository.findByBacktestRecordWithStock(record);
 
-        return BacktestResultResponse.from(record, details, portfolioStocks);
+        return BacktestResultResponse.from(record, detailsJson, portfolioStocks);
     }
 
     @Override
-    public void deleteBacktest(User user, Long backtestId) {
-        BacktestRecord record = backtestRecordRepository.findByUserAndIdWithUser(user, backtestId)
+    @Transactional
+    public void deleteBacktest(Long userId, Long backtestId) {
+        BacktestRecord record = backtestRecordRepository.findByUserIdAndId(userId, backtestId)
                 .orElseThrow(() -> BacktestException.notFound());
 
         // 진행 중인 백테스트는 삭제 불가
@@ -200,16 +272,14 @@ public class BacktestServiceImpl implements BacktestService {
             throw BacktestException.deleteNotAllowed();
         }
 
-        // 연관된 데이터 모두 삭제 (cascade 설정으로 BacktestStock은 자동 삭제됨)
-        backtestDetailRepository.findByBacktestRecordOrderByPeriodDateAsc(record)
-                .forEach(backtestDetailRepository::delete);
-
+        // BacktestRecord 삭제 (cascade 설정으로 BacktestStock은 자동 삭제됨)
+        // 상세 정보는 JSON으로 저장되므로 별도 삭제 불필요
         backtestRecordRepository.delete(record);
         log.info("백테스트 삭제 완료: backtestId={}", backtestId);
     }
 
-    // @KafkaListener(topics = "backtest-result", groupId = "rebra-main-server")
-    public void handleBacktestResult(Object message, Acknowledgment acknowledgment) {
+    @KafkaListener(topics = "backtest-result", groupId = "rebra-main-server")
+    public void handleBacktestResult(@Payload Map<String, Object> message, Acknowledgment acknowledgment) {
         try {
             processBacktestResult(message);
             acknowledgment.acknowledge();
@@ -221,10 +291,10 @@ public class BacktestServiceImpl implements BacktestService {
     }
 
     @Override
-    public void processBacktestResult(Object backtestResponse) {
+    @Transactional
+    public void processBacktestResult(Map<String, Object> responseMap) {
         try {
-            // JSON을 Map으로 변환
-            Map<String, Object> responseMap = objectMapper.convertValue(backtestResponse, Map.class);
+            // 이미 Map으로 받아왔으므로 변환 불필요
             Long backtestId = Long.valueOf(responseMap.get("backtest_id").toString());
             String status = responseMap.get("status").toString();
 
@@ -251,45 +321,91 @@ public class BacktestServiceImpl implements BacktestService {
         }
     }
 
-    private Map<String, Object> createBacktestRequest(BacktestRecord record, BacktestCreateRequest request, 
-                                                     List<String> tickers, List<LocalDate> tradingDates) {
-        // 특정 거래일의 주식 데이터만 조회
-        List<StockPrice> stockPrices = getStockPricesForDates(tickers, tradingDates);
+    private BacktestRequest createBacktestRequest(BacktestRecord record, BacktestCreateRequest request, 
+                                                     List<String> tickers, List<LocalDate> unusedTradingDates) {
+        // 모든 리밸런싱 타입에 대해 전체 기간 데이터 조회
+        List<StockPrice> stockPrices = stockPriceRepository.findByTickersAndDateRange(
+                tickers, request.getStartDate(), request.getEndDate());
+        
+        // 실제 거래일 추출 (중복 제거 및 정렬)
+        List<LocalDate> actualDates = stockPrices.stream()
+                .map(StockPrice::getDate)
+                .distinct()
+                .sorted()
+                .toList();
+        
+        log.info("{} 리밸런싱 - 전체 기간 데이터 조회: {}건 ({}일, {}종목)", 
+                request.getRebalancingType(), stockPrices.size(), actualDates.size(), tickers.size());
+
+        // 날짜별 가격 데이터 (맵 기반 구조) 먼저 생성
+        Map<String, Map<String, Double>> dailyPrices = createDailyPricesMap(tickers, actualDates, stockPrices);
+
+        // dailyPrices에서 리밸런싱 날짜 추출
+        List<LocalDate> rebalancingDates = extractRebalancingDatesFromMap(
+                dailyPrices, 
+                request.getRebalancingType(), 
+                request.getRebalancingPeriod()
+        );
 
         // 백테스트 요청 객체 생성
-        Map<String, Object> backtestRequest = new HashMap<>();
-        backtestRequest.put("backtest_id", record.getId());
-        backtestRequest.put("start_date", request.getStartDate().toString());
-        backtestRequest.put("end_date", request.getEndDate().toString());
-        backtestRequest.put("rebalancing_type", request.getRebalancingType().toString());
-        backtestRequest.put("rebalancing_period", request.getRebalancingPeriod() != null ? 
-                request.getRebalancingPeriod().toString() : null);
+        BacktestRequest backtestRequest = new BacktestRequest();
+        backtestRequest.setBacktestId(record.getId());
+        backtestRequest.setStartDate(request.getStartDate());
+        backtestRequest.setEndDate(request.getEndDate());
+        
+        // enum 매핑: 메인 서버의 enum을 백테스트 서버의 enum으로 변환
+        backtestRequest.setRebalancingType(convertToBacktestRebalancingType(request.getRebalancingType()));
+        backtestRequest.setRebalancingPeriod(convertToBacktestRebalancingPeriod(request.getRebalancingPeriod()));
+
+        // 리밸런싱 날짜 설정
+        backtestRequest.setRebalancingDates(rebalancingDates);
+        if (request.getRebalancingType() == BacktestRecord.RebalancingType.PERIODIC) {
+            log.info("PERIODIC 리밸런싱 날짜 설정: {}개 ({})", rebalancingDates.size(), rebalancingDates);
+        }
 
         // 종목 정보
-        List<Map<String, Object>> stocks = request.getStocks().stream()
-                .map(stock -> {
-                    Map<String, Object> stockMap = new HashMap<>();
-                    stockMap.put("stock_code", stock.getTicker());
-                    stockMap.put("weight", stock.getWeight());
-                    stockMap.put("threshold_percentage", stock.getThresholdPercentage());
-                    return stockMap;
-                })
+        List<BacktestStockDto> stocks = request.getStocks().stream()
+                .map(stock -> new BacktestStockDto(
+                        stock.getTicker(),
+                        stock.getWeight(),
+                        stock.getThresholdPercentage(),
+                        stock.getShares()
+                ))
                 .toList();
-        backtestRequest.put("stocks", stocks);
+        backtestRequest.setStocks(stocks);
 
-        // OHLCV 데이터 (종가만 전송)
-        List<Map<String, Object>> ohlcvData = stockPrices.stream()
-                .map(price -> {
-                    Map<String, Object> priceMap = new HashMap<>();
-                    priceMap.put("stock_code", price.getTicker());
-                    priceMap.put("trade_date", price.getDate().toString());
-                    priceMap.put("close_price", price.getClosePrice().doubleValue());
-                    return priceMap;
-                })
-                .toList();
-        backtestRequest.put("ohlcv_data", ohlcvData);
+        // 날짜별 가격 데이터 설정
+        backtestRequest.setDailyPrices(dailyPrices);
 
         return backtestRequest;
+    }
+
+    /**
+     * 메인 서버의 RebalancingType을 백테스트 서버의 RebalancingType으로 변환
+     */
+    private com.rebra.enums.RebalancingType convertToBacktestRebalancingType(BacktestRecord.RebalancingType mainType) {
+        if (mainType == null) {
+            return null;
+        }
+        
+        return switch (mainType) {
+            case THRESHOLD -> com.rebra.enums.RebalancingType.THRESHOLD;
+            case PERIODIC -> com.rebra.enums.RebalancingType.PERIODIC;
+        };
+    }
+
+    /**
+     * 메인 서버의 RebalancingPeriod를 백테스트 서버의 RebalancingPeriod로 변환
+     */
+    private com.rebra.enums.RebalancingPeriod convertToBacktestRebalancingPeriod(BacktestRecord.RebalancingPeriod mainPeriod) {
+        if (mainPeriod == null) {
+            return null;
+        }
+        
+        return switch (mainPeriod) {
+            case MONTHLY -> com.rebra.enums.RebalancingPeriod.MONTHLY;
+            case QUARTERLY -> com.rebra.enums.RebalancingPeriod.QUARTERLY;
+        };
     }
 
     private void updateBacktestResults(BacktestRecord record, Map<String, Object> responseMap) {
@@ -322,29 +438,25 @@ public class BacktestServiceImpl implements BacktestService {
                 rebalancingCount, totalFee, totalBorrowingCost, maxBorrowingAmount, minCashBalance,
                 maxDrawdown, volatility, sharpeRatio, timeWeightedReturn);
 
-        // BacktestDetail 저장
-        List<BacktestDetail> details = detailsList.stream()
-                .map(detailMap -> BacktestDetail.builder()
-                        .backtestRecord(record)
-                        .periodDate(LocalDate.parse(detailMap.get("period_date").toString()))
-                        .portfolioValue(new BigDecimal(detailMap.get("portfolio_value").toString()))
-                        .periodReturn(new BigDecimal(detailMap.get("period_return").toString()))
-                        .isRebalanced(Boolean.valueOf(detailMap.get("is_rebalanced").toString()))
-                        .cashBalance(detailMap.get("cash_balance") != null ?
-                                new BigDecimal(detailMap.get("cash_balance").toString()) : null)
-                        .dailyBorrowingInterest(detailMap.get("daily_borrowing_interest") != null ?
-                                new BigDecimal(detailMap.get("daily_borrowing_interest").toString()) : null)
-                        .cumulativeReturn(detailMap.get("cumulative_return") != null ?
-                                new BigDecimal(detailMap.get("cumulative_return").toString()) : null)
-                        .buyHoldReturn(detailMap.get("buy_hold_return") != null ?
-                                new BigDecimal(detailMap.get("buy_hold_return").toString()) : null)
-                        .totalBuyAmount(detailMap.get("total_buy_amount") != null ?
-                                new BigDecimal(detailMap.get("total_buy_amount").toString()) : null)
-                        .totalSellAmount(detailMap.get("total_sell_amount") != null ?
-                                new BigDecimal(detailMap.get("total_sell_amount").toString()) : null)
-                        .build())
-                .toList();
-        backtestDetailRepository.saveAll(details);
+        // 백테스트 서버의 상세 정보를 그대로 JSON으로 저장 (파싱하지 않음)
+        try {
+            String detailsJson = objectMapper.writeValueAsString(detailsList);
+            record.setDetailsJson(detailsJson);
+            log.info("백테스트 상세 정보 JSON 저장 완료: backtestId={}, 상세 기록 수={}", 
+                    record.getId(), detailsList.size());
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            log.error("백테스트 상세 정보 JSON 변환 실패: backtestId={}", record.getId(), e);
+            throw new RuntimeException("백테스트 상세 정보 JSON 변환 실패", e);
+        }
+        
+        // 저장 검증 로그
+        if (record.hasDetails()) {
+            log.info("백테스트 상세 정보 검증 성공: backtestId={}, detailsJson 길이={}", 
+                    record.getId(), record.getDetailsJson().length());
+        } else {
+            log.warn("백테스트 상세 정보 검증 실패: backtestId={}, detailsJson이 비어있음", 
+                    record.getId());
+        }
     }
 
     /**
@@ -393,16 +505,65 @@ public class BacktestServiceImpl implements BacktestService {
     }
 
     /**
-     * 리밸런싱 유형에 따른 거래일 목록을 반환한다
+     * dailyPrices Map에서 리밸런싱 날짜를 추출한다
+     * 백테스트 대상 종목의 실제 거래일을 기준으로 월말/분기말을 판단
+     */
+    private List<LocalDate> extractRebalancingDatesFromMap(
+            Map<String, Map<String, Double>> dailyPrices,
+            BacktestRecord.RebalancingType rebalancingType,
+            BacktestRecord.RebalancingPeriod rebalancingPeriod) {
+        
+        if (rebalancingType == BacktestRecord.RebalancingType.THRESHOLD) {
+            return Collections.emptyList();
+        }
+        
+        if (dailyPrices == null || dailyPrices.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        // dailyPrices의 키(날짜 문자열)에서 월말 날짜 찾기
+        Map<YearMonth, LocalDate> monthEndDates = dailyPrices.keySet().stream()
+                .map(LocalDate::parse)
+                .collect(Collectors.toMap(
+                        date -> YearMonth.from(date),
+                        date -> date,
+                        (existing, replacement) -> 
+                                existing.isAfter(replacement) ? existing : replacement // 각 월의 가장 늦은 날짜
+                ));
+        
+        if (rebalancingPeriod == BacktestRecord.RebalancingPeriod.MONTHLY) {
+            // 모든 월말 거래일 반환
+            return monthEndDates.values().stream()
+                    .sorted()
+                    .toList();
+        }
+        
+        if (rebalancingPeriod == BacktestRecord.RebalancingPeriod.QUARTERLY) {
+            // 분기말(3,6,9,12월)만 반환
+            return monthEndDates.entrySet().stream()
+                    .filter(entry -> {
+                        int month = entry.getKey().getMonthValue();
+                        return month == 3 || month == 6 || month == 9 || month == 12;
+                    })
+                    .map(Map.Entry::getValue)
+                    .sorted()
+                    .toList();
+        }
+        
+        return Collections.emptyList();
+    }
+
+    /**
+     * 리밸런싱 유형에 따른 거래일 목록을 반환한다 (검증용)
      */
     private List<LocalDate> getTradingDatesForRebalancing(BacktestRecord.RebalancingType rebalancingType,
                                                         BacktestRecord.RebalancingPeriod rebalancingPeriod,
                                                         LocalDate startDate, LocalDate endDate) {
         switch (rebalancingType) {
             case THRESHOLD:
-                // 임계값 기반은 모든 거래일 필요
-                return stockPriceRepository.findTradingDatesBetween(startDate, endDate);
-                
+                // 임계값 기반은 createBacktestRequest에서 직접 처리하므로 빈 리스트 반환
+                return Collections.emptyList();
+
             case PERIODIC:
                 // 주기적 리밸런싱은 주기에 맞는 날짜만
                 if (rebalancingPeriod == BacktestRecord.RebalancingPeriod.MONTHLY) {
@@ -416,25 +577,41 @@ public class BacktestServiceImpl implements BacktestService {
         throw new IllegalArgumentException("지원하지 않는 리밸런싱 설정입니다");
     }
 
+
     /**
-     * 특정 날짜들의 주식 가격 데이터를 조회한다
+     * 날짜별 종목 가격 맵을 생성한다
      */
-    private List<StockPrice> getStockPricesForDates(List<String> tickers, List<LocalDate> dates) {
-        List<StockPrice> allPrices = new ArrayList<>();
+    private Map<String, Map<String, Double>> createDailyPricesMap(
+            List<String> tickers, 
+            List<LocalDate> tradingDates,
+            List<StockPrice> stockPrices) {
         
-        for (LocalDate date : dates) {
-            List<StockPrice> dailyPrices = stockPriceRepository.findByDateOrderByTickerAsc(date);
-            // 요청된 종목만 필터링
-            List<StockPrice> filteredPrices = dailyPrices.stream()
-                    .filter(price -> tickers.contains(price.getTicker()))
-                    .toList();
-            allPrices.addAll(filteredPrices);
+        Map<String, Map<String, Double>> dailyPricesMap = new LinkedHashMap<>();
+        
+        // 모든 거래일 초기화 (모든 종목을 null로 초기화)
+        for (LocalDate date : tradingDates) {
+            Map<String, Double> dayPrices = new HashMap<>();
+            for (String ticker : tickers) {
+                dayPrices.put(ticker, null);
+            }
+            dailyPricesMap.put(date.toString(), dayPrices);
         }
         
-        log.info("주식 가격 데이터 조회 완료 - 총 {}건 ({}일, {}종목)", 
-                allPrices.size(), dates.size(), tickers.size());
+        // 실제 가격 데이터로 업데이트
+        for (StockPrice price : stockPrices) {
+            String dateKey = price.getDate().toString();
+            if (dailyPricesMap.containsKey(dateKey)) {
+                dailyPricesMap.get(dateKey).put(
+                        price.getTicker(), 
+                        price.getClosePrice().doubleValue()
+                );
+            }
+        }
         
-        return allPrices;
+        log.info("일별 가격 맵 생성 완료 - {}일 × {}종목 = {}개 데이터포인트", 
+                tradingDates.size(), tickers.size(), tradingDates.size() * tickers.size());
+        
+        return dailyPricesMap;
     }
 
     /**
@@ -615,11 +792,14 @@ public class BacktestServiceImpl implements BacktestService {
      * 백테스트 종목 정보를 저장한다
      */
     private void saveBacktestStocks(BacktestRecord backtestRecord, BacktestCreateRequest request) {
+        List<BacktestStock> backtestStocks = new ArrayList<>();
+        
         for (BacktestCreateRequest.BacktestStockRequest stockRequest : request.getStocks()) {
-            // Stock 엔티티 조회 또는 생성
-            Stock stock = getOrCreateStock(stockRequest.getTicker(), stockRequest.getName());
+            // Stock 엔티티 조회 (사용자가 미리 historical 조회를 통해 생성되어 있어야 함)
+            Stock stock = stockRepository.findByStockCode(stockRequest.getTicker())
+                .orElseThrow(() -> BacktestException.invalidRequest());
             
-            // BacktestStock 엔티티 생성 및 저장
+            // BacktestStock 엔티티 생성
             BacktestStock backtestStock = BacktestStock.builder()
                     .backtestRecord(backtestRecord)
                     .stock(stock)
@@ -628,32 +808,15 @@ public class BacktestServiceImpl implements BacktestService {
                             BigDecimal.valueOf(stockRequest.getThresholdPercentage()) : null)
                     .build();
             
-            backtestStockRepository.save(backtestStock);
+            backtestStocks.add(backtestStock);
         }
+        
+        // 일괄 저장
+        backtestStockRepository.saveAll(backtestStocks);
         
         log.info("백테스트 종목 정보 저장 완료 - backtestId: {}, 종목수: {}", 
                 backtestRecord.getId(), request.getStocks().size());
     }
 
-    /**
-     * Stock 엔티티를 조회하거나 생성한다
-     */
-    private Stock getOrCreateStock(String stockCode, String stockName) {
-        Optional<Stock> existingStock = stockRepository.findByStockCode(stockCode);
-        
-        if (existingStock.isPresent()) {
-            return existingStock.get();
-        }
-        
-        // 새로운 Stock 엔티티 생성
-        Stock newStock = Stock.builder()
-                .stockCode(stockCode)
-                .stockName(stockName)
-                .stockType("주식") // 기본값
-                .isActive(true)
-                .build();
-        
-        return stockRepository.save(newStock);
-    }
 
 }

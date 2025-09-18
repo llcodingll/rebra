@@ -1,5 +1,6 @@
-import { motion } from 'motion/react';
-import { Play, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Play, AlertTriangle, ChevronRight } from 'lucide-react';
 import { useConfirmModal } from '../../hooks/useModalState';
 import ConfirmModal from '../../shared/ui/modal/ConfirmModal';
 import styles from './BacktestSettings.module.css';
@@ -7,6 +8,8 @@ import styles from './BacktestSettings.module.css';
 interface BacktestSettingsProps {
   backtestName: string;
   setBacktestName: (name: string) => void;
+  rebalancingType: 'THRESHOLD' | 'PERIODIC';
+  setRebalancingType: (type: 'THRESHOLD' | 'PERIODIC') => void;
   rebalancingPeriod: string;
   startDate: string;
   setStartDate: (date: string) => void;
@@ -15,11 +18,15 @@ interface BacktestSettingsProps {
   onRunBacktest: () => void;
   isRunDisabled: boolean;
   onNavigateToBacktestList?: () => void;
+  isCreating?: boolean;
+  portfolioCount?: number;
 }
 
 export default function BacktestSettings({
   backtestName,
   setBacktestName,
+  rebalancingType,
+  setRebalancingType,
   rebalancingPeriod,
   startDate,
   setStartDate,
@@ -27,9 +34,19 @@ export default function BacktestSettings({
   setEndDate,
   onRunBacktest,
   isRunDisabled,
-  onNavigateToBacktestList
+  onNavigateToBacktestList,
+  isCreating,
+  portfolioCount = 0
 }: BacktestSettingsProps) {
   const { confirmState, showConfirm, hideConfirm } = useConfirmModal();
+
+  // 단계별 폼 상태 관리
+  const [currentStep, setCurrentStep] = useState(1);
+
+  // 각 단계 완료 조건 확인
+  const isStep1Complete = backtestName.trim().length > 0;
+  const isStep2Complete = rebalancingType !== '';
+  const isStep3Complete = startDate && endDate;
   // 현재 날짜 정보
   const currentDate = new Date();
   const currentDateStr = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
@@ -75,13 +92,41 @@ export default function BacktestSettings({
   const isNonTradingDay = (dateStr: string) => {
     return isWeekend(dateStr) || isHoliday(dateStr);
   };
-  
+
   // 다음 날 계산 함수
   const getNextDay = (dateStr: string) => {
     if (!dateStr) return "";
     const date = new Date(dateStr);
     date.setDate(date.getDate() + 1);
     return date.toISOString().split('T')[0];
+  };
+
+  // 백테스트 기간 검증 (최소 30일)
+  const validatePeriod = () => {
+    if (!startDate || !endDate) return { isValid: true, daysDiff: 0 };
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = end.getTime() - start.getTime();
+    const daysDiff = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return {
+      isValid: daysDiff >= 30,
+      daysDiff
+    };
+  };
+
+  const periodValidation = validatePeriod();
+
+  // 실행 버튼 상태 메시지 생성
+  const getButtonMessage = () => {
+    if (isCreating) return '백테스트 생성 중...';
+    if (!backtestName) return '테스트 이름을 입력하세요';
+    if (!startDate) return '시작 날짜를 설정하세요';
+    if (!endDate) return '종료 날짜를 설정하세요';
+    if (!periodValidation.isValid) return '최소 30일 이상 설정하세요';
+    if (portfolioCount === 0) return '종목을 추가하세요';
+    return '백테스트 실행';
   };
 
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,85 +184,186 @@ export default function BacktestSettings({
         <p>백테스트 실행을 위한 기본 설정을 입력해주세요</p>
       </div>
 
-      <div className={styles.settingsGrid}>
-        <div className={styles.formGroup}>
-          <label htmlFor="backtest-name">테스트 이름</label>
-          <input
-            id="backtest-name"
-            type="text"
-            value={backtestName}
-            onChange={(e) => setBacktestName(e.target.value)}
-            placeholder="백테스트 이름을 입력하세요"
-            className={styles.input}
-          />
-        </div>
-
-        <div className={styles.formGroup}>
-          <label htmlFor="rebalancing-period">리밸런싱 주기</label>
-          <div className={styles.fixedValue}>
-            <span>{rebalancingPeriod}</span>
+      <div className={styles.progressiveForm}>
+        {/* 1단계: 테스트 이름 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={styles.formStep}
+        >
+          <div className={styles.stepHeader}>
+            <div className={styles.stepNumber}>1</div>
+            <h3>백테스트 이름을 입력하세요</h3>
           </div>
-        </div>
-
-        <div className={styles.formGroup}>
-          <label htmlFor="start-date">시작 날짜</label>
-          <div className={styles.dateInputContainer}>
+          <div className={styles.formGroup}>
             <input
-              id="start-date"
-              type="date"
-              value={startDate}
-              onChange={handleStartDateChange}
-              min={minDate}
-              max={maxStartDate}
-              className={styles.dateInput}
+              id="backtest-name"
+              type="text"
+              value={backtestName}
+              onChange={(e) => setBacktestName(e.target.value)}
+              placeholder="예: 내 포트폴리오 전략"
+              className={styles.input}
             />
-            <div className={styles.warningContainer}>
-              {startDate && isNonTradingDay(startDate) && (
-                <div className={styles.warningMessage}>
-                  <AlertTriangle className={styles.warningIcon} />
-                  <span>
-                    {isWeekend(startDate) ? '주말' : '공휴일'}은 거래일이 아닙니다. 데이터 검색이 제한될 수 있습니다.
-                  </span>
-                </div>
-              )}
-            </div>
+            {isStep1Complete && currentStep === 1 && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className={styles.nextButton}
+                onClick={() => setCurrentStep(2)}
+              >
+                다음 단계 <ChevronRight className={styles.nextIcon} />
+              </motion.button>
+            )}
           </div>
-        </div>
+        </motion.div>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="end-date">종료 날짜</label>
-          <div className={styles.dateInputContainer}>
-            <input
-              id="end-date"
-              type="date"
-              value={endDate}
-              onChange={handleEndDateChange}
-              min={startDate ? getNextDay(startDate) : minDate}
-              max={maxEndDate}
-              className={styles.dateInput}
-            />
-            <div className={styles.warningContainer}>
-              {endDate && isNonTradingDay(endDate) && (
-                <div className={styles.warningMessage}>
-                  <AlertTriangle className={styles.warningIcon} />
-                  <span>
-                    {isWeekend(endDate) ? '주말' : '공휴일'}은 거래일이 아닙니다. 데이터 검색이 제한될 수 있습니다.
-                  </span>
-                </div>
+        {/* 2단계: 리밸런싱 방식 */}
+        <AnimatePresence>
+          {currentStep >= 2 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className={styles.formStep}
+            >
+              <div className={styles.stepHeader}>
+                <div className={styles.stepNumber}>2</div>
+                <h3>리밸런싱 방식을 선택하세요</h3>
+              </div>
+              <div className={styles.radioGroup}>
+                <label className={styles.radioOption}>
+                  <input
+                    type="radio"
+                    name="rebalancingType"
+                    value="THRESHOLD"
+                    checked={rebalancingType === 'THRESHOLD'}
+                    onChange={(e) => setRebalancingType(e.target.value as 'THRESHOLD' | 'PERIODIC')}
+                    className={styles.radioInput}
+                  />
+                  <span className={styles.radioLabel}>임계값 기반</span>
+                  <span className={styles.radioDescription}>목표 비중 대비 임계값 초과 시 리밸런싱</span>
+                </label>
+                <label className={styles.radioOption}>
+                  <input
+                    type="radio"
+                    name="rebalancingType"
+                    value="PERIODIC"
+                    checked={rebalancingType === 'PERIODIC'}
+                    onChange={(e) => setRebalancingType(e.target.value as 'THRESHOLD' | 'PERIODIC')}
+                    className={styles.radioInput}
+                  />
+                  <span className={styles.radioLabel}>주기적 (월간)</span>
+                  <span className={styles.radioDescription}>매월 말 정기적으로 리밸런싱</span>
+                </label>
+              </div>
+              {isStep2Complete && currentStep === 2 && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className={styles.nextButton}
+                  onClick={() => setCurrentStep(3)}
+                >
+                  다음 단계 <ChevronRight className={styles.nextIcon} />
+                </motion.button>
               )}
-            </div>
-          </div>
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* 3단계: 날짜 선택 */}
+        <AnimatePresence>
+          {currentStep >= 3 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className={styles.formStep}
+            >
+              <div className={styles.stepHeader}>
+                <div className={styles.stepNumber}>3</div>
+                <h3>백테스트 기간을 설정하세요</h3>
+              </div>
+              <div className={styles.dateStepGrid}>
+                <div className={styles.formGroup}>
+                  <label htmlFor="start-date">시작 날짜</label>
+                  <div className={styles.dateInputContainer}>
+                    <input
+                      id="start-date"
+                      type="date"
+                      value={startDate}
+                      onChange={handleStartDateChange}
+                      min={minDate}
+                      max={maxStartDate}
+                      className={styles.dateInput}
+                    />
+                    <div className={styles.warningContainer}>
+                      {startDate && isNonTradingDay(startDate) && (
+                        <div className={styles.warningMessage}>
+                          <AlertTriangle className={styles.warningIcon} />
+                          <span>
+                            {isWeekend(startDate) ? '주말' : '공휴일'}은 거래일이 아닙니다.
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="end-date">종료 날짜</label>
+                  <div className={styles.dateInputContainer}>
+                    <input
+                      id="end-date"
+                      type="date"
+                      value={endDate}
+                      onChange={handleEndDateChange}
+                      min={startDate ? getNextDay(startDate) : minDate}
+                      max={maxEndDate}
+                      className={styles.dateInput}
+                    />
+                    <div className={styles.warningContainer}>
+                      {startDate && endDate && !periodValidation.isValid && (
+                        <div className={styles.warningMessage}>
+                          <AlertTriangle className={styles.warningIcon} />
+                          <span>
+                            최소 30일 이상 설정해주세요. (현재: {periodValidation.daysDiff}일)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <button
-        className={styles.runButton}
-        onClick={handleRunBacktest}
-        disabled={isRunDisabled}
-      >
-        <Play className={styles.runIcon} />
-        백테스트 실행
-      </button>
+      {/* 실행 버튼은 3단계 완료 후에만 표시 */}
+      <AnimatePresence>
+        {currentStep >= 3 && isStep3Complete && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={styles.runButtonContainer}
+          >
+            <button
+              className={styles.runButton}
+              onClick={handleRunBacktest}
+              disabled={isRunDisabled || !periodValidation.isValid}
+            >
+              <Play className={styles.runIcon} />
+              {getButtonMessage()}
+            </button>
+            {isRunDisabled && !isCreating && portfolioCount === 0 && (
+              <p className={styles.runButtonHint}>
+                마지막 단계: 왼쪽에서 종목을 검색하여 포트폴리오에 추가하세요
+              </p>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <ConfirmModal
         isOpen={confirmState.isOpen}

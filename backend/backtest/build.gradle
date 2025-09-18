@@ -32,6 +32,9 @@ dependencies {
     // Kafka
     implementation 'org.springframework.kafka:spring-kafka'
     
+    // Micrometer for monitoring
+    implementation 'io.micrometer:micrometer-core'
+    
     // JSON Processing
     implementation 'com.fasterxml.jackson.core:jackson-core'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
@@ -43,7 +46,6 @@ dependencies {
     
     // Development Tools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
     
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

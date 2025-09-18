@@ -43,9 +43,16 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public TokenRefreshResponse refreshTokensWithRotation(String oldRefreshToken) {
+        // 1. JWT 서명 검증 (위조/변조 확인)
+        if (!tokenProvider.validateToken(oldRefreshToken)) {
+            throw TokenException.invalidToken();
+        }
+
+        // 2. DB에서 토큰 조회
         RefreshToken oldToken = refreshTokenRepository.findByRefreshToken(oldRefreshToken)
                 .orElseThrow(TokenException::refreshTokenNotFound);
-        
+
+        // 3. 만료 시간 검증
         if (oldToken.getExpirationDate().isBefore(LocalDateTime.now())) {
             throw TokenException.refreshTokenExpired();
         }
