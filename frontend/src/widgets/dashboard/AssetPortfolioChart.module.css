@@ -110,8 +110,8 @@
 }
 
 .amount {
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 500;
   color: #030213;
   margin-bottom: 8px;
   line-height: 1.2;
@@ -125,7 +125,7 @@
 
 .returnAmount {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .returnPercent {

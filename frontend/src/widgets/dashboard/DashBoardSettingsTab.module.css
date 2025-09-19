@@ -25,28 +25,34 @@
 }
 
 .executeButton {
-  background: #155dfc;
+  background: #030213;
+  border: 1px solid #030213;
+  border-radius: 12px;
+  padding: 16px 24px;
   color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 14px 24px;
-  font-size: 16px;
-  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  cursor: pointer;
-  box-shadow: 0px 2px 4px 0px rgba(21,93,252,0.2);
 }
 
 .executeButton:hover {
-  background: #0d47d9;
+  background: #1a1f2e;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(3, 2, 19, 0.15);
 }
 
 .executeButton svg {
-  width: 19px;
-  height: 19px;
+  width: 16px;
+  height: 16px;
+  color: white;
 }
+
+/* hover 시 svg 색상은 그대로 흰색 유지 */
 
 .toggleContainer {
   display: flex;
@@ -65,7 +71,7 @@
 }
 
 .toggle.active {
-  background: #155dfc;
+  background: #030213;
 }
 
 .toggleTrack {
@@ -98,7 +104,7 @@
 }
 
 .toggle.active + .toggleLabel {
-  color: #155dfc;
+  color: #030213;
 }
 
 .toggle.loading {
