@@ -489,6 +489,8 @@ public class PortfolioRebalancingProcessor {
 
     /**
      * 주기 기반 리밸런싱의 다음 날짜를 계산한다
+     * 이전 nextRebalanceDate를 기준으로 다음 주기를 계산하여
+     * 공휴일로 인한 실행 지연과 무관하게 일정한 패턴을 유지한다
      */
     public LocalDate calculateNextPeriodicDate(Portfolio portfolio, LocalDate baseDate) {
         RebalancingPeriod period = portfolio.getRebalancingPeriod();
@@ -500,11 +502,18 @@ public class PortfolioRebalancingProcessor {
         }
         
         if (period == RebalancingPeriod.MONTHLY) {
-            // rebalancingStartDate에서 일자만 추출
+            // rebalancingStartDate에서 목표 일자 추출
             int targetDayOfMonth = startDate.getDayOfMonth();
             
-            // 현재 시점 기준 다음달의 targetDayOfMonth 일로 설정
-            LocalDate nextMonth = baseDate.plusMonths(1);
+            // 갱신 전 nextRebalanceDate 기준으로 계산 (실행 지연과 무관하게 패턴 유지)
+            LocalDate previousNextDate = portfolio.getNextRebalanceDate();
+            if (previousNextDate == null) {
+                // 최초 설정 시 startDate 기준
+                previousNextDate = startDate;
+            }
+            
+            // 이전 예정일의 다음 달로 이동
+            LocalDate nextMonth = previousNextDate.plusMonths(1);
             
             // 해당 월의 마지막 날보다 큰 경우 월말로 조정
             // 예: 31일 → 2월(28일)이면 28일로 조정
@@ -518,8 +527,15 @@ public class PortfolioRebalancingProcessor {
             int targetMonth = startDate.getMonthValue();
             int targetDay = startDate.getDayOfMonth();
             
-            // 내년 같은 월일로 설정
-            LocalDate nextYear = baseDate.plusYears(1)
+            // 갱신 전 nextRebalanceDate 기준으로 계산
+            LocalDate previousNextDate = portfolio.getNextRebalanceDate();
+            if (previousNextDate == null) {
+                // 최초 설정 시 startDate 기준
+                previousNextDate = startDate;
+            }
+            
+            // 이전 예정일의 다음 년도로 이동
+            LocalDate nextYear = previousNextDate.plusYears(1)
                 .withMonth(targetMonth);
                 
             // 윤년 처리 (예: 2월 29일 → 평년 2월 28일)
