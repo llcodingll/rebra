@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import lombok.AccessLevel;
@@ -32,7 +33,12 @@ import lombok.NoArgsConstructor;
 public class BacktestStock extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+        name = "backtest_stock_seq_generator",
+        sequenceName = "backtest_stock_seq",
+        allocationSize = 100
+    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "backtest_stock_seq_generator")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

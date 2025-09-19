@@ -61,4 +61,16 @@ public class StockTradeResponse {
                 .errorMessage(errorMessage)
                 .build();
     }
+
+    public boolean isSuccess() {
+        return success != null && success;
+    }
+
+    public String getOrderId() {
+        return orderNumber;
+    }
+
+    public String getMessage() {
+        return errorMessage;
+    }
 }

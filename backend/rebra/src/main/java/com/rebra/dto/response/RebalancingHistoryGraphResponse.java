@@ -13,7 +13,7 @@ public class RebalancingHistoryGraphResponse {
 
     private Long orderId;
     private LocalDateTime executedAt;
-    private BigDecimal cumulativeReturn; // 누적 수익률
+    private Double cumulativeReturn; // 누적 수익률
 
     public static RebalancingHistoryGraphResponse from(RebalancingOrder order) {
         return RebalancingHistoryGraphResponse.builder()
@@ -28,7 +28,7 @@ public class RebalancingHistoryGraphResponse {
         return RebalancingHistoryGraphResponse.builder()
                 .orderId(null) // 더미 데이터이므로 null
                 .executedAt(createdAt)
-                .cumulativeReturn(new BigDecimal("100.00")) // 100% 기준
+                .cumulativeReturn(1.0) // 100% 기준
                 .build();
     }
 }

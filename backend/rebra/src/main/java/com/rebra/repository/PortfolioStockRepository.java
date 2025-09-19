@@ -52,4 +52,9 @@ public interface PortfolioStockRepository extends JpaRepository<PortfolioStock, 
      */
     @Query("SELECT ps FROM PortfolioStock ps JOIN ps.portfolio p WHERE p.user.id = :userId AND ps.status = :status")
     List<PortfolioStock> findByUserIdAndStatus(@Param("userId") Long userId, @Param("status") String status);
+
+    /**
+     * 포트폴리오별 주식 목록 조회
+     */
+    List<PortfolioStock> findByPortfolioId(Long portfolioId);
 }

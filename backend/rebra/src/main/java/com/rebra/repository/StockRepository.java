@@ -6,7 +6,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface StockRepository extends JpaRepository<Stock, Long> {
@@ -45,4 +47,9 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
      * 종목명에 특정 문자열이 포함된 주식 목록 조회 (모든 상태, 페이지네이션)
      */
     Page<Stock> findByStockNameContainingIgnoreCase(String stockName, Pageable pageable);
+
+    /**
+     * 여러 종목 코드로 주식 목록 조회 (배치 처리용)
+     */
+    List<Stock> findByStockCodeIn(Set<String> stockCodes);
 }

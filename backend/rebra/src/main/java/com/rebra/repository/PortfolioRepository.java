@@ -1,6 +1,7 @@
 package com.rebra.repository;
 
 import com.rebra.entity.Portfolio;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +40,16 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
     List<Portfolio> findByAutoRebalancingTrueOrderByNextRebalanceDateAsc();
 
     /**
+     * 오늘 리밸런싱 체크 대상 포트폴리오 조회
+     * nextRebalanceDate가 오늘 이하인 자동 리밸런싱 활성화 포트폴리오
+     */
+    @Query("SELECT p FROM Portfolio p " +
+           "WHERE p.autoRebalancing = true " +
+           "AND p.nextRebalanceDate <= :today " +
+           "ORDER BY p.nextRebalanceDate ASC")
+    List<Portfolio> findByAutoRebalancingTrueAndNextRebalanceDateLessThanEqual(@Param("today") LocalDate today);
+
+    /**
      * 사용자별 자동 리밸런싱 활성화된 포트폴리오 개수
      */
     long countByUserIdAndAutoRebalancingTrue(Long userId);
@@ -63,6 +74,18 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
      * 계좌 ID로 포트폴리오 삭제
      */
     void deleteByAccountId(Long accountId);
+
+    /**
+     * portfolioStocks와 함께 포트폴리오 조회 (fetch join)
+     */
+    @Query("SELECT p FROM Portfolio p LEFT JOIN FETCH p.portfolioStocks WHERE p.id = :id")
+    Optional<Portfolio> findByIdWithPortfolioStocks(@Param("id") Long id);
+
+    /**
+     * 사용자 검증과 함께 portfolioStocks를 포함한 포트폴리오 조회 (fetch join)
+     */
+    @Query("SELECT p FROM Portfolio p LEFT JOIN FETCH p.portfolioStocks WHERE p.id = :id AND p.user.id = :userId")
+    Optional<Portfolio> findByIdAndUserIdWithPortfolioStocks(@Param("id") Long id, @Param("userId") Long userId);
 
     /**
      * 특정 포트폴리오의 생성일시 업데이트
