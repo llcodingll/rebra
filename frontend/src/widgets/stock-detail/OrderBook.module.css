@@ -9,7 +9,7 @@
 }
 
 .orderBookHeader {
-  padding: 12px 16px;
+  padding: 8px 16px;
   border-bottom: 1px solid #f0f0f0;
   background: white;
 }
@@ -24,15 +24,25 @@
 .orderBookContent {
   background: white;
   position: relative;
-  height: 480px;
+  height: 400px; /* 높이 축소 */
 }
 
-/* 메인 호가 테이블 (스크롤 가능) */
+.noDataMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  font-size: 14px;
+}
+
+/* 메인 호가 테이블 */
 .orderBookTable {
   width: 100%;
-  height: 100%;
+  height: 100%; /* 전체 영역 사용 */
   overflow-y: auto;
   position: relative;
+  padding: 0 8px; /* 좌우 여백만 */
 
   /* 스크롤바 커스터마이징 */
   scrollbar-width: thin;
@@ -59,48 +69,76 @@
 /* 호가 행 */
 .orderRow {
   display: grid;
-  grid-template-columns: 80px 1fr 80px;
-  align-items: center;
+  grid-template-columns: 1fr 120px 1fr;
+  align-items: stretch;
   height: 40px;
-  padding: 0 16px;
-  border-bottom: 1px solid #f8f9fa;
+  border-bottom: 1px solid #e8e8e869;
+  position: relative;
+  background-color: #fcfcfc;
 }
 
 .orderRow:hover {
   background-color: #f8f9fa;
 }
 
-/* 현재가 행 */
-.currentPriceRow {
-  display: grid;
-  grid-template-columns: 80px 1fr 80px;
-  align-items: center;
-  height: 44px;
-  padding: 0 16px;
-  background: #ff4d4f;
-  color: white;
-  position: sticky;
-  top: 50%;
-  z-index: 2;
+/* 현재가 하이라이트 - 가격 셀에만 적용 */
+.currentPriceHighlight {
+  border: 2px solid #929292;
+  background: rgba(255, 77, 79, 0.1);
+  font-weight: bold;
+  border-radius: 6px;
 }
 
-/* 셀 스타일 */
+/* 매도 잔량 셀 (좌측) */
 .askQuantityCell {
-  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+  padding-right: 8px;
+}
+
+.askQuantityBar {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(24, 144, 255, 0.2);
+  border-radius: 2px 0 0 2px;
+}
+
+.askQuantityText {
+  position: relative;
+  z-index: 2;
   color: #1890ff;
-  font-weight: 600;
-  font-size: 13px;
+  font-weight: 400;
+  font-size: 12px;
 }
 
+/* 매수 잔량 셀 (우측) */
 .bidQuantityCell {
-  text-align: left;
-  color: #ff4d4f;
-  font-weight: 600;
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  position: relative;
+  padding-left: 8px;
 }
 
-.emptyCell {
-  width: 100%;
+.bidQuantityBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(255, 77, 79, 0.2);
+  border-radius: 0 2px 2px 0;
+}
+
+.bidQuantityText {
+  position: relative;
+  z-index: 2;
+  color: #ff4d4f;
+  font-weight: 400;
+  font-size: 12px;
 }
 
 /* 가격 셀 */
@@ -109,106 +147,54 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4px 0;
+  padding: 2px 8px;
+  background: white;
+  border-radius: 4px;
+  margin: 0 4px;
 }
 
 .price {
-  font-size: 15px;
-  font-weight: 700;
-  color: #ff4d4f;
+  font-size: 14px;
+  font-weight: 500;
   line-height: 1.2;
+  position: relative;
+}
+
+.askPrice {
+  color: #ff4d4f; /* 매도 빨간색 */
+}
+
+.bidPrice {
+  color: #ff4d4f; /* 매수도 빨간색 (토스 스타일) */
 }
 
 .changeRate {
-  font-size: 11px;
-  color: #ff4d4f;
-  margin-top: 2px;
-}
-
-/* 현재가 셀 */
-.currentPriceCell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.currentIcon {
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.currentPrice {
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.currentVolumeCell {
-  text-align: center;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-/* 우측 상단 거래정보 박스 */
-.tradeInfoBox {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 120px;
-  background: white;
-  z-index: 3;
-  border-left: 1px solid #f8f9fa;
-}
-
-.tradeInfoItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 40px;
-  padding: 0 16px;
-  border-bottom: 1px solid #f8f9fa;
-}
-
-.infoLabel {
-  font-size: 11px;
-  color: #666;
+  font-size: 10px;
+  margin-top: 1px;
   font-weight: 500;
 }
 
-.infoValue {
-  font-size: 12px;
-  color: #333;
-  font-weight: 600;
+.askChangeRate {
+  color: #ff4d4f;
 }
 
-/* 좌측 하단 체결강도 박스 */
-.strengthBox {
+.bidChangeRate {
+  color: #ff4d4f;
+}
+
+.highMarker {
   position: absolute;
-  bottom: 100px;
-  left: 0;
-  width: 80px;
-  height: 44px;
+  left: -20px;
+  top: 0;
   background: #ff4d4f;
   color: white;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 3;
-  border-right: 1px solid #ff4d4f;
-}
-
-.strengthLabel {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 2px;
+  font-weight: bold;
+  padding: 1px 4px;
+  border-radius: 2px;
 }
 
-.strengthValue {
-  font-size: 13px;
-  font-weight: 700;
-  color: white;
-}
+/* 삭제된 스타일들 (거래정보 박스, 체결강도 박스, 하단 총계 바) */
 
 /* 반응형 */
 @media (max-width: 768px) {
@@ -221,52 +207,20 @@
   }
 
   .orderRow {
-    grid-template-columns: 70px 1fr 70px;
-    height: 36px;
-    padding: 0 12px;
-  }
-
-  .currentPriceRow {
-    height: 40px;
-    padding: 0 12px;
-  }
-
-  .tradeInfoBox {
-    width: 100px;
-  }
-
-  .tradeInfoItem {
-    height: 36px;
-    padding: 0 12px;
-  }
-
-  .strengthBox {
-    width: 70px;
-    height: 40px;
+    grid-template-columns: 1fr 100px 1fr;
+    height: 32px;
   }
 
   .price {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .changeRate {
     font-size: 10px;
   }
 
-  .currentPrice {
-    font-size: 15px;
-  }
-
-  .askQuantityCell,
-  .bidQuantityCell {
-    font-size: 12px;
-  }
-
-  .infoLabel {
-    font-size: 10px;
-  }
-
-  .infoValue {
+  .askQuantityText,
+  .bidQuantityText {
     font-size: 11px;
   }
 }

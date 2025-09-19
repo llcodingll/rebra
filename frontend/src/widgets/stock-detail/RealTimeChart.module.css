@@ -11,17 +11,11 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #fafafa;
-  min-height: 50px;
 }
 
 .timeSelector {
   display: flex;
   gap: 2px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
   padding: 2px;
   background: white;
 }
@@ -68,15 +62,14 @@
   gap: 0; /* 차트 간 간격 제거 */
   padding: 8px;
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
+  /* border: 1px solid #e5e7eb; */
   position: relative; /* 크로스헤어 레이어 정위치 */
   z-index: 0; /* 기본 레이어 */
 }
 
 .priceChart {
   flex: 3; /* 6:4 비율 - 6에 해당 */
-  min-height: 280px; /* 원래 높이로 복원 */
+  min-height: 240px; /* 원래 높이로 복원 */
   background: white;
   border: none; /* 개별 테두리 제거 */
   border-bottom: 2px solid #cdcdcd; /* 구분선만 */
@@ -88,7 +81,7 @@
 
 .volumeChart {
   flex: 2; /* 6:4 비율 - 4에 해당 */
-  min-height: 120px; /* 원래 높이로 복원 */
+  min-height: 160px; /* 원래 높이로 복원 */
   background: white;
   border: none; /* 개별 테두리 제거 */
   pointer-events: auto; /* 마우스 이벤트 허용 */
