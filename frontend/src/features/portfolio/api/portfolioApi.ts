@@ -17,7 +17,8 @@ import type {
   RebalancingHistoryTableResponse,
   RebalancingHistoryDetailResponse,
   AutoRebalancingRequest,
-  AutoRebalancingResponse
+  AutoRebalancingResponse,
+  RebalancingExecuteResponse
 } from './types';
 
 class PortfolioApi {
@@ -104,6 +105,15 @@ class PortfolioApi {
     console.log("요청 URL:", `/api/v1/portfolios/${portfolioId}/auto-rebalancing`);
 
     return this.apiClient.put<AutoRebalancingResponse>(`/api/v1/portfolios/${portfolioId}/auto-rebalancing`, requestData);
+  }
+
+  executeRebalancing = async (portfolioId: number): Promise<Result<RebalancingExecuteResponse, AppError>> => {
+    console.log("=== 수동 리밸런싱 실행 API 요청 ===");
+    console.log("포트폴리오 ID:", portfolioId);
+    console.log("요청 URL:", `/api/v1/portfolios/${portfolioId}/rebalancing/execute`);
+    console.log("요청 메서드: POST");
+
+    return this.apiClient.post<RebalancingExecuteResponse>(`/api/v1/portfolios/${portfolioId}/rebalancing/execute`, {});
   }
 }
 
