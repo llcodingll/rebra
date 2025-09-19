@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'motion/react';
@@ -76,9 +76,25 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
   const [endDate, setEndDate] = useState('');
   const [isBacktestExecuted, setIsBacktestExecuted] = useState(false);
 
+  // 스크롤 위치 참조를 위한 ref들
+  const contentGridRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
+
+  // 3단계 완료 후 주식 검색 영역으로 자동 스크롤
+  useEffect(() => {
+    if (startDate && endDate && contentGridRef.current) {
+      setTimeout(() => {
+        contentGridRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }, 300);
+    }
+  }, [startDate, endDate]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
 
@@ -264,7 +280,7 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
         />
 
         {startDate && endDate && (
-          <div className={styles.contentGrid}>
+          <div ref={contentGridRef} className={styles.contentGrid}>
             <StockSearch
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}

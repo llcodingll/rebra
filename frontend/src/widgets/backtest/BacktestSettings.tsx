@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Play, AlertTriangle, ChevronRight } from 'lucide-react';
 import { useConfirmModal } from '../../hooks/useModalState';
@@ -20,6 +20,9 @@ interface BacktestSettingsProps {
   onNavigateToBacktestList?: () => void;
   isCreating?: boolean;
   portfolioCount?: number;
+  step2Ref?: React.RefObject<HTMLDivElement>;
+  step3Ref?: React.RefObject<HTMLDivElement>;
+  contentGridRef?: React.RefObject<HTMLDivElement>;
 }
 
 export default function BacktestSettings({
@@ -36,12 +39,25 @@ export default function BacktestSettings({
   isRunDisabled,
   onNavigateToBacktestList,
   isCreating,
-  portfolioCount = 0
+  portfolioCount = 0,
+  step2Ref,
+  step3Ref,
+  contentGridRef
 }: BacktestSettingsProps) {
   const { confirmState, showConfirm, hideConfirm } = useConfirmModal();
 
   // 단계별 폼 상태 관리
   const [currentStep, setCurrentStep] = useState(1);
+
+  // 각 단계별 컨테이너 ref
+  const localStep2Ref = useRef<HTMLDivElement>(null);
+  const localStep3Ref = useRef<HTMLDivElement>(null);
+  const localContentGridRef = useRef<HTMLDivElement>(null);
+
+  // props로 받은 ref가 있으면 사용, 없으면 로컬 ref 사용
+  const step2RefToUse = step2Ref || localStep2Ref;
+  const step3RefToUse = step3Ref || localStep3Ref;
+  const contentGridRefToUse = contentGridRef || localContentGridRef;
 
   // 각 단계 완료 조건 확인 (메모이제이션)
   const isStep1Complete = useMemo(() => backtestName.trim().length > 0, [backtestName]);
@@ -146,8 +162,29 @@ export default function BacktestSettings({
     setEndDate(newEndDate);
   }, [startDate]);
 
-  const handleNextToStep2 = useCallback(() => setCurrentStep(2), []);
-  const handleNextToStep3 = useCallback(() => setCurrentStep(3), []);
+  const handleNextToStep2 = useCallback(() => {
+    setCurrentStep(2);
+    setTimeout(() => {
+      if (step2RefToUse.current) {
+        step2RefToUse.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    }, 100);
+  }, [step2RefToUse]);
+
+  const handleNextToStep3 = useCallback(() => {
+    setCurrentStep(3);
+    setTimeout(() => {
+      if (step3RefToUse.current) {
+        step3RefToUse.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    }, 100);
+  }, [step3RefToUse]);
 
   const handleRunBacktest = () => {
     showConfirm({
@@ -217,6 +254,7 @@ export default function BacktestSettings({
         <AnimatePresence>
           {currentStep >= 2 && (
             <motion.div
+              ref={step2RefToUse}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -268,6 +306,7 @@ export default function BacktestSettings({
         <AnimatePresence>
           {currentStep >= 3 && (
             <motion.div
+              ref={step3RefToUse}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
