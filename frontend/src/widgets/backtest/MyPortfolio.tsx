@@ -306,24 +306,7 @@ export default function MyPortfolio({
         <div className={styles.emptyState}>
           <TrendingUp className={styles.emptyIcon} />
           <h4>포트폴리오를 구성해보세요</h4>
-          <p>1. 시작 날짜를 먼저 설정하세요</p>
-          <p>2. 왼쪽에서 종목을 검색하여 추가하세요</p>
-          <div className={styles.emptyStateSteps}>
-            <div className={styles.stepItem}>
-              <span className={styles.stepNumber}>📅</span>
-              <span>시작 날짜 설정</span>
-            </div>
-            <div className={styles.stepArrow}>→</div>
-            <div className={styles.stepItem}>
-              <span className={styles.stepNumber}>🔍</span>
-              <span>종목 검색 & 추가</span>
-            </div>
-            <div className={styles.stepArrow}>→</div>
-            <div className={styles.stepItem}>
-              <span className={styles.stepNumber}>🚀</span>
-              <span>백테스트 실행</span>
-            </div>
-          </div>
+          <p>왼쪽에서 종목을 검색하여 추가하세요</p>
         </div>
       )}
     </motion.div>

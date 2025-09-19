@@ -117,6 +117,14 @@ public class Portfolio extends BaseEntity {
         this.description = description;
     }
 
+    public void updateNextRebalanceDate(LocalDate nextRebalanceDate) {
+        this.nextRebalanceDate = nextRebalanceDate;
+    }
+
+    public void updateLastRebalanceDate(LocalDate lastRebalanceDate) {
+        this.lastRebalanceDate = lastRebalanceDate;
+    }
+
     // 연관관계 편의 메서드
     public void addPortfolioStock(PortfolioStock portfolioStock) {
         this.portfolioStocks.add(portfolioStock);

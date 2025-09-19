@@ -1,0 +1,57 @@
+개발 주소 : localhost8080
+
+1. 계좌 등록
+post /api/v1/accounts/register
+
+Request body
+{
+  "accountNumber": "stringst",
+  "appKey": "stringstringstringst",
+  "appSecret": "stringstringstringstringstringstringstringstringst",
+  "accountType": "MOCK"
+}
+
+Responses
+{
+  "success": true,
+  "status": 0,
+  "data": {
+    "accountId": 0,
+    "accountNumber": "string",
+    "accountType": "MOCK",
+    "brokerName": "string",
+    "registeredAt": "2025-09-16T04:43:42.899Z",
+    "connected": true
+  },
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-16T04:43:42.899Z"
+}
+
+
+2. 계좌 목록
+/api/v1/accounts
+
+응답값
+{
+  "success": true,
+  "status": 0,
+  "data": {
+    "accounts": [
+      {
+        "accountId": 0,
+        "accountNumber": "string",
+        "accountType": "string",
+        "brokerName": "string",
+        "registeredAt": "2025-09-16T08:02:13.511Z",
+        "connected": true
+      }
+    ],
+    "totalCount": 0
+  },
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-16T08:02:13.511Z"
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Play, AlertTriangle, ChevronRight } from 'lucide-react';
 import { useConfirmModal } from '../../hooks/useModalState';
@@ -20,6 +20,9 @@ interface BacktestSettingsProps {
   onNavigateToBacktestList?: () => void;
   isCreating?: boolean;
   portfolioCount?: number;
+  step2Ref?: React.RefObject<HTMLDivElement>;
+  step3Ref?: React.RefObject<HTMLDivElement>;
+  contentGridRef?: React.RefObject<HTMLDivElement>;
 }
 
 export default function BacktestSettings({
@@ -36,17 +39,30 @@ export default function BacktestSettings({
   isRunDisabled,
   onNavigateToBacktestList,
   isCreating,
-  portfolioCount = 0
+  portfolioCount = 0,
+  step2Ref,
+  step3Ref,
+  contentGridRef
 }: BacktestSettingsProps) {
   const { confirmState, showConfirm, hideConfirm } = useConfirmModal();
 
   // 단계별 폼 상태 관리
   const [currentStep, setCurrentStep] = useState(1);
 
-  // 각 단계 완료 조건 확인
-  const isStep1Complete = backtestName.trim().length > 0;
-  const isStep2Complete = rebalancingType !== '';
-  const isStep3Complete = startDate && endDate;
+  // 각 단계별 컨테이너 ref
+  const localStep2Ref = useRef<HTMLDivElement>(null);
+  const localStep3Ref = useRef<HTMLDivElement>(null);
+  const localContentGridRef = useRef<HTMLDivElement>(null);
+
+  // props로 받은 ref가 있으면 사용, 없으면 로컬 ref 사용
+  const step2RefToUse = step2Ref || localStep2Ref;
+  const step3RefToUse = step3Ref || localStep3Ref;
+  const contentGridRefToUse = contentGridRef || localContentGridRef;
+
+  // 각 단계 완료 조건 확인 (메모이제이션)
+  const isStep1Complete = useMemo(() => backtestName.trim().length > 0, [backtestName]);
+  const isStep2Complete = useMemo(() => rebalancingType !== '', [rebalancingType]);
+  const isStep3Complete = useMemo(() => startDate && endDate, [startDate, endDate]);
   // 현재 날짜 정보
   const currentDate = new Date();
   const currentDateStr = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
@@ -101,8 +117,8 @@ export default function BacktestSettings({
     return date.toISOString().split('T')[0];
   };
 
-  // 백테스트 기간 검증 (최소 30일)
-  const validatePeriod = () => {
+  // 백테스트 기간 검증 (최소 30일) - 메모이제이션
+  const periodValidation = useMemo(() => {
     if (!startDate || !endDate) return { isValid: true, daysDiff: 0 };
 
     const start = new Date(startDate);
@@ -114,22 +130,17 @@ export default function BacktestSettings({
       isValid: daysDiff >= 30,
       daysDiff
     };
-  };
+  }, [startDate, endDate]);
 
-  const periodValidation = validatePeriod();
-
-  // 실행 버튼 상태 메시지 생성
-  const getButtonMessage = () => {
+  // 실행 버튼 상태 메시지 생성 (메모이제이션)
+  const getButtonMessage = useMemo(() => {
     if (isCreating) return '백테스트 생성 중...';
-    if (!backtestName) return '테스트 이름을 입력하세요';
-    if (!startDate) return '시작 날짜를 설정하세요';
-    if (!endDate) return '종료 날짜를 설정하세요';
-    if (!periodValidation.isValid) return '최소 30일 이상 설정하세요';
+    if (!periodValidation.isValid) return '백테스트 기간이 너무 짧습니다';
     if (portfolioCount === 0) return '종목을 추가하세요';
     return '백테스트 실행';
-  };
+  }, [isCreating, periodValidation.isValid, portfolioCount]);
 
-  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleStartDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartDate = e.target.value;
     setStartDate(newStartDate);
 
@@ -138,18 +149,42 @@ export default function BacktestSettings({
       const nextDay = getNextDay(newStartDate);
       setEndDate(nextDay);
     }
-  };
-  
-  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  }, [endDate]);
+
+  const handleEndDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newEndDate = e.target.value;
-    
+
     // 종료일이 시작일과 같거나 빠르면 설정하지 않음
     if (startDate && newEndDate <= startDate) {
       return;
     }
-    
+
     setEndDate(newEndDate);
-  };
+  }, [startDate]);
+
+  const handleNextToStep2 = useCallback(() => {
+    setCurrentStep(2);
+    setTimeout(() => {
+      if (step2RefToUse.current) {
+        step2RefToUse.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    }, 100);
+  }, [step2RefToUse]);
+
+  const handleNextToStep3 = useCallback(() => {
+    setCurrentStep(3);
+    setTimeout(() => {
+      if (step3RefToUse.current) {
+        step3RefToUse.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    }, 100);
+  }, [step3RefToUse]);
 
   const handleRunBacktest = () => {
     showConfirm({
@@ -205,14 +240,12 @@ export default function BacktestSettings({
               className={styles.input}
             />
             {isStep1Complete && currentStep === 1 && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
+              <button
                 className={styles.nextButton}
-                onClick={() => setCurrentStep(2)}
+                onClick={handleNextToStep2}
               >
                 다음 단계 <ChevronRight className={styles.nextIcon} />
-              </motion.button>
+              </button>
             )}
           </div>
         </motion.div>
@@ -221,6 +254,7 @@ export default function BacktestSettings({
         <AnimatePresence>
           {currentStep >= 2 && (
             <motion.div
+              ref={step2RefToUse}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -257,14 +291,12 @@ export default function BacktestSettings({
                 </label>
               </div>
               {isStep2Complete && currentStep === 2 && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                <button
                   className={styles.nextButton}
-                  onClick={() => setCurrentStep(3)}
+                  onClick={handleNextToStep3}
                 >
                   다음 단계 <ChevronRight className={styles.nextIcon} />
-                </motion.button>
+                </button>
               )}
             </motion.div>
           )}
@@ -274,6 +306,7 @@ export default function BacktestSettings({
         <AnimatePresence>
           {currentStep >= 3 && (
             <motion.div
+              ref={step3RefToUse}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -354,11 +387,11 @@ export default function BacktestSettings({
               disabled={isRunDisabled || !periodValidation.isValid}
             >
               <Play className={styles.runIcon} />
-              {getButtonMessage()}
+              {getButtonMessage}
             </button>
-            {isRunDisabled && !isCreating && portfolioCount === 0 && (
+            {portfolioCount === 0 && !isCreating && (
               <p className={styles.runButtonHint}>
-                마지막 단계: 왼쪽에서 종목을 검색하여 포트폴리오에 추가하세요
+                아래에서 종목을 검색해 포트폴리오를 구성하세요
               </p>
             )}
           </motion.div>

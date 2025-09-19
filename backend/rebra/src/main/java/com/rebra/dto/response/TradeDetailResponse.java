@@ -4,7 +4,6 @@ import com.rebra.entity.TradeRecord;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -16,10 +15,7 @@ public class TradeDetailResponse {
     private String stockName;
     private String tradeType; // BUY, SELL
     private Integer executedShares;
-    private BigDecimal price;
-    private BigDecimal fee;
-    private BigDecimal profitAmount;
-    private BigDecimal profitRate;
+    private Long price;
     private String reason;
     private LocalDateTime tradeDate;
 
@@ -31,9 +27,6 @@ public class TradeDetailResponse {
                 .tradeType(tradeRecord.getTradeType())
                 .executedShares(tradeRecord.getExecutedShares())
                 .price(tradeRecord.getExecutedPrice())
-                .fee(tradeRecord.getFee())
-                .profitAmount(tradeRecord.getProfitAmount())
-                .profitRate(tradeRecord.getProfitRate())
                 .reason(tradeRecord.getReason())
                 .tradeDate(tradeRecord.getTradeDate())
                 .build();
