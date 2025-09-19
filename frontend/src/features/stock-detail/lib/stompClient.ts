@@ -1,11 +1,11 @@
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import type {
-  KRXRealtimePriceMessage,
-  KRXRealtimeOrderbookMessage,
+  OptimizedPriceData,
+  OptimizedOrderbookData,
   RealtimePriceMessage,
   RealtimeOrderbookMessage,
 } from '../api/types';
-import { transformKRXPriceData, transformKRXOrderbookData } from '../utils/krxDataTransform';
+import { transformOptimizedPriceData, transformOptimizedOrderbookData } from '../utils/krxDataTransform';
 
 export class StockStompClient {
   private client: Client;
@@ -102,8 +102,8 @@ export class StockStompClient {
     const subscription = this.client.subscribe(channel, (message: IMessage) => {
       try {
         console.log('📊 [STOMP] 실시간 가격 데이터 수신 시작');
-        const krxData: KRXRealtimePriceMessage = JSON.parse(message.body);
-        const priceData = transformKRXPriceData(krxData);
+        const optimizedData: OptimizedPriceData = JSON.parse(message.body);
+        const priceData = transformOptimizedPriceData(optimizedData);
         callback(priceData);
       } catch (error) {
         console.error('❌ [STOMP] 가격 데이터 파싱 에러:', error, '원본:', message.body);
@@ -137,8 +137,8 @@ export class StockStompClient {
     const subscription = this.client.subscribe(channel, (message: IMessage) => {
       try {
         console.log('📈 [STOMP] 실시간 호가 데이터 수신 시작');
-        const krxData: KRXRealtimeOrderbookMessage = JSON.parse(message.body);
-        const orderbookData = transformKRXOrderbookData(krxData);
+        const optimizedData: OptimizedOrderbookData = JSON.parse(message.body);
+        const orderbookData = transformOptimizedOrderbookData(optimizedData);
         callback(orderbookData);
       } catch (error) {
         console.error('❌ [STOMP] 호가 데이터 파싱 에러:', error, '원본:', message.body);

@@ -102,7 +102,7 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
     let mounted = true;
 
     // 🛠️ 개발 모드: 서버 연결 없이 목업 데이터 사용
-    if (true) {
+    if (false) {
       console.log('🛠️ 개발 모드: 목업 데이터로 실행', stockCode);
 
       setIsLoading(true);

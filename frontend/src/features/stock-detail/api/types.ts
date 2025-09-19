@@ -45,85 +45,96 @@ export interface WebSocketInfo {
   endpoint: string;
 }
 
-// KRX 국내주식 실시간 체결가 데이터 타입
-export interface KRXRealtimePriceMessage {
-  MKSC_SHRN_ISCD: string;     // 유가증권 단축 종목코드
-  STCK_CNTG_HOUR: string;     // 주식 체결 시간
-  STCK_PRPR: number;          // 주식 현재가
-  PRDY_VRSS_SIGN: string;     // 전일 대비 부호
-  PRDY_VRSS: number;          // 전일 대비
-  PRDY_CTRT: number;          // 전일 대비율
-  WGHN_AVRG_STCK_PRC: number; // 가중 평균 주식 가격
-  STCK_OPRC: number;          // 주식 시가
-  STCK_HGPR: number;          // 주식 최고가
-  STCK_LWPR: number;          // 주식 최저가
-  ASKP1: number;              // 매도호가1
-  BIDP1: number;              // 매수호가1
-  CNTG_VOL: number;           // 체결 거래량
-  ACML_VOL: number;           // 누적 거래량
-  ACML_TR_PBMN: number;       // 누적 거래 대금
-  SELN_CNTG_CSNU: number;     // 매도 체결 건수
-  SHNU_CNTG_CSNU: number;     // 매수 체결 건수
-  NTBY_CNTG_CSNU: number;     // 순매수 체결 건수
-  CTTR: number;               // 체결강도
-  SELN_CNTG_SMTN: number;     // 총 매도 수량
-  SHNU_CNTG_SMTN: number;     // 총 매수 수량
-  CCLD_DVSN: string;          // 체결구분
-  SHNU_RATE: number;          // 매수비율
-  PRDY_VOL_VRSS_ACML_VOL_RATE: number; // 전일 거래량 대비 등락율
-  OPRC_HOUR: string;          // 시가 시간
-  OPRC_VRSS_PRPR_SIGN: string; // 시가대비구분
-  OPRC_VRSS_PRPR: number;     // 시가대비
-  HGPR_HOUR: string;          // 최고가 시간
-  HGPR_VRSS_PRPR_SIGN: string; // 고가대비구분
-  HGPR_VRSS_PRPR: number;     // 고가대비
-  LWPR_HOUR: string;          // 최저가 시간
-  LWPR_VRSS_PRPR_SIGN: string; // 저가대비구분
-  LWPR_VRSS_PRPR: number;     // 저가대비
-  BSOP_DATE: string;          // 영업 일자
-  NEW_MKOP_CLS_CODE: string;  // 신 장운영 구분 코드
-  TRHT_YN: string;            // 거래정지 여부
-  ASKP_RSQN1: number;         // 매도호가 잔량1
-  BIDP_RSQN1: number;         // 매수호가 잔량1
-  TOTAL_ASKP_RSQN: number;    // 총 매도호가 잔량
-  TOTAL_BIDP_RSQN: number;    // 총 매수호가 잔량
-  VOL_TNRT: number;           // 거래량 회전율
-  PRDY_SMNS_HOUR_ACML_VOL: number; // 전일 동시간 누적 거래량
-  PRDY_SMNS_HOUR_ACML_VOL_RATE: number; // 전일 동시간 누적 거래량 비율
-  HOUR_CLS_CODE: string;      // 시간 구분 코드
-  MRKT_TRTM_CLS_CODE: string; // 임의종료구분코드
-  VI_STND_PRC: number;        // 정적VI발동기준가
+// 최적화된 실시간 체결가 데이터 타입
+export interface OptimizedPriceData {
+  // 종목 정보
+  stockCode: string;              // 종목 코드
+
+  // 현재가 정보
+  stckPrpr: string;              // 주식 현재가
+  prdyVrssSign: string;          // 전일 대비 부호 (1: 상한, 2: 상승, 3: 보합, 4: 하한, 5: 하락)
+  prdyVrss: string;              // 전일 대비
+  prdyCtrt: string;              // 전일 대비율
+
+  // 시고저가 정보
+  stckOprc: string;              // 주식 시가
+  stckHgpr: string;              // 주식 고가
+  stckLwpr: string;              // 주식 저가
+
+  // 거래량 정보
+  cntgVol: string;               // 체결 거래량
+  acmlVol: string;               // 누적 거래량
+  acmlTrPbmn: string;            // 누적 거래 대금
+
+  // 호가 정보 (1차)
+  askp1: string;                 // 매도호가 1
+  bidp1: string;                 // 매수호가 1
+  askpRsqn1: string;             // 매도호가 잔량 1
+  bidpRsqn1: string;             // 매수호가 잔량 1
+
+  // 시간 정보
+  timestamp: number;             // 데이터 수신 시간 (milliseconds)
 }
 
-// KRX 국내주식 실시간 호가 데이터 타입
-export interface KRXRealtimeOrderbookMessage {
-  MKSC_SHRN_ISCD: string;     // 유가증권 단축 종목코드
-  BSOP_HOUR: string;          // 영업 시간
-  HOUR_CLS_CODE: string;      // 시간 구분 코드
-  ASKP1: number; ASKP2: number; ASKP3: number; ASKP4: number; ASKP5: number;
-  ASKP6: number; ASKP7: number; ASKP8: number; ASKP9: number; ASKP10: number; // 매도호가1-10
-  BIDP1: number; BIDP2: number; BIDP3: number; BIDP4: number; BIDP5: number;
-  BIDP6: number; BIDP7: number; BIDP8: number; BIDP9: number; BIDP10: number; // 매수호가1-10
-  ASKP_RSQN1: number; ASKP_RSQN2: number; ASKP_RSQN3: number; ASKP_RSQN4: number; ASKP_RSQN5: number;
-  ASKP_RSQN6: number; ASKP_RSQN7: number; ASKP_RSQN8: number; ASKP_RSQN9: number; ASKP_RSQN10: number; // 매도호가 잔량1-10
-  BIDP_RSQN1: number; BIDP_RSQN2: number; BIDP_RSQN3: number; BIDP_RSQN4: number; BIDP_RSQN5: number;
-  BIDP_RSQN6: number; BIDP_RSQN7: number; BIDP_RSQN8: number; BIDP_RSQN9: number; BIDP_RSQN10: number; // 매수호가 잔량1-10
-  TOTAL_ASKP_RSQN: number;    // 총 매도호가 잔량
-  TOTAL_BIDP_RSQN: number;    // 총 매수호가 잔량
-  OVTM_TOTAL_ASKP_RSQN: number; // 시간외 총 매도호가 잔량
-  OVTM_TOTAL_BIDP_RSQN: number; // 시간외 총 매수호가 잔량
-  ANTC_CNPR: number;          // 예상 체결가
-  ANTC_CNQN: number;          // 예상 체결량
-  ANTC_VOL: number;           // 예상 거래량
-  ANTC_CNTG_VRSS: number;     // 예상 체결 대비
-  ANTC_CNTG_VRSS_SIGN: string; // 예상 체결 대비 부호
-  ANTC_CNTG_PRDY_CTRT: number; // 예상 체결 전일 대비율
-  ACML_VOL: number;           // 누적 거래량
-  TOTAL_ASKP_RSQN_ICDC: number; // 총 매도호가 잔량 증감
-  TOTAL_BIDP_RSQN_ICDC: number; // 총 매수호가 잔량 증감
-  OVTM_TOTAL_ASKP_ICDC: number; // 시간외 총 매도호가 증감
-  OVTM_TOTAL_BIDP_ICDC: number; // 시간외 총 매수호가 증감
-  STCK_DEAL_CLS_CODE: string; // 주식 매매 구분 코드
+// 최적화된 실시간 호가 데이터 타입
+export interface OptimizedOrderbookData {
+  // 종목 정보
+  stockCode: string;              // 종목 코드
+
+  // 매도 호가 (1~10차)
+  askp1: string;                 // 매도호가 1차
+  askp2: string;                 // 매도호가 2차
+  askp3: string;                 // 매도호가 3차
+  askp4: string;                 // 매도호가 4차
+  askp5: string;                 // 매도호가 5차
+  askp6: string;                 // 매도호가 6차
+  askp7: string;                 // 매도호가 7차
+  askp8: string;                 // 매도호가 8차
+  askp9: string;                 // 매도호가 9차
+  askp10: string;                // 매도호가 10차
+
+  // 매수 호가 (1~10차)
+  bidp1: string;                 // 매수호가 1차
+  bidp2: string;                 // 매수호가 2차
+  bidp3: string;                 // 매수호가 3차
+  bidp4: string;                 // 매수호가 4차
+  bidp5: string;                 // 매수호가 5차
+  bidp6: string;                 // 매수호가 6차
+  bidp7: string;                 // 매수호가 7차
+  bidp8: string;                 // 매수호가 8차
+  bidp9: string;                 // 매수호가 9차
+  bidp10: string;                // 매수호가 10차
+
+  // 매도 호가 잔량 (1~10차)
+  askpRsqn1: string;             // 매도호가 잔량 1차
+  askpRsqn2: string;             // 매도호가 잔량 2차
+  askpRsqn3: string;             // 매도호가 잔량 3차
+  askpRsqn4: string;             // 매도호가 잔량 4차
+  askpRsqn5: string;             // 매도호가 잔량 5차
+  askpRsqn6: string;             // 매도호가 잔량 6차
+  askpRsqn7: string;             // 매도호가 잔량 7차
+  askpRsqn8: string;             // 매도호가 잔량 8차
+  askpRsqn9: string;             // 매도호가 잔량 9차
+  askpRsqn10: string;            // 매도호가 잔량 10차
+
+  // 매수 호가 잔량 (1~10차)
+  bidpRsqn1: string;             // 매수호가 잔량 1차
+  bidpRsqn2: string;             // 매수호가 잔량 2차
+  bidpRsqn3: string;             // 매수호가 잔량 3차
+  bidpRsqn4: string;             // 매수호가 잔량 4차
+  bidpRsqn5: string;             // 매수호가 잔량 5차
+  bidpRsqn6: string;             // 매수호가 잔량 6차
+  bidpRsqn7: string;             // 매수호가 잔량 7차
+  bidpRsqn8: string;             // 매수호가 잔량 8차
+  bidpRsqn9: string;             // 매수호가 잔량 9차
+  bidpRsqn10: string;            // 매수호가 잔량 10차
+
+  // 총 잔량
+  totalAskpRsqn: string;         // 총 매도호가 잔량
+  totalBidpRsqn: string;         // 총 매수호가 잔량
+
+  // 시간 정보
+  timestamp: number;             // 데이터 수신 시간 (milliseconds)
 }
 
 // 기존 호환용 타입 (기존 컴포넌트에서 사용)

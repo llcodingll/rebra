@@ -202,7 +202,7 @@ export default function StockDetailPage() {
   return (
     <div className={styles.container}>
       {/* STOMP 연결 디버깅 패널 */}
-      {!isDevMode() && (
+      {isDevMode() && (
         <div className={styles.debugPanel}>
           <div className={styles.debugHeader}>
             <h3>🔌 STOMP 연결 상태</h3>
