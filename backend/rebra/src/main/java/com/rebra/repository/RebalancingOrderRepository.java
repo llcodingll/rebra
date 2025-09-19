@@ -23,9 +23,9 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
      * 포트폴리오별 리밸런싱 주문 목록 조회 (페이지네이션) - 최신순
      */
     @Query("SELECT ro FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
-           "AND (:startDate IS NULL OR ro.rebalancingDate >= :startDate) " +
-           "AND (:endDate IS NULL OR ro.rebalancingDate <= :endDate) " +
-           "ORDER BY ro.rebalancingDate DESC")
+            "AND (CAST(:startDate AS timestamp) IS NULL OR ro.rebalancingDate >= :startDate) " +
+            "AND (CAST(:endDate AS timestamp) IS NULL OR ro.rebalancingDate <= :endDate) " +
+            "ORDER BY ro.rebalancingDate DESC")
     Page<RebalancingOrder> findByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
@@ -36,8 +36,8 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
      * 포트폴리오별 리밸런싱 주문 전체 목록 조회 (그래프용) - 날짜 오름차순 (시계열)
      */
     @Query("SELECT ro FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
-           "AND (:startDate IS NULL OR ro.rebalancingDate >= :startDate) " +
-           "AND (:endDate IS NULL OR ro.rebalancingDate <= :endDate) " +
+           "AND (CAST(:startDate AS timestamp) IS NULL OR ro.rebalancingDate >= :startDate) " +
+           "AND (CAST(:endDate AS timestamp) IS NULL OR ro.rebalancingDate <= :endDate) " +
            "ORDER BY ro.rebalancingDate ASC")
     List<RebalancingOrder> findAllByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
@@ -53,8 +53,8 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
      * 기간별 리밸런싱 통계 - 총 개수
      */
     @Query("SELECT COUNT(ro) FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
-           "AND (:startDate IS NULL OR ro.rebalancingDate >= :startDate) " +
-           "AND (:endDate IS NULL OR ro.rebalancingDate <= :endDate)")
+           "AND (CAST(:startDate AS timestamp) IS NULL OR ro.rebalancingDate >= :startDate) " +
+           "AND (CAST(:endDate AS timestamp) IS NULL OR ro.rebalancingDate <= :endDate)")
     Integer countByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
@@ -64,8 +64,8 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
      * 기간별 리밸런싱 통계 - 총 매수 금액
      */
     @Query("SELECT COALESCE(SUM(ro.totalBuyAmount), 0) FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
-           "AND (:startDate IS NULL OR ro.rebalancingDate >= :startDate) " +
-           "AND (:endDate IS NULL OR ro.rebalancingDate <= :endDate)")
+           "AND (CAST(:startDate AS timestamp) IS NULL OR ro.rebalancingDate >= :startDate) " +
+           "AND (CAST(:endDate AS timestamp) IS NULL OR ro.rebalancingDate <= :endDate)")
     BigDecimal sumTotalBuyAmountByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
@@ -75,8 +75,8 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
      * 기간별 리밸런싱 통계 - 총 매도 금액
      */
     @Query("SELECT COALESCE(SUM(ro.totalSellAmount), 0) FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
-           "AND (:startDate IS NULL OR ro.rebalancingDate >= :startDate) " +
-           "AND (:endDate IS NULL OR ro.rebalancingDate <= :endDate)")
+           "AND (CAST(:startDate AS timestamp) IS NULL OR ro.rebalancingDate >= :startDate) " +
+           "AND (CAST(:endDate AS timestamp) IS NULL OR ro.rebalancingDate <= :endDate)")
     BigDecimal sumTotalSellAmountByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
@@ -87,8 +87,8 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
      */
     @Query("SELECT COUNT(ro) FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
            "AND ro.executionType = 'AUTO' " +
-           "AND (:startDate IS NULL OR ro.rebalancingDate >= :startDate) " +
-           "AND (:endDate IS NULL OR ro.rebalancingDate <= :endDate)")
+           "AND (CAST(:startDate AS timestamp) IS NULL OR ro.rebalancingDate >= :startDate) " +
+           "AND (CAST(:endDate AS timestamp) IS NULL OR ro.rebalancingDate <= :endDate)")
     Integer countAutoRebalancingByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
@@ -99,8 +99,8 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
      */
     @Query("SELECT COUNT(ro) FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
            "AND ro.executionType = 'MANUAL' " +
-           "AND (:startDate IS NULL OR ro.rebalancingDate >= :startDate) " +
-           "AND (:endDate IS NULL OR ro.rebalancingDate <= :endDate)")
+           "AND (CAST(:startDate AS timestamp) IS NULL OR ro.rebalancingDate >= :startDate) " +
+           "AND (CAST(:endDate AS timestamp) IS NULL OR ro.rebalancingDate <= :endDate)")
     Integer countManualRebalancingByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
