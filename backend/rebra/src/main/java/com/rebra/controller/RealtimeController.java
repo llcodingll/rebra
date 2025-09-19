@@ -4,6 +4,7 @@ import com.rebra.component.KisApiComponent;
 import com.rebra.entity.Account;
 import com.rebra.repository.AccountRepository;
 import com.rebra.service.KisRealtimeService;
+import com.rebra.service.WebSocketReconnectionService;
 import com.rebra.util.WebSocketHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ public class RealtimeController {
     private final KisApiComponent kisApiComponent;
     private final AccountRepository accountRepository;
     private final WebSocketHelper webSocketHelper;
+    private final WebSocketReconnectionService webSocketReconnectionService;
 
     /**
      * 체결가 구독 요청
@@ -33,6 +35,11 @@ public class RealtimeController {
 
         // 세션에서 userId 추출
         Long userId = webSocketHelper.getAuthenticatedUserId(headerAccessor);
+        if (userId == null) {
+            log.warn("Websocket 세션에 userId 없음 - sessionId: {}", sessionId);
+            webSocketHelper.sendStockError(null, stockCode, "price", "인증 실패", "로그인 필요");
+            return;
+        }
 
         log.info("📡 체결가 구독 요청 - userId={}, stockCode={}, sessionId={}", userId, stockCode, sessionId);
 
@@ -73,6 +80,9 @@ public class RealtimeController {
                     ));
 
             kisRealtimeService.startPriceSubscription(account, stockCode, sessionId);
+
+            // 세션별 구독 정보 추가
+            webSocketReconnectionService.addSubscription(sessionId, stockCode, "price");
 
             // 구독 성공 알림 전송
             webSocketHelper.sendSubscriptionStarted(userId, stockCode, "price");
@@ -139,6 +149,9 @@ public class RealtimeController {
 
             kisRealtimeService.startOrderbookSubscription(account, stockCode, sessionId);
 
+            // 세션별 구독 정보 추가
+            webSocketReconnectionService.addSubscription(sessionId, stockCode, "orderbook");
+
             webSocketHelper.sendSubscriptionStarted(userId, stockCode, "orderbook");
 
         } catch (Exception e) {
@@ -170,9 +183,11 @@ public class RealtimeController {
 
         if ("price".equals(dataType)) {
             kisRealtimeService.stopPriceSubscription(userId, stockCode, sessionId);
+            webSocketReconnectionService.removeSubscription(sessionId, stockCode, "price");
             webSocketHelper.sendSubscriptionStopped(userId, stockCode, "price");
         } else if ("orderbook".equals(dataType)) {
             kisRealtimeService.stopOrderbookSubscription(userId, stockCode, sessionId);
+            webSocketReconnectionService.removeSubscription(sessionId, stockCode, "orderbook");
             webSocketHelper.sendSubscriptionStopped(userId, stockCode, "orderbook");
         }
     }

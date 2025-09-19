@@ -1,5 +1,7 @@
 package com.rebra.util;
 
+import com.rebra.dto.realtime.OptimizedOrderbookData;
+import com.rebra.dto.realtime.OptimizedPriceData;
 import com.rebra.dto.response.WebSocketResponse;
 import com.rebra.exception.CustomRuntimeException;
 import com.rebra.exception.ExceptionCode;
@@ -30,14 +32,23 @@ public class WebSocketHelper {
     // ==================== 주식 실시간 데이터 전송 ====================
 
     /**
-     * 주식 실시간 체결가 데이터 브로드캐스트
+     * 주식 실시간 체결가 데이터 브로드캐스트 (최적화된 데이터 사용)
      */
-    public void broadcastPriceData(Long userId, String stockCode, Object priceData) {
+    public void broadcastPriceData(Long userId, String stockCode, OptimizedPriceData priceData) {
         try {
+            if (priceData == null) {
+                log.warn("체결가 데이터가 null입니다 - UserId: {}, StockCode: {}", userId, stockCode);
+                return;
+            }
+
+            // 사용자별 개인 전송을 위한 queue 경로 (convertAndSendToUser가 /user 프리픽스 자동 추가)
             String queuePath = String.format(STOCK_PRICE_QUEUE_TEMPLATE, stockCode);
+            log.info("📍 체결가 데이터 전송 경로 - Path: /user{}, UserId: {}", queuePath, userId);
+
             messagingTemplate.convertAndSendToUser(userId.toString(), queuePath, priceData);
 
-            log.debug("체결가 데이터 개인 전송 - UserId: {}, StockCode: {}", userId, stockCode);
+            log.info("📤 체결가 데이터 개인 전송 - UserId: {}, StockCode: {}, Price: {}, Path: /user{}",
+                     userId, stockCode, priceData.getStckPrpr(), queuePath);
 
         } catch (Exception e) {
             log.error("체결가 데이터 개인 전송 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
@@ -45,14 +56,23 @@ public class WebSocketHelper {
     }
 
     /**
-     * 주식 실시간 호가 데이터 브로드캐스트
+     * 주식 실시간 호가 데이터 브로드캐스트 (최적화된 데이터 사용)
      */
-    public void broadcastOrderbookData(Long userId, String stockCode, Object orderbookData) {
+    public void broadcastOrderbookData(Long userId, String stockCode, OptimizedOrderbookData orderbookData) {
         try {
+            if (orderbookData == null) {
+                log.warn("호가 데이터가 null입니다 - UserId: {}, StockCode: {}", userId, stockCode);
+                return;
+            }
+
+            // 사용자별 개인 전송을 위한 queue 경로 (convertAndSendToUser가 /user 프리픽스 자동 추가)
             String queuePath = String.format(STOCK_ORDERBOOK_QUEUE_TEMPLATE, stockCode);
+            log.info("📍 호가 데이터 전송 경로 - Path: /user{}, UserId: {}", queuePath, userId);
+
             messagingTemplate.convertAndSendToUser(userId.toString(), queuePath, orderbookData);
 
-            log.debug("호가 데이터 개인 전송 - UserId: {}, StockCode: {}", userId, stockCode);
+            log.info("📤 호가 데이터 개인 전송 - UserId: {}, StockCode: {}, Ask1: {}, Bid1: {}, Path: /user{}",
+                     userId, stockCode, orderbookData.getAskp1(), orderbookData.getBidp1(), queuePath);
 
         } catch (Exception e) {
             log.error("호가 데이터 개인 전송 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
@@ -64,7 +84,7 @@ public class WebSocketHelper {
      */
     public void sendSubscriptionStarted(Long userId, String stockCode, String dataType) {
         try {
-            String queueDestination = "price".equals(dataType) ?
+            String queuePath = "price".equals(dataType) ?
                 String.format(STOCK_PRICE_QUEUE_TEMPLATE, stockCode) :
                 String.format(STOCK_ORDERBOOK_QUEUE_TEMPLATE, stockCode);
 
@@ -81,8 +101,8 @@ public class WebSocketHelper {
                     statusData
             );
 
-            messagingTemplate.convertAndSendToUser(userId.toString(), queueDestination, response);
-            log.info("구독 시작 알림 - UserId: {}, StockCode: {}, Type: {}", userId, stockCode, dataType);
+            messagingTemplate.convertAndSendToUser(userId.toString(), queuePath, response);
+            log.info("구독 시작 알림 - UserId: {}, StockCode: {}, Type: {}, Path: /user{}", userId, stockCode, dataType, queuePath);
 
         } catch (Exception e) {
             log.error("구독 시작 알림 실패 - UserId: {}, StockCode: {}, Type: {}", userId, stockCode, dataType, e);
@@ -94,7 +114,7 @@ public class WebSocketHelper {
      */
     public void sendSubscriptionStopped(Long userId, String stockCode, String dataType) {
         try {
-            String queueDestination = "price".equals(dataType) ?
+            String queuePath = "price".equals(dataType) ?
                 String.format(STOCK_PRICE_QUEUE_TEMPLATE, stockCode) :
                 String.format(STOCK_ORDERBOOK_QUEUE_TEMPLATE, stockCode);
 
@@ -111,8 +131,8 @@ public class WebSocketHelper {
                     statusData
             );
 
-            messagingTemplate.convertAndSendToUser(userId.toString(), queueDestination, response);
-            log.info("구독 중지 알림 - UserId: {}, StockCode: {}, Type: {}", userId, stockCode, dataType);
+            messagingTemplate.convertAndSendToUser(userId.toString(), queuePath, response);
+            log.info("구독 중지 알림 - UserId: {}, StockCode: {}, Type: {}, Path: /user{}", userId, stockCode, dataType, queuePath);
 
         } catch (Exception e) {
             log.error("구독 중지 알림 실패 - UserId: {}, StockCode: {}, Type: {}", userId, stockCode, dataType, e);
@@ -173,7 +193,7 @@ public class WebSocketHelper {
      */
     public void sendStockError(Long userId, String stockCode, String dataType, String error, String message) {
         try {
-            String queueDestination = "price".equals(dataType) ?
+            String queuePath = "price".equals(dataType) ?
                 String.format(STOCK_PRICE_QUEUE_TEMPLATE, stockCode) :
                 String.format(STOCK_ORDERBOOK_QUEUE_TEMPLATE, stockCode);
 
@@ -187,10 +207,14 @@ public class WebSocketHelper {
 
             WebSocketResponse payload = WebSocketResponse.of(WebSocketResponse.MessageType.ERROR, errorResponse);
 
-            messagingTemplate.convertAndSendToUser(userId.toString(), queueDestination, payload);
-
-            log.error("주식 채널 에러 전송 - UserId: {}, StockCode: {}, Type: {}, Error: {}",
-                    userId, stockCode, dataType, error);
+            if (userId != null) {
+                messagingTemplate.convertAndSendToUser(userId.toString(), queuePath, payload);
+                log.error("주식 채널 에러 전송 - UserId: {}, StockCode: {}, Type: {}, Error: {}, Path: /user{}",
+                        userId, stockCode, dataType, error, queuePath);
+            } else {
+                log.warn("주식 채널 에러 전송 실패 - UserId가 null입니다. StockCode: {}, Type: {}, Error: {}",
+                        stockCode, dataType, error);
+            }
         } catch (Exception e) {
             log.error("주식 채널 에러 전송 실패 - UserId: {}, StockCode: {}, Type: {}",
                     userId, stockCode, dataType, e);
