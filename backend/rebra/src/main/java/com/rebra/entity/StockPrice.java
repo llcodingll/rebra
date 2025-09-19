@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
@@ -34,7 +35,12 @@ import lombok.NoArgsConstructor;
 public class StockPrice extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+        name = "stock_price_seq_generator",
+        sequenceName = "stock_price_seq",
+        allocationSize = 100
+    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "stock_price_seq_generator")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
