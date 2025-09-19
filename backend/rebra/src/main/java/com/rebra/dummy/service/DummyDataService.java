@@ -70,7 +70,7 @@ public class DummyDataService {
 
         // 최근 3개월간 4~6개의 리밸런싱 생성
         int rebalancingCount = 4 + random.nextInt(3); // 4~6개
-        BigDecimal currentReturn = new BigDecimal("100.00"); // 시작 수익률 100%
+        Double currentReturn = 1.0; // 시작 수익률 100%
 
         for (int i = 0; i < rebalancingCount; i++) {
             // 리밸런싱 날짜: 최근 3개월 내 랜덤
@@ -94,12 +94,8 @@ public class DummyDataService {
                         .executedShares(trade.getExecutedShares())
                         .executedPrice(trade.getExecutedPrice())
                         .totalAmount(trade.getTotalAmount())
-                        .fee(trade.getFee())
                         .status(trade.getStatus())
                         .orderNumber(trade.getOrderNumber())
-                        .purchasePrice(trade.getPurchasePrice())
-                        .profitAmount(trade.getProfitAmount())
-                        .profitRate(trade.getProfitRate())
                         .reason(trade.getReason())
                         .build();
                 allTradeRecords.add(updatedTrade);
@@ -108,7 +104,7 @@ public class DummyDataService {
             rebalancingOrders.add(rebalancingOrder);
 
             // 다음 수익률 계산 (점진적 증가)
-            currentReturn = currentReturn.add(new BigDecimal(random.nextDouble() * 5 + 1)); // 1~6% 증가
+            currentReturn = currentReturn + (random.nextDouble() * 0.05 + 0.01); // 1~6% 증가
         }
 
         // 데이터베이스 저장
@@ -134,9 +130,8 @@ public class DummyDataService {
 
             String tradeType = TRADE_TYPES[random.nextInt(TRADE_TYPES.length)];
             int executedShares = 1 + random.nextInt(50); // 1~50주
-            BigDecimal executedPrice = new BigDecimal(minPrice + random.nextInt(maxPrice - minPrice));
-            BigDecimal totalAmount = executedPrice.multiply(new BigDecimal(executedShares));
-            BigDecimal fee = totalAmount.multiply(new BigDecimal("0.0015")); // 0.15% 수수료
+            Long executedPrice = (long)(minPrice + random.nextInt(maxPrice - minPrice));
+            Long totalAmount = executedPrice * executedShares;
 
             TradeRecord tradeRecord = TradeRecord.builder()
                     .stockCode(stockCode)
@@ -146,13 +141,8 @@ public class DummyDataService {
                     .executedShares(executedShares)
                     .executedPrice(executedPrice)
                     .totalAmount(totalAmount)
-                    .fee(fee)
                     .status(TransactionStatus.COMPLETED)
                     .orderNumber("ORD" + System.currentTimeMillis() + i)
-                    .purchasePrice(executedPrice.multiply(new BigDecimal("0.95"))) // 5% 낮은 매수가
-                    .profitAmount(tradeType.equals("SELL") ?
-                            totalAmount.multiply(new BigDecimal("0.05")) : BigDecimal.ZERO)
-                    .profitRate(tradeType.equals("SELL") ? new BigDecimal("5.0") : BigDecimal.ZERO)
                     .reason(tradeType.equals("BUY") ? "목표 비중 미달로 인한 매수" : "목표 비중 초과로 인한 매도")
                     .build();
 
@@ -163,24 +153,24 @@ public class DummyDataService {
     }
 
     private RebalancingOrder createDummyRebalancingOrder(Portfolio portfolio,
-            List<TradeRecord> tradeRecords, LocalDateTime rebalancingDate, BigDecimal cumulativeReturn) {
+            List<TradeRecord> tradeRecords, LocalDateTime rebalancingDate, Double cumulativeReturn) {
 
-        BigDecimal totalBuyAmount = tradeRecords.stream()
+        Long totalBuyAmount = tradeRecords.stream()
                 .filter(trade -> "BUY".equals(trade.getTradeType()))
-                .map(TradeRecord::getTotalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .mapToLong(TradeRecord::getTotalAmount)
+                .sum();
 
-        BigDecimal totalSellAmount = tradeRecords.stream()
+        Long totalSellAmount = tradeRecords.stream()
                 .filter(trade -> "SELL".equals(trade.getTradeType()))
-                .map(TradeRecord::getTotalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .mapToLong(TradeRecord::getTotalAmount)
+                .sum();
 
         ExecutionType executionType = EXECUTION_TYPES[random.nextInt(EXECUTION_TYPES.length)];
         TransactionStatus status = STATUSES[random.nextInt(STATUSES.length)];
 
         // 포트폴리오 총 평가액 계산 (수익률 기반으로 계산)
-        BigDecimal baseAmount = new BigDecimal("10000000"); // 초기 1000만원 기준
-        BigDecimal totalPortfolioValue = baseAmount.multiply(cumulativeReturn).divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP);
+        Long baseAmount = 10000000L; // 초기 1000만원 기준
+        Long totalPortfolioValue = (long)(baseAmount * cumulativeReturn);
 
         return RebalancingOrder.builder()
                 .portfolio(portfolio)

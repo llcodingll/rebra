@@ -1,8 +1,9 @@
 .header {
   background: white;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  padding: 14px 21px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+  padding: 20px 32px;
   width: 100%;
+  overflow: visible;
 }
 
 .container {
@@ -10,130 +11,189 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  overflow: visible;
 }
 
 .leftSection {
   display: flex;
   align-items: center;
-  gap: 40px;
+  gap: 64px;
+  overflow: visible;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  position: relative;
 }
 
 .logoIcon {
-  width: 28px;
-  height: 28px;
-  background: #030213;
-  border-radius: 6.75px;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #030213 0%, #1e293b 100%);
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 12.3px;
-  font-family: 'Segoe UI Symbol', sans-serif;
+  box-shadow: 0 4px 16px rgba(3, 2, 19, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.logoIcon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.15) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.8s ease;
+}
+
+.logoIcon:hover::before {
+  transform: translateX(100%);
+}
+
+.logoIconSvg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2;
+  /* Scale icon made upright - no rotation */
 }
 
 .logoText {
-  font-size: 15.8px;
-  font-family: 'Segoe UI Symbol', sans-serif;
-  color: #0f172a;
+  font-size: 28px;
+  font-weight: 700;
+  color: #030213;
   margin: 0;
+  letter-spacing: -0.8px;
+  background: linear-gradient(135deg, #030213 0%, #475569 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .rightSection {
   display: flex;
   align-items: center;
-  gap: 25px;
+  gap: 20px;
+  overflow: visible;
 }
 
-.iconButton {
-  position: relative;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.iconButton img {
-  width: 20px;
-  height: 20px;
-}
-
-.badge {
-  position: absolute;
-  top: -3.5px;
-  right: -3.5px;
-  width: 17.5px;
-  height: 17.5px;
-  background: #d4183d;
+.userAvatar {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
+  background: linear-gradient(135deg, #030213 0%, #1e293b 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 10.5px;
-  font-family: 'Segoe UI Symbol', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(3, 2, 19, 0.2);
 }
 
-.userInfo {
-  display: flex;
-  align-items: center;
-  gap: 7px;
+.userAvatar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(3, 2, 19, 0.3);
 }
 
-.avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background-size: cover;
-  background-position: center;
+.avatarIcon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
 }
 
-.userName {
-  font-size: 14px;
-  font-family: 'Segoe UI Symbol', sans-serif;
-  color: #0f172a;
-}
-
-/* Navigation styles integrated into header */
+/* Navigation styles */
 .navigation {
   display: flex;
   align-items: center;
-  gap: 3.5px;
+  position: relative;
 }
 
 .navButton {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding-top: 2px;
-  padding-left: 20px;
+  justify-content: center;
+  position: relative;
+  padding: 16px 24px;
   background: none;
   border: none;
   cursor: pointer;
-  color: #b7b7b7;
-  transition: color 0.2s;
+  color: #64748b;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  border-radius: 0;
 }
 
 .navButton:hover {
-  color: #6b7280;
+  color: #334155;
 }
 
 .navButton.active {
-  color: #000;
+  color: #030213;
+  font-weight: 600;
 }
 
 .navButton span {
-  font-size: 15px;
-  font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
-  line-height: 17.5px;
-  display: flex;
-  align-items: center;
-  font-weight: bold;
+  font-size: 16px;
+  line-height: 1;
+  transition: all 0.3s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  position: relative;
+  z-index: 10;
+}
+
+/* Motion underline will be handled in JS */
+.underline {
+  position: absolute;
+  bottom: -20px;
+  height: 2px;
+  background: linear-gradient(135deg, #030213 0%, #475569 100%);
+  border-radius: 1px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .header {
+    padding: 16px 20px;
+  }
+  
+  .leftSection {
+    gap: 32px;
+  }
+  
+  .logo {
+    gap: 12px;
+  }
+  
+  .logoIcon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .logoIconSvg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .logoText {
+    font-size: 24px;
+  }
+  
+  .navButton {
+    padding: 14px 20px;
+  }
+  
+  .navButton span {
+    font-size: 15px;
+  }
 }

@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -31,7 +32,12 @@ import java.util.List;
 public class Stock extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+        name = "stock_seq_generator",
+        sequenceName = "stock_seq",
+        allocationSize = 10
+    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "stock_seq_generator")
     private Long id;
 
     @Column(name = "stock_code", nullable = false, unique = true)

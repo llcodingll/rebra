@@ -16,8 +16,8 @@ public class RebalancingHistoryDetailResponse {
     private Long orderId;
     private ExecutionType executionType;
     private LocalDateTime executedAt;
-    private BigDecimal cumulativeReturn; // 누적 수익률
-    private BigDecimal totalPortfolioValue; // 포트폴리오 총 평가액
+    private Double cumulativeReturn; // 누적 수익률
+    private Long totalPortfolioValue; // 포트폴리오 총 평가액
     private List<TradeDetailResponse> trades;
 
     public static RebalancingHistoryDetailResponse from(RebalancingOrder order, List<TradeDetailResponse> trades) {
@@ -37,8 +37,8 @@ public class RebalancingHistoryDetailResponse {
                 .orderId(null) // 더미 데이터이므로 null
                 .executionType(ExecutionType.INITIAL) // 시작점 표시
                 .executedAt(createdAt)
-                .cumulativeReturn(new BigDecimal("100.00")) // 100% 기준
-                .totalPortfolioValue(new BigDecimal("10000000")) // 초기 1000만원 기준
+                .cumulativeReturn(1.0) // 100% 기준
+                .totalPortfolioValue(10000000L) // 초기 1000만원 기준
                 .trades(List.of()) // 빈 리스트
                 .build();
     }

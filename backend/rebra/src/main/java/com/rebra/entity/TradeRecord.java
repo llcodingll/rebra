@@ -12,8 +12,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -27,7 +27,12 @@ import lombok.NoArgsConstructor;
 public class TradeRecord extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+        name = "trade_record_seq_generator",
+        sequenceName = "trade_record_seq",
+        allocationSize = 100
+    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "trade_record_seq_generator")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -50,13 +55,10 @@ public class TradeRecord extends BaseEntity {
     private Integer executedShares;
 
     @Column(name = "executed_price", nullable = false)
-    private BigDecimal executedPrice;
+    private Long executedPrice;
 
     @Column(name = "total_amount", nullable = false)
-    private BigDecimal totalAmount;
-
-    @Column(nullable = false)
-    private BigDecimal fee;
+    private Long totalAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -65,14 +67,6 @@ public class TradeRecord extends BaseEntity {
     @Column(name = "order_number", nullable = false)
     private String orderNumber;
 
-    @Column(name = "purchase_price")
-    private BigDecimal purchasePrice; // 매수 평균가 (매도시 손익 계산용)
-
-    @Column(name = "profit_amount")
-    private BigDecimal profitAmount; // 손익 금액
-
-    @Column(name = "profit_rate")
-    private BigDecimal profitRate; // 손익률
 
     @Column(name = "reason")
     private String reason; // 거래 사유
@@ -80,9 +74,9 @@ public class TradeRecord extends BaseEntity {
     @Builder
     public TradeRecord(RebalancingOrder rebalancingOrder, String stockCode, String stockName,
                        String tradeType, LocalDateTime tradeDate, Integer executedShares,
-                       BigDecimal executedPrice, BigDecimal totalAmount, BigDecimal fee,
-                       TransactionStatus status, String orderNumber, BigDecimal purchasePrice,
-                       BigDecimal profitAmount, BigDecimal profitRate, String reason) {
+                       Long executedPrice, Long totalAmount,
+                       TransactionStatus status, String orderNumber,
+                       String reason) {
         this.rebalancingOrder = rebalancingOrder;
         this.stockCode = stockCode;
         this.stockName = stockName;
@@ -91,12 +85,8 @@ public class TradeRecord extends BaseEntity {
         this.executedShares = executedShares;
         this.executedPrice = executedPrice;
         this.totalAmount = totalAmount;
-        this.fee = fee;
         this.status = status;
         this.orderNumber = orderNumber;
-        this.purchasePrice = purchasePrice;
-        this.profitAmount = profitAmount;
-        this.profitRate = profitRate;
         this.reason = reason;
     }
 }
