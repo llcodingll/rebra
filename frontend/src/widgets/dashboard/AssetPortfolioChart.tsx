@@ -291,14 +291,21 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                   </div>
                 </div>
               </div>
-              <span className={styles.thresholdValue}>{selectedStock?.thresholdPercentage || 0}%</span>
 
             <div className={styles.targetInfo}>
-              <div className={styles.targetLabel}>목표 비중</div>
-              <div className={styles.targetBar}>
-                <div className={styles.targetFill}></div>
+              <div className={styles.targetHeader}>
+                <span className={styles.targetLabel}>목표 비중</span>
+                <span className={styles.targetValue}>{selectedStock.targetPercentage || 0}%</span>
               </div>
-              <span className={styles.targetValue}>30%</span>
+              <div className={styles.targetBar}>
+                <div
+                  className={styles.targetFill}
+                  style={{
+                    width: `${selectedStock.targetPercentage || 0}%`,
+                    background: selectedStock.targetPercentage ? '#3b82f6' : '#e2e8f0'
+                  }}
+                ></div>
+              </div>
             </div>
 
                 <div className={styles.weightItem}>
