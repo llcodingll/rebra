@@ -1,9 +1,7 @@
 /* 컨테이너 */
 .chartContainer {
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 24px;
+  padding: 24px 0;
 }
 
 .chartCard {
@@ -574,6 +572,47 @@
   color: #717182;
   margin: 0;
   line-height: 1.6;
+}
+
+/* 목표 비중 스타일 - weightItem과 동일한 디자인 */
+.targetInfo {
+  margin-bottom: 16px;
+}
+
+.targetInfo:last-child {
+  margin-bottom: 0;
+}
+
+.targetHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.targetLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.targetValue {
+  font-size: 12px;
+  font-weight: 600;
+  color: #030213;
+}
+
+.targetBar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.targetFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
 }
 
 /* 애니메이션 클래스 */

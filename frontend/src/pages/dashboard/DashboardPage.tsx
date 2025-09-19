@@ -195,10 +195,9 @@ export default function DashboardPage() {
           </div>
 
           {renderContent()}
-        </div>
 
-        {/* 자산 테이블들 */}
-        <div className={styles.tablesContainer}>
+          {/* 자산 테이블들 */}
+          <div className={styles.tablesContainer}>
           <AssetTable
             title="등록 주식"
             type="registered"
@@ -223,6 +222,7 @@ export default function DashboardPage() {
               refetchPortfolioDetail();
             }}
           />
+          </div>
         </div>
 
         <PortfolioSelectionModal

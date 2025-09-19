@@ -5,20 +5,15 @@
 }
 
 .container {
-  padding: 21px;
-  max-width: 1920px;
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 30px 60px;
 }
-
 
 
 .tabHeader {
   display: flex;
   gap: 0;
-  margin-bottom: 30px;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 24px;
 }
 
 .tab {
@@ -41,6 +36,6 @@
 .tablesContainer {
   display: flex;
   flex-direction: column;
-  gap: 38px;
-  margin-top: 40px;
+  gap: 24px;
+  
 }
