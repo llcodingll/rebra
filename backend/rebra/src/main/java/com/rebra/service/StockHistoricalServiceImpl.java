@@ -19,7 +19,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -58,18 +61,30 @@ public class StockHistoricalServiceImpl implements StockHistoricalService {
             return List.of();
         }
 
-        // 2. API 결과 처리 - Stock 엔티티만 저장, StockPrice는 응답용으로만 사용
+        // 2. API 결과 처리 - Stock 엔티티 배치 저장 후 StockPrice 생성
         List<StockHistoricalDataResponse> responses = new ArrayList<>();
         
-        for (FssStockPriceResponse.StockItem item : apiResults) {
+        // 2-1. 유효한 종목들 필터링 및 종목코드 수집
+        List<FssStockPriceResponse.StockItem> validItems = apiResults.stream()
+                .filter(item -> item.getItmsNm().contains(stockName))
+                .collect(Collectors.toList());
+        
+        if (validItems.isEmpty()) {
+            log.warn("유효한 종목이 없습니다 - 요청 종목명: {}", stockName);
+            return List.of();
+        }
+        
+        // 2-2. 필요한 Stock 엔티티들을 배치로 준비
+        Map<String, Stock> stockMap = prepareStocksInBatch(validItems);
+        
+        // 2-3. StockPrice 생성 및 응답 구성
+        for (FssStockPriceResponse.StockItem item : validItems) {
             try {
-                // 종목명이 요청한 종목명을 포함하는지 확인
-                if (!item.getItmsNm().contains(stockName)) {
-                    continue; // 관련 없는 종목은 건너뛰기
+                Stock stock = stockMap.get(item.getSrtnCd());
+                if (stock == null) {
+                    log.warn("Stock 엔티티를 찾을 수 없음 - 종목코드: {}", item.getSrtnCd());
+                    continue;
                 }
-
-                // Stock 엔티티 생성 또는 조회 (DB에 저장됨)
-                Stock stock = getOrCreateStock(item.getSrtnCd(), item.getItmsNm());
                 
                 // StockPrice는 메모리에서만 생성 (DB 저장 없음)
                 StockPrice stockPrice = convertToStockPrice(item, stock);
@@ -88,7 +103,59 @@ public class StockHistoricalServiceImpl implements StockHistoricalService {
     }
 
     /**
-     * Stock 엔티티를 조회하거나 생성한다
+     * Stock 엔티티들을 배치로 준비한다 (기존 조회 + 신규 생성)
+     */
+    private Map<String, Stock> prepareStocksInBatch(List<FssStockPriceResponse.StockItem> validItems) {
+        // 1. 종목코드 수집
+        Set<String> stockCodes = validItems.stream()
+                .map(FssStockPriceResponse.StockItem::getSrtnCd)
+                .collect(Collectors.toSet());
+        
+        // 2. 기존 Stock 엔티티들 조회
+        List<Stock> existingStocks = stockRepository.findByStockCodeIn(stockCodes);
+        Map<String, Stock> stockMap = existingStocks.stream()
+                .collect(Collectors.toMap(Stock::getStockCode, stock -> stock));
+        
+        // 3. 신규 Stock 엔티티들 준비
+        List<Stock> newStocks = new ArrayList<>();
+        Map<String, String> codeToNameMap = validItems.stream()
+                .collect(Collectors.toMap(
+                    FssStockPriceResponse.StockItem::getSrtnCd,
+                    FssStockPriceResponse.StockItem::getItmsNm,
+                    (existing, replacement) -> existing // 중복 시 기존 값 유지
+                ));
+        
+        for (String stockCode : stockCodes) {
+            if (!stockMap.containsKey(stockCode)) {
+                String stockName = codeToNameMap.get(stockCode);
+                Stock newStock = Stock.builder()
+                        .stockCode(stockCode)
+                        .stockName(stockName)
+                        .stockType("주식")
+                        .isActive(true)
+                        .build();
+                newStocks.add(newStock);
+                log.info("새로운 Stock 엔티티 준비 - 코드: {}, 이름: {}", stockCode, stockName);
+            }
+        }
+        
+        // 4. 신규 Stock 엔티티들 배치 저장
+        if (!newStocks.isEmpty()) {
+            log.info("신규 Stock 엔티티 배치 저장 시작 - 저장할 개수: {}", newStocks.size());
+            List<Stock> savedStocks = stockRepository.saveAll(newStocks);
+            log.info("신규 Stock 엔티티 배치 저장 완료 - 저장된 개수: {}", savedStocks.size());
+            
+            // 새로 저장된 Stock들을 맵에 추가
+            for (Stock savedStock : savedStocks) {
+                stockMap.put(savedStock.getStockCode(), savedStock);
+            }
+        }
+        
+        return stockMap;
+    }
+
+    /**
+     * Stock 엔티티를 조회하거나 생성한다 (개별 처리용 - 호환성 유지)
      */
     private Stock getOrCreateStock(String stockCode, String stockName) {
         return stockRepository.findByStockCode(stockCode)

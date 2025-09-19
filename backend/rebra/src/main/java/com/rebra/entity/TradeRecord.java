@@ -12,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
@@ -26,7 +27,12 @@ import lombok.NoArgsConstructor;
 public class TradeRecord extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+        name = "trade_record_seq_generator",
+        sequenceName = "trade_record_seq",
+        allocationSize = 100
+    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "trade_record_seq_generator")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

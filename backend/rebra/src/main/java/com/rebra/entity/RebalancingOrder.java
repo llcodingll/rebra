@@ -19,7 +19,12 @@ import lombok.NoArgsConstructor;
 public class RebalancingOrder extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+        name = "rebalancing_order_seq_generator",
+        sequenceName = "rebalancing_order_seq",
+        allocationSize = 1
+    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "rebalancing_order_seq_generator")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
