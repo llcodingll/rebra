@@ -49,7 +49,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
 
   // API 연동 모드 전환 (개발 중 편의를 위한 분기)
-  const USE_API_DATA = false; // true: API 데이터 사용, false: 시뮬레이션 데이터 사용
+  const USE_API_DATA = true; // true: API 데이터 사용, false: 시뮬레이션 데이터 사용
 
   // API에서 차트 데이터 가져오기
   const { data: chartApiData, isLoading, error } = useStockChartData(stockCode, selectedPeriod);
