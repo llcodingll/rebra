@@ -22,11 +22,9 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
     /**
      * 포트폴리오별 리밸런싱 주문 목록 조회 (페이지네이션) - 최신순
      */
-    @Query(value = "SELECT * FROM rebalancing_order ro " +
-            "WHERE ro.portfolio_id = :portfolioId " +
-            "AND ro.rebalancing_date BETWEEN :startDate AND :endDate " +
-            "ORDER BY ro.rebalancing_date DESC",
-            nativeQuery = true)
+    @Query("SELECT ro FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
+            "AND ro.rebalancingDate BETWEEN :startDate AND :endDate " +
+            "ORDER BY ro.rebalancingDate DESC")
     Page<RebalancingOrder> findByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
@@ -36,10 +34,9 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
     /**
      * 포트폴리오별 리밸런싱 주문 전체 목록 조회 (그래프용) - 날짜 오름차순 (시계열)
      */
-    @Query(value = "SELECT * FROM rebalancing_order ro WHERE ro.portfolio_id = :portfolioId " +
-           "AND ro.rebalancing_date BETWEEN :startDate AND :endDate " +
-           "ORDER BY ro.rebalancing_date ASC",
-           nativeQuery = true)
+    @Query("SELECT ro FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
+           "AND ro.rebalancingDate BETWEEN :startDate AND :endDate " +
+           "ORDER BY ro.rebalancingDate ASC")
     List<RebalancingOrder> findAllByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
@@ -53,9 +50,8 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
     /**
      * 기간별 리밸런싱 통계 - 총 개수
      */
-    @Query(value = "SELECT COUNT(*) FROM rebalancing_order ro WHERE ro.portfolio_id = :portfolioId " +
-           "AND ro.rebalancing_date BETWEEN :startDate AND :endDate",
-           nativeQuery = true)
+    @Query("SELECT COUNT(ro) FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
+           "AND ro.rebalancingDate BETWEEN :startDate AND :endDate")
     Integer countByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
@@ -64,9 +60,8 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
     /**
      * 기간별 리밸런싱 통계 - 총 매수 금액
      */
-    @Query(value = "SELECT COALESCE(SUM(ro.total_buy_amount), 0) FROM rebalancing_order ro WHERE ro.portfolio_id = :portfolioId " +
-           "AND ro.rebalancing_date BETWEEN :startDate AND :endDate",
-           nativeQuery = true)
+    @Query("SELECT COALESCE(SUM(ro.totalBuyAmount), 0) FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
+           "AND ro.rebalancingDate BETWEEN :startDate AND :endDate")
     BigDecimal sumTotalBuyAmountByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
@@ -75,9 +70,8 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
     /**
      * 기간별 리밸런싱 통계 - 총 매도 금액
      */
-    @Query(value = "SELECT COALESCE(SUM(ro.total_sell_amount), 0) FROM rebalancing_order ro WHERE ro.portfolio_id = :portfolioId " +
-           "AND ro.rebalancing_date BETWEEN :startDate AND :endDate",
-           nativeQuery = true)
+    @Query("SELECT COALESCE(SUM(ro.totalSellAmount), 0) FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
+           "AND ro.rebalancingDate BETWEEN :startDate AND :endDate")
     BigDecimal sumTotalSellAmountByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
@@ -86,10 +80,9 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
     /**
      * 기간별 자동 리밸런싱 개수
      */
-    @Query(value = "SELECT COUNT(*) FROM rebalancing_order ro WHERE ro.portfolio_id = :portfolioId " +
-           "AND ro.execution_type = 'AUTO' " +
-           "AND ro.rebalancing_date BETWEEN :startDate AND :endDate",
-           nativeQuery = true)
+    @Query("SELECT COUNT(ro) FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
+           "AND ro.executionType = 'AUTO' " +
+           "AND ro.rebalancingDate BETWEEN :startDate AND :endDate")
     Integer countAutoRebalancingByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
@@ -98,10 +91,9 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
     /**
      * 기간별 수동 리밸런싱 개수
      */
-    @Query(value = "SELECT COUNT(*) FROM rebalancing_order ro WHERE ro.portfolio_id = :portfolioId " +
-           "AND ro.execution_type = 'MANUAL' " +
-           "AND ro.rebalancing_date BETWEEN :startDate AND :endDate",
-           nativeQuery = true)
+    @Query("SELECT COUNT(ro) FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
+           "AND ro.executionType = 'MANUAL' " +
+           "AND ro.rebalancingDate BETWEEN :startDate AND :endDate")
     Integer countManualRebalancingByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
