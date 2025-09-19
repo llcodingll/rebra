@@ -1,8 +1,10 @@
 package com.rebra.config;
 
+import com.rebra.service.WebSocketReconnectionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -19,11 +21,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class WebSocketSessionInterceptor implements ChannelInterceptor {
 
     private final ApplicationEventPublisher eventPublisher;
+    private final WebSocketReconnectionService webSocketReconnectionService;
     private final Map<String, String> sessionUserMap = new ConcurrentHashMap<>();
+
+    public WebSocketSessionInterceptor(ApplicationEventPublisher eventPublisher,
+                                     @Lazy WebSocketReconnectionService webSocketReconnectionService) {
+        this.eventPublisher = eventPublisher;
+        this.webSocketReconnectionService = webSocketReconnectionService;
+    }
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -66,9 +74,17 @@ public class WebSocketSessionInterceptor implements ChannelInterceptor {
             
             if (Boolean.TRUE.equals(authenticated) && userId != null) {
                 sessionUserMap.put(sessionId, userId.toString());
-                log.info("인증된 사용자 WebSocket 연결 - SessionId: {}, UserId: {}, Username: {}", 
-                        sessionId, userId, username);
+
+                // Principal 설정 - convertAndSendToUser가 작동하려면 필수
+                UserPrincipal userPrincipal = new UserPrincipal(userId.toString());
+                accessor.setUser(userPrincipal);
+
+                webSocketReconnectionService.registerSession(sessionId, userId);
+                log.info("인증된 사용자 WebSocket 연결 - SessionId: {}, UserId: {}, Username: {}, Principal: {}",
+                        sessionId, userId, username, userPrincipal);
             } else {
+                // 게스트도 세션 등록 (userId는 null)
+                webSocketReconnectionService.registerSession(sessionId, null);
                 log.info("게스트 사용자 WebSocket 연결 - SessionId: {}", sessionId);
             }
         }

@@ -114,12 +114,40 @@ public class WebSocketReconnectionService {
     public void removeSession(String sessionId) {
         sessionActivity.remove(sessionId);
         SessionSubscriptions subscriptions = sessionSubscriptions.remove(sessionId);
-        
+
         if (subscriptions != null) {
-            log.info("WebSocket 세션 제거 및 구독 정리 - SessionId: {}, 체결가: {}개, 호가: {}개", 
-                    sessionId, 
+            Long userId = subscriptions.getUserId();
+
+            log.info("WebSocket 세션 제거 및 구독 정리 시작 - SessionId: {}, UserId: {}, 체결가: {}개, 호가: {}개",
+                    sessionId, userId,
                     subscriptions.getPriceSubscriptions().size(),
                     subscriptions.getOrderbookSubscriptions().size());
+
+            // 모든 체결가 구독 해제
+            subscriptions.getPriceSubscriptions().keySet().forEach(stockCode -> {
+                try {
+                    log.info("🔌 세션 해제로 인한 체결가 구독 해제 - SessionId: {}, UserId: {}, StockCode: {}",
+                            sessionId, userId, stockCode);
+                    kisRealtimeService.stopPriceSubscription(userId, stockCode, sessionId);
+                } catch (Exception e) {
+                    log.error("❌ 세션 해제 시 체결가 구독 해제 실패 - SessionId: {}, StockCode: {}", sessionId, stockCode, e);
+                }
+            });
+
+            // 모든 호가 구독 해제
+            subscriptions.getOrderbookSubscriptions().keySet().forEach(stockCode -> {
+                try {
+                    log.info("🔌 세션 해제로 인한 호가 구독 해제 - SessionId: {}, UserId: {}, StockCode: {}",
+                            sessionId, userId, stockCode);
+                    kisRealtimeService.stopOrderbookSubscription(userId, stockCode, sessionId);
+                } catch (Exception e) {
+                    log.error("❌ 세션 해제 시 호가 구독 해제 실패 - SessionId: {}, StockCode: {}", sessionId, stockCode, e);
+                }
+            });
+
+            log.info("✅ WebSocket 세션 제거 및 구독 정리 완료 - SessionId: {}, UserId: {}", sessionId, userId);
+        } else {
+            log.info("WebSocket 세션 제거 - SessionId: {} (구독 정보 없음)", sessionId);
         }
     }
 
