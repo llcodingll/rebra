@@ -16,7 +16,7 @@ import styles from './LandingPage.module.css';
 export default function LandingPage() {
   const navigate = useNavigate();
 
-  const handleSignup = () => navigate('/signup');
+  const handleSignup = () => navigate('/login');
   const handleLogin = () => navigate('/login');
 
   return (
