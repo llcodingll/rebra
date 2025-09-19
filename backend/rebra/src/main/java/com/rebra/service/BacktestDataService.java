@@ -180,24 +180,40 @@ public class BacktestDataService {
         if (dataAvailability.isEmpty()) {
             throw BacktestException.invalidRequest();
         }
+
+        StringBuilder errorMessages = new StringBuilder();
         
-        for (Object[] availability : dataAvailability) {
-            String ticker = (String) availability[0];
-            LocalDate firstDate = (LocalDate) availability[1];
-            LocalDate lastDate = (LocalDate) availability[2];
-            Long dataCount = (Long) availability[3];
+        for (Object[] data : dataAvailability) {
+            String ticker = (String) data[0];
+            LocalDate dataStartDate = (LocalDate) data[1];
+            LocalDate dataEndDate = (LocalDate) data[2];
+            Long dataCount = (Long) data[3];
             
-            if (firstDate == null || lastDate == null || dataCount == 0) {
-                throw BacktestException.invalidRequest();
+            // 요청 기간에 데이터가 없는 경우
+            if (dataEndDate.isBefore(startDate) || dataStartDate.isAfter(endDate)) {
+                errorMessages.append(String.format("종목 %s: 요청 기간에 데이터가 없습니다 (데이터 보유 기간: %s ~ %s)\n", 
+                    ticker, dataStartDate, dataEndDate));
             }
-            
-            if (firstDate.isAfter(startDate) || lastDate.isBefore(endDate)) {
-                throw BacktestException.invalidRequest();
+            // 데이터 커버리지가 부족한 경우 (50% 미만)
+            else {
+                LocalDate actualStart = dataStartDate.isAfter(startDate) ? dataStartDate : startDate;
+                LocalDate actualEnd = dataEndDate.isBefore(endDate) ? dataEndDate : endDate;
+                long requestedDays = startDate.until(endDate).getDays() + 1;
+                long coverageDays = actualStart.until(actualEnd).getDays() + 1;
+                
+                if (coverageDays < requestedDays * 0.5) {
+                    errorMessages.append(String.format("종목 %s: 데이터 커버리지가 부족합니다 (%.1f%%)\n", 
+                        ticker, (double) coverageDays / requestedDays * 100));
+                }
             }
         }
         
-        log.info("데이터 가용성 검증 통과 - 종목 수: {}, 검증 기간: {} ~ {}", 
-                tickers.size(), startDate, endDate);
+        if (errorMessages.length() > 0) {
+            log.warn("백테스트 데이터 가용성 검증 실패:\n{}", errorMessages.toString());
+            throw BacktestException.invalidRequest();
+        }
+        
+        log.info("백테스트 데이터 가용성 검증 완료 - 종목수: {}", tickers.size());
     }
 
     /**
