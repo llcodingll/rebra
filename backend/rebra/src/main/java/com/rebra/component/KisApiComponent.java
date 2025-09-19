@@ -16,10 +16,10 @@ import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import com.youhogeon.finance.kis_api.client.socket.SubscribableApiResult;
 import com.youhogeon.finance.kis_api.config.Configuration;
 import com.youhogeon.finance.kis_api.config.Credentials;
+import com.youhogeon.finance.kis_api.config.RoundRobinCredentialsSelector;
 import com.youhogeon.finance.kis_api.exception.KisClientException;
 import jakarta.annotation.PostConstruct;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,9 +51,6 @@ public class KisApiComponent {
     // WebSocket 연결 풀링 (AppKey별 단일 연결 관리)
     private final Map<String, SubscribableApiResult> connectionPool = new ConcurrentHashMap<>();
     private final Map<String, ReentrantLock> connectionLocks = new ConcurrentHashMap<>();
-
-    // WebSocket 동시성 제어를 위한 락
-    private final ReentrantLock webSocketLock = new ReentrantLock();
 
     @PostConstruct
     public void initializeConfigurations() {
@@ -537,11 +534,37 @@ public class KisApiComponent {
                     log.info("📡 WebSocket 데이터 수신 - Type: {}, Data: {}",
                         data != null ? data.getClass().getSimpleName() : "null", data);
 
-                    if (data instanceof H0STCNT0Data) {
+                    if (data instanceof H0STCNT0Data[]) {
+                        H0STCNT0Data[] priceDataArray = (H0STCNT0Data[]) data;
+                        log.info("📊 체결가 배열 데이터 수신 - StockCode요청: {}, 배열크기: {}", stockCode, priceDataArray.length);
+
+                        for (H0STCNT0Data priceData : priceDataArray) {
+                            // 종목코드 필드들 모두 로깅
+                            log.info("💰 체결가 데이터 상세 - StockCode요청: {}, MkscShrnIscd: {}, StckShrnIscd: {}, Price: {}",
+                                    stockCode, priceData.getMkscShrnIscd(),
+                                    getFieldSafely(() -> priceData.getMkscShrnIscd(), "N/A"),
+                                    priceData.getStckPrpr());
+
+                            // 종목코드 필터링 (해당 종목만 처리)
+                            if (stockCode.equals(priceData.getMkscShrnIscd()) ||
+                                stockCode.equals(getFieldSafely(() -> priceData.getMkscShrnIscd(), ""))) {
+
+                                log.info("✅ 체결가 데이터 매칭 - StockCode: {}, Price: {}",
+                                        stockCode, priceData.getStckPrpr());
+
+                                // 데이터 핸들러를 통해 KisRealtimeService로 데이터 전달
+                                dataHandler.accept(priceData);
+                            } else {
+                                log.debug("⏭️ 체결가 데이터 스킵 - 요청: {}, 수신: {}",
+                                        stockCode, priceData.getMkscShrnIscd());
+                            }
+                        }
+                    } else if (data instanceof H0STCNT0Data) {
+                        // 단일 데이터 처리 (하위 호환성)
                         H0STCNT0Data priceData = (H0STCNT0Data) data;
 
                         // 종목코드 필드들 모두 로깅
-                        log.info("💰 체결가 데이터 상세 - StockCode요청: {}, MkscShrnIscd: {}, StckShrnIscd: {}, Price: {}",
+                        log.info("💰 체결가 단일 데이터 상세 - StockCode요청: {}, MkscShrnIscd: {}, StckShrnIscd: {}, Price: {}",
                                 stockCode, priceData.getMkscShrnIscd(),
                                 getFieldSafely(() -> priceData.getMkscShrnIscd(), "N/A"),
                                 priceData.getStckPrpr());
@@ -591,11 +614,37 @@ public class KisApiComponent {
                     log.info("📡 WebSocket 데이터 수신 - Type: {}, Data: {}",
                         data != null ? data.getClass().getSimpleName() : "null", data);
 
-                    if (data instanceof H0STASP0Data) {
+                    if (data instanceof H0STASP0Data[]) {
+                        H0STASP0Data[] orderbookDataArray = (H0STASP0Data[]) data;
+                        log.info("📊 호가 배열 데이터 수신 - StockCode요청: {}, 배열크기: {}", stockCode, orderbookDataArray.length);
+
+                        for (H0STASP0Data orderbookData : orderbookDataArray) {
+                            // 종목코드 필드들 모두 로깅
+                            log.info("📊 호가 데이터 상세 - StockCode요청: {}, MkscShrnIscd: {}, StckShrnIscd: {}, AskPrice1: {}, BidPrice1: {}",
+                                    stockCode, orderbookData.getMkscShrnIscd(),
+                                    getFieldSafely(() -> orderbookData.getMkscShrnIscd(), "N/A"),
+                                    orderbookData.getAskp1(), orderbookData.getBidp1());
+
+                            // 종목코드 필터링 (해당 종목만 처리)
+                            if (stockCode.equals(orderbookData.getMkscShrnIscd()) ||
+                                stockCode.equals(getFieldSafely(() -> orderbookData.getMkscShrnIscd(), ""))) {
+
+                                log.info("✅ 호가 데이터 매칭 - StockCode: {}, AskPrice1: {}, BidPrice1: {}",
+                                        stockCode, orderbookData.getAskp1(), orderbookData.getBidp1());
+
+                                // 데이터 핸들러를 통해 KisRealtimeService로 데이터 전달
+                                dataHandler.accept(orderbookData);
+                            } else {
+                                log.debug("⏭️ 호가 데이터 스킵 - 요청: {}, 수신: {}",
+                                        stockCode, orderbookData.getMkscShrnIscd());
+                            }
+                        }
+                    } else if (data instanceof H0STASP0Data) {
+                        // 단일 데이터 처리 (하위 호환성)
                         H0STASP0Data orderbookData = (H0STASP0Data) data;
 
                         // 종목코드 필드들 모두 로깅
-                        log.info("📊 호가 데이터 상세 - StockCode요청: {}, MkscShrnIscd: {}, StckShrnIscd: {}, AskPrice1: {}, BidPrice1: {}",
+                        log.info("📊 호가 단일 데이터 상세 - StockCode요청: {}, MkscShrnIscd: {}, StckShrnIscd: {}, AskPrice1: {}, BidPrice1: {}",
                                 stockCode, orderbookData.getMkscShrnIscd(),
                                 getFieldSafely(() -> orderbookData.getMkscShrnIscd(), "N/A"),
                                 orderbookData.getAskp1(), orderbookData.getBidp1());
@@ -631,7 +680,7 @@ public class KisApiComponent {
     }
 
     /**
-     * WebSocket 상태 충돌 방지를 위한 재시도 로직
+     * WebSocket 상태 충돌 방지를 위한 재시도 로직 (KIS 라이브러리 RateLimiter 활용)
      */
     private <T> T executeWithRetry(Supplier<T> operation, int maxRetries, String operationName) {
         Exception lastException = null;
@@ -643,10 +692,20 @@ public class KisApiComponent {
             } catch (Exception e) {
                 lastException = e;
 
-                // 재시도 가능한 에러인지 확인
+                // KIS 라이브러리 표준 예외 처리 패턴 활용
                 boolean isRetryableError = false;
                 long waitTime = 500L * attempt; // 기본 대기 시간
 
+                // KisClientException 우선 처리
+                if (e instanceof KisClientException) {
+                    KisClientException kisException = (KisClientException) e;
+                    log.warn("KIS API 에러 발생 - 시도: {}/{}, 에러 코드: {}, 메시지: {}",
+                            attempt, maxRetries, kisException.getClass().getSimpleName(), kisException.getMessage());
+
+                    // KIS API 에러는 대부분 재시도 가능
+                    isRetryableError = true;
+                    waitTime = 1000L * attempt; // KIS API 에러는 더 긴 대기
+                }
                 // WebSocket 상태 충돌 에러
                 if (e.getMessage() != null &&
                     (e.getMessage().contains("TEXT_FULL_WRITING") ||
