@@ -1,9 +1,4 @@
-import type {
-  StockInfo,
-  RealtimePriceMessage,
-  RealtimeOrderbookMessage,
-  WebSocketInfo
-} from '../api/types';
+import type { StockInfo, RealtimePriceMessage, RealtimeOrderbookMessage, WebSocketInfo } from '../api/types';
 
 /**
  * 개발용 목업 데이터
@@ -16,7 +11,7 @@ export const createMockStockInfo = (stockCode: string): StockInfo => ({
   stockCode,
   stockName: getMockStockName(stockCode),
   stockType: 'STOCK',
-  isActive: true
+  isActive: true,
 });
 
 // 목업 실시간 가격 데이터
@@ -26,7 +21,7 @@ export const createMockPriceData = (stockCode: string): RealtimePriceMessage => 
   change: 1200,
   changePercent: 1.71,
   volume: 1234567,
-  timestamp: new Date().toISOString()
+  timestamp: new Date().toISOString(),
 });
 
 // 목업 호가 데이터
@@ -49,7 +44,7 @@ export const createMockOrderbook = (stockCode: string): RealtimeOrderbookMessage
       { price: basePrice - 1000, quantity: 244413, size: 2.73 },
       { price: basePrice - 1200, quantity: 181658, size: 2.03 },
     ],
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 };
 
@@ -57,7 +52,7 @@ export const createMockOrderbook = (stockCode: string): RealtimeOrderbookMessage
 export const createMockWebSocketInfo = (stockCode: string): WebSocketInfo => ({
   priceChannel: `/topic/price/${stockCode}`,
   orderbookChannel: `/topic/orderbook/${stockCode}`,
-  endpoint: 'ws://localhost:8080/ws'
+  endpoint: 'ws://localhost:8080/ws',
 });
 
 // 종목 코드별 주식명 매핑
@@ -72,7 +67,7 @@ const getMockStockName = (stockCode: string): string => {
     '012330': '현대모비스',
     '207940': '삼성바이오로직스',
     '035720': '카카오',
-    '068270': '셀트리온'
+    '068270': '셀트리온',
   };
 
   return stockNames[stockCode] || `주식명-${stockCode}`;
@@ -81,16 +76,16 @@ const getMockStockName = (stockCode: string): string => {
 // 종목 코드별 기준 가격
 const getMockBasePrice = (stockCode: string): number => {
   const basePrices: Record<string, number> = {
-    '005930': 71400,   // 삼성전자
-    '000660': 125000,  // SK하이닉스
-    '035420': 180000,  // NAVER
-    '051910': 420000,  // LG화학
-    '006400': 250000,  // 삼성SDI
-    '028260': 45000,   // 삼성물산
-    '012330': 250000,  // 현대모비스
-    '207940': 850000,  // 삼성바이오로직스
-    '035720': 58200,   // 카카오
-    '068270': 178500   // 셀트리온
+    '005930': 71400, // 삼성전자
+    '000660': 125000, // SK하이닉스
+    '035420': 180000, // NAVER
+    '051910': 420000, // LG화학
+    '006400': 250000, // 삼성SDI
+    '028260': 45000, // 삼성물산
+    '012330': 250000, // 현대모비스
+    '207940': 850000, // 삼성바이오로직스
+    '035720': 58200, // 카카오
+    '068270': 178500, // 셀트리온
   };
 
   return basePrices[stockCode] || 50000;
@@ -105,7 +100,7 @@ export const isDevMode = (): boolean => {
 export const createPriceSimulation = (
   stockCode: string,
   callback: (data: RealtimePriceMessage) => void
-): () => void => {
+): (() => void) => {
   let basePrice = getMockBasePrice(stockCode);
 
   const interval = setInterval(() => {
@@ -117,13 +112,15 @@ export const createPriceSimulation = (
       stockCode,
       currentPrice: Math.round(basePrice),
       change: Math.round(basePrice - getMockBasePrice(stockCode)),
-      changePercent: Number(((basePrice - getMockBasePrice(stockCode)) / getMockBasePrice(stockCode) * 100).toFixed(2)),
+      changePercent: Number(
+        (((basePrice - getMockBasePrice(stockCode)) / getMockBasePrice(stockCode)) * 100).toFixed(2)
+      ),
       volume: Math.floor(Math.random() * 1000000) + 500000,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     callback(mockPrice);
-  }, 3000); // 3초마다 업데이트
+  }, 1000); // 1초마다 업데이트
 
   // 정리 함수 반환
   return () => clearInterval(interval);

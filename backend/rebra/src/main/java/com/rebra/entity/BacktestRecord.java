@@ -20,6 +20,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import java.math.BigDecimal;
@@ -48,7 +49,12 @@ import lombok.extern.slf4j.Slf4j;
 public class BacktestRecord extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+        name = "backtest_record_seq_generator",
+        sequenceName = "backtest_record_seq",
+        allocationSize = 1
+    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "backtest_record_seq_generator")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -1,0 +1,346 @@
+.container {
+  position: relative;
+  z-index: 1000;
+}
+
+.trigger {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+  border: 1px solid rgba(3, 2, 19, 0.06);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: visible;
+  backdrop-filter: blur(12px);
+  box-shadow: 
+    0 1px 3px rgba(3, 2, 19, 0.04),
+    0 0 0 1px rgba(3, 2, 19, 0.02),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.trigger:hover {
+  background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+  border-color: rgba(3, 2, 19, 0.12);
+  box-shadow: 
+    0 4px 12px rgba(3, 2, 19, 0.08),
+    0 2px 4px rgba(3, 2, 19, 0.04),
+    0 0 0 1px rgba(3, 2, 19, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
+.notificationIcon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.bellIcon {
+  width: 18px;
+  height: 18px;
+  color: #030213;
+  stroke-width: 2;
+  z-index: 2;
+  filter: drop-shadow(0 1px 2px rgba(3, 2, 19, 0.08));
+  transition: all 0.3s ease;
+}
+
+.iconGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  background: radial-gradient(circle, rgba(3, 2, 19, 0.04) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 1;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.trigger:hover .iconGlow {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.3);
+}
+
+.trigger:hover .bellIcon {
+  color: #1e293b;
+  transform: rotate(-8deg) scale(1.05);
+}
+
+.counter {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  background: #FF3B30;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 6px;
+  border: 3px solid white;
+  box-shadow: 
+    0 2px 8px rgba(255, 59, 48, 0.3),
+    0 1px 3px rgba(0, 0, 0, 0.2);
+  letter-spacing: -0.2px;
+  z-index: 1001;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+}
+
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 999;
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 380px;
+  max-height: 480px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #030213;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.markAllButton {
+  font-size: 13px;
+  color: #64748b;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.markAllButton:hover {
+  color: #030213;
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.closeButton {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.closeIcon {
+  width: 14px;
+  height: 14px;
+  color: #64748b;
+  stroke-width: 2;
+}
+
+.content {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  color: #64748b;
+}
+
+.emptyIcon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 12px;
+  opacity: 0.3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.empty p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.list {
+  padding: 8px 0;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.item:hover {
+  background: rgba(3, 2, 19, 0.02);
+}
+
+.item.unread {
+  background: rgba(3, 2, 19, 0.02);
+}
+
+.iconWrapper {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.successIcon {
+  width: 16px;
+  height: 16px;
+  color: #059669;
+  stroke-width: 2;
+}
+
+.warningIcon {
+  width: 16px;
+  height: 16px;
+  color: #d97706;
+  stroke-width: 2;
+}
+
+.errorIcon {
+  width: 16px;
+  height: 16px;
+  color: #dc2626;
+  stroke-width: 2;
+}
+
+.infoIcon {
+  width: 16px;
+  height: 16px;
+  color: #2563eb;
+  stroke-width: 2;
+}
+
+.textContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.notificationTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #030213;
+  margin: 0 0 4px 0;
+  line-height: 1.4;
+}
+
+.message {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.time {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.unreadDot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  background: #030213;
+  border-radius: 50%;
+  margin-top: 4px;
+}
+
+/* Custom scrollbar */
+.content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 2px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .panel {
+    width: 320px;
+    right: -20px;
+  }
+  
+  .header {
+    padding: 16px 20px 12px;
+  }
+  
+  .item {
+    padding: 12px 20px;
+  }
+}
