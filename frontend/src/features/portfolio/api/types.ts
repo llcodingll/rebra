@@ -247,3 +247,31 @@ export interface AutoRebalancingResponse {
   errorData?: string;
   timestamp: string;
 }
+
+export interface RebalancingExecuteResponse {
+  success: boolean;
+  status: number;
+  data: {
+    success: boolean;
+    rebalancingOrderId: number;
+    executionTime: string;
+    totalBuyAmount: number;
+    totalSellAmount: number;
+    totalPortfolioValue: number;
+    orderResults: {
+      stockCode: string;
+      stockName: string;
+      orderType: string;
+      quantity: number;
+      price: number;
+      success: boolean;
+      orderId: string;
+      errorMessage: string;
+    }[];
+    failureReason: string;
+  };
+  errorCode?: string;
+  errorMessage?: string;
+  errorData?: string;
+  timestamp: string;
+}

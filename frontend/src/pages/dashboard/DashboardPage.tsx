@@ -176,6 +176,10 @@ export default function DashboardPage() {
               // 자동 리밸런싱 설정 변경 시 포트폴리오 상세 정보 새로고침
               refetchPortfolioDetail();
             }}
+            onRebalancingExecuted={() => {
+              // 리밸런싱 실행 시 포트폴리오 상세 정보 새로고침
+              refetchPortfolioDetail();
+            }}
           />
 
           {/* 탭 헤더 */}
