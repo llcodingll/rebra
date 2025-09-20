@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import RealTimeChart from '../../widgets/stock-detail/RealTimeChart';
 import StockBasicInfo from '../../widgets/stock-detail/StockBasicInfo';
-import HoldingInfoTable from '../../widgets/stock-detail/HoldingInfoTable';
+import HoldingInfoTable from '../../features/stock-detail/ui/HoldingInfoTable';
 import OrderBook from '../../widgets/stock-detail/OrderBook';
 import OrderFormContainer from '../../widgets/stock-detail/order/OrderFormContainer';
 import { useRealtimeStock } from '../../features/stock-detail/model/useRealtimeStock';
@@ -30,6 +30,7 @@ export default function StockDetailPage() {
   const stockCode = symbol || '005930';
   const { stockInfo, realtimePrice, orderbook, isConnected, isLoading, error, connectionDetails, disconnect } =
     useRealtimeStock(stockCode);
+
 
   // 차트 데이터에서 현재 가격 정보 가져오기 (일봉 기준)
   const { data: infiniteData } = useInfiniteChartData(stockCode, 'daily', true);
@@ -84,18 +85,6 @@ export default function StockDetailPage() {
     low: 0,
   };
 
-  // 보유 현황 데이터
-  const holdingData = {
-    buyPrice: 54747,
-    profitLoss: 166530,
-    profitRate: 31.24,
-    buyAmount: 547470,
-    evaluationAmount: 714000,
-    holdingQuantity: 10,
-    availableQuantity: 10,
-    fee: 1234,
-    tax: 1234,
-  };
 
   // 실시간 호가 데이터 (fallback 포함)
   const displayOrderBook = orderbook
@@ -274,7 +263,7 @@ export default function StockDetailPage() {
         </div>
 
         <div className={styles.holdingInfoWrapper}>
-          <HoldingInfoTable holdingData={holdingData} />
+          <HoldingInfoTable stockCode={stockCode} />
         </div>
       </div>
 

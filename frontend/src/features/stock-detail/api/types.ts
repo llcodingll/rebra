@@ -1,48 +1,12 @@
 import type { UTCTimestamp } from 'lightweight-charts';
 
 export interface StockDetailResponse {
-  success: boolean;
-  status: number;
-  data: {
-    stock: StockInfo;
-    realtime: RealtimeData;
-    webSocketInfo: WebSocketInfo;
-  };
-  errorCode?: string;
-  errorMessage?: string;
-  errorData?: string;
-  timestamp: string;
-}
-
-export interface StockInfo {
-  id: number;
-  stockCode: string;
-  stockName: string;
-  stockType: string;
-  isActive: boolean;
-}
-
-export interface RealtimeData {
-  currentPrice: PriceData;
-  orderbook: OrderbookData;
-}
-
-export interface PriceData {
-  stockCode: string;
-  timestamp: string;
-  priceData: string; // 실제 구조 확인 후 파싱 필요
-}
-
-export interface OrderbookData {
-  stockCode: string;
-  timestamp: string;
-  orderbookData: string; // 실제 구조 확인 후 파싱 필요
-}
-
-export interface WebSocketInfo {
-  priceChannel: string;
-  orderbookChannel: string;
-  endpoint: string;
+  holdingQuantity: string;
+  purchaseAmount: string;
+  averagePrice: string;
+  currentValue: string;
+  profitLoss: string;
+  profitLossRate: string;
 }
 
 // 최적화된 실시간 체결가 데이터 타입

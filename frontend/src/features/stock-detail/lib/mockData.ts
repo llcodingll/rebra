@@ -1,4 +1,5 @@
-import type { StockInfo, RealtimePriceMessage, RealtimeOrderbookMessage, WebSocketInfo } from '../api/types';
+import type { RealtimePriceMessage, RealtimeOrderbookMessage } from '../api/types';
+import type { StockInfo } from '../../../entities/stock/type';
 
 /**
  * 개발용 목업 데이터
@@ -48,12 +49,6 @@ export const createMockOrderbook = (stockCode: string): RealtimeOrderbookMessage
   };
 };
 
-// 목업 WebSocket 정보 (실제로는 사용하지 않음)
-export const createMockWebSocketInfo = (stockCode: string): WebSocketInfo => ({
-  priceChannel: `/topic/price/${stockCode}`,
-  orderbookChannel: `/topic/orderbook/${stockCode}`,
-  endpoint: 'ws://localhost:8080/ws',
-});
 
 // 종목 코드별 주식명 매핑
 const getMockStockName = (stockCode: string): string => {

@@ -11,14 +11,22 @@ export class ErrorProcessor {
   /**
    * Axios 에러 (HTTP, 네트워크 에러)를 AppError로 변환
    */
-  static processAxiosError(error: AxiosError): AppError {
+  static processAxiosError(error: AxiosError, customMessages?: { [statusCode: number]: string } | string): AppError {
     if (error.response) {
       // HTTP 에러 (서버가 응답했지만 에러 상태 코드)
       const statusCode = error.response.status;
       const responseData = error.response.data as any;
 
-      // 서버에서 제공하는 메시지가 있으면 사용, 없으면 기본 메시지
-      const message = responseData?.message || this.getDefaultHttpErrorMessage(statusCode);
+      // 커스텀 메시지 우선, 서버 메시지, 기본 메시지 순서로 적용
+      let message = responseData?.message || this.getDefaultHttpErrorMessage(statusCode);
+
+      if (customMessages) {
+        if (typeof customMessages === 'string') {
+          message = customMessages;
+        } else if (typeof customMessages === 'object' && customMessages[statusCode]) {
+          message = customMessages[statusCode];
+        }
+      }
       const serverCode = responseData?.error?.code;
 
       const appError = createHttpError(statusCode, message);

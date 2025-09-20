@@ -7,7 +7,8 @@ import {
   createMockOrderbook,
   createPriceSimulation,
 } from '../lib/mockData';
-import type { StockInfo, RealtimePriceMessage, RealtimeOrderbookMessage } from '../api/types';
+import type { RealtimePriceMessage, RealtimeOrderbookMessage } from '../api/types';
+import type { StockInfo } from '../../../entities/stock/type';
 
 // 전역 연결 카운터
 let globalConnectionCounter = 0;
