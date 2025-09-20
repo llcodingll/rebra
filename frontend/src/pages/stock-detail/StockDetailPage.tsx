@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import RealTimeChart from '../../widgets/stock-detail/RealTimeChart';
 import StockBasicInfo from '../../widgets/stock-detail/StockBasicInfo';
@@ -6,7 +6,7 @@ import HoldingInfoTable from '../../widgets/stock-detail/HoldingInfoTable';
 import OrderBook from '../../widgets/stock-detail/OrderBook';
 import OrderFormContainer from '../../widgets/stock-detail/order/OrderFormContainer';
 import { useRealtimeStock } from '../../features/stock-detail/model/useRealtimeStock';
-import { useStockChartData } from '../../features/stock-detail/hooks/useStockChartData';
+import { useInfiniteChartData, mergeInfiniteChartData } from '../../features/stock-detail/hooks/useInfiniteChartData';
 import { isDevMode } from '../../features/stock-detail/lib/mockData';
 import styles from './StockDetailPage.module.css';
 
@@ -32,7 +32,10 @@ export default function StockDetailPage() {
     useRealtimeStock(stockCode);
 
   // 차트 데이터에서 현재 가격 정보 가져오기 (일봉 기준)
-  const { data: chartApiData } = useStockChartData(stockCode, 'daily', true);
+  const { data: infiniteData } = useInfiniteChartData(stockCode, 'daily', true);
+  const chartApiData = useMemo(() => {
+    return mergeInfiniteChartData(infiniteData?.pages);
+  }, [infiniteData?.pages]);
 
   // 실시간 가격 업데이트 시 주문가격도 업데이트
   useEffect(() => {
