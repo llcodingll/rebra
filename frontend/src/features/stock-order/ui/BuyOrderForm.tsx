@@ -57,7 +57,6 @@ export default function BuyOrderForm({
     buyOrder.buyStock({
       quantity,
       price: orderPrice,
-      accountId: 1, // 임시 계정 ID
     });
   };
 

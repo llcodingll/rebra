@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { stockOrderApi } from '../api/stockOrderApi';
+import { useAccountStore } from '../../../entities/account/accountStore';
 import type { BuyOrderRequest, OrderResponseData, OrderStatus } from '../api/types';
 
 interface UseBuyOrderProps {
@@ -18,10 +19,10 @@ interface UseBuyOrderProps {
  */
 export const useBuyOrder = ({ stockCode, onSuccess, onError }: UseBuyOrderProps) => {
   const [orderStatus, setOrderStatus] = useState<OrderStatus>('idle');
+  const { accountId } = useAccountStore();
 
   const mutation = useMutation({
     mutationFn: async (orderData: BuyOrderRequest) => {
-      console.log(`🛒 매수 주문 시작: ${stockCode}`, orderData);
       setOrderStatus('loading');
 
       const result = await stockOrderApi.buyStock(stockCode, orderData);
@@ -33,12 +34,10 @@ export const useBuyOrder = ({ stockCode, onSuccess, onError }: UseBuyOrderProps)
       return result.data;
     },
     onSuccess: (data) => {
-      console.log('✅ 매수 주문 성공:', data);
       setOrderStatus('success');
       onSuccess?.(data);
     },
     onError: (error: Error) => {
-      console.error('❌ 매수 주문 실패:', error);
       setOrderStatus('error');
       onError?.(error.message);
     },
@@ -47,17 +46,26 @@ export const useBuyOrder = ({ stockCode, onSuccess, onError }: UseBuyOrderProps)
       setTimeout(() => {
         setOrderStatus('idle');
       }, 2000);
-    }
+    },
   });
 
-  const buyStock = useCallback((orderData: Omit<BuyOrderRequest, 'orderType'>) => {
-    const buyOrderData: BuyOrderRequest = {
-      ...orderData,
-      orderType: '01', // 지정가 주문 타입
-    };
+  const buyStock = useCallback(
+    (orderData: Omit<BuyOrderRequest, 'orderType' | 'accountId'>) => {
+      if (!accountId) {
+        onError?.('계정 정보를 찾을 수 없습니다. 대시보드에서 포트폴리오를 선택해주세요.');
+        return;
+      }
 
-    mutation.mutate(buyOrderData);
-  }, [mutation]);
+      const buyOrderData: BuyOrderRequest = {
+        ...orderData,
+        accountId,
+        orderType: '00', // 지정가 주문 타입
+      };
+
+      mutation.mutate(buyOrderData);
+    },
+    [mutation, accountId, onError]
+  );
 
   return {
     buyStock,

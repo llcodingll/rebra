@@ -56,7 +56,6 @@ export default function SellOrderForm({
     sellOrder.sellStock({
       quantity,
       price: orderPrice,
-      accountId: 1, // 임시 계정 ID
     });
   };
 

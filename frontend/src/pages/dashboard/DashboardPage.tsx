@@ -4,6 +4,7 @@ import { useApi } from '../../shared/hook/useApi';
 import { portfolioApi } from '../../features/portfolio/api/portfolioApi';
 import { transformPortfolioData, transformPortfolioDetailToStocks } from '../../features/portfolio/utils/portfolioTransform';
 import type { Portfolio, Stock } from '../../entities/portfolio';
+import { useAccountStore } from '../../entities/account/accountStore';
 import DashBoardSettingsTab from '../../widgets/dashboard/DashBoardSettingsTab';
 import AssetPortfolioChart from '../../widgets/dashboard/AssetPortfolioChart';
 import AssetTable from '../../widgets/dashboard/AssetTable';
@@ -21,6 +22,9 @@ export default function DashboardPage() {
 
   // 포트폴리오 있음 상태일 때 기본값 설정 (portfolios 배열의 첫 번째 항목)
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(null);
+
+  // 계정 정보 store
+  const { setAccountId } = useAccountStore();
 
   // API로 포트폴리오 목록 조회
   const { data: portfolioData, isLoading: isPortfolioLoading, error: portfolioError, refetch: refetchPortfolios } = useApi({
@@ -41,6 +45,14 @@ export default function DashboardPage() {
   console.log("isDetailLoading:", isDetailLoading);
   console.log("portfolioDetailData:", portfolioDetailData);
   console.log("detailError:", detailError);
+
+  // 포트폴리오 상세 데이터가 로드되면 accountId를 store에 저장
+  useEffect(() => {
+    if (portfolioDetailData?.portfolio?.account?.id) {
+      setAccountId(portfolioDetailData.portfolio.account.id);
+      console.log("AccountId 저장됨:", portfolioDetailData.portfolio.account.id);
+    }
+  }, [portfolioDetailData?.portfolio?.account?.id, setAccountId]);
 
   // API 데이터를 기존 Portfolio 타입으로 변환
   const portfolios = useMemo(() => {
