@@ -2,6 +2,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import type { UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
 import { isOk, type Result } from '../util/result';
 import type { AppError } from '../util/appErrors';
+import { ErrorProcessor } from '../util/errorProcessor';
 
 // Result 패턴용 API 함수 타입
 type ApiFunction<TData, TVariables = void> = (variables: TVariables) => Promise<Result<TData, AppError>>;
@@ -15,6 +16,9 @@ interface UseApiOptions<TData, TVariables = void>
   queryKey: QueryKey;
   apiFunction: ApiFunction<TData, TVariables>;
   variables?: TVariables;
+  errorMessages?: {
+    [statusCode: number]: string;
+  } | string; // 전체 에러 메시지 오버라이드 또는 상태별 메시지
 }
 
 /**
@@ -27,6 +31,7 @@ export const useApi = <TData, TVariables = void>({
   queryKey,
   apiFunction,
   variables,
+  errorMessages,
   ...options
 }: UseApiOptions<TData, TVariables>) => {
   return useQuery<TData, AppError, TData, QueryKey>({
@@ -37,9 +42,17 @@ export const useApi = <TData, TVariables = void>({
       if (isOk(result)) {
         return result.data; // 성공 데이터만 반환
       } else {
-        // AppError를 던져서 React Query 에러 처리
-        // ErrorProcessor에서 이미 사용자 알림 처리됨
-        throw result.error;
+        // 에러 타입에 따라 적절히 처리
+        const error = result.error;
+
+        if (error && typeof error === 'object' && 'isAxiosError' in error) {
+          // AxiosError인 경우: 커스텀 메시지 또는 기본 메시지로 ErrorProcessor 호출
+          const processedError = ErrorProcessor.processAxiosError(error as any, errorMessages);
+          throw processedError;
+        } else {
+          // 이미 처리된 AppError인 경우: 그대로 throw
+          throw error;
+        }
       }
     },
     ...options,

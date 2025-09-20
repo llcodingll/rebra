@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import RealTimeChart from '../../widgets/stock-detail/RealTimeChart';
 import StockBasicInfo from '../../widgets/stock-detail/StockBasicInfo';
-import HoldingInfoTable from '../../widgets/stock-detail/HoldingInfoTable';
+import HoldingInfoTable from '../../features/stock-detail/ui/HoldingInfoTable';
 import OrderBook from '../../widgets/stock-detail/OrderBook';
-import OrderForm from '../../widgets/stock-detail/OrderForm';
+import OrderFormContainer from '../../widgets/stock-detail/order/OrderFormContainer';
 import { useRealtimeStock } from '../../features/stock-detail/model/useRealtimeStock';
-import { useStockChartData } from '../../features/stock-detail/hooks/useStockChartData';
+import { useInfiniteChartData, mergeInfiniteChartData } from '../../features/stock-detail/hooks/useInfiniteChartData';
 import { isDevMode } from '../../features/stock-detail/lib/mockData';
 import styles from './StockDetailPage.module.css';
 
@@ -28,20 +28,15 @@ export default function StockDetailPage() {
 
   // 실시간 주식 데이터 연동
   const stockCode = symbol || '005930';
-  const {
-    stockInfo,
-    realtimePrice,
-    orderbook,
-    isConnected,
-    isLoading,
-    error,
-    connectionDetails,
-    disconnect,
-    reconnect,
-  } = useRealtimeStock(stockCode);
+  const { stockInfo, realtimePrice, orderbook, isConnected, isLoading, error, connectionDetails, disconnect } =
+    useRealtimeStock(stockCode);
+
 
   // 차트 데이터에서 현재 가격 정보 가져오기 (일봉 기준)
-  const { data: chartApiData } = useStockChartData(stockCode, 'daily', true);
+  const { data: infiniteData } = useInfiniteChartData(stockCode, 'daily', true);
+  const chartApiData = useMemo(() => {
+    return mergeInfiniteChartData(infiniteData?.pages);
+  }, [infiniteData?.pages]);
 
   // 실시간 가격 업데이트 시 주문가격도 업데이트
   useEffect(() => {
@@ -90,18 +85,6 @@ export default function StockDetailPage() {
     low: 0,
   };
 
-  // 보유 현황 데이터
-  const holdingData = {
-    buyPrice: 54747,
-    profitLoss: 166530,
-    profitRate: 31.24,
-    buyAmount: 547470,
-    evaluationAmount: 714000,
-    holdingQuantity: 10,
-    availableQuantity: 10,
-    fee: 1234,
-    tax: 1234,
-  };
 
   // 실시간 호가 데이터 (fallback 포함)
   const displayOrderBook = orderbook
@@ -140,10 +123,6 @@ export default function StockDetailPage() {
 
   const formatPrice = (price: number) => {
     return `${formatNumber(price)}원`;
-  };
-
-  const handleOrderSubmit = () => {
-    console.log('주문 제출:', { stockCode, quantity, orderPrice });
   };
 
   const handlePriceAdjust = (direction: 'up' | 'down') => {
@@ -209,9 +188,6 @@ export default function StockDetailPage() {
             <div className={styles.debugControls}>
               <button onClick={disconnect} className={styles.disconnectBtn} disabled={!isConnected}>
                 연결 해제
-              </button>
-              <button onClick={reconnect} className={styles.reconnectBtn} disabled={true}>
-                재연결 (비활성화됨)
               </button>
             </div>
           </div>
@@ -287,7 +263,7 @@ export default function StockDetailPage() {
         </div>
 
         <div className={styles.holdingInfoWrapper}>
-          <HoldingInfoTable holdingData={holdingData} />
+          <HoldingInfoTable stockCode={stockCode} />
         </div>
       </div>
 
@@ -395,12 +371,13 @@ export default function StockDetailPage() {
           }}
         />
 
-        <OrderForm
+        <OrderFormContainer
+          stockCode={stockCode}
           orderPrice={orderPrice}
+          onPriceChange={setOrderPrice}
           onPriceAdjust={handlePriceAdjust}
           onQuantityChange={setQuantity}
           onRatioSelect={handleRatioSelect}
-          onOrderSubmit={handleOrderSubmit}
           quantity={quantity}
           selectedRatio={selectedRatio}
         />

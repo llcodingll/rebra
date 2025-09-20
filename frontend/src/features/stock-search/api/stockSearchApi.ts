@@ -8,7 +8,7 @@ class StockSearchApiService extends ApiClient {
    * @param params 검색 요청 파라미터
    * @returns 검색 결과
    */
-  async searchStocks(params: StockSearchRequest): Promise<Result<StockSearchResponse, AppError>> {
+  searchStocks = async (params: StockSearchRequest): Promise<Result<StockSearchResponse, AppError>> => {
     console.log(`🔍 주식 검색 API 호출: /api/stocks/search?stockName=${params.stockName}`);
 
     const result = await this.get<StockSearchResponse>(

@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { createChart, ColorType, CandlestickSeries, HistogramSeries, CrosshairMode } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import type { RealtimePriceMessage } from '../../features/stock-detail/api/types';
-import { useStockChartData } from '../../features/stock-detail/hooks/useStockChartData';
+import { useInfiniteChartData, mergeInfiniteChartData } from '../../features/stock-detail/hooks/useInfiniteChartData';
 import type { ChartPeriodType } from '../../features/stock-detail/utils/dateUtils';
 import { transformChartData } from '../../features/stock-detail/utils/chartDataTransform';
 import styles from './RealTimeChart.module.css';
@@ -40,6 +40,8 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
   const panSyncingRef = useRef<boolean>(false); // 줌/드래그 동기화용
   const crosshairSyncingRef = useRef<boolean>(false); // 크로스헤어 동기화용
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const loadingMoreDataRef = useRef<boolean>(false); // 데이터 로딩 중복 방지
+  const candleDataRef = useRef<CandleData[]>([]); // 최신 candleData 참조용
 
   const [selectedPeriod, setSelectedPeriod] = useState<ChartPeriodType>('daily');
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
@@ -51,8 +53,45 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
   // API 연동 모드 전환 (개발 중 편의를 위한 분기)
   const USE_API_DATA = true; // true: API 데이터 사용, false: 시뮬레이션 데이터 사용
 
-  // API에서 차트 데이터 가져오기
-  const { data: chartApiData, isLoading, error } = useStockChartData(stockCode, selectedPeriod);
+  // API에서 차트 데이터 가져오기 (무한 스크롤)
+  const {
+    data: infiniteData,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteChartData(stockCode, selectedPeriod);
+
+  // 무한 쿼리 데이터를 병합 (메모이제이션으로 불필요한 재계산 방지)
+  const chartApiData = useMemo(() => {
+    return mergeInfiniteChartData(infiniteData?.pages);
+  }, [infiniteData?.pages]);
+
+  // 무한 스크롤 핸들러 (스로틀링 적용)
+  const handleVisibleRangeChange = useCallback(
+    (timeRange: any) => {
+      if (!timeRange || loadingMoreDataRef.current || !hasNextPage || isFetchingNextPage) {
+        return;
+      }
+
+      // 현재 보이는 범위의 시작점과 전체 데이터의 시작점 비교
+      const visibleStart = timeRange.from;
+      const dataStart = candleDataRef.current.length > 0 ? candleDataRef.current[0].time : null;
+
+      if (dataStart && visibleStart && visibleStart <= dataStart + 5) { // 5초 여유값으로 트리거
+        loadingMoreDataRef.current = true;
+
+        fetchNextPage().finally(() => {
+          // 로딩 완료 후 플래그 해제 (딜레이로 중복 호출 방지)
+          setTimeout(() => {
+            loadingMoreDataRef.current = false;
+          }, 1000);
+        });
+      }
+    },
+    [hasNextPage, isFetchingNextPage, fetchNextPage]
+  );
 
   // 종목별 초기 가격 설정
   const getInitialPrice = (code: string) => {
@@ -396,6 +435,8 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
       panSyncingRef.current = false;
     });
 
+    // 무한 스크롤 이벤트는 별도 useEffect에서 관리
+
     // ResizeObserver 설정
     if (chartContainerRef.current) {
       resizeObserverRef.current = new ResizeObserver(() => {
@@ -414,7 +455,30 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
         resizeObserverRef.current = null;
       }
     };
-  }, []);
+  }, []); // 의존성 배열에서 handleVisibleRangeChange 제거
+
+  // candleData ref 업데이트
+  useEffect(() => {
+    candleDataRef.current = candleData;
+  }, [candleData]);
+
+  // 이벤트 핸들러 등록 (차트가 생성된 후)
+  useEffect(() => {
+    if (priceChartRef.current && volumeChartRef.current && handleVisibleRangeChange) {
+      const priceChart = priceChartRef.current;
+      const volumeChart = volumeChartRef.current;
+
+      // 무한 스크롤을 위한 가시 시간 범위 변경 감지 재등록
+      priceChart.timeScale().subscribeVisibleTimeRangeChange(handleVisibleRangeChange);
+      volumeChart.timeScale().subscribeVisibleTimeRangeChange(handleVisibleRangeChange);
+
+      return () => {
+        // 정리 시 이벤트 해제
+        priceChart.timeScale().unsubscribeVisibleTimeRangeChange(handleVisibleRangeChange);
+        volumeChart.timeScale().unsubscribeVisibleTimeRangeChange(handleVisibleRangeChange);
+      };
+    }
+  }, [handleVisibleRangeChange]);
 
   // 데이터 설정 (자연스러운 자동 피팅 활용)
   useEffect(() => {
