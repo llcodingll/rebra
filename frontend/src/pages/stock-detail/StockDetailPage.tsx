@@ -4,7 +4,7 @@ import RealTimeChart from '../../widgets/stock-detail/RealTimeChart';
 import StockBasicInfo from '../../widgets/stock-detail/StockBasicInfo';
 import HoldingInfoTable from '../../widgets/stock-detail/HoldingInfoTable';
 import OrderBook from '../../widgets/stock-detail/OrderBook';
-import OrderForm from '../../widgets/stock-detail/OrderForm';
+import OrderFormContainer from '../../widgets/stock-detail/order/OrderFormContainer';
 import { useRealtimeStock } from '../../features/stock-detail/model/useRealtimeStock';
 import { useStockChartData } from '../../features/stock-detail/hooks/useStockChartData';
 import { isDevMode } from '../../features/stock-detail/lib/mockData';
@@ -28,17 +28,8 @@ export default function StockDetailPage() {
 
   // 실시간 주식 데이터 연동
   const stockCode = symbol || '005930';
-  const {
-    stockInfo,
-    realtimePrice,
-    orderbook,
-    isConnected,
-    isLoading,
-    error,
-    connectionDetails,
-    disconnect,
-    reconnect,
-  } = useRealtimeStock(stockCode);
+  const { stockInfo, realtimePrice, orderbook, isConnected, isLoading, error, connectionDetails, disconnect } =
+    useRealtimeStock(stockCode);
 
   // 차트 데이터에서 현재 가격 정보 가져오기 (일봉 기준)
   const { data: chartApiData } = useStockChartData(stockCode, 'daily', true);
@@ -142,10 +133,6 @@ export default function StockDetailPage() {
     return `${formatNumber(price)}원`;
   };
 
-  const handleOrderSubmit = () => {
-    console.log('주문 제출:', { stockCode, quantity, orderPrice });
-  };
-
   const handlePriceAdjust = (direction: 'up' | 'down') => {
     const step = 100;
     setOrderPrice((prev) => (direction === 'up' ? prev + step : Math.max(prev - step, 0)));
@@ -209,9 +196,6 @@ export default function StockDetailPage() {
             <div className={styles.debugControls}>
               <button onClick={disconnect} className={styles.disconnectBtn} disabled={!isConnected}>
                 연결 해제
-              </button>
-              <button onClick={reconnect} className={styles.reconnectBtn} disabled={true}>
-                재연결 (비활성화됨)
               </button>
             </div>
           </div>
@@ -395,12 +379,13 @@ export default function StockDetailPage() {
           }}
         />
 
-        <OrderForm
+        <OrderFormContainer
+          stockCode={stockCode}
           orderPrice={orderPrice}
+          onPriceChange={setOrderPrice}
           onPriceAdjust={handlePriceAdjust}
           onQuantityChange={setQuantity}
           onRatioSelect={handleRatioSelect}
-          onOrderSubmit={handleOrderSubmit}
           quantity={quantity}
           selectedRatio={selectedRatio}
         />
