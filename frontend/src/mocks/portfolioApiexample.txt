@@ -522,3 +522,38 @@ Response
   },
   "timestamp": "2025-09-18T13:24:29.0181949"
 }
+
+수동 리밸런싱 실행
+
+/api/v1/portfolios/{portfolioId}/rebalancing/execute
+포트폴리오의 수동 리밸런싱을 즉시 실행합니다. 현재 보유 종목과 목표 비중을 기준으로 매수/매도 주문을 생성합니다.
+
+{
+  "success": true,
+  "status": 0,
+  "data": {
+    "success": true,
+    "rebalancingOrderId": 0,
+    "executionTime": "2025-09-19T03:58:18.708Z",
+    "totalBuyAmount": 0,
+    "totalSellAmount": 0,
+    "totalPortfolioValue": 0,
+    "orderResults": [
+      {
+        "stockCode": "string",
+        "stockName": "string",
+        "orderType": "string",
+        "quantity": 0,
+        "price": 0,
+        "success": true,
+        "orderId": "string",
+        "errorMessage": "string"
+      }
+    ],
+    "failureReason": "string"
+  },
+  "errorCode": "string",
+  "errorMessage": "string",
+  "errorData": "string",
+  "timestamp": "2025-09-19T03:58:18.709Z"
+}

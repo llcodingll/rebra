@@ -188,6 +188,10 @@ export default function DashboardPage() {
               // 자동 리밸런싱 설정 변경 시 포트폴리오 상세 정보 새로고침
               refetchPortfolioDetail();
             }}
+            onRebalancingExecuted={() => {
+              // 리밸런싱 실행 시 포트폴리오 상세 정보 새로고침
+              refetchPortfolioDetail();
+            }}
           />
 
           {/* 탭 헤더 */}
@@ -207,10 +211,9 @@ export default function DashboardPage() {
           </div>
 
           {renderContent()}
-        </div>
 
-        {/* 자산 테이블들 */}
-        <div className={styles.tablesContainer}>
+          {/* 자산 테이블들 */}
+          <div className={styles.tablesContainer}>
           <AssetTable
             title="등록 주식"
             type="registered"
@@ -235,6 +238,7 @@ export default function DashboardPage() {
               refetchPortfolioDetail();
             }}
           />
+          </div>
         </div>
 
         <PortfolioSelectionModal
