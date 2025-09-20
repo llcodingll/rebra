@@ -11,7 +11,7 @@ import type { StockDetailResponse } from '../api/types';
 export const useStockDetail = (stockCode: string, enabled: boolean = true) => {
   return useApi<StockDetailResponse, string>({
     queryKey: ['stockDetail', stockCode],
-    apiFunction: stockApi.getStockDetail.bind(stockApi),
+    apiFunction: stockApi.getStockDetail,
     variables: stockCode,
     enabled: enabled && !!stockCode,
     staleTime: 5 * 60 * 1000, // 5분간 캐시

@@ -8,7 +8,7 @@ class StockApiService extends ApiClient {
    * @param stockCode 주식 코드 (예: "005930")
    * @returns 보유 정보 (수량, 매입금액, 평균가, 현재가치, 손익 등)
    */
-  async getStockDetail(stockCode: string): Promise<Result<StockDetailResponse, AppError>> {
+  getStockDetail = async (stockCode: string): Promise<Result<StockDetailResponse, AppError>> => {
     return this.get<StockDetailResponse>(`/api/stocks/${stockCode}`);
   }
 
@@ -17,7 +17,7 @@ class StockApiService extends ApiClient {
    * @param params 종목코드, 시작날짜, 종료날짜
    * @returns 일봉 차트 데이터
    */
-  async getDailyChartData(params: ChartDataRequest): Promise<Result<StockChartData, AppError>> {
+  getDailyChartData = async (params: ChartDataRequest): Promise<Result<StockChartData, AppError>> => {
     return this.get<StockChartData>(
       `/api/stocks/${params.stockCode}/chart/daily?startDate=${params.startDate}&endDate=${params.endDate}`
     );
@@ -28,7 +28,7 @@ class StockApiService extends ApiClient {
    * @param params 종목코드, 시작날짜, 종료날짜
    * @returns 주봉 차트 데이터
    */
-  async getWeeklyChartData(params: ChartDataRequest): Promise<Result<StockChartData, AppError>> {
+  getWeeklyChartData = async (params: ChartDataRequest): Promise<Result<StockChartData, AppError>> => {
     return this.get<StockChartData>(
       `/api/stocks/${params.stockCode}/chart/weekly?startDate=${params.startDate}&endDate=${params.endDate}`
     );
@@ -39,7 +39,7 @@ class StockApiService extends ApiClient {
    * @param params 종목코드, 시작날짜, 종료날짜
    * @returns 월봉 차트 데이터
    */
-  async getMonthlyChartData(params: ChartDataRequest): Promise<Result<StockChartData, AppError>> {
+  getMonthlyChartData = async (params: ChartDataRequest): Promise<Result<StockChartData, AppError>> => {
     return this.get<StockChartData>(
       `/api/stocks/${params.stockCode}/chart/monthly?startDate=${params.startDate}&endDate=${params.endDate}`
     );
@@ -50,7 +50,7 @@ class StockApiService extends ApiClient {
    * @param params 종목코드, 시작날짜, 종료날짜
    * @returns 연봉 차트 데이터
    */
-  async getYearlyChartData(params: ChartDataRequest): Promise<Result<StockChartData, AppError>> {
+  getYearlyChartData = async (params: ChartDataRequest): Promise<Result<StockChartData, AppError>> => {
     return this.get<StockChartData>(
       `/api/stocks/${params.stockCode}/chart/yearly?startDate=${params.startDate}&endDate=${params.endDate}`
     );

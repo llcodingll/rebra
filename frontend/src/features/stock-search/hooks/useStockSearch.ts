@@ -52,7 +52,7 @@ export const useStockSearch = (searchQuery: string, debounceMs: number = 300, fa
     refetch,
   } = useApi({
     queryKey: ['stockSearch', debouncedQuery],
-    apiFunction: stockSearchApi.searchStocks.bind(stockSearchApi),
+    apiFunction: stockSearchApi.searchStocks,
     variables: searchParams,
     enabled: shouldSearch,
     staleTime: 0, // 즉시 stale 처리하여 이전 데이터 표시 방지
