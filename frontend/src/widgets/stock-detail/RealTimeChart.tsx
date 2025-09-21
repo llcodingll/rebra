@@ -60,7 +60,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
     error,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage
+    isFetchingNextPage,
   } = useInfiniteChartData(stockCode, selectedPeriod);
 
   // 무한 쿼리 데이터를 병합 (메모이제이션으로 불필요한 재계산 방지)
@@ -79,7 +79,8 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
       const visibleStart = timeRange.from;
       const dataStart = candleDataRef.current.length > 0 ? candleDataRef.current[0].time : null;
 
-      if (dataStart && visibleStart && visibleStart <= dataStart + 5) { // 5초 여유값으로 트리거
+      if (dataStart && visibleStart && visibleStart <= dataStart + 5) {
+        // 5초 여유값으로 트리거
         loadingMoreDataRef.current = true;
 
         fetchNextPage().finally(() => {
@@ -145,7 +146,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
       volumeData.push({
         time: timestamp,
         value: volumeValue,
-        color: close >= open ? '#dc2626' : '#2563eb',
+        color: close >= open ? '#ea3939' : '#3b82f6',
       });
     }
 
@@ -337,11 +338,11 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
 
     // 시리즈 추가
     const priceSeries = priceChart.addSeries(CandlestickSeries, {
-      upColor: '#dc2626',
-      downColor: '#2563eb',
+      upColor: '#ea3939',
+      downColor: '#3b82f6',
       borderVisible: false,
-      wickUpColor: '#dc2626',
-      wickDownColor: '#2563eb',
+      wickUpColor: '#ea3939',
+      wickDownColor: '#3b82f6',
       priceFormat: {
         type: 'price',
         precision: 0,
@@ -350,7 +351,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
     });
 
     const volumeSeries = volumeChart.addSeries(HistogramSeries, {
-      color: '#dc2626',
+      color: '#ea3939',
       priceFormat: { type: 'volume' },
     });
 

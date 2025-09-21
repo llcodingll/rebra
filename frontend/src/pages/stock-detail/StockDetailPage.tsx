@@ -31,7 +31,6 @@ export default function StockDetailPage() {
   const { stockInfo, realtimePrice, orderbook, isConnected, isLoading, error, connectionDetails, disconnect } =
     useRealtimeStock(stockCode);
 
-
   // 차트 데이터에서 현재 가격 정보 가져오기 (일봉 기준)
   const { data: infiniteData } = useInfiniteChartData(stockCode, 'daily', true);
   const chartApiData = useMemo(() => {
@@ -84,7 +83,6 @@ export default function StockDetailPage() {
     high: 0,
     low: 0,
   };
-
 
   // 실시간 호가 데이터 (fallback 포함)
   const displayOrderBook = orderbook
@@ -181,7 +179,7 @@ export default function StockDetailPage() {
   return (
     <div className={styles.container}>
       {/* STOMP 연결 디버깅 패널 */}
-      {isDevMode() && (
+      {!isDevMode() && (
         <div className={styles.debugPanel}>
           <div className={styles.debugHeader}>
             <h3>🔌 STOMP 연결 상태</h3>

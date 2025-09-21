@@ -47,15 +47,21 @@ export default function HoldingInfoTable({ stockCode }: HoldingInfoTableProps) {
           <div className={`${styles.tableColumn} ${styles.singleColumn}`}>
             <div className={styles.columnHeader}>평균가</div>
             <div className={styles.singleColumnData}>
-              <div className={styles.singleDataValue}>{holdingData ? formatNumber(holdingData.averagePrice) : '-'}원</div>
+              <div className={styles.singleDataValue}>
+                {holdingData ? formatNumber(holdingData.averagePrice) : '-'}원
+              </div>
             </div>
           </div>
           <div className={styles.tableColumn}>
             <div className={styles.columnHeader}>평가손익</div>
             <div className={styles.columnHeaderSecond}>수익률</div>
             <div className={styles.columnData}>
-              <div className={holdingData ? getProfitStyle(holdingData.profitLoss) : styles.dataValue}>{holdingData ? formatNumber(holdingData.profitLoss) : '-'}</div>
-              <div className={holdingData ? getProfitStyle(holdingData.profitLossRate) : styles.dataValue}>{holdingData ? formatPercent(holdingData.profitLossRate) : '-'}</div>
+              <div className={holdingData ? getProfitStyle(holdingData.profitLoss) : styles.dataValue}>
+                {holdingData ? formatNumber(holdingData.profitLoss) : '-'}
+              </div>
+              <div className={holdingData ? getProfitStyle(holdingData.profitLossRate) : styles.dataValue}>
+                {holdingData ? formatPercent(holdingData.profitLossRate) : '-'}
+              </div>
             </div>
           </div>
           <div className={styles.tableColumn}>
