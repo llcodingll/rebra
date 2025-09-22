@@ -372,6 +372,7 @@ class PerformanceMetricsServiceImplTest {
                 .isRebalanced(isRebalanced)
                 .isSold(isSold)
                 .isBought(isBought)
+                .isCompositionChanged(false) // 테스트에서는 기본적으로 false
                 .build();
     }
 
