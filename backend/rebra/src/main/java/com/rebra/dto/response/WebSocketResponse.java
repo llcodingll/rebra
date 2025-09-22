@@ -39,11 +39,18 @@ public class WebSocketResponse {
 
     // 주식 관련 메시지 타입 상수
     public static class MessageType {
+        // 기존 개별 구독 관련
         public static final String PRICE_UPDATE = "price-update";
         public static final String ORDERBOOK_UPDATE = "orderbook-update";
         public static final String STOCK_INFO = "stock-info";
         public static final String SUBSCRIPTION_STARTED = "subscription-started";
         public static final String SUBSCRIPTION_STOPPED = "subscription-stopped";
         public static final String ERROR = "error";
+
+        // 일괄 구독 관련
+        public static final String BULK_SUBSCRIPTION_RESPONSE = "bulk-subscription-response";
+        public static final String BULK_SUBSCRIPTION_PROGRESS = "bulk-subscription-progress";
+        public static final String BULK_UNSUBSCRIPTION_RESPONSE = "bulk-unsubscription-response";
+        public static final String BULK_UNSUBSCRIPTION_ERROR = "bulk-unsubscription-error";
     }
 }
