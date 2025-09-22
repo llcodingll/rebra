@@ -25,6 +25,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 개별 포트폴리오 리밸런싱 처리를 담당하는 서비스
@@ -187,14 +188,14 @@ public class PortfolioRebalancingProcessor {
             return RebalancingCalculation.builder()
                     .currentHoldings(currentHoldings)
                     .targetStocks(targetStocks)
-                    .totalPortfolioValue(calculateTotalValue(currentHoldings))
+                    .totalPortfolioValue(calculateManagedTotalValue(currentHoldings, targetStocks))
                     .totalTargetWeight(0.0)
                     .stockDetails(List.of())
                     .build();
         }
         
-        // 2. 전체 값 계산
-        long totalValue = calculateTotalValue(currentHoldings);
+        // 2. 관리 종목의 전체 값 계산
+        long totalValue = calculateManagedTotalValue(currentHoldings, targetStocks);
         double totalTargetWeight = calculateTotalTargetWeight(targetStocks);
         
         // 3. 종목별 상세 계산
@@ -289,6 +290,27 @@ public class PortfolioRebalancingProcessor {
     private long calculateTotalValue(Map<String, HoldingInfo> holdings) {
         return holdings.values().stream()
                 .mapToLong(holding -> holding.getCurrentPrice() * holding.getQuantity())
+                .sum();
+    }
+
+    /**
+     * 포트폴리오가 관리하는 종목만의 총 가치를 계산한다
+     * 
+     * @param holdings 현재 보유 종목 정보
+     * @param targetStocks 포트폴리오가 관리하는 목표 종목 리스트
+     * @return 관리 종목만의 총 가치
+     */
+    private long calculateManagedTotalValue(Map<String, HoldingInfo> holdings, List<PortfolioStock> targetStocks) {
+        Set<String> managedStockCodes = targetStocks.stream()
+                .map(PortfolioStock::getStockCode)
+                .collect(Collectors.toSet());
+        
+        return holdings.entrySet().stream()
+                .filter(entry -> managedStockCodes.contains(entry.getKey()))
+                .mapToLong(entry -> {
+                    HoldingInfo holding = entry.getValue();
+                    return holding.getCurrentPrice() * holding.getQuantity();
+                })
                 .sum();
     }
 
