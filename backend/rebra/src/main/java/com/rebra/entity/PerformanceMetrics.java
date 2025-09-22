@@ -35,21 +35,25 @@ public class PerformanceMetrics extends BaseEntity {
     private LocalDate metricDate;
 
     @Column(name = "total_value", nullable = false)
-    private BigDecimal totalValue;
+    private double totalValue;
 
-    @Column(name = "cumulative_return", nullable = false)
-    private BigDecimal cumulativeReturn;
+    @Column(name = "is_rebalanced", nullable = false)
+    private boolean isRebalanced;
 
-    @Column(name = "daily_return", nullable = false)
-    private BigDecimal dailyReturn;
+    @Column(name = "is_sold", nullable = false)
+    private boolean isSold;
+
+    @Column(name = "is_bought", nullable = false)
+    private boolean isBought;
 
     @Builder
-    public PerformanceMetrics(Portfolio portfolio, LocalDate metricDate, BigDecimal totalValue,
-                              BigDecimal cumulativeReturn, BigDecimal dailyReturn) {
+    public PerformanceMetrics(Portfolio portfolio, LocalDate metricDate, double totalValue,
+                              boolean isRebalanced, boolean isSold, boolean isBought) {
         this.portfolio = portfolio;
         this.metricDate = metricDate;
         this.totalValue = totalValue;
-        this.cumulativeReturn = cumulativeReturn;
-        this.dailyReturn = dailyReturn;
+        this.isRebalanced = isRebalanced;
+        this.isSold = isSold;
+        this.isBought = isBought;
     }
 }
