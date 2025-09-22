@@ -45,27 +45,25 @@ export const wrapSync = <T>(func: () => T): Result<T, AppError> => {
 };
 
 // 비동기 함수를 Result 패턴으로 감싸기 + ErrorProcessor 자동 처리
-export const wrapAsync = async <T>(func: () => Promise<T>): Promise<Result<T, AppError>> => {
+export const wrapAsync = async <T>(func: () => Promise<T>): Promise<Result<T, any>> => {
   try {
     const result = await func();
     return Ok(result);
   } catch (error) {
     console.error('Async function error:', error);
 
-    // 에러 타입에 따라 적절한 ErrorProcessor 메서드 호출
-    let appError;
+    // AxiosError는 그대로 반환하여 useApi에서 처리하도록 함
     if (error && typeof error === 'object' && 'isAxiosError' in error) {
-      appError = ErrorProcessor.processAxiosError(error as any);
+      return Err(error);
     } else {
-      // 일반 에러는 AppError로 변환
-      appError = createAppError(
+      // 일반 에러만 AppError로 변환하고 즉시 처리
+      const appError = createAppError(
         ERROR_TYPES.UNKNOWN_ERROR,
         error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다'
       );
       ErrorProcessor.showToUser(appError);
+      return Err(appError);
     }
-
-    return Err(appError);
   }
 };
 

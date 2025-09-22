@@ -153,8 +153,6 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
     mutationFn: createBacktest,
     onSuccess: (result) => {
       if (result.success) {
-        console.log('생성된 백테스트 ID:', result.data);
-
         // 새로 생성된 백테스트 데이터 구성
         const newBacktest = {
           id: result.data,
@@ -166,36 +164,42 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
           createdAt: new Date().toISOString()
         };
 
-        // 첫 페이지 캐시에 새 항목 추가 (즉시 반영)
-        const firstPageKey = ['backtestList', 0, 10]; // 첫 페이지 키
+        // 첫 페이지 캐시에 새 항목 추가
+        const firstPageKey = ['backtestList', 0, 10];
         queryClient.setQueryData(firstPageKey, (oldData: any) => {
           if (oldData) {
             return {
               ...oldData,
-              content: [newBacktest, ...oldData.content.slice(0, 9)], // 맨 앞에 추가, 기존 항목은 9개만
+              content: [newBacktest, ...oldData.content.slice(0, 9)],
               totalElements: oldData.totalElements + 1
             };
           }
           return oldData;
         });
 
-        // 백테스트 목록 캐시 무효화하여 서버 데이터와 동기화 (즉시 refetch)
+        // 백테스트 목록 캐시 무효화
         queryClient.invalidateQueries({
           queryKey: ['backtestList'],
           exact: false,
-          refetchType: 'active' // 활성 쿼리만 즉시 refetch
+          refetchType: 'active'
         });
 
-        // 성공 시 백테스트 목록 페이지로 이동
         navigate('/backtest');
       } else {
-        console.error('백테스트 생성 실패:', result.error.message);
-        setIsBacktestExecuted(false); // 실패 시 다시 블락 활성화
+        setIsBacktestExecuted(false);
       }
     },
-    onError: (error) => {
-      console.error('백테스트 생성 중 오류:', error.message);
-      setIsBacktestExecuted(false); // 에러 시 다시 블락 활성화
+    onError: (error: any) => {
+      // 타임아웃 오류의 경우 특별 처리
+      if (error.message && error.message.includes('timeout')) {
+        queryClient.invalidateQueries({
+          queryKey: ['backtestList'],
+          exact: false
+        });
+        navigate('/backtest');
+      } else {
+        setIsBacktestExecuted(false);
+      }
     }
   });
 
@@ -234,11 +238,6 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
       rebalancingPeriod: rebalancingType === 'PERIODIC' ? 'MONTHLY' : undefined,
       stocks
     };
-
-    console.log('비중 정규화 결과:');
-    console.log('- 원본 총 비중:', totalWeight);
-    console.log('- 정규화된 비중:', stocks.map(s => ({ name: s.name, weight: s.weight.toFixed(1) + '%' })));
-    console.log('백테스트 생성 요청:', request);
 
     createBacktestMutation.mutate(request);
   };

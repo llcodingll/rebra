@@ -26,7 +26,11 @@ interface CustomAxiosInstance extends AxiosInstance {
     config?: InternalAxiosRequestConfig<D>
   ): Promise<R>;
 
-  delete<T = unknown, R = ApiResponse<T>, D = any>(url: string, data?: D, config?: InternalAxiosRequestConfig<D>): Promise<R>;
+  delete<T = unknown, R = ApiResponse<T>, D = any>(
+    url: string,
+    data?: D,
+    config?: InternalAxiosRequestConfig<D>
+  ): Promise<R>;
 }
 
 /**
@@ -48,7 +52,6 @@ export class ApiClient {
 
     this.setupInterceptors();
   }
-
 
   // 401 에러 시 호출될 콜백 설정
   setUnauthorizedCallback(callback: () => Promise<void>): void {
@@ -86,12 +89,12 @@ export class ApiClient {
         }
 
         // 서버 에러 - 재시도 로직 적용
-        if (error.response?.status && error.response.status >= 500 && error.response.status < 600) {
-          const shouldRetry = await retryRequest(originalRequest, error);
-          if (shouldRetry && originalRequest) {
-            return this.client(originalRequest);
-          }
-        }
+        // if (error.response?.status && error.response.status >= 500 && error.response.status < 600) {
+        //   const shouldRetry = await retryRequest(originalRequest, error);
+        //   if (shouldRetry && originalRequest) {
+        //     return this.client(originalRequest);
+        //   }
+        // }
 
         // 에러는 그대로 throw (wrapApiCall에서 처리)
         return Promise.reject(error);
@@ -116,7 +119,6 @@ export class ApiClient {
     }
   }
 
-
   // HTTP 메서드 + Result 패턴
   async get<T>(url: string, config?: InternalAxiosRequestConfig): Promise<Result<T, AppError>> {
     return this.wrapApiCall(() => this.client.get<T>(url, config));
@@ -133,5 +135,4 @@ export class ApiClient {
   async delete<T>(url: string, data?: any, config?: InternalAxiosRequestConfig): Promise<Result<T, AppError>> {
     return this.wrapApiCall(() => this.client.delete<T>(url, { ...config, data }));
   }
-
 }

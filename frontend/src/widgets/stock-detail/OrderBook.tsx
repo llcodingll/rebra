@@ -1,8 +1,8 @@
 import styles from './OrderBook.module.css';
-import { KRXRealtimeOrderbookMessage } from '../../features/stock-detail/api/types';
+import { OptimizedOrderbookData } from '../../features/stock-detail/api/types';
 
 interface OrderBookProps {
-  orderBook: KRXRealtimeOrderbookMessage | null;
+  orderBook: OptimizedOrderbookData | null;
   stockInfo: {
     currentPrice: number;
     high52?: number;
@@ -40,32 +40,32 @@ export default function OrderBook({ orderBook, stockInfo }: OrderBookProps) {
   const generateOrderBookRows = (): OrderBookRow[] => {
     if (!orderBook) return [];
 
-    // 매도 호가 (ASKP10 → ASKP1 순서로 상단부터)
+    // 매도 호가 (askp10 → askp1 순서로 상단부터)
     const askPrices = [
-      { price: orderBook.ASKP10, quantity: orderBook.ASKP_RSQN10 },
-      { price: orderBook.ASKP9, quantity: orderBook.ASKP_RSQN9 },
-      { price: orderBook.ASKP8, quantity: orderBook.ASKP_RSQN8 },
-      { price: orderBook.ASKP7, quantity: orderBook.ASKP_RSQN7 },
-      { price: orderBook.ASKP6, quantity: orderBook.ASKP_RSQN6 },
-      { price: orderBook.ASKP5, quantity: orderBook.ASKP_RSQN5 },
-      { price: orderBook.ASKP4, quantity: orderBook.ASKP_RSQN4 },
-      { price: orderBook.ASKP3, quantity: orderBook.ASKP_RSQN3 },
-      { price: orderBook.ASKP2, quantity: orderBook.ASKP_RSQN2 },
-      { price: orderBook.ASKP1, quantity: orderBook.ASKP_RSQN1 },
+      { price: parseFloat(orderBook.askp10), quantity: parseFloat(orderBook.askpRsqn10) },
+      { price: parseFloat(orderBook.askp9), quantity: parseFloat(orderBook.askpRsqn9) },
+      { price: parseFloat(orderBook.askp8), quantity: parseFloat(orderBook.askpRsqn8) },
+      { price: parseFloat(orderBook.askp7), quantity: parseFloat(orderBook.askpRsqn7) },
+      { price: parseFloat(orderBook.askp6), quantity: parseFloat(orderBook.askpRsqn6) },
+      { price: parseFloat(orderBook.askp5), quantity: parseFloat(orderBook.askpRsqn5) },
+      { price: parseFloat(orderBook.askp4), quantity: parseFloat(orderBook.askpRsqn4) },
+      { price: parseFloat(orderBook.askp3), quantity: parseFloat(orderBook.askpRsqn3) },
+      { price: parseFloat(orderBook.askp2), quantity: parseFloat(orderBook.askpRsqn2) },
+      { price: parseFloat(orderBook.askp1), quantity: parseFloat(orderBook.askpRsqn1) },
     ];
 
-    // 매수 호가 (BIDP1 → BIDP10 순서로 하단부터)
+    // 매수 호가 (bidp1 → bidp10 순서로 하단부터)
     const bidPrices = [
-      { price: orderBook.BIDP1, quantity: orderBook.BIDP_RSQN1 },
-      { price: orderBook.BIDP2, quantity: orderBook.BIDP_RSQN2 },
-      { price: orderBook.BIDP3, quantity: orderBook.BIDP_RSQN3 },
-      { price: orderBook.BIDP4, quantity: orderBook.BIDP_RSQN4 },
-      { price: orderBook.BIDP5, quantity: orderBook.BIDP_RSQN5 },
-      { price: orderBook.BIDP6, quantity: orderBook.BIDP_RSQN6 },
-      { price: orderBook.BIDP7, quantity: orderBook.BIDP_RSQN7 },
-      { price: orderBook.BIDP8, quantity: orderBook.BIDP_RSQN8 },
-      { price: orderBook.BIDP9, quantity: orderBook.BIDP_RSQN9 },
-      { price: orderBook.BIDP10, quantity: orderBook.BIDP_RSQN10 },
+      { price: parseFloat(orderBook.bidp1), quantity: parseFloat(orderBook.bidpRsqn1) },
+      { price: parseFloat(orderBook.bidp2), quantity: parseFloat(orderBook.bidpRsqn2) },
+      { price: parseFloat(orderBook.bidp3), quantity: parseFloat(orderBook.bidpRsqn3) },
+      { price: parseFloat(orderBook.bidp4), quantity: parseFloat(orderBook.bidpRsqn4) },
+      { price: parseFloat(orderBook.bidp5), quantity: parseFloat(orderBook.bidpRsqn5) },
+      { price: parseFloat(orderBook.bidp6), quantity: parseFloat(orderBook.bidpRsqn6) },
+      { price: parseFloat(orderBook.bidp7), quantity: parseFloat(orderBook.bidpRsqn7) },
+      { price: parseFloat(orderBook.bidp8), quantity: parseFloat(orderBook.bidpRsqn8) },
+      { price: parseFloat(orderBook.bidp9), quantity: parseFloat(orderBook.bidpRsqn9) },
+      { price: parseFloat(orderBook.bidp10), quantity: parseFloat(orderBook.bidpRsqn10) },
     ];
 
     // 모든 가격을 모아서 정렬 (0보다 큰 값만)

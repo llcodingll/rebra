@@ -27,15 +27,15 @@ export const useStockChartData = (
   const getApiFunction = () => {
     switch (period) {
       case 'daily':
-        return stockApi.getDailyChartData.bind(stockApi);
+        return stockApi.getDailyChartData;
       case 'weekly':
-        return stockApi.getWeeklyChartData.bind(stockApi);
+        return stockApi.getWeeklyChartData;
       case 'monthly':
-        return stockApi.getMonthlyChartData.bind(stockApi);
+        return stockApi.getMonthlyChartData;
       case 'yearly':
-        return stockApi.getYearlyChartData.bind(stockApi);
+        return stockApi.getYearlyChartData;
       default:
-        return stockApi.getDailyChartData.bind(stockApi);
+        return stockApi.getDailyChartData;
     }
   };
 

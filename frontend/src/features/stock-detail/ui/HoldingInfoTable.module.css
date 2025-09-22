@@ -115,6 +115,20 @@
   color: #dc2626 !important;
 }
 
+.lossValue {
+  color: #2563eb !important;
+}
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  font-size: 14px;
+  color: #6b7280;
+  background: white;
+}
+
 @media (max-width: 768px) {
   .tableContent {
     flex-direction: column;

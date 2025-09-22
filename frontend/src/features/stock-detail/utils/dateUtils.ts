@@ -72,3 +72,46 @@ export const dateStringToTimestamp = (dateString: string): UTCTimestamp => {
   const date = new Date(year, month, day, 9, 0, 0, 0); // 장 시작 시간 09:00
   return Math.floor(date.getTime() / 1000) as UTCTimestamp;
 };
+
+/**
+ * 특정 날짜로부터 이전 기간의 날짜 범위를 계산 (무한 스크롤용)
+ * @param endDate 종료 날짜 (YYYYMMDD)
+ * @param period 차트 기간 타입
+ * @returns 계산된 시작날짜와 종료날짜
+ */
+export const getPreviousDateRange = (endDate: string, period: ChartPeriodType): { startDate: string; endDate: string } => {
+  const end = new Date(
+    parseInt(endDate.substring(0, 4)),
+    parseInt(endDate.substring(4, 6)) - 1,
+    parseInt(endDate.substring(6, 8))
+  );
+
+  // 중복 방지를 위해 하루 전을 새로운 종료일로 설정
+  end.setDate(end.getDate() - 1);
+
+  const start = new Date(end);
+
+  switch (period) {
+    case 'daily':
+      // 4개월 이전
+      start.setMonth(end.getMonth() - 4);
+      break;
+    case 'weekly':
+      // 2년 이전
+      start.setFullYear(end.getFullYear() - 2);
+      break;
+    case 'monthly':
+      // 8년 이전
+      start.setFullYear(end.getFullYear() - 8);
+      break;
+    case 'yearly':
+      // 100년 이전
+      start.setFullYear(end.getFullYear() - 100);
+      break;
+  }
+
+  return {
+    startDate: formatDateToString(start),
+    endDate: formatDateToString(end)
+  };
+};

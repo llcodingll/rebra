@@ -11,9 +11,10 @@ interface DashBoardSettingsTabProps {
   initialAutoRebalancing?: boolean;
   isLoadingSettings?: boolean;
   onAutoRebalancingChanged?: () => void;
+  onRebalancingExecuted?: () => void;
 }
 
-export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalancing = false, isLoadingSettings = false, onAutoRebalancingChanged }: DashBoardSettingsTabProps) {
+export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalancing = false, isLoadingSettings = false, onAutoRebalancingChanged, onRebalancingExecuted }: DashBoardSettingsTabProps) {
     const { confirmState, showConfirm, hideConfirm } = useConfirmModal();
     const { isOpen: isPeriodModalOpen, open: openPeriodModal, close: closePeriodModal } = useModalState();
     const [isAutoRebalancingEnabled, setIsAutoRebalancingEnabled] = useState(initialAutoRebalancing);
@@ -47,6 +48,27 @@ export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalanci
         }
     });
 
+    // 리밸런싱 실행 API 뮤테이션
+    const { mutate: executeRebalancing, isPending: isExecutingRebalancing } = useApiMutation({
+        apiFunction: () => {
+            if (!portfolioId) {
+                return Promise.reject('Portfolio ID가 없습니다.');
+            }
+            return portfolioApi.executeRebalancing(portfolioId);
+        },
+        onSuccess: (data) => {
+            console.log('리밸런싱 실행 성공:', data);
+            alert('리밸런싱이 성공적으로 실행되었습니다!');
+            if (onRebalancingExecuted) {
+                onRebalancingExecuted();
+            }
+        },
+        onError: (error) => {
+            console.error('리밸런싱 실행 실패:', error);
+            alert('리밸런싱 실행에 실패했습니다. 다시 시도해주세요.');
+        }
+    });
+
     const handleExecuteRebalancing = () => {
         showConfirm({
             title: '리밸런싱 실행',
@@ -55,8 +77,7 @@ export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalanci
             confirmText: '실행',
             cancelText: '취소',
             onConfirm: () => {
-                console.log('리밸런싱 실행 API 호출');
-                // TODO: 리밸런싱 실행 API 호출
+                executeRebalancing();
             }
         });
     };

@@ -7,6 +7,7 @@ import ResultsHeader from '../../widgets/backtest/ResultsHeader';
 import CumulativeReturnsChart from '../../widgets/backtest/CumulativeReturnsChart';
 import MonthlyRebalancing from '../../widgets/backtest/MonthlyRebalancing';
 import DetailedMetrics from '../../widgets/backtest/DetailedMetrics';
+import PortfolioComposition from '../../widgets/backtest/PortfolioComposition';
 import { getBacktestResult } from '../../features/backtest/api/backtestApi';
 
 interface TradeData {
@@ -51,7 +52,7 @@ export default function BacktestResultsPage() {
       }
     },
     enabled: Boolean(backtestId),
-    staleTime: 60000,
+    staleTime: 60000, // 결과 페이지는 정적이므로 60초 캐시
   });
 
   if (isLoading) {
@@ -162,6 +163,7 @@ export default function BacktestResultsPage() {
             rebalancingDates={rebalancingDates}
             showKospi={false}
           />
+          <PortfolioComposition portfolioStocks={backtestResult?.portfolioStocks || []} />
         </div>
 
         <div className={styles.sidebar}>
