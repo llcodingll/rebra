@@ -1,17 +1,22 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import styles from './BacktestPage.module.css';
 import Pagination from '../../widgets/common/Pagination';
 import BacktestSearchWidget from '../../widgets/backtest/BacktestSearchWidget';
 import BacktestHistoryWidget from '../../widgets/backtest/BacktestHistoryWidget';
+import TutorialOverlay from '../../widgets/tutorial/TutorialOverlay';
+import { backtestTutorialSteps } from '../../widgets/tutorial/backtestTutorialSteps';
 import { getBacktestList, deleteBacktest, type BacktestListResponse } from '../../features/backtest/api/backtestApi';
 
 export default function BacktestPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { registerTutorialTarget } = useOutletContext<{ registerTutorialTarget: (page: string, startFunction: () => void) => void }>();
   const [currentPage, setCurrentPage] = useState(1);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const itemsPerPage = 10;
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 백테스트 목록 조회
   const { data: backtestResponse, isLoading, error } = useQuery({
@@ -24,7 +29,14 @@ export default function BacktestPage() {
         throw new Error(result.error.message);
       }
     },
-    staleTime: 30000, // 30초
+    refetchInterval: (data) => {
+      if (!data?.content) return false;
+      const hasProcessing = data.content.some(item => item.status === 'PROCESSING');
+      return hasProcessing ? 3000 : false;
+    },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   // 백테스트 삭제 mutation
@@ -41,6 +53,30 @@ export default function BacktestPage() {
   const backtestData = backtestResponse?.content || [];
   const totalPages = backtestResponse?.totalPages || 0;
 
+  // 수동 폴링 로직 (React Query 백업용)
+  useEffect(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+
+    const hasProcessing = backtestData.some(item => item.status === 'PROCESSING');
+
+    if (hasProcessing) {
+      pollingIntervalRef.current = setInterval(() => {
+        queryClient.invalidateQueries({
+          queryKey: ['backtestList'],
+          exact: false
+        });
+      }, 3000);
+    }
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [backtestData, queryClient]);
+
   const handleDirectCreation = () => {
     navigate('/backtest/create');
   };
@@ -55,6 +91,21 @@ export default function BacktestPage() {
       deleteMutation.mutate(backtest.id);
     }
   };
+
+  const handleTutorialStart = useCallback(() => {
+    console.log('튜토리얼 시작!');
+    setIsTutorialOpen(true);
+  }, []);
+
+  const handleTutorialClose = useCallback(() => {
+    setIsTutorialOpen(false);
+  }, []);
+
+  // Layout에 튜토리얼 시작 함수 등록
+  useEffect(() => {
+    console.log('백테스트 페이지에서 튜토리얼 등록');
+    registerTutorialTarget('backtest', handleTutorialStart);
+  }, []);
 
 
   return (
@@ -85,6 +136,12 @@ export default function BacktestPage() {
         )}
       </div>
 
+      {/* Tutorial Overlay */}
+      <TutorialOverlay
+        isOpen={isTutorialOpen}
+        onClose={handleTutorialClose}
+        steps={backtestTutorialSteps}
+      />
     </div>
   );
 }

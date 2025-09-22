@@ -172,6 +172,14 @@
   overflow: visible;
 }
 
+.valueContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: visible;
+}
+
 .warningIconContainer {
   position: relative;
   display: inline-block;

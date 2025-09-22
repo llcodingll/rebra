@@ -1,11 +1,11 @@
-import { Scale, User } from 'lucide-react';
+import { Scale, User, HelpCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import styles from './Header.module.css';
-import NotificationPanel from './NotificationPanel';
 
 interface HeaderProps {
   activeTab: 'dashboard' | 'search' | 'backtest';
   onTabChange: (tab: 'dashboard' | 'search' | 'backtest') => void;
+  onTutorialClick?: () => void;
 }
 
 const tabs = [
@@ -14,7 +14,7 @@ const tabs = [
   { id: 'backtest', label: '백테스트' },
 ] as const;
 
-export default function Header({ activeTab, onTabChange }: HeaderProps) {
+export default function Header({ activeTab, onTabChange, onTutorialClick }: HeaderProps) {
   return (
     <header className={styles.header}>
       <div className={styles.container}>
@@ -43,7 +43,17 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
 
         {/* Right section */}
         <div className={styles.rightSection}>
-          <NotificationPanel />
+          {/* 튜토리얼 버튼 */}
+          <motion.button
+            className={styles.tutorialButton}
+            onClick={onTutorialClick}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="튜토리얼"
+          >
+            <HelpCircle className={styles.tutorialIcon} />
+          </motion.button>
+
           <motion.div
             className={styles.userAvatar}
             // whileHover={{ y: -2, boxShadow: '0 8px 25px rgba(3, 2, 19, 0.4)' }}

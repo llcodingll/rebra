@@ -1,0 +1,243 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9998;
+  backdrop-filter: blur(2px);
+}
+
+.tutorialContainer {
+  position: fixed;
+  top: 80px;
+  right: 30px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  max-width: 400px;
+  width: 400px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+.closeButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  z-index: 10;
+}
+
+.closeButton:hover {
+  background: white;
+  transform: scale(1.1);
+}
+
+.closeIcon {
+  width: 18px;
+  height: 18px;
+  color: #374151;
+}
+
+.mascotContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: -10px;
+}
+
+.mascot {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+}
+
+.speechBubble {
+  background: white;
+  border-radius: 20px;
+  padding: 28px;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  max-width: 450px;
+  width: 100%;
+  border: 2px solid #f3f4f6;
+}
+
+.speechBubbleArrow {
+  position: absolute;
+  top: -12px;
+  left: 60px;
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 12px solid white;
+}
+
+.speechBubbleArrow::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: -14px;
+  width: 0;
+  height: 0;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-bottom: 14px solid #f3f4f6;
+}
+
+.stepIndicator {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.content {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #030213;
+  margin: 0 0 12px 0;
+  line-height: 1.3;
+}
+
+.description {
+  font-size: 16px;
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-line;
+}
+
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.previousButton {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.previousButton:hover:not(:disabled) {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+.previousButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nextButton, .finishButton {
+  background: linear-gradient(135deg, #030213 0%, #1e293b 100%);
+  color: white;
+}
+
+.nextButton:hover, .finishButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(3, 2, 19, 0.3);
+}
+
+.navIcon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .tutorialContainer {
+    width: 95%;
+    max-width: none;
+  }
+
+  .speechBubble {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+
+  .mascot {
+    width: 160px;
+    height: 160px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .description {
+    font-size: 15px;
+  }
+
+  .navButton {
+    padding: 10px 16px;
+    font-size: 13px;
+    min-width: 70px;
+  }
+
+  .speechBubbleArrow {
+    left: 50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .speechBubble {
+    padding: 20px 16px;
+  }
+
+  .navigation {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .navButton {
+    width: 100%;
+  }
+
+  .stepIndicator {
+    position: static;
+    align-self: flex-end;
+    margin-bottom: 16px;
+  }
+}

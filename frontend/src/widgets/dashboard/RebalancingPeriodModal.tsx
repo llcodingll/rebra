@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import DatePicker from 'react-datepicker';
+import { HelpCircle } from 'lucide-react';
 import BaseModal from '../../shared/ui/modal/BaseModal';
 import styles from './RebalancingPeriodModal.module.css';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -13,6 +14,8 @@ export default function RebalancingPeriodModal({ isOpen, onClose }: RebalancingP
   const [startDate, setStartDate] = useState<Date | null>(new Date());
   const [periodType, setPeriodType] = useState<'month' | 'year'>('month');
   const [periodValue, setPeriodValue] = useState(1);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [showPeriodTooltip, setShowPeriodTooltip] = useState(false);
 
   const handleSave = () => {
     const periodData = {
@@ -35,7 +38,21 @@ export default function RebalancingPeriodModal({ isOpen, onClose }: RebalancingP
       <div className={styles.content}>
         {/* 시작일자 설정 */}
         <div className={styles.field}>
-          <label className={styles.label}>시작일자</label>
+          <div className={styles.labelWithTooltip}>
+            <label className={styles.label}>시작일자</label>
+            <div
+              className={styles.helpIconContainer}
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+            >
+              <HelpCircle className={styles.helpIcon} />
+              {showTooltip && (
+                <div className={styles.tooltip}>
+                  선택한 해당 날짜를 기준으로 리밸런싱이 이뤄집니다. <br />만약 해당 날짜가 존재하지 않거나 거래일이 아닌 경우 가능한 거래의 다음 일자로 거래가 넘어갑니다.
+                </div>
+              )}
+            </div>
+          </div>
           <div className={styles.datePickerWrapper}>
             <DatePicker
               selected={startDate}
@@ -53,7 +70,21 @@ export default function RebalancingPeriodModal({ isOpen, onClose }: RebalancingP
 
         {/* 주기 단위 선택 */}
         <div className={styles.field}>
-          <label className={styles.label}>주기 단위</label>
+          <div className={styles.labelWithTooltip}>
+            <label className={styles.label}>주기 단위</label>
+            <div
+              className={styles.helpIconContainer}
+              onMouseEnter={() => setShowPeriodTooltip(true)}
+              onMouseLeave={() => setShowPeriodTooltip(false)}
+            >
+              <HelpCircle className={styles.helpIcon} />
+              {showPeriodTooltip && (
+                <div className={styles.tooltip}>
+                  월의 경우에는 일자, 년의 경우에는 월과 일자를 기준으로 리밸런싱 일자가 설정됩니다.
+                </div>
+              )}
+            </div>
+          </div>
           <div className={styles.toggleButtons}>
             <button
               type="button"
