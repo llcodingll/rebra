@@ -194,7 +194,6 @@ export default function DashboardPage() {
   return (
     <div>
       <div className={styles.dashboard}>
-        
         <div className={styles.container}>
           {/* 포트폴리오 선택 섹션 */}
           <PortfolioHeader
