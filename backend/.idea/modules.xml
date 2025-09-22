@@ -2,9 +2,12 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/backend.iml" filepath="$PROJECT_DIR$/.idea/backend.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/backtest.iml" filepath="$PROJECT_DIR$/.idea/modules/backtest.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backtest.main.iml" filepath="$PROJECT_DIR$/.idea/modules/backtest.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/backtest.test.iml" filepath="$PROJECT_DIR$/.idea/modules/backtest.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rebra.iml" filepath="$PROJECT_DIR$/.idea/modules/rebra.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/rebra.main.iml" filepath="$PROJECT_DIR$/.idea/modules/rebra.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rebra.test.iml" filepath="$PROJECT_DIR$/.idea/modules/rebra.test.iml" />
     </modules>
   </component>
 </project>

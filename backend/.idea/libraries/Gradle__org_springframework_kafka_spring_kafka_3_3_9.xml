@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Gradle: org.springframework.kafka:spring-kafka:3.3.9" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="org.springframework.kafka" artifactId="spring-kafka" version="3.3.9" baseVersion="3.3.9" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.springframework.kafka/spring-kafka/3.3.9/784ce910bb5671c21a4e7318bfa709893eb73da3/spring-kafka-3.3.9.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
