@@ -5,7 +5,9 @@
       "Bash(rm:*)",
       "Bash(psql:*)",
       "Read(//c/Users/SSAFY/Desktop/웹소켓 문제/0922/S13P21A406/frontend/src/features/stock-detail/lib/**)",
-      "Read(//c/Users/SSAFY/Desktop/웹소켓 문제/0922/S13P21A406/frontend/**)"
+      "Read(//c/Users/SSAFY/Desktop/웹소켓 문제/0922/S13P21A406/frontend/**)",
+      "Read(//c/Users/SSAFY/Desktop/rebra/S13P21A406/frontend/src/features/stock-detail/lib/**)",
+      "Read(//c/Users/SSAFY/Desktop/rebra/S13P21A406/frontend/src/features/stock-detail/model/**)"
     ],
     "deny": [],
     "ask": []
