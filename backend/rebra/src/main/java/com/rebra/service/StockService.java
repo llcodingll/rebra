@@ -1,6 +1,7 @@
 package com.rebra.service;
 
 import com.rebra.dto.response.PageResponse;
+import com.rebra.dto.response.StockBasicInfoResponse;
 import com.rebra.dto.response.StockChartResponse;
 import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockHistoricalDataResponse;
@@ -25,6 +26,11 @@ public interface StockService {
      * FSS API를 통한 주식 검색 (종목명 부분 일치, 최근 영업일 기준)
      */
     List<StockHistoricalDataResponse> searchStocksFromApi(String stockName);
+
+    /**
+     * FSS API를 통한 종목 기본정보 검색 (종목명 부분 일치)
+     */
+    List<StockBasicInfoResponse> searchStockBasicInfoFromApi(String stockName);
 
     /**
      * 종목 차트 데이터 조회 (일/주/월/년봉)

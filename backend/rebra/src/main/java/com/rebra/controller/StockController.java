@@ -3,6 +3,7 @@ package com.rebra.controller;
 import com.rebra.annotation.LoginUser;
 import com.rebra.common.CommonApiResponse;
 import com.rebra.dto.request.StockTradeRequest;
+import com.rebra.dto.response.StockBasicInfoResponse;
 import com.rebra.dto.response.StockChartResponse;
 import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockHistoricalDataResponse;
@@ -37,13 +38,13 @@ public class StockController {
     private final StockService stockService;
     private final StockTradingService stockTradingService;
 
-    @Operation(summary = "종목명으로 주식 검색", description = "FSS API를 통해 종목명에 포함된 문자열로 주식을 검색합니다. (최근 영업일 기준)")
+    @Operation(summary = "종목명으로 주식 검색", description = "FSS API를 통해 종목명에 포함된 문자열로 주식 기본정보를 검색합니다.")
     @GetMapping("/search")
-    public ResponseEntity<CommonApiResponse<List<StockHistoricalDataResponse>>> searchStocks(
+    public ResponseEntity<CommonApiResponse<List<StockBasicInfoResponse>>> searchStocks(
             @Parameter(description = "검색할 종목명", example = "삼성")
             @RequestParam String stockName) {
 
-        List<StockHistoricalDataResponse> responses = stockService.searchStocksFromApi(stockName);
+        List<StockBasicInfoResponse> responses = stockService.searchStockBasicInfoFromApi(stockName);
 
         return ResponseEntity.ok(CommonApiResponse.success(responses));
     }
