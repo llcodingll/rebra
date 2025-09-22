@@ -67,38 +67,6 @@ public class RebalancingHistoryController {
     }
 
     @Operation(
-            summary = "리밸런싱 히스토리 전체 조회 (그래프용)",
-            description = "포트폴리오의 모든 리밸런싱 히스토리를 조회합니다. 그래프 그리기 용도로 사용됩니다. " +
-                         "조회 기간은 포트폴리오 생성일부터 마지막 리밸런싱 날짜까지 자동으로 계산되며, " +
-                         "시작점으로 100% 수익률의 더미 데이터가 포함됩니다. " +
-                         "성능 최적화를 위해 거래 내역(trades)은 제외되며, orderId 클릭 시 상세 조회 API를 사용하세요."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증 실패"),
-            @ApiResponse(responseCode = "403", description = "권한 없음"),
-            @ApiResponse(responseCode = "404", description = "포트폴리오를 찾을 수 없음"),
-            @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    @GetMapping("/all")
-    public ResponseEntity<CommonApiResponse<List<RebalancingHistoryGraphResponse>>> getAllRebalancingHistory(
-            @Parameter(hidden = true) @LoginUser Long userId,
-            @Parameter(description = "포트폴리오 ID", required = true)
-            @PathVariable Long portfolioId) {
-
-        log.info("리밸런싱 히스토리 전체 조회 (그래프용) 요청 - 사용자ID: {}, 포트폴리오ID: {}",
-                userId, portfolioId);
-
-        List<RebalancingHistoryGraphResponse> response = rebalancingHistoryService
-                .getAllRebalancingHistory(portfolioId);
-
-        log.info("리밸런싱 히스토리 전체 조회 (그래프용) 성공 - 포트폴리오ID: {}, 히스토리 수: {}",
-                portfolioId, response.size());
-
-        return ResponseEntity.ok(CommonApiResponse.success(response));
-    }
-
-    @Operation(
             summary = "리밸런싱 히스토리 상세 조회",
             description = "특정 리밸런싱 주문의 상세 정보와 거래 내역을 조회합니다."
     )
@@ -125,6 +93,38 @@ public class RebalancingHistoryController {
 
         log.info("리밸런싱 히스토리 상세 조회 성공 - 포트폴리오ID: {}, 주문ID: {}, 거래 수: {}",
                 portfolioId, orderId, response.getTrades().size());
+
+        return ResponseEntity.ok(CommonApiResponse.success(response));
+    }
+
+    @Operation(
+            summary = "[더 이상 사용되지 않습니다.] 리밸런싱 히스토리 전체 조회 (그래프용)",
+            description = "포트폴리오의 모든 리밸런싱 히스토리를 조회합니다. 그래프 그리기 용도로 사용됩니다. " +
+                         "조회 기간은 포트폴리오 생성일부터 마지막 리밸런싱 날짜까지 자동으로 계산되며, " +
+                         "시작점으로 100% 수익률의 더미 데이터가 포함됩니다. " +
+                         "성능 최적화를 위해 거래 내역(trades)은 제외되며, orderId 클릭 시 상세 조회 API를 사용하세요."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "403", description = "권한 없음"),
+            @ApiResponse(responseCode = "404", description = "포트폴리오를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @GetMapping("/all")
+    public ResponseEntity<CommonApiResponse<List<RebalancingHistoryGraphResponse>>> getAllRebalancingHistory(
+            @Parameter(hidden = true) @LoginUser Long userId,
+            @Parameter(description = "포트폴리오 ID", required = true)
+            @PathVariable Long portfolioId) {
+
+        log.info("리밸런싱 히스토리 전체 조회 (그래프용) 요청 - 사용자ID: {}, 포트폴리오ID: {}",
+                userId, portfolioId);
+
+        List<RebalancingHistoryGraphResponse> response = rebalancingHistoryService
+                .getAllRebalancingHistory(portfolioId);
+
+        log.info("리밸런싱 히스토리 전체 조회 (그래프용) 성공 - 포트폴리오ID: {}, 히스토리 수: {}",
+                portfolioId, response.size());
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
