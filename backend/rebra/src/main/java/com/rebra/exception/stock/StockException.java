@@ -20,4 +20,12 @@ public class StockException extends CustomRuntimeException {
     public static StockException stockNameNotFound() {
         return new StockException(ExceptionCode.STOCK_NAME_NOT_FOUND);
     }
+
+    public static StockException stockHoldingFetchFailed() {
+        return new StockException(ExceptionCode.STOCK_HOLDING_FETCH_FAILED);
+    }
+
+    public static StockException stockHoldingDetailFetchFailed() {
+        return new StockException(ExceptionCode.STOCK_HOLDING_DETAIL_FETCH_FAILED);
+    }
 }
