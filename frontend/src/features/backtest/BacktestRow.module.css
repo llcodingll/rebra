@@ -1,17 +1,239 @@
-ㅇstatusCompleted {
+.dataRow {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  height: 64px;
+  transition: all 0.2s ease;
+  background: white;
+  position: relative;
+}
+
+.dataRow.clickable {
+  cursor: pointer;
+}
+
+.dataRow.clickable:hover {
+  background: #f8f9fb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border-bottom-color: rgba(3, 2, 19, 0.15);
+}
+
+.dataRow:not(.clickable) {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.dataRow:last-child {
+  border-bottom: none;
+}
+
+.dataRow td {
+  padding: 16px 20px;
+  vertical-align: middle;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 500;
+  color: #030213;
+}
+
+/* Name Cell */
+.nameCell {
+  width: 280px;
+}
+
+.nameMain {
+  font-weight: 600;
+  color: #030213;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.nameSubtext {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Date Cell */
+.dateCell {
+  width: 120px;
+  color: #717182;
+  font-size: 13px;
+}
+
+.dateMain {
+  color: #030213;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Period Cell */
+.periodCell {
+  width: 140px;
+  color: #717182;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.periodBadge {
+  background: #ececf0;
+  color: #030213;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Return Cell */
+.returnCell {
+  width: 130px;
+}
+
+.returnMain {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: bold;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.returnSubtext {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.positiveReturn {
+  color: #dc2626;
+}
+
+.negativeReturn {
+  color: #2563eb;
+}
+
+.neutralReturn {
+  color: #6b7280;
+}
+
+.trendIcon {
+  width: 12px;
+  height: 12px;
+}
+
+/* Drawdown Cell */
+.drawdownCell {
+  width: 110px;
+}
+
+.drawdownMain {
+  color: #2563eb;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.drawdownSubtext {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Sharpe Cell */
+.sharpeCell {
+  width: 80px;
+}
+
+.sharpeMain {
+  color: #030213;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.sharpeSubtext {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Volatility Cell */
+.volatilityCell {
+  width: 80px;
+}
+
+.volatilityMain {
+  color: #030213;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.volatilitySubtext {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Win Rate Cell */
+.winRateCell {
+  width: 60px;
+}
+
+.winRateMain {
+  color: #030213;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.winRateSubtext {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Backtest Period Cell */
+.backtestPeriodCell {
+  width: 200px;
+}
+
+.backtestPeriodMain {
+  font-size: 13px;
+  color: #4b5563;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Status Cell */
+.statusCell {
+  width: 80px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.statusBadge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-block;
+  line-height: 1.2;
+}
+
+.statusCompleted {
   background: #059669;
+  color: white;
 }
 
 .statusInProgress {
   background: #d97706;
+  color: white;
 }
 
 .statusFailed {
   background: #dc2626;
+  color: white;
 }
 
 .statusDefault {
   background: #6b7280;
+  color: white;
 }
 
 /* Action Cell */
@@ -60,37 +282,32 @@
     height: auto;
     min-height: 56px;
   }
-  
+
   .dataRow td {
     padding: 12px 16px;
     font-size: 13px;
   }
-  
+
   .nameCell {
     max-width: 200px;
     font-size: 14px;
   }
-  
-  .returnCell {
-    font-size: 15px;
-  }
-  
-  .periodCell span,
-  .sharpeCell span {
+
+  .periodCell .periodBadge {
     padding: 3px 8px;
     font-size: 11px;
   }
-  
+
   .statusBadge {
     padding: 5px 12px;
     font-size: 11px;
   }
-  
+
   .deleteButton {
     width: 32px;
     height: 32px;
   }
-  
+
   .deleteIcon {
     width: 14px;
     height: 14px;
@@ -102,12 +319,8 @@
     padding: 10px 12px;
     font-size: 12px;
   }
-  
+
   .nameCell {
     font-size: 13px;
-  }
-  
-  .returnCell {
-    font-size: 14px;
   }
 }
