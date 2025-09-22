@@ -2,8 +2,10 @@ package com.rebra.service;
 
 import com.rebra.client.FssApiClient;
 import com.rebra.component.KisApiComponent;
+import com.rebra.dto.external.FssStockBasicInfoResponse;
 import com.rebra.dto.external.FssStockPriceResponse;
 import com.rebra.dto.response.PageResponse;
+import com.rebra.dto.response.StockBasicInfoResponse;
 import com.rebra.dto.response.StockChartResponse;
 import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockHistoricalDataResponse;
@@ -349,6 +351,63 @@ public class StockServiceImpl implements StockService {
                     userId, stockCode, e.getMessage());
             // 보유 정보 조회 실패시에도 종목 기본 정보는 제공
             return null;
+        }
+    }
+
+    @Override
+    public List<StockBasicInfoResponse> searchStockBasicInfoFromApi(String stockName) {
+        log.info("FSS API를 통한 종목기본정보 검색 시작 - 종목명: {}", stockName);
+
+        try {
+            // FSS 종목기본정보조회 API 호출
+            List<FssStockBasicInfoResponse.StockBasicItem> apiResults = fssApiClient.getStockBasicInfoByName(stockName);
+
+            if (apiResults == null || apiResults.isEmpty()) {
+                log.warn("FSS API에서 데이터를 찾을 수 없음 - 종목명: {}", stockName);
+                return List.of();
+            }
+
+            // API 결과를 StockBasicInfoResponse로 변환
+            List<StockBasicInfoResponse> responses = new ArrayList<>();
+
+            for (FssStockBasicInfoResponse.StockBasicItem item : apiResults) {
+                try {
+                    // 종목명이 요청한 종목명을 포함하는지 확인
+                    if (item.getStckIssuCmpyNm() != null && 
+                        item.getStckIssuCmpyNm().contains(stockName)) {
+                        
+                        // 상장 중인 종목만 필터링
+                        // 1. 상장일자가 존재해야 함 (텍스트가 있음) - 비상장 주식 제외
+                        // 2. 상장폐지일자가 없어야 함 (텍스트가 없음) - 상장폐지 종목 제외
+                        if (StringUtils.hasText(item.getLstgDt()) && !StringUtils.hasText(item.getLstgAbolDt())) {
+                            responses.add(StockBasicInfoResponse.from(item));
+                            log.debug("상장 중인 종목 추가: {} ({}) - 상장일: {}", 
+                                     item.getStckIssuCmpyNm(), 
+                                     item.getItmsShrtnCd(), 
+                                     item.getLstgDt());
+                        } else {
+                            log.debug("필터링된 종목: {} ({}) - 상장일: {}, 폐지일: {}", 
+                                     item.getStckIssuCmpyNm(), 
+                                     item.getItmsShrtnCd(),
+                                     item.getLstgDt(), 
+                                     item.getLstgAbolDt());
+                        }
+                    }
+
+                } catch (Exception e) {
+                    log.error("종목 기본정보 데이터 변환 실패 - 종목: {}, 오류: {}", 
+                            item.getStckIssuCmpyNm(), e.getMessage());
+                    // 개별 항목 실패는 전체 처리를 중단하지 않음
+                }
+            }
+
+            log.info("FSS API 종목기본정보 검색 완료 - 요청 종목명: {}, 응답 건수: {}", stockName, responses.size());
+
+            return responses;
+
+        } catch (Exception e) {
+            log.error("FSS API 종목기본정보 검색 실패 - 종목명: {}, 오류: {}", stockName, e.getMessage());
+            return List.of();
         }
     }
 }
