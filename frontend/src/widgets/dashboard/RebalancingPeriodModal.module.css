@@ -233,3 +233,59 @@
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(21, 93, 252, 0.4);
 }
+
+/* 툴팁 관련 스타일 */
+.labelWithTooltip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.helpIconContainer {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.helpIcon {
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+  cursor: help;
+  transition: color 0.2s ease;
+}
+
+.helpIcon:hover {
+  color: #6b7280;
+}
+
+.tooltip {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 12px);
+  transform: translateY(-50%);
+  max-width: 570px;
+  width: max-content;
+  padding: 14px 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #ffffff;
+  background: #1f2937;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  white-space: normal;
+  word-wrap: break-word;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-right-color: #1f2937;
+}

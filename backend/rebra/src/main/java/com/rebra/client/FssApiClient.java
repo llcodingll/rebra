@@ -1,6 +1,7 @@
 package com.rebra.client;
 
 import com.rebra.config.FssApiProperties;
+import com.rebra.dto.external.FssStockBasicInfoResponse;
 import com.rebra.dto.external.FssStockPriceResponse;
 import com.rebra.exception.external.ExternalApiException;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,22 @@ public class FssApiClient {
     private final FssApiProperties fssApiProperties;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+    public List<FssStockBasicInfoResponse.StockBasicItem> getStockBasicInfoByName(String stockName) {
+        if (!StringUtils.hasText(fssApiProperties.getServiceKey())) {
+            throw new ExternalApiException("FSS API 서비스 키가 설정되지 않았습니다");
+        }
+
+        try {
+            log.info("FSS API 종목기본정보 조회 시작 - 종목명: {}", stockName);
+            
+            return fetchAllBasicInfoPagesByName(stockName);
+            
+        } catch (RestClientException e) {
+            log.error("FSS API 종목기본정보 호출 실패", e);
+            throw new ExternalApiException("FSS API 종목기본정보 호출 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
 
     public List<FssStockPriceResponse.StockItem> getStockPriceByNameAndDate(String stockName, LocalDate date) {
         if (!StringUtils.hasText(fssApiProperties.getServiceKey())) {
@@ -188,6 +205,63 @@ public class FssApiClient {
 
     private List<FssStockPriceResponse.StockItem> extractStockItems(FssStockPriceResponse response) {
         FssStockPriceResponse.Body body = response.getResponse().getBody();
+        if (body == null || body.getItems() == null || body.getItems().getItem() == null) {
+            return new ArrayList<>();
+        }
+        
+        return body.getItems().getItem();
+    }
+
+    private List<FssStockBasicInfoResponse.StockBasicItem> fetchAllBasicInfoPagesByName(String stockName) {
+        // 현재 날짜에서 3일 전 날짜로 기준일자 설정 (API 데이터 갱신 지연 고려)
+        LocalDate baseDate = LocalDate.now().minusDays(3);
+        
+        String url = buildRequestUrlForBasicInfoSearch(stockName, baseDate);
+        
+        ResponseEntity<FssStockBasicInfoResponse> response = restTemplate.getForEntity(url, FssStockBasicInfoResponse.class);
+        
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new ExternalApiException("FSS API 종목기본정보 응답이 유효하지 않습니다");
+        }
+
+        FssStockBasicInfoResponse apiResponse = response.getBody();
+        validateBasicInfoApiResponse(apiResponse);
+
+        List<FssStockBasicInfoResponse.StockBasicItem> items = extractStockBasicItems(apiResponse);
+        
+        log.info("FSS API 종목기본정보 조회 완료 - 기준일자: {}, 조회된 종목 수: {} 개", 
+                baseDate.format(DATE_FORMATTER), items.size());
+        
+        return items;
+    }
+
+    private String buildRequestUrlForBasicInfoSearch(String stockName, LocalDate baseDate) {
+        return UriComponentsBuilder.fromHttpUrl("https://apis.data.go.kr/1160100/service/GetStocIssuInfoService_V2")
+                .path("/getItemBasiInfo_V2")
+                .queryParam("serviceKey", fssApiProperties.getServiceKey())
+                .queryParam("numOfRows", 100)  // 1페이지 최대 100개 조회
+                .queryParam("pageNo", 1)       // 첫 번째 페이지만 조회
+                .queryParam("resultType", "json")
+                .queryParam("basDt", baseDate.format(DATE_FORMATTER))  // 기준일자 추가
+                .queryParam("stckIssuCmpyNm", stockName)
+                .build()
+                .toUriString();
+    }
+
+    private void validateBasicInfoApiResponse(FssStockBasicInfoResponse response) {
+        if (response.getResponse() == null) {
+            throw new ExternalApiException("FSS API 종목기본정보 응답 형식이 올바르지 않습니다");
+        }
+
+        FssStockBasicInfoResponse.Header header = response.getResponse().getHeader();
+        if (header == null || !"00".equals(header.getResultCode())) {
+            String errorMsg = header != null ? header.getResultMsg() : "알 수 없는 오류";
+            throw new ExternalApiException("FSS API 종목기본정보 오류: " + errorMsg);
+        }
+    }
+
+    private List<FssStockBasicInfoResponse.StockBasicItem> extractStockBasicItems(FssStockBasicInfoResponse response) {
+        FssStockBasicInfoResponse.Body body = response.getResponse().getBody();
         if (body == null || body.getItems() == null || body.getItems().getItem() == null) {
             return new ArrayList<>();
         }

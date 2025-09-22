@@ -8,25 +8,40 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.hamcrest.Matchers.hasSize;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rebra.config.resolver.LoginUserArgumentResolver;
 import com.rebra.dto.request.StockTradeRequest;
 import com.rebra.dto.response.StockTradeResponse;
+import com.rebra.dto.response.StockHoldingListResponse;
+import com.rebra.dto.response.StockHoldingResponse;
+import com.rebra.dto.response.StockHoldingDetailResponse;
+import com.rebra.common.PageResponse;
+import com.rebra.common.PageInfo;
 import com.rebra.exception.CustomRuntimeException;
 import com.rebra.exception.ExceptionCode;
+import com.rebra.exception.account.AccountException;
+import com.rebra.exception.stock.StockException;
 import com.rebra.service.StockService;
 import com.rebra.service.StockTradingService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Nested;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 
 @WebMvcTest(StockController.class)
 class StockControllerTest {
@@ -269,6 +284,235 @@ class StockControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.success").value(false))
                 .andExpect(jsonPath("$.data.errorMessage").value("주문 처리 중 알 수 없는 오류가 발생했습니다"));
+    }
+
+    @Nested
+    @DisplayName("보유 종목 조회 API 테스트")
+    class GetHoldingStocksTest {
+
+        @Test
+        @DisplayName("보유 종목 조회 성공")
+        @WithMockUser
+        void getHoldingStocks_Success() throws Exception {
+            // Given
+            Long accountId = 1L;
+
+            StockHoldingResponse holding1 = StockHoldingResponse.builder()
+                    .stockCode("005930")
+                    .stockName("삼성전자")
+                    .currentPrice(new BigDecimal("70000"))
+                    .averagePurchasePrice(new BigDecimal("65000"))
+                    .purchaseAmount(new BigDecimal("650000"))
+                    .evaluationAmount(new BigDecimal("700000"))
+                    .evaluationProfitLoss(new BigDecimal("50000"))
+                    .returnRate(new BigDecimal("7.69"))
+                    .holdingQuantity(10)
+                    .orderableQuantity(10)
+                    .priceChange(new BigDecimal("1000"))
+                    .changeRate(new BigDecimal("1.45"))
+                    .build();
+
+            StockHoldingResponse holding2 = StockHoldingResponse.builder()
+                    .stockCode("000660")
+                    .stockName("SK하이닉스")
+                    .currentPrice(new BigDecimal("120000"))
+                    .averagePurchasePrice(new BigDecimal("110000"))
+                    .purchaseAmount(new BigDecimal("550000"))
+                    .evaluationAmount(new BigDecimal("600000"))
+                    .evaluationProfitLoss(new BigDecimal("50000"))
+                    .returnRate(new BigDecimal("9.09"))
+                    .holdingQuantity(5)
+                    .orderableQuantity(5)
+                    .priceChange(new BigDecimal("-2000"))
+                    .changeRate(new BigDecimal("-1.64"))
+                    .build();
+
+            StockHoldingListResponse listResponse = StockHoldingListResponse.of(Arrays.asList(holding1, holding2));
+            PageInfo pageInfo = new PageInfo(0, 5, 2L, 1, true, true);
+            PageResponse<StockHoldingListResponse> response = PageResponse.success("조회 성공", listResponse, pageInfo);
+
+            given(stockService.getHoldingStocks(eq(accountId), any())).willReturn(response);
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/holdings")
+                            .param("accountId", accountId.toString())
+                            .param("page", "0")
+                            .param("size", "5"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.status").value(200))
+                    .andExpect(jsonPath("$.data.content.holdings").isArray())
+                    .andExpect(jsonPath("$.data.content.holdings", hasSize(2)))
+                    .andExpect(jsonPath("$.data.content.holdings[0].stockCode").value("005930"))
+                    .andExpect(jsonPath("$.data.content.holdings[0].stockName").value("삼성전자"))
+                    .andExpect(jsonPath("$.data.content.holdings[0].currentPrice").value(70000))
+                    .andExpect(jsonPath("$.data.content.holdings[1].stockCode").value("000660"))
+                    .andExpect(jsonPath("$.data.pageInfo.page").value(0))
+                    .andExpect(jsonPath("$.data.pageInfo.size").value(5))
+                    .andExpect(jsonPath("$.data.pageInfo.totalElements").value(2))
+                    .andExpect(jsonPath("$.data.pageInfo.totalPages").value(1));
+        }
+
+        @Test
+        @DisplayName("보유 종목 조회 실패 - 계좌 없음")
+        @WithMockUser
+        void getHoldingStocks_AccountNotFound() throws Exception {
+            // Given
+            Long accountId = 999L;
+
+            given(stockService.getHoldingStocks(eq(accountId), any()))
+                    .willThrow(new CustomRuntimeException(ExceptionCode.ACCOUNT_NOT_FOUND));
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/holdings")
+                            .param("accountId", accountId.toString())
+                            .param("page", "0")
+                            .param("size", "5"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.errorMessage").value("계좌를 찾을 수 없습니다."));
+        }
+
+        @Test
+        @DisplayName("보유 종목 조회 실패 - 보유 종목 조회 실패")
+        @WithMockUser
+        void getHoldingStocks_FetchFailed() throws Exception {
+            // Given
+            Long accountId = 1L;
+
+            given(stockService.getHoldingStocks(eq(accountId), any()))
+                    .willThrow(StockException.stockHoldingFetchFailed());
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/holdings")
+                            .param("accountId", accountId.toString())
+                            .param("page", "0")
+                            .param("size", "5"))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.status").value(500))
+                    .andExpect(jsonPath("$.errorMessage").value("보유 종목 조회에 실패했습니다."));
+        }
+
+        @Test
+        @DisplayName("보유 종목 조회 성공 - 빈 결과")
+        @WithMockUser
+        void getHoldingStocks_EmptyResult() throws Exception {
+            // Given
+            Long accountId = 1L;
+
+            StockHoldingListResponse listResponse = StockHoldingListResponse.of(Collections.emptyList());
+            PageInfo pageInfo = new PageInfo(0, 5, 0L, 0, true, true);
+            PageResponse<StockHoldingListResponse> response = PageResponse.success("조회 성공", listResponse, pageInfo);
+
+            given(stockService.getHoldingStocks(eq(accountId), any())).willReturn(response);
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/holdings")
+                            .param("accountId", accountId.toString())
+                            .param("page", "0")
+                            .param("size", "5"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.status").value(200))
+                    .andExpect(jsonPath("$.data.content.holdings").isArray())
+                    .andExpect(jsonPath("$.data.content.holdings", hasSize(0)))
+                    .andExpect(jsonPath("$.data.pageInfo.totalElements").value(0));
+        }
+    }
+
+    @Nested
+    @DisplayName("특정 종목 보유 정보 조회 API 테스트")
+    class GetStockHoldingTest {
+
+        @Test
+        @DisplayName("특정 종목 보유 정보 조회 성공")
+        @WithMockUser
+        void getStockHolding_Success() throws Exception {
+            // Given
+            String stockCode = "005930";
+            Long accountId = 1L;
+
+            StockHoldingDetailResponse response = StockHoldingDetailResponse.builder()
+                    .averagePurchasePrice(new BigDecimal("65000"))
+                    .purchaseAmount(new BigDecimal("650000"))
+                    .holdingQuantity(10)
+                    .orderableQuantity(10)
+                    .build();
+
+            given(stockService.getStockHolding(eq(stockCode), eq(accountId))).willReturn(response);
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/{stockCode}/holding", stockCode)
+                            .param("accountId", accountId.toString()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.status").value(200))
+                    .andExpect(jsonPath("$.data.averagePurchasePrice").value(65000))
+                    .andExpect(jsonPath("$.data.purchaseAmount").value(650000))
+                    .andExpect(jsonPath("$.data.holdingQuantity").value(10))
+                    .andExpect(jsonPath("$.data.orderableQuantity").value(10));
+        }
+
+        @Test
+        @DisplayName("특정 종목 보유 정보 조회 성공 - 보유하지 않는 종목")
+        @WithMockUser
+        void getStockHolding_NotHolding() throws Exception {
+            // Given
+            String stockCode = "035720";
+            Long accountId = 1L;
+
+            given(stockService.getStockHolding(eq(stockCode), eq(accountId))).willReturn(null);
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/{stockCode}/holding", stockCode)
+                            .param("accountId", accountId.toString()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.status").value(200))
+                    .andExpect(jsonPath("$.data").doesNotExist());
+        }
+
+        @Test
+        @DisplayName("특정 종목 보유 정보 조회 실패 - 계좌 없음")
+        @WithMockUser
+        void getStockHolding_AccountNotFound() throws Exception {
+            // Given
+            String stockCode = "005930";
+            Long accountId = 999L;
+
+            given(stockService.getStockHolding(eq(stockCode), eq(accountId)))
+                    .willThrow(new CustomRuntimeException(ExceptionCode.ACCOUNT_NOT_FOUND));
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/{stockCode}/holding", stockCode)
+                            .param("accountId", accountId.toString()))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.errorMessage").value("계좌를 찾을 수 없습니다."));
+        }
+
+        @Test
+        @DisplayName("특정 종목 보유 정보 조회 실패 - 종목 보유 정보 조회 실패")
+        @WithMockUser
+        void getStockHolding_FetchFailed() throws Exception {
+            // Given
+            String stockCode = "005930";
+            Long accountId = 1L;
+
+            given(stockService.getStockHolding(eq(stockCode), eq(accountId)))
+                    .willThrow(StockException.stockHoldingDetailFetchFailed());
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/{stockCode}/holding", stockCode)
+                            .param("accountId", accountId.toString()))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.status").value(500))
+                    .andExpect(jsonPath("$.errorMessage").value("종목 보유 정보 조회에 실패했습니다."));
+        }
     }
 
     private StockTradeRequest createTradeRequest(String orderType, Integer quantity, Long price, Long accountId) {

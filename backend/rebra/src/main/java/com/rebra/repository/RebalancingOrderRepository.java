@@ -62,7 +62,7 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
      */
     @Query("SELECT COALESCE(SUM(ro.totalBuyAmount), 0) FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
            "AND ro.rebalancingDate BETWEEN :startDate AND :endDate")
-    BigDecimal sumTotalBuyAmountByPortfolioIdWithDateRange(
+    Long sumTotalBuyAmountByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
@@ -72,7 +72,7 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
      */
     @Query("SELECT COALESCE(SUM(ro.totalSellAmount), 0) FROM RebalancingOrder ro WHERE ro.portfolio.id = :portfolioId " +
            "AND ro.rebalancingDate BETWEEN :startDate AND :endDate")
-    BigDecimal sumTotalSellAmountByPortfolioIdWithDateRange(
+    Long sumTotalSellAmountByPortfolioIdWithDateRange(
             @Param("portfolioId") Long portfolioId,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
