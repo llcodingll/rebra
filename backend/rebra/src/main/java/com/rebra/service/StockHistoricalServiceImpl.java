@@ -4,6 +4,7 @@ import com.rebra.client.FssApiClient;
 import com.rebra.dto.external.FssStockPriceResponse;
 import com.rebra.dto.request.StockHistoricalSearchRequest;
 import com.rebra.dto.response.StockHistoricalDataResponse;
+import com.rebra.dto.response.StockHistoricalDataWithTradingInfo;
 import com.rebra.entity.Stock;
 import com.rebra.entity.StockPrice;
 import com.rebra.exception.external.ExternalApiException;
@@ -34,15 +35,52 @@ public class StockHistoricalServiceImpl implements StockHistoricalService {
     private final StockPriceRepository stockPriceRepository;
     private final StockRepository stockRepository;
     private final FssApiClient fssApiClient;
+    private final HolidayService holidayService;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     @Override
-    public List<StockHistoricalDataResponse> getStockHistoricalData(StockHistoricalSearchRequest request) {
+    public StockHistoricalDataWithTradingInfo getStockHistoricalData(StockHistoricalSearchRequest request) {
         String stockName = request.getStockName();
         LocalDate date = request.getDate();
 
         log.info("주식 과거 데이터 조회 시작 - 종목명: {}, 날짜: {}", stockName, date);
+
+        // 1. 거래일 여부 체크
+        boolean isTradingDay = holidayService.isTradingDay(date);
+        log.info("거래일 체크 결과 - 날짜: {}, 거래일 여부: {}", date, isTradingDay);
+
+        if (!isTradingDay) {
+            log.info("거래일이 아님 - 날짜: {} (주말 또는 공휴일)", date);
+            return StockHistoricalDataWithTradingInfo.builder()
+                    .tradingDay(false)
+                    .data(List.of())
+                    .message(date + "은(는) 거래일이 아닙니다 (주말/공휴일)")
+                    .build();
+        }
+
+        // 2. 거래일인 경우 주식 데이터 조회
+        List<StockHistoricalDataResponse> stockData = getStockHistoricalDataLegacy(request);
+        
+        String message = null;
+        if (stockData.isEmpty()) {
+            message = "해당 종목을 찾을 수 없습니다";
+        }
+
+        return StockHistoricalDataWithTradingInfo.builder()
+                .tradingDay(true)
+                .data(stockData)
+                .message(message)
+                .build();
+    }
+
+    @Override
+    @Deprecated
+    public List<StockHistoricalDataResponse> getStockHistoricalDataLegacy(StockHistoricalSearchRequest request) {
+        String stockName = request.getStockName();
+        LocalDate date = request.getDate();
+
+        log.info("주식 과거 데이터 조회 시작 (Legacy) - 종목명: {}, 날짜: {}", stockName, date);
 
         // 1. FSS API에서 먼저 조회 (모든 관련 종목 검색)
         log.info("FSS API에서 조회 시작 - 모든 관련 종목 검색");

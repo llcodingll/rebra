@@ -2,10 +2,14 @@ package com.rebra.controller;
 
 import com.rebra.annotation.LoginUser;
 import com.rebra.common.CommonApiResponse;
+import com.rebra.common.PageResponse;
 import com.rebra.dto.request.StockTradeRequest;
+import com.rebra.dto.response.StockBasicInfoResponse;
 import com.rebra.dto.response.StockChartResponse;
 import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockHistoricalDataResponse;
+import com.rebra.dto.response.StockHoldingDetailResponse;
+import com.rebra.dto.response.StockHoldingListResponse;
 import com.rebra.dto.response.StockTradeResponse;
 import com.rebra.service.StockService;
 import com.rebra.service.StockTradingService;
@@ -18,6 +22,8 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,13 +43,13 @@ public class StockController {
     private final StockService stockService;
     private final StockTradingService stockTradingService;
 
-    @Operation(summary = "종목명으로 주식 검색", description = "FSS API를 통해 종목명에 포함된 문자열로 주식을 검색합니다. (최근 영업일 기준)")
+    @Operation(summary = "종목명으로 주식 검색", description = "FSS API를 통해 종목명에 포함된 문자열로 주식 기본정보를 검색합니다.")
     @GetMapping("/search")
-    public ResponseEntity<CommonApiResponse<List<StockHistoricalDataResponse>>> searchStocks(
+    public ResponseEntity<CommonApiResponse<List<StockBasicInfoResponse>>> searchStocks(
             @Parameter(description = "검색할 종목명", example = "삼성")
             @RequestParam String stockName) {
 
-        List<StockHistoricalDataResponse> responses = stockService.searchStocksFromApi(stockName);
+        List<StockBasicInfoResponse> responses = stockService.searchStockBasicInfoFromApi(stockName);
 
         return ResponseEntity.ok(CommonApiResponse.success(responses));
     }
@@ -180,6 +186,55 @@ public class StockController {
             @Parameter(hidden = true) @LoginUser Long userId) {
 
         StockChartResponse response = stockService.getStockChartData(stockCode, startDate, endDate, "Y", userId);
+        return ResponseEntity.ok(CommonApiResponse.success(response));
+    }
+
+    @Operation(summary = "보유 종목 전체 조회 (페이지네이션)", description = "계좌의 보유 종목을 페이지 단위로 조회합니다. 기본 페이지 크기는 5개입니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "404", description = "계좌를 찾을 수 없음"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+            @ApiResponse(responseCode = "500", description = "KIS API 연동 실패")
+    })
+    @GetMapping("/holdings")
+    public ResponseEntity<CommonApiResponse<PageResponse<StockHoldingListResponse>>> getHoldingStocks(
+            @Parameter(description = "계좌 ID", required = true, example = "1")
+            @RequestParam Long accountId,
+            @Parameter(description = "페이지 번호 (0부터 시작)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기", example = "5")
+            @RequestParam(defaultValue = "5") int size,
+            @Parameter(hidden = true) @LoginUser Long userId) {
+
+        log.info("보유 종목 전체 조회 요청 - UserId: {}, AccountId: {}, Page: {}, Size: {}",
+                userId, accountId, page, size);
+
+        Pageable pageable = PageRequest.of(page, size);
+        PageResponse<StockHoldingListResponse> response = stockService.getHoldingStocks(accountId, pageable);
+
+        return ResponseEntity.ok(CommonApiResponse.success(response));
+    }
+
+    @Operation(summary = "특정 종목 보유 정보 조회", description = "특정 종목의 보유 정보를 조회합니다. 보유하지 않는 경우 null을 반환합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공 (보유/미보유 모두 성공)"),
+            @ApiResponse(responseCode = "404", description = "계좌를 찾을 수 없음"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+            @ApiResponse(responseCode = "500", description = "KIS API 연동 실패")
+    })
+    @GetMapping("/{stockCode}/holding")
+    public ResponseEntity<CommonApiResponse<StockHoldingDetailResponse>> getStockHolding(
+            @Parameter(description = "조회할 종목 코드", example = "005930")
+            @PathVariable String stockCode,
+            @Parameter(description = "계좌 ID", required = true, example = "1")
+            @RequestParam Long accountId,
+            @Parameter(hidden = true) @LoginUser Long userId) {
+
+        log.info("특정 종목 보유 정보 조회 요청 - UserId: {}, StockCode: {}, AccountId: {}",
+                userId, stockCode, accountId);
+
+        StockHoldingDetailResponse response = stockService.getStockHolding(stockCode, accountId);
+
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
 }

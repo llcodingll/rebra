@@ -20,6 +20,7 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
 
     private final PortfolioRepository portfolioRepository;
     private final PortfolioRebalancingProcessor processor;
+    private final HolidayService holidayService;
 
 
 
@@ -87,18 +88,7 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
      * @return 거래일이면 true
      */
     private boolean isTradingDay(LocalDate date) {
-        // 주말 제외
-        if (date.getDayOfWeek() == DayOfWeek.SATURDAY || 
-            date.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            return false;
-        }
-        
-        // TODO: 한국 공휴일 API 연동
-        // - 한국거래소 휴장일 API: https://kind.krx.co.kr
-        // - 공공데이터포털 공휴일 정보 API
-        // - 예시: return !holidayApiService.isHoliday(date);
-        
-        return true;
+        return holidayService.isTradingDay(date);
     }
 
 }

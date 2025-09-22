@@ -115,17 +115,49 @@ export default function StockSettingsModal({
     });
   };
 
-  // 저장
-  const handleSave = () => {
-    // 임계값이 null인 주식이 있는지 검사
-    const stocksWithNullThreshold = stockSettings.filter(setting => setting.threshold === null);
-    if (stocksWithNullThreshold.length > 0) {
-      const stockNames = stocksWithNullThreshold.map(setting => {
+  // 유효성 검사
+  const getValidationMessages = () => {
+    const errors: Array<{ message: string; type: 'error' | 'warning' }> = [];
+
+    // 임계값이 0~10% 범위인 주식 검사 (오류)
+    const stocksWithLowThreshold = stockSettings.filter(setting =>
+      setting.threshold !== null && setting.threshold >= 0 && setting.threshold <= 10
+    );
+    if (stocksWithLowThreshold.length > 0) {
+      const stockNames = stocksWithLowThreshold.map(setting => {
         const stock = stocks.find(s => s.code === setting.code);
         return stock?.name || setting.code;
       }).join(', ');
-      alert(`다음 주식의 임계값을 설정해주세요: ${stockNames}`);
-      return;
+      errors.push({
+        message: `다음 주식의 임계값이 너무 낮습니다 (10% 초과 필수): ${stockNames}`,
+        type: 'error'
+      });
+    }
+
+    // 임계값이 10~20% 범위인 주식 검사 (경고)
+    const stocksWithMediumThreshold = stockSettings.filter(setting =>
+      setting.threshold !== null && setting.threshold > 10 && setting.threshold <= 20
+    );
+    if (stocksWithMediumThreshold.length > 0) {
+      const stockNames = stocksWithMediumThreshold.map(setting => {
+        const stock = stocks.find(s => s.code === setting.code);
+        return stock?.name || setting.code;
+      }).join(', ');
+      errors.push({
+        message: `다음 주식의 임계값은 20% 이상을 권장합니다: ${stockNames}`,
+        type: 'warning'
+      });
+    }
+
+    return errors;
+  };
+
+  // 저장
+  const handleSave = () => {
+    const validationMessages = getValidationMessages();
+    const hasErrors = validationMessages.some(msg => msg.type === 'error');
+    if (hasErrors) {
+      return; // 오류가 있을 시 저장하지 않음
     }
 
     const updatedStocks = stocks.map(stock => {
@@ -153,6 +185,8 @@ export default function StockSettingsModal({
   const registeredStocks = stocks.filter(stock => stock.type === 'registered');
   const settingsWithTargets = calculateTargetWeights(stockSettings);
   const totalWeight = stockSettings.reduce((sum, setting) => sum + setting.weight, 0);
+  const validationMessages = getValidationMessages();
+  const hasErrors = validationMessages.some(msg => msg.type === 'error');
 
   return (
     <AnimatePresence>
@@ -192,14 +226,20 @@ export default function StockSettingsModal({
               </button>
             </div>
 
-            {/* 전체 통계 */}
-            <div className={styles.summary}>
 
-              <div className={styles.summaryItem}>
-                <span className={styles.summaryLabel}>등록 주식 수</span>
-                <span className={styles.summaryValue}>{registeredStocks.length}개</span>
+            {/* 유효성 검사 메시지 */}
+            {validationMessages.length > 0 && (
+              <div className={styles.validationMessages}>
+                {validationMessages.map((msg, index) => (
+                  <div key={index} className={`${styles.message} ${styles[msg.type]}`}>
+                    <span className={styles.messageIcon}>
+                      {msg.type === 'error' ? '⚠️' : '💡'}
+                    </span>
+                    {msg.message}
+                  </div>
+                ))}
               </div>
-            </div>
+            )}
 
             {/* 주식 설정 리스트 */}
             <div className={styles.content}>
@@ -317,7 +357,7 @@ export default function StockSettingsModal({
                 </button>
                 <button
                   onClick={handleSaveClick}
-                  disabled={!hasChanges || isSaving}
+                  disabled={!hasChanges || isSaving || hasErrors}
                   className={styles.saveButton}
                 >
                   <Save size={16} />

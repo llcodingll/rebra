@@ -12,8 +12,8 @@ public class RebalancingHistorySummaryResponse {
 
     private PeriodInfo period;
     private Integer totalRebalances;
-    private BigDecimal totalBuyAmount;
-    private BigDecimal totalSellAmount;
+    private Long totalBuyAmount;
+    private Long totalSellAmount;
     private Integer autoRebalances;
     private Integer manualRebalances;
 
@@ -26,7 +26,7 @@ public class RebalancingHistorySummaryResponse {
 
     public static RebalancingHistorySummaryResponse of(
             LocalDate startDate, LocalDate endDate,
-            Integer totalRebalances, BigDecimal totalBuyAmount, BigDecimal totalSellAmount,
+            Integer totalRebalances, Long totalBuyAmount, Long totalSellAmount,
             Integer autoRebalances, Integer manualRebalances) {
 
         return RebalancingHistorySummaryResponse.builder()

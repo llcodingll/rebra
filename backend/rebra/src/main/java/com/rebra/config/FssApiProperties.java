@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class FssApiProperties {
 
     private String baseUrl;
+    private String marketIndexBaseUrl;
     private String serviceKey;
     private int timeout = 30000; // 30초 기본값
     private int maxRetries = 3;

@@ -65,8 +65,8 @@ class RebalancingHistoryControllerTest {
                     .orderId(1L)
                     .executionType(ExecutionType.AUTO)
                     .totalStocks(3)
-                    .totalBuyAmount(new BigDecimal("1500000"))
-                    .totalSellAmount(new BigDecimal("800000"))
+                    .totalBuyAmount(1500000L)
+                    .totalSellAmount(800000L)
                     .status(TransactionStatus.COMPLETED)
                     .executedAt(LocalDateTime.now())
                     .build();
@@ -75,8 +75,8 @@ class RebalancingHistoryControllerTest {
                     LocalDate.of(2025, 1, 1),
                     LocalDate.of(2025, 9, 17),
                     5,
-                    new BigDecimal("5000000"),
-                    new BigDecimal("3000000"),
+                    5000000L,
+                    3000000L,
                     3,
                     2);
 
@@ -120,8 +120,8 @@ class RebalancingHistoryControllerTest {
                     LocalDate.of(2025, 1, 1),
                     LocalDate.of(2025, 9, 17),
                     0,
-                    BigDecimal.ZERO,
-                    BigDecimal.ZERO,
+                    0L,
+                    0L,
                     0,
                     0);
 
@@ -171,7 +171,7 @@ class RebalancingHistoryControllerTest {
             RebalancingHistoryListResponse content = RebalancingHistoryListResponse.of(
                     Collections.emptyList(),
                     RebalancingHistorySummaryResponse.of(
-                            LocalDate.now(), LocalDate.now(), 0, BigDecimal.ZERO, BigDecimal.ZERO, 0, 0));
+                            LocalDate.now(), LocalDate.now(), 0, 0L, 0L, 0, 0));
 
             PageInfo pageInfo = new PageInfo(0, 20, 0L, 0, true, true);
 
@@ -204,18 +204,18 @@ class RebalancingHistoryControllerTest {
                     RebalancingHistoryGraphResponse.builder()
                             .orderId(null)
                             .executedAt(LocalDateTime.of(2025, 1, 1, 9, 0))
-                            .cumulativeReturn(new BigDecimal("100.00"))
+                            .cumulativeReturn(100.00)
                             .build(),
                     // 실제 데이터
                     RebalancingHistoryGraphResponse.builder()
                             .orderId(1L)
                             .executedAt(LocalDateTime.of(2025, 2, 15, 14, 30))
-                            .cumulativeReturn(new BigDecimal("105.25"))
+                            .cumulativeReturn(105.25)
                             .build(),
                     RebalancingHistoryGraphResponse.builder()
                             .orderId(2L)
                             .executedAt(LocalDateTime.of(2025, 3, 15, 10, 15))
-                            .cumulativeReturn(new BigDecimal("108.50"))
+                            .cumulativeReturn(108.50)
                             .build()
             );
 
@@ -253,7 +253,7 @@ class RebalancingHistoryControllerTest {
                     RebalancingHistoryGraphResponse.builder()
                             .orderId(null)
                             .executedAt(LocalDateTime.of(2025, 1, 1, 9, 0))
-                            .cumulativeReturn(new BigDecimal("100.00"))
+                            .cumulativeReturn(100.00)
                             .build()
             );
 
@@ -305,10 +305,7 @@ class RebalancingHistoryControllerTest {
                             .stockName("삼성전자")
                             .tradeType("SELL")
                             .executedShares(5)
-                            .price(new BigDecimal("78000.00"))
-                            .fee(new BigDecimal("1170.00"))
-                            .profitAmount(new BigDecimal("15000.00"))
-                            .profitRate(new BigDecimal("4.17"))
+                            .price(78000L)
                             .reason("목표 비중 초과로 인한 매도")
                             .tradeDate(LocalDateTime.of(2025, 2, 15, 14, 30, 15))
                             .build(),
@@ -318,10 +315,7 @@ class RebalancingHistoryControllerTest {
                             .stockName("SK하이닉스")
                             .tradeType("BUY")
                             .executedShares(8)
-                            .price(new BigDecimal("95000.00"))
-                            .fee(new BigDecimal("2280.00"))
-                            .profitAmount(BigDecimal.ZERO)
-                            .profitRate(BigDecimal.ZERO)
+                            .price(95000L)
                             .reason("목표 비중 미달로 인한 매수")
                             .tradeDate(LocalDateTime.of(2025, 2, 15, 14, 30, 30))
                             .build()
@@ -331,7 +325,7 @@ class RebalancingHistoryControllerTest {
                     .orderId(orderId)
                     .executionType(ExecutionType.AUTO)
                     .executedAt(LocalDateTime.of(2025, 2, 15, 14, 30))
-                    .cumulativeReturn(new BigDecimal("105.25"))
+                    .cumulativeReturn(105.25)
                     .trades(trades)
                     .build();
 

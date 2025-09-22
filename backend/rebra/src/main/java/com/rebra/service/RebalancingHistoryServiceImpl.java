@@ -23,7 +23,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -154,10 +153,10 @@ public class RebalancingHistoryServiceImpl implements RebalancingHistoryService 
         Integer totalRebalances = rebalancingOrderRepository
                 .countByPortfolioIdWithDateRange(portfolioId, startDateTime, endDateTime);
 
-        BigDecimal totalBuyAmount = rebalancingOrderRepository
+        Long totalBuyAmount = rebalancingOrderRepository
                 .sumTotalBuyAmountByPortfolioIdWithDateRange(portfolioId, startDateTime, endDateTime);
 
-        BigDecimal totalSellAmount = rebalancingOrderRepository
+        Long totalSellAmount = rebalancingOrderRepository
                 .sumTotalSellAmountByPortfolioIdWithDateRange(portfolioId, startDateTime, endDateTime);
 
         Integer autoRebalances = rebalancingOrderRepository
