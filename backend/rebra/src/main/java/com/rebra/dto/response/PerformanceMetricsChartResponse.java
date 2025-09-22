@@ -58,6 +58,23 @@ public class PerformanceMetricsChartResponse {
 
         @Schema(description = "매수 실행 여부", example = "false")
         private boolean isBought;
+
+        @Schema(description = "포트폴리오 구성 변경 여부", example = "false")
+        private boolean isCompositionChanged;
+
+        /**
+         * PerformanceMetrics 엔티티로부터 PerformanceDataPoint 생성
+         */
+        public static PerformanceDataPoint from(com.rebra.entity.PerformanceMetrics metrics) {
+            return PerformanceDataPoint.builder()
+                    .metricDate(metrics.getMetricDate())
+                    .totalValue(metrics.getTotalValue())
+                    .isRebalanced(metrics.isRebalanced())
+                    .isSold(metrics.isSold())
+                    .isBought(metrics.isBought())
+                    .isCompositionChanged(metrics.isCompositionChanged())
+                    .build();
+        }
     }
 
     @Getter
@@ -93,5 +110,58 @@ public class PerformanceMetricsChartResponse {
 
         @Schema(description = "최저 포트폴리오 가치", example = "950000.0")
         private Double minValue;
+
+        /**
+         * PerformanceMetrics 리스트로부터 PerformanceStatistics 생성
+         */
+        public static PerformanceStatistics from(java.util.List<com.rebra.entity.PerformanceMetrics> metricsData) {
+            if (metricsData.isEmpty()) {
+                return PerformanceStatistics.builder()
+                        .totalDataPoints(0)
+                        .rebalancingCount(0)
+                        .buyCount(0)
+                        .sellCount(0)
+                        .build();
+            }
+
+            int rebalancingCount = 0;
+            int buyCount = 0;
+            int sellCount = 0;
+
+            double maxValue = Double.MIN_VALUE;
+            double minValue = Double.MAX_VALUE;
+
+            for (com.rebra.entity.PerformanceMetrics metrics : metricsData) {
+                if (metrics.isRebalanced()) rebalancingCount++;
+                if (metrics.isBought()) buyCount++;
+                if (metrics.isSold()) sellCount++;
+
+                double value = metrics.getTotalValue();
+                if (value > maxValue) maxValue = value;
+                if (value < minValue) minValue = value;
+            }
+
+            // 초기값과 최종값
+            Double initialValue = metricsData.get(0).getTotalValue();
+            Double finalValue = metricsData.get(metricsData.size() - 1).getTotalValue();
+
+            // 총 수익률 계산
+            Double totalReturnRate = null;
+            if (initialValue != null && initialValue > 0 && finalValue != null) {
+                totalReturnRate = ((finalValue - initialValue) / initialValue) * 100.0;
+            }
+
+            return PerformanceStatistics.builder()
+                    .totalDataPoints(metricsData.size())
+                    .rebalancingCount(rebalancingCount)
+                    .buyCount(buyCount)
+                    .sellCount(sellCount)
+                    .initialValue(initialValue)
+                    .finalValue(finalValue)
+                    .totalReturnRate(totalReturnRate)
+                    .maxValue(maxValue != Double.MIN_VALUE ? maxValue : null)
+                    .minValue(minValue != Double.MAX_VALUE ? minValue : null)
+                    .build();
+        }
     }
 }
