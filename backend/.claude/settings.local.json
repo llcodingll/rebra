@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(findstr:*)",
+      "Bash(./gradlew:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

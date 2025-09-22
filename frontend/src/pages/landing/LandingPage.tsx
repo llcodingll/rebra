@@ -12,12 +12,15 @@ import {
   ArrowRight
 } from 'lucide-react';
 import styles from './LandingPage.module.css';
+import KakaoLoginWidget from '../../widgets/auth/KakaoLoginWidget';
 
 export default function LandingPage() {
   const navigate = useNavigate();
 
-  const handleSignup = () => navigate('/signup');
-  const handleLogin = () => navigate('/login');
+  const handleLoginSuccess = () => {
+    // 로그인 성공 시 대시보드로 이동
+    navigate('/dashboard');
+  };
 
   return (
     <div className={styles.landingPage}>
@@ -31,14 +34,6 @@ export default function LandingPage() {
             <span className={styles.logoText}>Rebra</span>
           </div>
 
-          <div className={styles.headerButtons}>
-            <button className={styles.loginButton} onClick={handleLogin}>
-              로그인
-            </button>
-            <button className={styles.signupButton} onClick={handleSignup}>
-              무료로 시작하기
-            </button>
-          </div>
         </div>
       </header>
 
@@ -68,15 +63,6 @@ export default function LandingPage() {
               모든 투자 도구를 한 곳에서 경험하세요.
             </p>
 
-            <div className={styles.heroButtons}>
-              <button className={styles.primaryButton} onClick={handleSignup}>
-                <ArrowRight size={16} />
-                무료로 시작하기
-              </button>
-              <button className={styles.secondaryButton} onClick={handleLogin}>
-                로그인하기
-              </button>
-            </div>
 
             <div className={styles.socialProof}>
               <div className={styles.stats}>
@@ -331,13 +317,7 @@ export default function LandingPage() {
               <p>지금 바로 Rebra를 체험하고 더 스마트한 투자를 시작하세요</p>
 
               <div className={styles.ctaButtons}>
-                <button className={styles.ctaPrimary} onClick={handleSignup}>
-                  <ArrowRight size={16} />
-                  지금 시작하기
-                </button>
-                <button className={styles.ctaSecondary} onClick={handleLogin}>
-                  로그인하기
-                </button>
+                <KakaoLoginWidget onLoginSuccess={handleLoginSuccess} />
               </div>
 
               <div className={styles.ctaFeatures}>
