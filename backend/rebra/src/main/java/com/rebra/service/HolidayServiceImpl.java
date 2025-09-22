@@ -38,13 +38,12 @@ public class HolidayServiceImpl implements HolidayService {
     }
 
     /**
-     * 특정 연/월의 공휴일 목록을 조회한다 (캐싱 적용)
+     * 특정 연/월의 공휴일 목록을 조회한다
      * 
      * @param year 연도
      * @param month 월
      * @return 공휴일 날짜 Set
      */
-    @Cacheable(value = "holidayCache", key = "#year + '-' + #month")
     public Set<LocalDate> getHolidaysForMonth(int year, int month) {
         try {
             log.info("공휴일 데이터 조회 시작 - {}년 {}월", year, month);

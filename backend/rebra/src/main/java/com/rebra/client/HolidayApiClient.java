@@ -5,6 +5,7 @@ import com.rebra.dto.external.HolidayApiResponse;
 import com.rebra.exception.external.ExternalApiException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -27,12 +28,13 @@ public class HolidayApiClient {
     private final FssApiProperties fssApiProperties;
 
     /**
-     * 특정 연/월의 공휴일 날짜 목록을 조회한다
+     * 특정 연/월의 공휴일 날짜 목록을 조회한다 (캐싱 적용)
      * 
      * @param year 연도
      * @param month 월
      * @return 공휴일 날짜 Set (LocalDate)
      */
+    @Cacheable(value = "holidayCache", key = "#year + '-' + #month")
     public Set<LocalDate> getHolidaysForMonth(int year, int month) {
         if (!StringUtils.hasText(fssApiProperties.getServiceKey())) {
             throw new ExternalApiException("공휴일 API 서비스 키가 설정되지 않았습니다");
@@ -128,11 +130,16 @@ public class HolidayApiClient {
 
     private List<HolidayApiResponse.HolidayItem> extractHolidayItems(HolidayApiResponse response) {
         HolidayApiResponse.Body body = response.getResponse().getBody();
-        if (body == null || body.getItems() == null || body.getItems().getItem() == null) {
+        if (body == null || body.getItems() == null) {
             return new ArrayList<>();
         }
         
-        return body.getItems().getItem();
+        List<HolidayApiResponse.HolidayItem> items = body.getItems().getItem();
+        if (items == null) {
+            return new ArrayList<>();
+        }
+        
+        return items;
     }
 
     private LocalDate parseDate(String dateStr) {

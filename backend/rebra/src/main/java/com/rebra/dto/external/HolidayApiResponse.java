@@ -2,6 +2,7 @@ package com.rebra.dto.external;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
 import java.util.List;
@@ -37,6 +38,7 @@ public class HolidayApiResponse {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Body {
         @JsonProperty("items")
+        @JsonDeserialize(using = ItemsDeserializer.class)
         private Items items;
 
         @JsonProperty("numOfRows")
@@ -53,6 +55,7 @@ public class HolidayApiResponse {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Items {
         @JsonProperty("item")
+        @JsonDeserialize(using = ItemDeserializer.class)
         private List<HolidayItem> item;
     }
 
