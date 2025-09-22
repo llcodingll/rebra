@@ -60,7 +60,7 @@ export default function MyPortfolio({
   };
 
   const checkRebalanceWarning = (item: PortfolioItem) => {
-    if (totalValue === 0 || item.threshold === 0 || item.targetWeight === 0) return false;
+    if (totalValue === 0 || item.targetWeight === 0) return false;
 
     // 현재 평가액 기준 실제 비중 계산
     const currentValue = calculateValue(item.buyPrice, item.quantity);
@@ -72,8 +72,11 @@ export default function MyPortfolio({
     // 정규화된 목표비중 대비 편차율 계산: |실제비중 - 정규화목표비중| / 정규화목표비중 * 100
     const deviationRate = normalizedTargetWeight > 0 ? Math.abs(actualWeight - normalizedTargetWeight) / normalizedTargetWeight * 100 : 0;
 
-    // 편차율이 임계값보다 큰 경우 경고
-    return deviationRate > item.threshold;
+    // 임계값 설정: 임계값 기반은 사용자 설정값, 주기적은 10% 고정
+    const thresholdValue = rebalancingType === 'THRESHOLD' ? item.threshold : 10;
+
+    // 편차율이 임계값보다 큰 경우 경고 (임계값이 0이 아닐 때만)
+    return thresholdValue > 0 && deviationRate > thresholdValue;
   };
 
   const handleThresholdChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,9 +228,39 @@ export default function MyPortfolio({
                   </div>
                 </div>
                 <div className={styles.tableCell}>
-                  <span className={styles.valueText}>
-                    {formatCompactPrice(calculateValue(item.buyPrice, item.quantity))}
-                  </span>
+                  <div className={styles.valueContainer}>
+                    <span className={styles.valueText}>
+                      {formatCompactPrice(calculateValue(item.buyPrice, item.quantity))}
+                    </span>
+                    {rebalancingType === 'PERIODIC' && checkRebalanceWarning(item) && (
+                      <div className={styles.warningIconContainer}>
+                        <AlertTriangle
+                          className={styles.permanentWarningIcon}
+                          style={{
+                            color: '#ff6b6b',
+                            marginLeft: '5px',
+                            width: '16px',
+                            height: '16px'
+                          }}
+                          onMouseEnter={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setTooltipPosition(prev => ({
+                              ...prev,
+                              [item.code]: { x: rect.left, y: rect.top }
+                            }));
+                            setWarningVisible(prev => ({
+                              ...prev,
+                              [item.code]: true
+                            }));
+                          }}
+                          onMouseLeave={() => setWarningVisible(prev => ({
+                            ...prev,
+                            [item.code]: false
+                          }))}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
                 {rebalancingType === 'THRESHOLD' && (
                   <div className={styles.tableCell}>
