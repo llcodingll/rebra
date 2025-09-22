@@ -35,9 +35,9 @@ export const transformSearchResults = (
 
   return apiData
     .map((item) => ({
-      code: item.ticker,
-      name: item.name,
-      isFavorite: favoriteStockCodes.includes(item.ticker),
+      code: item.stockCode,
+      name: item.stockName,
+      isFavorite: favoriteStockCodes.includes(item.stockCode),
     }))
     .slice(0, 10); // 최대 10개로 제한
 };
