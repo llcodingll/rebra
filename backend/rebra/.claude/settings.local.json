@@ -3,7 +3,9 @@
     "allow": [
       "Bash(./gradlew:*)",
       "Bash(rm:*)",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "Bash(git restore:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

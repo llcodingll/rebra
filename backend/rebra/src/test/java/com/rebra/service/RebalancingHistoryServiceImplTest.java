@@ -71,13 +71,13 @@ class RebalancingHistoryServiceImplTest {
     private RebalancingOrder createTestRebalancingOrder(Long id, ExecutionType executionType, LocalDateTime rebalancingDate) {
         RebalancingOrder order = mock(RebalancingOrder.class);
         lenient().when(order.getId()).thenReturn(id);
-        lenient().when(order.getTotalBuyAmount()).thenReturn(new BigDecimal("1500000"));
-        lenient().when(order.getTotalSellAmount()).thenReturn(new BigDecimal("800000"));
+        lenient().when(order.getTotalBuyAmount()).thenReturn(1500000L);
+        lenient().when(order.getTotalSellAmount()).thenReturn(800000L);
         lenient().when(order.getRebalancingDate()).thenReturn(rebalancingDate);
         lenient().when(order.getStatus()).thenReturn(TransactionStatus.COMPLETED);
         lenient().when(order.getExecutionType()).thenReturn(executionType);
-        lenient().when(order.getCumulativeReturn()).thenReturn(new BigDecimal("105.25"));
-        lenient().when(order.getTotalPortfolioValue()).thenReturn(new BigDecimal("10525000")); // 수익률 기반 계산
+        lenient().when(order.getCumulativeReturn()).thenReturn(105.25);
+        lenient().when(order.getTotalPortfolioValue()).thenReturn(10525000L); // 수익률 기반 계산
         return order;
     }
 
@@ -88,10 +88,7 @@ class RebalancingHistoryServiceImplTest {
         lenient().when(tradeRecord.getStockName()).thenReturn(stockName);
         lenient().when(tradeRecord.getTradeType()).thenReturn(tradeType);
         lenient().when(tradeRecord.getExecutedShares()).thenReturn(10);
-        lenient().when(tradeRecord.getExecutedPrice()).thenReturn(new BigDecimal("50000"));
-        lenient().when(tradeRecord.getFee()).thenReturn(new BigDecimal("750"));
-        lenient().when(tradeRecord.getProfitAmount()).thenReturn(new BigDecimal("5000"));
-        lenient().when(tradeRecord.getProfitRate()).thenReturn(new BigDecimal("10.0"));
+        lenient().when(tradeRecord.getExecutedPrice()).thenReturn(50000L);
         lenient().when(tradeRecord.getReason()).thenReturn("리밸런싱");
         lenient().when(tradeRecord.getTradeDate()).thenReturn(LocalDateTime.now());
         return tradeRecord;
@@ -134,10 +131,10 @@ class RebalancingHistoryServiceImplTest {
                     .willReturn(5);
             given(rebalancingOrderRepository.sumTotalBuyAmountByPortfolioIdWithDateRange(
                     eq(portfolioId), any(LocalDateTime.class), any(LocalDateTime.class)))
-                    .willReturn(new BigDecimal("5000000"));
+                    .willReturn(5000000L);
             given(rebalancingOrderRepository.sumTotalSellAmountByPortfolioIdWithDateRange(
                     eq(portfolioId), any(LocalDateTime.class), any(LocalDateTime.class)))
-                    .willReturn(new BigDecimal("3000000"));
+                    .willReturn(3000000L);
             given(rebalancingOrderRepository.countAutoRebalancingByPortfolioIdWithDateRange(
                     eq(portfolioId), any(LocalDateTime.class), any(LocalDateTime.class)))
                     .willReturn(3);
@@ -162,8 +159,8 @@ class RebalancingHistoryServiceImplTest {
             assertThat(history1.getOrderId()).isEqualTo(1L);
             assertThat(history1.getExecutionType()).isEqualTo(ExecutionType.AUTO);
             assertThat(history1.getTotalStocks()).isEqualTo(3);
-            assertThat(history1.getTotalBuyAmount()).isEqualTo(new BigDecimal("1500000"));
-            assertThat(history1.getTotalPortfolioValue()).isEqualTo(new BigDecimal("10525000"));
+            assertThat(history1.getTotalBuyAmount()).isEqualTo(1500000);
+            assertThat(history1.getTotalPortfolioValue()).isEqualTo(10525000);
             assertThat(history1.getStatus()).isEqualTo(TransactionStatus.COMPLETED);
 
             // 두 번째 히스토리 검증
@@ -171,15 +168,15 @@ class RebalancingHistoryServiceImplTest {
             assertThat(history2.getOrderId()).isEqualTo(2L);
             assertThat(history2.getExecutionType()).isEqualTo(ExecutionType.MANUAL);
             assertThat(history2.getTotalStocks()).isEqualTo(2);
-            assertThat(history2.getTotalPortfolioValue()).isEqualTo(new BigDecimal("10525000"));
+            assertThat(history2.getTotalPortfolioValue()).isEqualTo(10525000);
 
             // 요약 정보 검증
             RebalancingHistorySummaryResponse summary = content.getSummary();
             assertThat(summary.getPeriod().getStartDate()).isEqualTo(LocalDate.of(2025, 1, 1));
             assertThat(summary.getPeriod().getEndDate()).isEqualTo(LocalDate.of(2025, 9, 17));
             assertThat(summary.getTotalRebalances()).isEqualTo(5);
-            assertThat(summary.getTotalBuyAmount()).isEqualTo(new BigDecimal("5000000"));
-            assertThat(summary.getTotalSellAmount()).isEqualTo(new BigDecimal("3000000"));
+            assertThat(summary.getTotalBuyAmount()).isEqualTo(5000000);
+            assertThat(summary.getTotalSellAmount()).isEqualTo(3000000);
             assertThat(summary.getAutoRebalances()).isEqualTo(3);
             assertThat(summary.getManualRebalances()).isEqualTo(2);
 
@@ -214,10 +211,10 @@ class RebalancingHistoryServiceImplTest {
                     .willReturn(0);
             given(rebalancingOrderRepository.sumTotalBuyAmountByPortfolioIdWithDateRange(
                     eq(portfolioId), any(LocalDateTime.class), any(LocalDateTime.class)))
-                    .willReturn(BigDecimal.ZERO);
+                    .willReturn(0L);
             given(rebalancingOrderRepository.sumTotalSellAmountByPortfolioIdWithDateRange(
                     eq(portfolioId), any(LocalDateTime.class), any(LocalDateTime.class)))
-                    .willReturn(BigDecimal.ZERO);
+                    .willReturn(0L);
             given(rebalancingOrderRepository.countAutoRebalancingByPortfolioIdWithDateRange(
                     eq(portfolioId), any(LocalDateTime.class), any(LocalDateTime.class)))
                     .willReturn(0);
@@ -277,10 +274,10 @@ class RebalancingHistoryServiceImplTest {
                     .willReturn(0);
             given(rebalancingOrderRepository.sumTotalBuyAmountByPortfolioIdWithDateRange(
                     eq(portfolioId), any(LocalDateTime.class), any(LocalDateTime.class)))
-                    .willReturn(BigDecimal.ZERO);
+                    .willReturn(0L);
             given(rebalancingOrderRepository.sumTotalSellAmountByPortfolioIdWithDateRange(
                     eq(portfolioId), any(LocalDateTime.class), any(LocalDateTime.class)))
-                    .willReturn(BigDecimal.ZERO);
+                    .willReturn(0L);
             given(rebalancingOrderRepository.countAutoRebalancingByPortfolioIdWithDateRange(
                     eq(portfolioId), any(LocalDateTime.class), any(LocalDateTime.class)))
                     .willReturn(0);
@@ -299,97 +296,6 @@ class RebalancingHistoryServiceImplTest {
             // endDate가 현재 날짜로 설정되었는지 확인 (정확한 시간은 검증하지 않고 오늘 날짜인지만 확인)
             LocalDate today = LocalDate.now();
             assertThat(result.content().getSummary().getPeriod().getEndDate()).isEqualTo(today);
-        }
-    }
-
-    @Nested
-    @DisplayName("getAllRebalancingHistory() - 그래프용 전체 조회")
-    class GetAllRebalancingHistory {
-
-        @Test
-        @DisplayName("성공 - 더미 데이터와 실제 히스토리 리스트 반환")
-        void getAllRebalancingHistory_성공() {
-            // Given
-            Long portfolioId = 1L;
-            Portfolio portfolio = createTestPortfolio();
-
-            RebalancingOrder order1 = createTestRebalancingOrder(1L, ExecutionType.AUTO,
-                    LocalDateTime.of(2025, 2, 15, 14, 30));
-            RebalancingOrder order2 = createTestRebalancingOrder(2L, ExecutionType.MANUAL,
-                    LocalDateTime.of(2025, 3, 15, 10, 15));
-
-            List<RebalancingOrder> orders = Arrays.asList(order1, order2);
-
-            given(portfolioRepository.findById(portfolioId)).willReturn(Optional.of(portfolio));
-            given(rebalancingOrderRepository.findAllByPortfolioIdWithDateRange(
-                    eq(portfolioId), any(LocalDateTime.class), any(LocalDateTime.class)))
-                    .willReturn(orders);
-
-            // When
-            List<RebalancingHistoryGraphResponse> result =
-                    rebalancingHistoryService.getAllRebalancingHistory(portfolioId);
-
-            // Then
-            assertThat(result).isNotNull();
-            assertThat(result).hasSize(3); // 더미 데이터 1개 + 실제 데이터 2개
-
-            // 더미 데이터 검증 (첫 번째 요소)
-            RebalancingHistoryGraphResponse dummyData = result.get(0);
-            assertThat(dummyData.getOrderId()).isNull();
-            assertThat(dummyData.getExecutedAt()).isEqualTo(LocalDateTime.of(2025, 1, 1, 9, 0));
-            assertThat(dummyData.getCumulativeReturn()).isEqualTo(new BigDecimal("100.00"));
-
-            // 실제 데이터 검증 (두 번째, 세 번째 요소)
-            RebalancingHistoryGraphResponse actual1 = result.get(1);
-            assertThat(actual1.getOrderId()).isEqualTo(1L);
-            assertThat(actual1.getExecutedAt()).isEqualTo(LocalDateTime.of(2025, 2, 15, 14, 30));
-            assertThat(actual1.getCumulativeReturn()).isEqualTo(new BigDecimal("105.25"));
-
-            RebalancingHistoryGraphResponse actual2 = result.get(2);
-            assertThat(actual2.getOrderId()).isEqualTo(2L);
-            assertThat(actual2.getExecutedAt()).isEqualTo(LocalDateTime.of(2025, 3, 15, 10, 15));
-            assertThat(actual2.getCumulativeReturn()).isEqualTo(new BigDecimal("105.25"));
-        }
-
-        @Test
-        @DisplayName("성공 - 더미 데이터만 있는 경우 (히스토리 없음)")
-        void getAllRebalancingHistory_성공_더미데이터만() {
-            // Given
-            Long portfolioId = 1L;
-            Portfolio portfolio = createTestPortfolio();
-
-            given(portfolioRepository.findById(portfolioId)).willReturn(Optional.of(portfolio));
-            given(rebalancingOrderRepository.findAllByPortfolioIdWithDateRange(
-                    eq(portfolioId), any(LocalDateTime.class), any(LocalDateTime.class)))
-                    .willReturn(Collections.emptyList());
-
-            // When
-            List<RebalancingHistoryGraphResponse> result =
-                    rebalancingHistoryService.getAllRebalancingHistory(portfolioId);
-
-            // Then
-            assertThat(result).isNotNull();
-            assertThat(result).hasSize(1); // 더미 데이터만
-
-            RebalancingHistoryGraphResponse dummyData = result.get(0);
-            assertThat(dummyData.getOrderId()).isNull();
-            assertThat(dummyData.getExecutedAt()).isEqualTo(LocalDateTime.of(2025, 1, 1, 9, 0));
-            assertThat(dummyData.getCumulativeReturn()).isEqualTo(new BigDecimal("100.00"));
-        }
-
-        @Test
-        @DisplayName("실패 - 포트폴리오 없음")
-        void getAllRebalancingHistory_실패_포트폴리오없음() {
-            // Given
-            Long portfolioId = 999L;
-
-            given(portfolioRepository.findById(portfolioId)).willReturn(Optional.empty());
-
-            // When & Then
-            assertThatThrownBy(() ->
-                    rebalancingHistoryService.getAllRebalancingHistory(portfolioId))
-                    .isInstanceOf(CustomRuntimeException.class)
-                    .hasMessage(ExceptionCode.PORTFOLIO_NOT_FOUND.getMessage());
         }
     }
 
@@ -425,8 +331,8 @@ class RebalancingHistoryServiceImplTest {
             assertThat(result.getOrderId()).isEqualTo(orderId);
             assertThat(result.getExecutionType()).isEqualTo(ExecutionType.AUTO);
             assertThat(result.getExecutedAt()).isEqualTo(LocalDateTime.of(2025, 2, 15, 14, 30));
-            assertThat(result.getCumulativeReturn()).isEqualTo(new BigDecimal("105.25"));
-            assertThat(result.getTotalPortfolioValue()).isEqualTo(new BigDecimal("10525000"));
+            assertThat(result.getCumulativeReturn()).isEqualTo(105.25);
+            assertThat(result.getTotalPortfolioValue()).isEqualTo(10525000);
 
             // 거래 내역 검증
             List<TradeDetailResponse> trades = result.getTrades();
@@ -438,7 +344,7 @@ class RebalancingHistoryServiceImplTest {
             assertThat(tradeDetail1.getStockName()).isEqualTo("삼성전자");
             assertThat(tradeDetail1.getTradeType()).isEqualTo("SELL");
             assertThat(tradeDetail1.getExecutedShares()).isEqualTo(10);
-            assertThat(tradeDetail1.getPrice()).isEqualTo(new BigDecimal("50000"));
+            assertThat(tradeDetail1.getPrice()).isEqualTo(50000);
 
             TradeDetailResponse tradeDetail2 = trades.get(1);
             assertThat(tradeDetail2.getTradeId()).isEqualTo(790L);

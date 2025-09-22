@@ -3,7 +3,6 @@ import App from '../App';
 import Layout from '../widgets/common/Layout';
 import LandingPage from '../pages/landing/LandingPage';
 import SignupPage from '../pages/signup';
-import LoginPage from '../pages/login/LoginPage';
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import SearchPage from '../pages/search/SearchPage';
 import BacktestPage from '../pages/backtest/BacktestPage';
@@ -27,10 +26,6 @@ export const router = createBrowserRouter([
       {
         path: 'signup',
         element: <SignupPage />,
-      },
-      {
-        path: 'login',
-        element: <LoginPage />,
       },
       {
         path: 'dashboard',

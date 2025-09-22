@@ -9,6 +9,7 @@ import com.rebra.dto.response.BacktestResultResponse;
 import com.rebra.dto.response.BacktestValidationResponse;
 import com.rebra.dto.response.PageResponse;
 import com.rebra.dto.response.StockHistoricalDataResponse;
+import com.rebra.dto.response.StockHistoricalDataWithTradingInfo;
 import com.rebra.service.BacktestService;
 import com.rebra.service.StockHistoricalService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -93,8 +94,8 @@ public class BacktestController {
 
     @GetMapping("/stocks/historical")
     @Operation(summary = "백테스트용 과거 주식 데이터 조회", 
-               description = "종목명과 날짜로 과거 주식 데이터를 조회합니다. DB에서 먼저 찾고, 없으면 FSS API에서 조회 후 저장합니다.")
-    public ResponseEntity<CommonApiResponse<List<StockHistoricalDataResponse>>> getStockHistoricalData(
+               description = "종목명과 날짜로 과거 주식 데이터를 조회합니다. 거래일 여부도 함께 반환하여 클라이언트가 데이터 없음의 원인을 구분할 수 있습니다.")
+    public ResponseEntity<CommonApiResponse<StockHistoricalDataWithTradingInfo>> getStockHistoricalData(
             @Parameter(description = "검색할 종목명", example = "삼성전자", required = true)
             @RequestParam String stockName,
             @Parameter(description = "조회할 날짜 (YYYY-MM-DD)", example = "2023-01-01", required = true)
@@ -106,8 +107,8 @@ public class BacktestController {
                 java.time.LocalDate.parse(date)
         );
 
-        List<StockHistoricalDataResponse> results = stockHistoricalService.getStockHistoricalData(request);
-        return ResponseEntity.ok(CommonApiResponse.success(results));
+        StockHistoricalDataWithTradingInfo result = stockHistoricalService.getStockHistoricalData(request);
+        return ResponseEntity.ok(CommonApiResponse.success(result));
     }
 
 }
