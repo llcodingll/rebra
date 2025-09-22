@@ -1,6 +1,7 @@
 package com.rebra.scheduler;
 
 import com.rebra.entity.Portfolio;
+import com.rebra.repository.PerformanceMetricsRepository;
 import com.rebra.repository.PortfolioRepository;
 import com.rebra.service.PerformanceMetricsService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import java.util.List;
 public class PerformanceMetricsScheduler {
 
     private final PerformanceMetricsService performanceMetricsService;
+    private final PerformanceMetricsRepository performanceMetricsRepository;
     private final PortfolioRepository portfolioRepository;
 
     // TODO: 향후 공휴일 API나 설정을 통해 공휴일 체크 로직 추가
@@ -62,9 +64,10 @@ public class PerformanceMetricsScheduler {
             // 각 포트폴리오별 성과 메트릭 수집
             for (Portfolio portfolio : allPortfolios) {
                 try {
-                    // 중복 방지: 이미 오늘 데이터가 존재하는지 확인
-                    if (performanceMetricsService.existsMetrics(portfolio.getId(), targetDate)) {
-                        log.debug("이미 수집된 성과 메트릭 - Portfolio ID: {}, Date: {}",
+                    // 중복 방지: 이미 일일 성과 메트릭 데이터(구성 변경이 아닌)가 존재하는지 확인
+                    if (performanceMetricsRepository.existsByPortfolioIdAndMetricDateAndIsCompositionChangedFalse(
+                            portfolio.getId(), targetDate)) {
+                        log.debug("이미 수집된 일일 성과 메트릭 - Portfolio ID: {}, Date: {}",
                                 portfolio.getId(), targetDate);
                         successCount++;
                         continue;
