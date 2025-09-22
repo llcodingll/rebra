@@ -28,8 +28,17 @@ export default function StockDetailPage() {
 
   // 실시간 주식 데이터 연동
   const stockCode = symbol || '005930';
-  const { stockInfo, realtimePrice, orderbook, isConnected, isLoading, error, connectionDetails, disconnect } =
-    useRealtimeStock(stockCode);
+  const {
+    stockInfo,
+    realtimePrice,
+    orderbook,
+    isConnected,
+    isLoading,
+    error,
+    subscriptionStatus,
+    disconnect,
+    reconnect,
+  } = useRealtimeStock(stockCode);
 
   // 차트 데이터에서 현재 가격 정보 가져오기 (일봉 기준)
   const { data: infiniteData } = useInfiniteChartData(stockCode, 'daily', true);
@@ -179,7 +188,7 @@ export default function StockDetailPage() {
   return (
     <div className={styles.container}>
       {/* STOMP 연결 디버깅 패널 */}
-      {!isDevMode() && (
+      {isDevMode() && (
         <div className={styles.debugPanel}>
           <div className={styles.debugHeader}>
             <h3>🔌 STOMP 연결 상태</h3>
@@ -193,45 +202,43 @@ export default function StockDetailPage() {
           <div className={styles.debugContent}>
             <div className={styles.debugRow}>
               <span className={styles.debugLabel}>STOMP 연결:</span>
-              <span className={connectionDetails.stompConnected ? styles.statusOk : styles.statusError}>
-                {connectionDetails.stompConnected ? '✅ 연결됨' : '❌ 연결 안됨'}
+              <span className={isConnected ? styles.statusOk : styles.statusError}>
+                {isConnected ? '✅ 연결됨' : '❌ 연결 안됨'}
               </span>
             </div>
 
             <div className={styles.debugRow}>
-              <span className={styles.debugLabel}>가격 구독:</span>
-              <span className={connectionDetails.priceSubscribed ? styles.statusOk : styles.statusError}>
-                {connectionDetails.priceSubscribed ? '✅ 구독 중' : '❌ 구독 안됨'}
+              <span className={styles.debugLabel}>일괄 구독 요청:</span>
+              <span className={subscriptionStatus.requested ? styles.statusOk : styles.statusError}>
+                {subscriptionStatus.requested ? '✅ 요청됨' : '❌ 요청 안됨'}
               </span>
             </div>
 
             <div className={styles.debugRow}>
-              <span className={styles.debugLabel}>호가 구독:</span>
-              <span className={connectionDetails.orderbookSubscribed ? styles.statusOk : styles.statusError}>
-                {connectionDetails.orderbookSubscribed ? '✅ 구독 중' : '❌ 구독 안됨'}
+              <span className={styles.debugLabel}>구독 성공:</span>
+              <span className={subscriptionStatus.successful ? styles.statusOk : styles.statusError}>
+                {subscriptionStatus.successful ? '✅ 성공' : '❌ 실패'}
               </span>
             </div>
 
             <div className={styles.debugRow}>
-              <span className={styles.debugLabel}>연결 시도:</span>
-              <span className={styles.debugValue}>{connectionDetails.connectionAttempts}회</span>
+              <span className={styles.debugLabel}>로딩 상태:</span>
+              <span className={styles.debugValue}>{isLoading ? '⏳ 로딩 중...' : '✅ 완료'}</span>
             </div>
 
-            {connectionDetails.lastPriceUpdate && (
+            {subscriptionStatus.lastUpdate && (
               <div className={styles.debugRow}>
-                <span className={styles.debugLabel}>마지막 가격 업데이트:</span>
+                <span className={styles.debugLabel}>마지막 업데이트:</span>
                 <span className={styles.debugValue}>
-                  {new Date(connectionDetails.lastPriceUpdate).toLocaleTimeString()}
+                  {new Date(subscriptionStatus.lastUpdate).toLocaleTimeString()}
                 </span>
               </div>
             )}
 
-            {connectionDetails.lastOrderbookUpdate && (
+            {error && (
               <div className={styles.debugRow}>
-                <span className={styles.debugLabel}>마지막 호가 업데이트:</span>
-                <span className={styles.debugValue}>
-                  {new Date(connectionDetails.lastOrderbookUpdate).toLocaleTimeString()}
-                </span>
+                <span className={styles.debugLabel}>오류:</span>
+                <span className={styles.statusError}>{error}</span>
               </div>
             )}
           </div>
