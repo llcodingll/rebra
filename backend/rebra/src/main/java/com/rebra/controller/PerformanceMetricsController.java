@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PerformanceMetricsController {
 
     private final PerformanceMetricsService performanceMetricsService;
-    private final PerformanceMetricsScheduler performanceMetricsScheduler;
+//    private final PerformanceMetricsScheduler performanceMetricsScheduler;
 
     @Operation(
         summary = "포트폴리오 성과 차트 데이터 조회",
@@ -51,7 +51,7 @@ public class PerformanceMetricsController {
         /**
          * 스케줄러 메서드 강제 호출 / 테스트 시에 주석 풀고 사용하세요.
          */
-        performanceMetricsScheduler.collectDailyPerformanceMetrics();
+//        performanceMetricsScheduler.collectDailyPerformanceMetrics();
 
         PerformanceMetricsChartResponse response = performanceMetricsService
                 .getPortfolioPerformanceChart(portfolioId, userId);
