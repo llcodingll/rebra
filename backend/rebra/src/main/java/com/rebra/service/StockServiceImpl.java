@@ -1,6 +1,7 @@
 package com.rebra.service;
 
 import com.rebra.client.FssApiClient;
+import com.rebra.common.PageInfo;
 import com.rebra.component.KisApiComponent;
 import com.rebra.dto.external.FssStockBasicInfoResponse;
 import com.rebra.dto.external.FssStockPriceResponse;
@@ -9,10 +10,14 @@ import com.rebra.dto.response.StockBasicInfoResponse;
 import com.rebra.dto.response.StockChartResponse;
 import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockHistoricalDataResponse;
+import com.rebra.dto.response.StockHoldingDetailResponse;
+import com.rebra.dto.response.StockHoldingListResponse;
+import com.rebra.dto.response.StockHoldingResponse;
 import com.rebra.dto.response.StockSearchResponse;
 import com.rebra.entity.Account;
 import com.rebra.entity.Stock;
 import com.rebra.entity.StockPrice;
+import com.rebra.exception.account.AccountException;
 import com.rebra.exception.stock.StockException;
 import com.rebra.repository.AccountRepository;
 import com.rebra.repository.StockRepository;
@@ -27,6 +32,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -408,6 +414,90 @@ public class StockServiceImpl implements StockService {
         } catch (Exception e) {
             log.error("FSS API 종목기본정보 검색 실패 - 종목명: {}, 오류: {}", stockName, e.getMessage());
             return List.of();
+        }
+    }
+
+
+    @Override
+    public com.rebra.common.PageResponse<StockHoldingListResponse> getHoldingStocks(Long accountId, Pageable pageable) {
+        try {
+            log.info("보유 종목 조회 시작 - AccountId: {}, Page: {}, Size: {}",
+                    accountId, pageable.getPageNumber(), pageable.getPageSize());
+
+            // 1. 계좌 조회
+            Account account = accountRepository.findById(accountId)
+                    .orElseThrow(AccountException::accountNotFound);
+
+            // 2. KIS API로 잔고 조회
+            InquireBalanceResult balanceResult = kisApiComponent.getUserBalance(account);
+
+            // 3. 보유 종목 데이터 변환
+            List<StockHoldingResponse> holdings = new ArrayList<>();
+
+            if (balanceResult.getOutput1() != null && balanceResult.getOutput1().length > 0) {
+                for (InquireBalanceResult.Output1 holding : balanceResult.getOutput1()) {
+                    // 보유 수량이 0이 아닌 경우만 처리
+                    if (!"0".equals(holding.getHldgQty())) {
+                        holdings.add(StockHoldingResponse.from(holding));
+                    }
+                }
+            }
+
+            // 4. 페이지네이션 처리
+            int start = (int) pageable.getOffset();
+            int end = Math.min(start + pageable.getPageSize(), holdings.size());
+            List<StockHoldingResponse> pagedHoldings = holdings.subList(start, end);
+
+            Page<StockHoldingResponse> page = new PageImpl<>(pagedHoldings, pageable, holdings.size());
+
+            log.info("보유 종목 조회 완료 - AccountId: {}, 총 종목 수: {}, 페이지 크기: {}",
+                    accountId, holdings.size(), pagedHoldings.size());
+
+            StockHoldingListResponse content = StockHoldingListResponse.of(pagedHoldings);
+            PageInfo pageInfo = PageInfo.from(page);
+
+            return com.rebra.common.PageResponse.success("조회 성공", content, pageInfo);
+
+        } catch (Exception e) {
+            log.error("보유 종목 조회 실패 - AccountId: {}, Error: {}", accountId, e.getMessage(), e);
+            throw StockException.stockHoldingFetchFailed();
+        }
+    }
+
+    @Override
+    public StockHoldingDetailResponse getStockHolding(String stockCode, Long accountId) {
+        try {
+            log.info("특정 종목 보유 정보 조회 시작 - StockCode: {}, AccountId: {}", stockCode, accountId);
+
+            // 1. 계좌 조회
+            Account account = accountRepository.findById(accountId)
+                    .orElseThrow(AccountException::accountNotFound);
+
+            // 2. KIS API로 잔고 조회
+            InquireBalanceResult balanceResult = kisApiComponent.getUserBalance(account);
+
+            // 3. 해당 종목의 보유 정보 찾기
+            if (balanceResult.getOutput1() != null && balanceResult.getOutput1().length > 0) {
+                for (InquireBalanceResult.Output1 holding : balanceResult.getOutput1()) {
+                    if (stockCode.equals(holding.getPdno())) {
+                        // 보유 수량이 0이 아닌 경우만 반환
+                        if (!"0".equals(holding.getHldgQty())) {
+                            log.info("특정 종목 보유 정보 조회 완료 - StockCode: {}, AccountId: {}", stockCode, accountId);
+                            return StockHoldingDetailResponse.from(holding);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // 보유하지 않은 경우 null 반환
+            log.info("특정 종목 미보유 - StockCode: {}, AccountId: {}", stockCode, accountId);
+            return null;
+
+        } catch (Exception e) {
+            log.error("특정 종목 보유 정보 조회 실패 - StockCode: {}, AccountId: {}, Error: {}",
+                    stockCode, accountId, e.getMessage(), e);
+            throw StockException.stockHoldingDetailFetchFailed();
         }
     }
 }
