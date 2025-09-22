@@ -2,11 +2,14 @@ package com.rebra.util;
 
 import com.rebra.dto.realtime.OptimizedOrderbookData;
 import com.rebra.dto.realtime.OptimizedPriceData;
+import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Data;
+import com.youhogeon.finance.kis_api.api.realtime.H0STASP0Data;
 import com.rebra.dto.response.BulkSubscriptionResponse;
 import com.rebra.dto.response.SubscriptionResult;
 import com.rebra.dto.response.WebSocketResponse;
 import com.rebra.exception.CustomRuntimeException;
 import com.rebra.exception.ExceptionCode;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -15,8 +18,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 /**
  * WebSocket 메시지 전송 및 관리를 위한 유틸리티 클래스
@@ -40,9 +41,9 @@ public class WebSocketHelper {
     // ==================== 주식 실시간 데이터 전송 ====================
 
     /**
-     * 주식 실시간 체결가 데이터 브로드캐스트 (최적화된 데이터 사용)
+     * 주식 실시간 체결가 데이터 브로드캐스트 (H0STCNT0Data 원본 데이터 사용)
      */
-    public void broadcastPriceData(Long userId, String stockCode, OptimizedPriceData priceData) {
+    public void broadcastPriceData(Long userId, String stockCode, H0STCNT0Data priceData) {
         try {
             if (priceData == null) {
                 log.warn("체결가 데이터가 null입니다 - UserId: {}, StockCode: {}", userId, stockCode);
@@ -55,8 +56,8 @@ public class WebSocketHelper {
 
             messagingTemplate.convertAndSendToUser(userId.toString(), queuePath, priceData);
 
-            log.info("📤 체결가 데이터 개인 전송 - UserId: {}, StockCode: {}, Price: {}, Path: /user{}",
-                     userId, stockCode, priceData.getStckPrpr(), queuePath);
+            log.info("📤 체결가 원본 데이터 개인 전송 - UserId: {}, StockCode: {}, Path: /user{}",
+                     userId, stockCode, queuePath);
 
         } catch (Exception e) {
             log.error("체결가 데이터 개인 전송 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
@@ -64,9 +65,9 @@ public class WebSocketHelper {
     }
 
     /**
-     * 주식 실시간 호가 데이터 브로드캐스트 (최적화된 데이터 사용)
+     * 주식 실시간 호가 데이터 브로드캐스트 (H0STASP0Data 원본 데이터 사용)
      */
-    public void broadcastOrderbookData(Long userId, String stockCode, OptimizedOrderbookData orderbookData) {
+    public void broadcastOrderbookData(Long userId, String stockCode, H0STASP0Data orderbookData) {
         try {
             if (orderbookData == null) {
                 log.warn("호가 데이터가 null입니다 - UserId: {}, StockCode: {}", userId, stockCode);
@@ -79,8 +80,8 @@ public class WebSocketHelper {
 
             messagingTemplate.convertAndSendToUser(userId.toString(), queuePath, orderbookData);
 
-            log.info("📤 호가 데이터 개인 전송 - UserId: {}, StockCode: {}, Ask1: {}, Bid1: {}, Path: /user{}",
-                     userId, stockCode, orderbookData.getAskp1(), orderbookData.getBidp1(), queuePath);
+            log.info("📤 호가 원본 데이터 개인 전송 - UserId: {}, StockCode: {}, Path: /user{}",
+                     userId, stockCode, queuePath);
 
         } catch (Exception e) {
             log.error("호가 데이터 개인 전송 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
