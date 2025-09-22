@@ -98,13 +98,13 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
   const [searchTerm, setSearchTerm] = useState('');
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
 
-  // 디바운스된 검색어 (0.5초 지연)
+  // 디바운스된 검색어 (0.3초 지연)
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-    }, 500);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
@@ -117,7 +117,28 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
 
       const result = await searchStocksForBacktest(debouncedSearchTerm, startDate);
       if (result.success) {
-        return result.data.map(transformApiDataToStock);
+        // 새로운 응답 구조에 맞게 수정
+        const responseData = result.data as any;
+
+        // 거래일이 아닌 경우 메시지를 예외로 던짐
+        if (!responseData.tradingDay) {
+          const originalMessage = responseData.message || '거래일이 아닙니다';
+          // 사용자 친화적인 메시지로 변환
+          const friendlyMessage = originalMessage.includes('주말/공휴일')
+            ? originalMessage.replace('은(는) 거래일이 아닙니다 (주말/공휴일)', '은(는) 주말 또는 공휴일이어서 거래일이 아닙니다')
+            : originalMessage;
+          throw new Error(friendlyMessage);
+        }
+
+        // 검색 결과가 없는 경우
+        if (!responseData.data || responseData.data.length === 0) {
+          if (responseData.message) {
+            throw new Error(responseData.message);
+          }
+          return [];
+        }
+
+        return responseData.data.map(transformApiDataToStock);
       } else {
         throw new Error(result.error.message);
       }
@@ -127,6 +148,9 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
   });
 
   const filteredStocks = stockSearchData || [];
+
+  // 디바운스 중인지 확인
+  const isDebouncing = searchTerm.trim() !== debouncedSearchTerm.trim();
 
   const handleAddToPortfolio = (stock: Stock) => {
     const existingItem = portfolioItems.find((item) => item.code === stock.code);
@@ -288,7 +312,7 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
               onAddToPortfolio={handleAddToPortfolio}
               startDate={startDate}
               endDate={endDate}
-              isLoading={isSearchLoading}
+              isLoading={isSearchLoading || isDebouncing}
               searchError={searchError}
             />
 
