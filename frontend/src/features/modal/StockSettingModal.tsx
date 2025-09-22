@@ -205,9 +205,10 @@ export default function StockSettingsModal({
             <div className={styles.content}>
               <div className={styles.stockList}>
                 {registeredStocks.map((stock, index) => {
+                  console.log('렌더링 중인 주식:', stock.code, stock.name);
                   const setting = stockSettings.find(s => s.code === stock.code);
                   const settingWithTarget = settingsWithTargets.find(s => s.code === stock.code);
-                  
+
                   if (!setting) return null;
 
                   const isPositive = stock.profitLossRate >= 0;
