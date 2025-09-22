@@ -81,4 +81,32 @@ public class PortfolioCalculationUtil {
 
         return new PortfolioReturnData(totalPurchaseAmount, totalEvaluationAmount, returnAmount, returnRate);
     }
+
+    /**
+     * 수익률 계산: (현재가 / 평균매입가 - 1) * 100
+     *
+     * @param currentPrice 현재가 (문자열)
+     * @param averagePrice 평균매입가 (문자열)
+     * @return 수익률 (백분율, 소수점 2자리)
+     */
+    public static BigDecimal calculateReturnRate(String currentPrice, String averagePrice) {
+        try {
+            BigDecimal current = new BigDecimal(currentPrice);
+            BigDecimal average = new BigDecimal(averagePrice);
+
+            if (average.compareTo(BigDecimal.ZERO) == 0) {
+                return BigDecimal.ZERO;
+            }
+
+            return current.divide(average, 4, RoundingMode.HALF_UP)
+                    .subtract(BigDecimal.ONE)
+                    .multiply(new BigDecimal("100"))
+                    .setScale(2, RoundingMode.HALF_UP);
+
+        } catch (Exception e) {
+            log.warn("수익률 계산 실패 - CurrentPrice: {}, AveragePrice: {}, Error: {}",
+                    currentPrice, averagePrice, e.getMessage());
+            return BigDecimal.ZERO;
+        }
+    }
 }

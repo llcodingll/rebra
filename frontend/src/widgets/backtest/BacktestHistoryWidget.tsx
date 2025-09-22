@@ -23,7 +23,8 @@ export default function BacktestHistoryWidget({
   isLoading,
   error
 }: BacktestHistoryWidgetProps) {
-  const paginatedData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  // 백엔드에서 이미 페이징된 데이터를 받으므로 클라이언트 페이징 불필요
+  const paginatedData = data;
 
   // API 응답 데이터를 UI용 형태로 변환
   const transformBacktestData = (backtest: BacktestListResponse) => {
