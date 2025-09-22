@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { StockStompClient } from '../lib/stompClient';
 import {
   isDevMode,
@@ -7,11 +7,12 @@ import {
   createMockOrderbook,
   createPriceSimulation,
 } from '../lib/mockData';
-import type { RealtimePriceMessage, RealtimeOrderbookMessage } from '../api/types';
+import type {
+  RealtimePriceMessage,
+  RealtimeOrderbookMessage,
+  BulkSubscriptionResponse
+} from '../api/types';
 import type { StockInfo } from '../../../entities/stock/type';
-
-// 전역 연결 카운터
-let globalConnectionCounter = 0;
 
 interface UseRealtimeStockReturn {
   // 기본 주식 정보
@@ -26,232 +27,246 @@ interface UseRealtimeStockReturn {
   isLoading: boolean;
   error: string | null;
 
-  // 상세 상태 (테스트/디버깅용)
-  connectionDetails: {
-    stompConnected: boolean;
-    priceSubscribed: boolean;
-    orderbookSubscribed: boolean;
-    lastPriceUpdate: string | null;
-    lastOrderbookUpdate: string | null;
-    connectionAttempts: number;
+  // 구독 상태
+  subscriptionStatus: {
+    requested: boolean;
+    successful: boolean;
+    failed: boolean;
+    lastUpdate: string | null;
   };
 
   // 수동 제어 함수
   disconnect: () => void;
+  reconnect: () => void;
 }
 
 /**
- * 실시간 주식 데이터를 관리하는 커스텀 훅
+ * 실시간 주식 데이터를 관리하는 커스텀 훅 (일괄 구독 방식)
  * @param stockCode 주식 코드 (예: "005930")
  * @returns 주식 정보, 실시간 데이터, 연결 상태
  */
 export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
-  // 상태 관리
+  // 기본 상태
   const [stockInfo, setStockInfo] = useState<StockInfo | null>(null);
   const [realtimePrice, setRealtimePrice] = useState<RealtimePriceMessage | null>(null);
   const [orderbook, setOrderbook] = useState<RealtimeOrderbookMessage | null>(null);
 
+  // 연결 상태
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 상세 상태 관리 (테스트/디버깅용)
-  const [connectionDetails, setConnectionDetails] = useState({
-    stompConnected: false,
-    priceSubscribed: false,
-    orderbookSubscribed: false,
-    lastPriceUpdate: null as string | null,
-    lastOrderbookUpdate: null as string | null,
-    connectionAttempts: 0,
-  });
+  // 구독 상태 (최적화된 객체)
+  const [subscriptionStatus, setSubscriptionStatus] = useState(() => ({
+    requested: false,
+    successful: false,
+    failed: false,
+    lastUpdate: null as string | null,
+  }));
 
-  // STOMP 클라이언트 참조
+  // Refs
   const stompClientRef = useRef<StockStompClient | null>(null);
   const simulationCleanupRef = useRef<(() => void) | null>(null);
+  const isInitializingRef = useRef(false);
+  const mountedRef = useRef(true);
 
-  // 중복 연결 방지를 위한 상태 관리
-  const isConnectingRef = useRef<boolean>(false);
-  const hookIdRef = useRef<string>(`hook-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  // 안정화된 콜백들 (무한 리렌더링 방지)
+  const handleConnect = useCallback(() => {
+    if (!mountedRef.current) return;
+    setIsConnected(true);
+    setError(null);
+    console.log('✅ STOMP 연결 완료');
+  }, []);
 
-  useEffect(() => {
-    const currentHookId = hookIdRef.current;
-    globalConnectionCounter++;
+  const handleDisconnect = useCallback(() => {
+    if (!mountedRef.current) return;
+    setIsConnected(false);
+    console.log('🔌 STOMP 연결 해제');
+  }, []);
 
-    if (!stockCode) {
-      console.warn(' stockCode가 제공되지 않음');
+  const handleError = useCallback((errorMessage: string) => {
+    if (!mountedRef.current) return;
+    setError(errorMessage);
+    setIsLoading(false);
+    console.error('❌ STOMP 오류:', errorMessage);
+  }, []);
+
+  const handleBulkSubscriptionResult = useCallback((response: BulkSubscriptionResponse) => {
+    if (!mountedRef.current) return;
+
+    console.log('📥 일괄 구독 결과:', response);
+
+    const currentTime = new Date().toISOString();
+    const hasSuccess = response.summary.totalSuccessful > 0;
+    const hasFailed = response.summary.totalFailed > 0;
+
+    setSubscriptionStatus({
+      requested: true,
+      successful: hasSuccess,
+      failed: hasFailed,
+      lastUpdate: currentTime,
+    });
+
+    if (hasSuccess) {
+      console.log(`✅ 구독 성공: ${response.summary.totalSuccessful}개`);
+    }
+    if (hasFailed) {
+      console.warn(`⚠️ 구독 실패: ${response.summary.totalFailed}개`);
+    }
+  }, []);
+
+  const handlePriceData = useCallback((receivedStockCode: string, data: RealtimePriceMessage) => {
+    if (!mountedRef.current || receivedStockCode !== stockCode) return;
+
+    setRealtimePrice(data);
+    console.log(`📈 체결가 데이터 수신 [${receivedStockCode}]:`, data.currentPrice);
+  }, [stockCode]);
+
+  const handleOrderbookData = useCallback((receivedStockCode: string, data: RealtimeOrderbookMessage) => {
+    if (!mountedRef.current || receivedStockCode !== stockCode) return;
+
+    setOrderbook(data);
+    console.log(`📊 호가 데이터 수신 [${receivedStockCode}]:`, data.asks.length, '개 호가');
+  }, [stockCode]);
+
+  // STOMP 클라이언트 생성 (stockCode 변경 시에만)
+  const stompClient = useMemo(() => {
+    if (!stockCode) return null;
+
+    return new StockStompClient({
+      onConnect: handleConnect,
+      onDisconnect: handleDisconnect,
+      onError: handleError,
+      onBulkSubscriptionResult: handleBulkSubscriptionResult,
+      onPriceData: handlePriceData,
+      onOrderbookData: handleOrderbookData,
+    });
+  }, [stockCode, handleConnect, handleDisconnect, handleError, handleBulkSubscriptionResult, handlePriceData, handleOrderbookData]);
+
+  // 연결 및 구독 초기화
+  const initializeConnection = useCallback(async () => {
+    if (!stockCode || !stompClient || isInitializingRef.current) {
       return;
     }
 
-    // 중복 연결 방지 체크
-    if (isConnectingRef.current || stompClientRef.current?.getConnectionStatus()) {
-      console.warn('이미 연결 중이거나 연결됨. 중복 연결 방지.');
-      return;
-    }
-
-    let mounted = true;
-
-    // 🛠️ 개발 모드: 서버 연결 없이 목업 데이터 사용
-    if (true) {
-      console.log('🛠️ 개발 모드: 목업 데이터로 실행', stockCode);
-
+    try {
+      isInitializingRef.current = true;
       setIsLoading(true);
+      setError(null);
 
-      // 목업 데이터 설정 (약간의 지연으로 실제와 유사하게)
-      setTimeout(() => {
-        if (!mounted) return;
+      // 개발 모드에서는 목업 데이터 사용
+      if (false) { // isDevMode()
+        console.log('🛠️ 개발 모드: 목업 데이터 사용');
 
-        const mockStock = createMockStockInfo(stockCode);
-        const mockPrice = createMockPriceData(stockCode);
-        const mockOrderbook = createMockOrderbook(stockCode);
+        setTimeout(() => {
+          if (!mountedRef.current) return;
 
-        setStockInfo(mockStock);
-        setRealtimePrice(mockPrice);
-        setOrderbook(mockOrderbook);
-        setIsConnected(false); // 개발 모드는 실제 연결 아님
-        setIsLoading(false);
-        // 실시간 가격 시뮬레이션 시작
-        const cleanup = createPriceSimulation(stockCode, (priceData) => {
-          if (!mounted) return;
-          setRealtimePrice(priceData);
-        });
+          const mockStock = createMockStockInfo(stockCode);
+          const mockPrice = createMockPriceData(stockCode);
+          const mockOrderbook = createMockOrderbook(stockCode);
 
-        simulationCleanupRef.current = cleanup;
-      }, 500);
+          setStockInfo(mockStock);
+          setRealtimePrice(mockPrice);
+          setOrderbook(mockOrderbook);
+          setIsConnected(false); // 개발 모드는 실제 연결 아님
+          setIsLoading(false);
 
+          // 시뮬레이션 시작
+          const cleanup = createPriceSimulation(stockCode, (priceData) => {
+            if (mountedRef.current) {
+              setRealtimePrice(priceData);
+            }
+          });
+
+          simulationCleanupRef.current = cleanup;
+        }, 300);
+
+        return;
+      }
+
+      // 실제 STOMP 연결
+      console.log(`🚀 실시간 연결 시작: ${stockCode}`);
+
+      await stompClient.connect();
+
+      if (!mountedRef.current) return;
+
+      // 일괄 구독 요청
+      await stompClient.subscribeBulkStocks([stockCode]);
+
+      setIsLoading(false);
+      console.log(`✅ 구독 요청 완료: ${stockCode}`);
+
+    } catch (error) {
+      if (!mountedRef.current) return;
+
+      const errorMessage = error instanceof Error ? error.message : '연결 실패';
+      setError(errorMessage);
+      setIsLoading(false);
+      console.error('❌ 연결 실패:', error);
+    } finally {
+      isInitializingRef.current = false;
+    }
+  }, [stockCode, stompClient]);
+
+  // 수동 재연결
+  const reconnect = useCallback(() => {
+    console.log('🔄 수동 재연결 시작');
+    if (stompClient) {
+      stompClient.disconnect();
+    }
+    initializeConnection();
+  }, [stompClient, initializeConnection]);
+
+  // 수동 연결 해제
+  const disconnect = useCallback(() => {
+    console.log('🔌 수동 연결 해제');
+
+    // 시뮬레이션 정리
+    if (simulationCleanupRef.current) {
+      simulationCleanupRef.current();
+      simulationCleanupRef.current = null;
+    }
+
+    // STOMP 연결 해제
+    if (stompClient) {
+      stompClient.disconnect();
+    }
+
+    // 상태 초기화
+    setIsConnected(false);
+    setIsLoading(false);
+    setSubscriptionStatus({
+      requested: false,
+      successful: false,
+      failed: false,
+      lastUpdate: null,
+    });
+  }, [stompClient]);
+
+  // stockCode 변경 시 연결 초기화
+  useEffect(() => {
+    if (!stockCode) {
+      console.warn('⚠️ stockCode가 제공되지 않음');
       return;
     }
 
-    const initializeRealtimeConnection = async () => {
-      try {
-        isConnectingRef.current = true;
+    // 이전 연결 정리
+    if (stompClientRef.current) {
+      stompClientRef.current.disconnect();
+    }
 
-        setIsLoading(true);
-        setError(null);
-        setConnectionDetails((prev) => ({
-          ...prev,
-          connectionAttempts: prev.connectionAttempts + 1,
-        }));
+    // 새 클라이언트 저장
+    stompClientRef.current = stompClient;
 
-        // 기본 주식 정보 설정 (하드코딩)
-        // const basicStockInfo: StockInfo = {
-        //   id: 1,
-        //   stockCode: stockCode,
-        //   stockName: '테스트 주식', // 실제로는 별도 API나 정적 데이터에서 가져와야 함
-        //   stockType: 'STOCK',
-        //   isActive: true,
-        // };
-        // setStockInfo(basicStockInfo);
-
-        // STOMP 클라이언트 연결
-        const stompClient = new StockStompClient();
-        stompClientRef.current = stompClient;
-
-        try {
-          await stompClient.connect();
-
-          if (!mounted) {
-            console.log('연결 완료 후 컴포넌트 unmount됨');
-            return;
-          }
-
-          setIsConnected(true);
-          setConnectionDetails((prev) => ({
-            ...prev,
-            stompConnected: true,
-          }));
-          console.log(' STOMP 연결 성공');
-          isConnectingRef.current = false;
-
-          // 실시간 가격 정보 구독 (Queue 기반)
-          console.log('가격 정보 구독 시작...');
-          stompClient.subscribePriceData(stockCode, (priceData: RealtimePriceMessage) => {
-            console.log('받은 가격 데이터:', priceData);
-
-            if (!mounted) {
-              console.log('컴포넌트가 unmount됨. 상태 업데이트 생략.');
-              return;
-            }
-
-            setRealtimePrice(priceData);
-
-            setConnectionDetails((prev) => {
-              const newDetails = {
-                ...prev,
-                priceSubscribed: true,
-                lastPriceUpdate: new Date().toISOString(),
-              };
-              return newDetails;
-            });
-          });
-
-          // 실시간 호가 정보 구독 (Queue 기반)
-          console.log('호가 정보 구독 시작...');
-          stompClient.subscribeOrderbook(stockCode, (orderbookData: RealtimeOrderbookMessage) => {
-            console.log('받은 호가 데이터:', orderbookData);
-
-            if (!mounted) {
-              console.log('컴포넌트가 unmount됨. 상태 업데이트 생략.');
-              return;
-            }
-
-            setOrderbook(orderbookData);
-
-            setConnectionDetails((prev) => {
-              const newDetails = {
-                ...prev,
-                orderbookSubscribed: true,
-                lastOrderbookUpdate: new Date().toISOString(),
-              };
-              return newDetails;
-            });
-          });
-
-          setConnectionDetails((prev) => ({
-            ...prev,
-            priceSubscribed: true,
-            orderbookSubscribed: true,
-          }));
-        } catch (stompError) {
-          if (!mounted) return;
-
-          setError(' STOMP 연결에 실패했습니다');
-          setIsConnected(false);
-          isConnectingRef.current = false;
-          setConnectionDetails((prev) => ({
-            ...prev,
-            stompConnected: false,
-            priceSubscribed: false,
-            orderbookSubscribed: false,
-          }));
-        }
-      } catch (error) {
-        if (!mounted) return;
-
-        setError('주식 정보 로딩 중 오류가 발생했습니다');
-        isConnectingRef.current = false;
-        setConnectionDetails((prev) => ({
-          ...prev,
-          stompConnected: false,
-          priceSubscribed: false,
-          orderbookSubscribed: false,
-        }));
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    initializeRealtimeConnection();
+    // 연결 시작
+    initializeConnection();
 
     // 클린업 함수
     return () => {
-      globalConnectionCounter--;
-      mounted = false;
+      console.log(`🧹 useRealtimeStock cleanup: ${stockCode}`);
 
-      console.log(' cleanup 함수 실행 시작');
-
-      // 개발 모드 시뮬레이션 정리
+      // 시뮬레이션 정리
       if (simulationCleanupRef.current) {
         simulationCleanupRef.current();
         simulationCleanupRef.current = null;
@@ -263,37 +278,19 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
         stompClientRef.current = null;
       }
 
-      // 연결 상태 초기화
-      isConnectingRef.current = false;
-      console.log(' cleanup 완료. isConnecting = false');
-
-      setIsConnected(false);
-      setIsLoading(false);
-      setConnectionDetails({
-        stompConnected: false,
-        priceSubscribed: false,
-        orderbookSubscribed: false,
-        lastPriceUpdate: null,
-        lastOrderbookUpdate: null,
-        connectionAttempts: 0,
-      });
+      // 초기화 플래그 리셋
+      isInitializingRef.current = false;
     };
-  }, [stockCode]);
+  }, [stockCode, stompClient, initializeConnection]);
 
-  // 수동 제어 함수
-  const disconnect = () => {
-    if (stompClientRef.current) {
-      stompClientRef.current.disconnect();
-      stompClientRef.current = null;
-      setIsConnected(false);
-      setConnectionDetails((prev) => ({
-        ...prev,
-        stompConnected: false,
-        priceSubscribed: false,
-        orderbookSubscribed: false,
-      }));
-    }
-  };
+  // 컴포넌트 언마운트 시 정리
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   return {
     stockInfo,
@@ -302,7 +299,8 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
     isConnected,
     isLoading,
     error,
-    connectionDetails,
+    subscriptionStatus,
     disconnect,
+    reconnect,
   };
 }

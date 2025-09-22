@@ -26,15 +26,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
  * KIS API 클라이언트 및 연결 관리 컴포넌트
  */
-@Slf4j
 @Component
 public class KisApiComponent {
+
+    private static final Logger log = LoggerFactory.getLogger(KisApiComponent.class);
 
     private Configuration mockConfig;  // 모의투자용 Configuration
     private Configuration realConfig;  // 실계좌용 Configuration
@@ -474,7 +476,7 @@ public class KisApiComponent {
                 return existingConnection;
             }
 
-            // 새 연결 생성 (실제 종목코드 사용)
+            // 새 연결 생성 (실제 종목코드 사용) - 호가 API로 변경
             log.info("🆕 새 WebSocket 연결 생성 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
             KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
 

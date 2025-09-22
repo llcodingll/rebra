@@ -3,7 +3,9 @@
     "allow": [
       "Bash(./gradlew:*)",
       "Bash(rm:*)",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "Read(//c/Users/SSAFY/Desktop/웹소켓 문제/0922/S13P21A406/frontend/src/features/stock-detail/lib/**)",
+      "Read(//c/Users/SSAFY/Desktop/웹소켓 문제/0922/S13P21A406/frontend/**)"
     ],
     "deny": [],
     "ask": []

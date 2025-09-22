@@ -2,16 +2,21 @@ package com.rebra.util;
 
 import com.rebra.dto.realtime.OptimizedOrderbookData;
 import com.rebra.dto.realtime.OptimizedPriceData;
+import com.rebra.dto.response.BulkSubscriptionResponse;
+import com.rebra.dto.response.SubscriptionResult;
 import com.rebra.dto.response.WebSocketResponse;
 import com.rebra.exception.CustomRuntimeException;
 import com.rebra.exception.ExceptionCode;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * WebSocket 메시지 전송 및 관리를 위한 유틸리티 클래스
@@ -19,8 +24,9 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class WebSocketHelper {
+
+    private static final Logger log = LoggerFactory.getLogger(WebSocketHelper.class);
 
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -28,6 +34,8 @@ public class WebSocketHelper {
     private static final String STOCK_PRICE_QUEUE_TEMPLATE = "/queue/stock/%s/price";
     private static final String STOCK_ORDERBOOK_QUEUE_TEMPLATE = "/queue/stock/%s/orderbook";
     private static final String USER_QUEUE = "/queue/user";
+    private static final String BULK_SUBSCRIPTION_QUEUE = "/queue/bulk/subscription";
+    private static final String BULK_UNSUBSCRIPTION_QUEUE = "/queue/bulk/unsubscription";
 
     // ==================== 주식 실시간 데이터 전송 ====================
 
@@ -330,6 +338,209 @@ public class WebSocketHelper {
         private String message;
         private String stockCode;
         private String dataType;
+        private Long timestamp;
+    }
+
+    // ==================== 일괄 구독 관련 메서드 ====================
+
+    /**
+     * 일괄 구독 응답 전송
+     */
+    public void sendBulkSubscriptionResponse(Long userId, BulkSubscriptionResponse response) {
+        try {
+            if (userId == null) {
+                log.warn("일괄 구독 응답 전송 실패 - UserId가 null입니다");
+                return;
+            }
+
+            log.info("📤 일괄 구독 응답 전송 - UserId: {}, 성공: {}, 실패: {}, 총 구독: {}",
+                userId, response.getTotalSuccessful(),
+                response.getTotalFailed(),
+                response.getTotalRequested());
+
+            WebSocketResponse payload = WebSocketResponse.of(
+                WebSocketResponse.MessageType.BULK_SUBSCRIPTION_RESPONSE,
+                response
+            );
+
+            messagingTemplate.convertAndSendToUser(userId.toString(), BULK_SUBSCRIPTION_QUEUE, payload);
+
+            // 개별 구독 성공/실패 로깅
+            if (log.isDebugEnabled()) {
+                response.getResults().forEach(result -> {
+                    if (result.isSuccess()) {
+                        log.debug("✅ 구독 성공 - UserId: {}, {}:{}", userId, result.getStockCode(), result.getDataType());
+                    } else {
+                        log.debug("❌ 구독 실패 - UserId: {}, {}:{}, 사유: {}",
+                            userId, result.getStockCode(), result.getDataType(), result.getMessage());
+                    }
+                });
+            }
+
+        } catch (Exception e) {
+            log.error("일괄 구독 응답 전송 실패 - UserId: {}", userId, e);
+        }
+    }
+
+    /**
+     * 일괄 구독 해제 응답 전송
+     */
+    public void sendBulkUnsubscriptionResponse(Long userId, List<SubscriptionResult> results,
+                                             int successCount, int failureCount) {
+        try {
+            if (userId == null) {
+                log.warn("일괄 구독 해제 응답 전송 실패 - UserId가 null입니다");
+                return;
+            }
+
+            log.info("📤 일괄 구독 해제 응답 전송 - UserId: {}, 성공: {}, 실패: {}, 총 해제: {}",
+                userId, successCount, failureCount, results.size());
+
+            BulkUnsubscriptionResponseData responseData = BulkUnsubscriptionResponseData.builder()
+                .success(failureCount == 0)
+                .message(failureCount == 0 ?
+                    String.format("모든 구독 해제가 성공했습니다. (총 %d개)", successCount) :
+                    String.format("일부 구독 해제가 실패했습니다. (성공: %d개, 실패: %d개)", successCount, failureCount))
+                .results(results)
+                .summary(BulkUnsubscriptionSummary.builder()
+                    .totalRequested(results.size())
+                    .totalSuccessful(successCount)
+                    .totalFailed(failureCount)
+                    .successRate(results.size() > 0 ? (double) successCount / results.size() * 100.0 : 0.0)
+                    .build())
+                .timestamp(System.currentTimeMillis())
+                .build();
+
+            WebSocketResponse payload = WebSocketResponse.of(
+                WebSocketResponse.MessageType.BULK_UNSUBSCRIPTION_RESPONSE,
+                responseData
+            );
+
+            messagingTemplate.convertAndSendToUser(userId.toString(), BULK_UNSUBSCRIPTION_QUEUE, payload);
+
+            // 개별 구독 해제 성공/실패 로깅
+            if (log.isDebugEnabled()) {
+                results.forEach(result -> {
+                    if (result.isSuccess()) {
+                        log.debug("✅ 구독 해제 성공 - UserId: {}, {}:{}", userId, result.getStockCode(), result.getDataType());
+                    } else {
+                        log.debug("❌ 구독 해제 실패 - UserId: {}, {}:{}, 사유: {}",
+                            userId, result.getStockCode(), result.getDataType(), result.getMessage());
+                    }
+                });
+            }
+
+        } catch (Exception e) {
+            log.error("일괄 구독 해제 응답 전송 실패 - UserId: {}", userId, e);
+        }
+    }
+
+    /**
+     * 일괄 구독 해제 에러 전송
+     */
+    public void sendBulkUnsubscriptionError(Long userId, String errorMessage) {
+        try {
+            if (userId == null) {
+                log.warn("일괄 구독 해제 에러 전송 실패 - UserId가 null입니다");
+                return;
+            }
+
+            log.error("📤 일괄 구독 해제 에러 전송 - UserId: {}, Error: {}", userId, errorMessage);
+
+            BulkUnsubscriptionResponseData errorResponse = BulkUnsubscriptionResponseData.builder()
+                .success(false)
+                .message(errorMessage)
+                .results(List.of())
+                .summary(BulkUnsubscriptionSummary.builder()
+                    .totalRequested(0)
+                    .totalSuccessful(0)
+                    .totalFailed(0)
+                    .successRate(0.0)
+                    .build())
+                .timestamp(System.currentTimeMillis())
+                .build();
+
+            WebSocketResponse payload = WebSocketResponse.of(
+                WebSocketResponse.MessageType.BULK_UNSUBSCRIPTION_ERROR,
+                errorResponse
+            );
+
+            messagingTemplate.convertAndSendToUser(userId.toString(), BULK_UNSUBSCRIPTION_QUEUE, payload);
+
+        } catch (Exception e) {
+            log.error("일괄 구독 해제 에러 전송 실패 - UserId: {}", userId, e);
+        }
+    }
+
+    /**
+     * 일괄 구독 진행 상황 알림 전송 (선택적)
+     */
+    public void sendBulkSubscriptionProgress(Long userId, String message, int completed, int total) {
+        try {
+            if (userId == null) {
+                return;
+            }
+
+            BulkSubscriptionProgressData progressData = BulkSubscriptionProgressData.builder()
+                .message(message)
+                .completed(completed)
+                .total(total)
+                .percentage(total > 0 ? (double) completed / total * 100.0 : 0.0)
+                .timestamp(System.currentTimeMillis())
+                .build();
+
+            WebSocketResponse payload = WebSocketResponse.of(
+                WebSocketResponse.MessageType.BULK_SUBSCRIPTION_PROGRESS,
+                progressData
+            );
+
+            messagingTemplate.convertAndSendToUser(userId.toString(), BULK_SUBSCRIPTION_QUEUE, payload);
+
+            log.debug("📤 일괄 구독 진행 상황 전송 - UserId: {}, 진행률: {}% ({}/{})",
+                userId, progressData.getPercentage(), completed, total);
+
+        } catch (Exception e) {
+            log.error("일괄 구독 진행 상황 전송 실패 - UserId: {}", userId, e);
+        }
+    }
+
+    // ==================== 일괄 구독 관련 데이터 클래스 ====================
+
+    /**
+     * 일괄 구독 해제 응답 데이터
+     */
+    @Builder
+    @Getter
+    public static class BulkUnsubscriptionResponseData {
+        private boolean success;
+        private String message;
+        private List<SubscriptionResult> results;
+        private BulkUnsubscriptionSummary summary;
+        private Long timestamp;
+    }
+
+    /**
+     * 일괄 구독 해제 요약 정보
+     */
+    @Builder
+    @Getter
+    public static class BulkUnsubscriptionSummary {
+        private int totalRequested;
+        private int totalSuccessful;
+        private int totalFailed;
+        private double successRate;
+    }
+
+    /**
+     * 일괄 구독 진행 상황 데이터
+     */
+    @Builder
+    @Getter
+    public static class BulkSubscriptionProgressData {
+        private String message;
+        private int completed;
+        private int total;
+        private double percentage;
         private Long timestamp;
     }
 }
