@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PerformanceMetricsController {
 
     private final PerformanceMetricsService performanceMetricsService;
-    private final PerformanceMetricsScheduler performanceMetricsScheduler;
+//    private final PerformanceMetricsScheduler performanceMetricsScheduler;
 
     @Operation(
         summary = "포트폴리오 성과 차트 데이터 조회",

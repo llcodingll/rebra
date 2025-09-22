@@ -24,6 +24,8 @@ public class PerformanceMetricsScheduler {
     private final PerformanceMetricsService performanceMetricsService;
     private final PortfolioRepository portfolioRepository;
 
+    // TODO: 향후 공휴일 API나 설정을 통해 공휴일 체크 로직 추가
+
     /**
      * 매일 저녁 6시에 성과 메트릭 수집 실행
      * 평일(월-금)에만 실행
