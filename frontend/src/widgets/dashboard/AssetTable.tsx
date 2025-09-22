@@ -243,7 +243,7 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
                         <span>{formatWeight(stock.currentPercentage)}</span>
                       </td>
                       <td className={styles.dataCell}>
-                        <span>{formatWeight(stock.targetWeight)}</span>
+                        <span>{stock.targetWeight === null ? '-' : stock.targetWeight}</span>
                       </td>
                       <td className={styles.dataCell}>
                         <span>{stock.targetWeight === null ? '-' : formatWeight(stock.targetPercentage)}</span>
