@@ -5,31 +5,27 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Section Trigger - Invisible elements to trigger section visibility */
-.sectionTrigger {
-  height: 50px; /* Much smaller height to reduce gaps */
-  visibility: hidden;
-  pointer-events: none;
-}
-
-/* Header */
-.header {
+/* Header - Fixed position for sticky behavior */
+.landingHeader {
+  position: fixed;
+  top: 2px;
+  left: 0;
+  right: 0;
+  z-index: 50;
   background: white;
   border-bottom: 1px solid rgba(148, 163, 184, 0.15);
-  padding: 20px 32px;
+  padding: 12px 20px;
   width: 100%;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  overflow: visible;
 }
 
-.headerContainer {
+.landingHeaderContainer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  max-width: 1400px;
   margin: 0 auto;
+  overflow: visible;
 }
 
 .logo {
@@ -40,15 +36,15 @@
 }
 
 .logoIcon {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   background: linear-gradient(135deg, #030213 0%, #1e293b 100%);
-  border-radius: 16px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  box-shadow: 0 4px 16px rgba(3, 2, 19, 0.25);
+  /* box-shadow: 0 4px 16px rgba(3, 2, 19, 0.25); */
   position: relative;
   overflow: hidden;
 }
@@ -73,6 +69,8 @@
   width: 24px;
   height: 24px;
   stroke-width: 2;
+  position: relative;
+  z-index: 10;
 }
 
 .logoText {
@@ -88,6 +86,11 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
 
 .headerButtons {
   display: flex;
@@ -131,9 +134,9 @@
   box-shadow: 0 8px 25px rgba(3, 2, 19, 0.25);
 }
 
-/* Hero Section */
+/* Hero Section - Add top padding to account for fixed header */
 .heroSection {
-  padding: 80px 0 120px;
+  padding: 90px 0 120px; /* Slightly increased top padding */
   background: linear-gradient(180deg, #fafbfc 0%, #ffffff 100%);
   position: relative;
 }
@@ -262,58 +265,6 @@
 .statLabel {
   font-size: 14px;
   color: #64748b;
-}
-
-/* Scroll Indicator */
-.scrollIndicator {
-  display: none;
-}
-
-/* Global Scroll Indicator - Fixed position indicator */
-.globalScrollIndicator {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  z-index: 100;
-}
-
-.globalScrollIndicator > div {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  background: linear-gradient(135deg, #030213 0%, #1e293b 100%);
-  color: white;
-  padding: 16px 20px;
-  border-radius: 50px;
-  box-shadow: 0 4px 20px rgba(3, 2, 19, 0.3);
-  transition: all 0.3s ease;
-  animation: pulse 2s infinite;
-  backdrop-filter: blur(10px);
-}
-
-.globalScrollIndicator > div:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(3, 2, 19, 0.4);
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-}
-
-.globalScrollIndicator span {
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.9;
-  }
 }
 
 /* Hero Image */
@@ -633,14 +584,6 @@
   line-height: 1.6;
 }
 
-.ctaButtons {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-bottom: 40px;
-}
-
 .ctaPrimary {
   display: flex;
   align-items: center;
@@ -722,10 +665,9 @@
 }
 
 @media (max-width: 768px) {
-  .headerContainer {
+  .landingHeaderContainer {
     padding: 0 16px;
   }
-
 
   .heroTitle {
     font-size: 36px;
@@ -747,11 +689,6 @@
 
   .sectionHeader h2 {
     font-size: 28px;
-  }
-
-  .ctaButtons {
-    flex-direction: column;
-    align-items: stretch;
   }
 
   .ctaFeatures {

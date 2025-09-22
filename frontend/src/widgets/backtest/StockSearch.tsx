@@ -82,11 +82,15 @@ export default function StockSearch({
           </div>
         ) : searchError ? (
           <div className={styles.emptyState}>
-            <p>검색 중 오류가 발생했습니다: {searchError.message}</p>
+            <p>{searchError.message}</p>
           </div>
         ) : !searchTerm.trim() ? (
           <div className={styles.emptyState}>
             <p>종목명을 입력해주세요.</p>
+          </div>
+        ) : isLoading ? (
+          <div className={styles.emptyState}>
+            <p>검색 중...</p>
           </div>
         ) : filteredStocks.length === 0 ? (
           <div className={styles.emptyState}>
