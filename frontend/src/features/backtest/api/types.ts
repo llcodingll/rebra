@@ -26,10 +26,11 @@ export interface PageResponse<T> {
   content: T[];
   totalPages: number;
   totalElements: number;
-  size: number;
-  number: number;
+  pageSize: number;
+  pageNumber: number;
   first: boolean;
   last: boolean;
+  empty: boolean;
 }
 
 export interface BacktestCreateRequest {
