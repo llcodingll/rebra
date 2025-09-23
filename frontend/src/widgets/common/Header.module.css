@@ -111,6 +111,35 @@
   stroke-width: 2;
 }
 
+/* 튜토리얼 버튼 스타일 */
+.tutorialButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #64748b;
+}
+
+.tutorialButton:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #475569;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.15);
+}
+
+.tutorialIcon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
 .navigation {
   display: flex;
   align-items: center;

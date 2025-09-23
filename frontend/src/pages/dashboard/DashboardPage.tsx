@@ -14,6 +14,25 @@ import NoPortfolioState from '../../widgets/dashboard/NoPortfolioState';
 import PortfolioCreateModal from '../../widgets/portfolio/PortfolioCreateModal';
 import PortfolioHeader from '../../widgets/dashboard/PortfolioHeader';
 
+// 서울 시간 기준 주식 시장 시간 체크
+const isMarketOpen = (): boolean => {
+  const now = new Date();
+  const seoulTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
+
+  const day = seoulTime.getDay(); // 0=일요일, 6=토요일
+  const hour = seoulTime.getHours();
+  const minute = seoulTime.getMinutes();
+
+  // 주말 제외
+  if (day === 0 || day === 6) return false;
+
+  // 09:00 ~ 15:30 (서울시간 기준)
+  if (hour < 9) return false;
+  if (hour > 15) return false;
+  if (hour === 15 && minute > 30) return false;
+
+  return true;
+};
 
 export default function DashboardPage() {
   const [activeSubTab, setActiveSubTab] = useState<'assets' | 'profit'>('assets');
@@ -32,11 +51,14 @@ export default function DashboardPage() {
     apiFunction: () => portfolioApi.getPortfolioList(),
   });
 
-  // 선택된 포트폴리오의 상세 정보 조회
+  // 선택된 포트폴리오의 상세 정보 조회 (시장 시간에만 30초마다 자동 새로고침)
   const { data: portfolioDetailData, isLoading: isDetailLoading, error: detailError, refetch: refetchPortfolioDetail } = useApi({
     queryKey: ['portfolio-detail', selectedPortfolio?.id],
     apiFunction: () => selectedPortfolio ? portfolioApi.getPortfolioDetail(Number(selectedPortfolio.id)) : Promise.reject('No portfolio selected'),
-    enabled: !!selectedPortfolio?.id,
+    enabled: !!selectedPortfolio?.id, // 첫 조회는 항상 실행
+    //refetchInterval: 1000, // 항상 1초마다 polling (테스트용)
+    refetchInterval: isMarketOpen() ? 1000 : false, 
+    refetchIntervalInBackground: true, // 백그라운드에서도 새로고침
   });
 
   // 포트폴리오 상세 조회 상태 로깅
@@ -172,7 +194,6 @@ export default function DashboardPage() {
   return (
     <div>
       <div className={styles.dashboard}>
-        
         <div className={styles.container}>
           {/* 포트폴리오 선택 섹션 */}
           <PortfolioHeader

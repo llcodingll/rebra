@@ -5,12 +5,15 @@ import com.rebra.dto.request.PortfolioStockDeleteRequest;
 import com.rebra.dto.request.PortfolioStockBatchUpdateRequest;
 import com.rebra.dto.request.PortfolioStockUpdateRequest;
 import com.rebra.dto.response.PortfolioStockResponse;
+import com.rebra.entity.PerformanceMetrics;
 import com.rebra.entity.Portfolio;
 import com.rebra.entity.PortfolioStock;
 import com.rebra.exception.portfolio.PortfolioException;
 import com.rebra.exception.portfoliostock.PortfolioStockException;
+import com.rebra.repository.PerformanceMetricsRepository;
 import com.rebra.repository.PortfolioRepository;
 import com.rebra.repository.PortfolioStockRepository;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,7 @@ public class PortfolioStockServiceImpl implements PortfolioStockService {
 
     private final PortfolioRepository portfolioRepository;
     private final PortfolioStockRepository portfolioStockRepository;
+    private final PerformanceMetricsRepository performanceMetricsRepository;
 
     @Override
     @Transactional
@@ -64,6 +68,9 @@ public class PortfolioStockServiceImpl implements PortfolioStockService {
 
         log.info("포트폴리오 주식 등록 완료 - 포트폴리오스탁ID: {}", savedPortfolioStock.getId());
 
+        // 6. 포트폴리오 구성 변경으로 인한 PerformanceMetrics 생성
+        createCompositionChangeMetrics(portfolio, "주식 등록");
+
         return PortfolioStockResponse.from(savedPortfolioStock, null);
     }
 
@@ -88,6 +95,9 @@ public class PortfolioStockServiceImpl implements PortfolioStockService {
         portfolioStockRepository.delete(portfolioStock);
 
         log.info("포트폴리오 주식 삭제 완료 - 주식코드: {}", request.getStockCode());
+
+        // 5. 포트폴리오 구성 변경으로 인한 PerformanceMetrics 생성
+        createCompositionChangeMetrics(portfolio, "주식 삭제");
     }
 
     /**
@@ -146,5 +156,45 @@ public class PortfolioStockServiceImpl implements PortfolioStockService {
                 userId, portfolioId, responses.size());
 
         return responses;
+    }
+
+    /**
+     * 포트폴리오 구성 변경으로 인한 PerformanceMetrics 생성
+     */
+    private void createCompositionChangeMetrics(Portfolio portfolio, String changeType) {
+        try {
+            LocalDate today = LocalDate.now();
+
+            log.info("포트폴리오 구성 변경 메트릭 생성 시작 - Portfolio ID: {}, ChangeType: {}, Date: {}",
+                    portfolio.getId(), changeType, today);
+
+            // 오늘 날짜에 이미 메트릭이 있는지 확인 (중복 방지)
+            if (performanceMetricsRepository.existsByPortfolioIdAndMetricDate(portfolio.getId(), today)) {
+                log.info("오늘 날짜 PerformanceMetrics가 이미 존재 - Portfolio ID: {}, Date: {}, ChangeType: {}",
+                        portfolio.getId(), today, changeType);
+                return;
+            }
+
+            // 구성 변경으로 인한 PerformanceMetrics 생성
+            PerformanceMetrics compositionChangeMetrics = PerformanceMetrics.builder()
+                    .portfolio(portfolio)
+                    .metricDate(today)
+                    .totalValue(0.0) // 구성 변경 시점의 정확한 가치는 스케줄러가 나중에 업데이트
+                    .isRebalanced(false)
+                    .isSold(false)
+                    .isBought(false)
+                    .isCompositionChanged(true) // 구성 변경 표시
+                    .build();
+
+            performanceMetricsRepository.save(compositionChangeMetrics);
+
+            log.info("포트폴리오 구성 변경 메트릭 생성 완료 - Portfolio ID: {}, ChangeType: {}, Date: {}",
+                    portfolio.getId(), changeType, today);
+
+        } catch (Exception e) {
+            log.error("포트폴리오 구성 변경 메트릭 생성 실패 - Portfolio ID: {}, ChangeType: {}",
+                    portfolio.getId(), changeType, e);
+            throw e;
+        }
     }
 }

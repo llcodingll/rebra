@@ -43,7 +43,18 @@ public class HolidayApiClient {
         try {
             log.info("공휴일 API 요청 시작 - 연도: {}, 월: {}", year, month);
             
-            List<HolidayApiResponse.HolidayItem> holidayItems = fetchAllPages(year, month);
+            String url = buildRequestUrl(year, month, 1, 100);
+            
+            ResponseEntity<HolidayApiResponse> response = restTemplate.getForEntity(url, HolidayApiResponse.class);
+            
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                throw new ExternalApiException("공휴일 API 응답이 유효하지 않습니다");
+            }
+
+            HolidayApiResponse apiResponse = response.getBody();
+            validateApiResponse(apiResponse);
+
+            List<HolidayApiResponse.HolidayItem> holidayItems = extractHolidayItems(apiResponse);
             
             Set<LocalDate> holidays = holidayItems.stream()
                     .filter(item -> "Y".equals(item.getIsHoliday()))
@@ -60,48 +71,6 @@ public class HolidayApiClient {
         }
     }
 
-    private List<HolidayApiResponse.HolidayItem> fetchAllPages(int year, int month) {
-        List<HolidayApiResponse.HolidayItem> allItems = new ArrayList<>();
-        int pageNo = 1;
-        int numOfRows = 100;
-        int totalCount = 0;
-        
-        while (true) {
-            String url = buildRequestUrl(year, month, pageNo, numOfRows);
-            
-            ResponseEntity<HolidayApiResponse> response = restTemplate.getForEntity(url, HolidayApiResponse.class);
-            
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                throw new ExternalApiException("공휴일 API 응답이 유효하지 않습니다");
-            }
-
-            HolidayApiResponse apiResponse = response.getBody();
-            validateApiResponse(apiResponse);
-
-            List<HolidayApiResponse.HolidayItem> items = extractHolidayItems(apiResponse);
-            allItems.addAll(items);
-            
-            if (pageNo == 1) {
-                totalCount = apiResponse.getResponse().getBody().getTotalCount();
-                log.debug("공휴일 API 전체 데이터 개수: {} 개", totalCount);
-                
-                if (totalCount == 0) {
-                    break;
-                }
-            }
-            
-            log.debug("공휴일 API 페이지 {} 처리 완료 - 현재 페이지 항목 수: {} 개, 누적 항목 수: {} 개", 
-                    pageNo, items.size(), allItems.size());
-            
-            if (allItems.size() >= totalCount || items.isEmpty()) {
-                break;
-            }
-            
-            pageNo++;
-        }
-        
-        return allItems;
-    }
 
     private String buildRequestUrl(int year, int month, int pageNo, int numOfRows) {
         return UriComponentsBuilder.fromHttpUrl("http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService")

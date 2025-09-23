@@ -214,3 +214,109 @@ export interface ChartDataRequest {
   startDate: string; // YYYYMMDD
   endDate: string; // YYYYMMDD
 }
+
+// =============================================================================
+// 일괄 구독 API 타입 정의 (백엔드 API와 연동)
+// =============================================================================
+
+/**
+ * 일괄 구독 요청 데이터
+ */
+export interface BulkSubscriptionRequest {
+  stocks: StockSubscription[];
+}
+
+/**
+ * 개별 종목 구독 정보
+ */
+export interface StockSubscription {
+  stockCode: string;
+  dataTypes: string[];
+}
+
+/**
+ * 일괄 구독 응답 데이터
+ */
+export interface BulkSubscriptionResponse {
+  success: boolean;
+  message?: string;
+  results: SubscriptionResult[];
+  summary: SubscriptionSummary;
+  sessionId?: string;
+  timestamp: number;
+}
+
+/**
+ * 개별 구독 결과
+ */
+export interface SubscriptionResult {
+  stockCode: string;
+  dataType: string;
+  success: boolean;
+  error?: string;
+  timestamp: number;
+}
+
+/**
+ * 구독 요약 정보
+ */
+export interface SubscriptionSummary {
+  totalRequested: number;
+  totalSuccessful: number;
+  totalFailed: number;
+}
+
+/**
+ * 일괄 구독 해제 요청 데이터
+ */
+export interface BulkUnsubscriptionRequest {
+  stocks: StockUnsubscription[];
+}
+
+/**
+ * 개별 종목 구독 해제 정보
+ */
+export interface StockUnsubscription {
+  stockCode: string;
+  dataTypes: string[]; // ["all"]이면 모든 타입 해제
+}
+
+/**
+ * WebSocket 메시지 타입
+ */
+export interface WebSocketMessage<T = any> {
+  type: string;
+  data: T;
+  timestamp: number;
+}
+
+/**
+ * WebSocket 응답 메시지 타입 상수
+ */
+export const WS_MESSAGE_TYPES = {
+  // 기본 실시간 데이터
+  PRICE_UPDATE: 'price-update',
+  ORDERBOOK_UPDATE: 'orderbook-update',
+  STOCK_INFO: 'stock-info',
+
+  // 구독 관리
+  SUBSCRIPTION_STARTED: 'subscription-started',
+  SUBSCRIPTION_STOPPED: 'subscription-stopped',
+  ERROR: 'error',
+
+  // 일괄 구독 관련
+  BULK_SUBSCRIPTION_RESPONSE: 'bulk-subscription-response',
+  BULK_SUBSCRIPTION_PROGRESS: 'bulk-subscription-progress',
+  BULK_UNSUBSCRIPTION_RESPONSE: 'bulk-unsubscription-response',
+  BULK_UNSUBSCRIPTION_ERROR: 'bulk-unsubscription-error',
+} as const;
+
+/**
+ * 지원되는 데이터 타입
+ */
+export const SUBSCRIPTION_DATA_TYPES = {
+  PRICE: 'price',
+  ORDERBOOK: 'orderbook',
+} as const;
+
+export type SubscriptionDataType = typeof SUBSCRIPTION_DATA_TYPES[keyof typeof SUBSCRIPTION_DATA_TYPES];
