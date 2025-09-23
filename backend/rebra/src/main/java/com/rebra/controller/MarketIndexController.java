@@ -1,5 +1,6 @@
 package com.rebra.controller;
 
+import com.rebra.common.CommonApiResponse;
 import com.rebra.dto.response.MarketIndexResponse;
 import com.rebra.service.MarketIndexService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,7 +33,7 @@ public class MarketIndexController {
             @ApiResponse(responseCode = "200", description = "시장 지수 조회 성공"),
             @ApiResponse(responseCode = "500", description = "시장 지수 조회 실패")
     })
-    public ResponseEntity<MarketIndexResponse> getLatestMarketIndices() {
+    public ResponseEntity<CommonApiResponse<MarketIndexResponse>> getLatestMarketIndices() {
         log.info("시장 지수 조회 요청");
         
         MarketIndexResponse response = marketIndexService.getLatestMarketIndices();
@@ -40,6 +41,6 @@ public class MarketIndexController {
         log.info("시장 지수 조회 응답 - 데이터일: {}, 지수 개수: {}", 
                 response.getDataDate(), response.getIndices().size());
         
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(CommonApiResponse.success(response));
     }
 }
