@@ -47,7 +47,7 @@ export default function StockBasicInfo({ stockInfo, realTimePrice, realTimePrice
           </span>
           <span className={styles.changePercent}>
             ({changeRate > 0 ? '+' : ''}
-            {changeRate.toFixed(2)}%)
+            {(changeRate ?? 0).toFixed(2)}%)
           </span>
         </div>
       </div>
