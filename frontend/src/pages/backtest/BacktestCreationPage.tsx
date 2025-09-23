@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'motion/react';
@@ -8,6 +8,7 @@ import BacktestSettings from '../../widgets/backtest/BacktestSettings';
 import StockSearch from '../../widgets/backtest/StockSearch';
 import MyPortfolio from '../../widgets/backtest/MyPortfolio';
 import { searchStocksForBacktest, createBacktest, type BacktestCreateRequest } from '../../features/backtest/api/backtestApi';
+
 
 interface Stock {
   name: string;
@@ -66,6 +67,7 @@ const calculateValue = (buyPrice: string, quantity: number): number => {
 };
 
 export default function BacktestCreationPage({ onBack }: BacktestCreationPageProps = {}) {
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedPortfolio, setSelectedPortfolio] = useState('');
@@ -98,24 +100,30 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
   const [searchTerm, setSearchTerm] = useState('');
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
 
-  // 디바운스된 검색어 (0.3초 지연)
+  // 다시 간단한 debounce로 변경 (안정적임)
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300);
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // API로 주식 검색 (디바운스된 검색어 사용)
+  // API로 주식 검색 (debounce된 검색어 사용)
+  const queryKey = useMemo(() =>
+    ['stockSearch', debouncedSearchTerm.toLowerCase(), startDate],
+    [debouncedSearchTerm, startDate]
+  );
+
   const { data: stockSearchData, isLoading: isSearchLoading, error: searchError } = useQuery({
-    queryKey: ['stockSearch', debouncedSearchTerm, startDate],
+    queryKey,
     queryFn: async () => {
       if (!debouncedSearchTerm.trim() || !startDate) return [];
 
-      const result = await searchStocksForBacktest(debouncedSearchTerm, startDate);
+
+      const result = await searchStocksForBacktest(debouncedSearchTerm.trim(), startDate);
       if (result.success) {
         // 새로운 응답 구조에 맞게 수정
         const responseData = result.data as any;
@@ -143,14 +151,18 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
         throw new Error(result.error.message);
       }
     },
-    enabled: Boolean(debouncedSearchTerm.trim() && startDate),
-    staleTime: 30000, // 30초
+    enabled: Boolean(debouncedSearchTerm.trim() && startDate && debouncedSearchTerm.length >= 1),
+    staleTime: 60000, // 1분
+    gcTime: 300000, // 5분
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: false, // 재시도 비활성화
   });
 
   const filteredStocks = stockSearchData || [];
 
-  // 디바운스 중인지 확인
-  const isDebouncing = searchTerm.trim() !== debouncedSearchTerm.trim();
+  // debounce 중인지 확인
+  const isDebouncing = searchTerm.trim() !== debouncedSearchTerm;
 
   const handleAddToPortfolio = (stock: Stock) => {
     const existingItem = portfolioItems.find((item) => item.code === stock.code);
@@ -177,35 +189,10 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
     mutationFn: createBacktest,
     onSuccess: (result) => {
       if (result.success) {
-        // 새로 생성된 백테스트 데이터 구성
-        const newBacktest = {
-          id: result.data,
-          testName: backtestName,
-          startDate,
-          endDate,
-          rebalancingType: rebalancingType,
-          status: 'PROCESSING',
-          createdAt: new Date().toISOString()
-        };
-
-        // 첫 페이지 캐시에 새 항목 추가
-        const firstPageKey = ['backtestList', 0, 10];
-        queryClient.setQueryData(firstPageKey, (oldData: any) => {
-          if (oldData) {
-            return {
-              ...oldData,
-              content: [newBacktest, ...oldData.content.slice(0, 9)],
-              totalElements: oldData.totalElements + 1
-            };
-          }
-          return oldData;
-        });
-
-        // 백테스트 목록 캐시 무효화
+        // 백테스트 목록 캐시 무효화 (서버에서 최신 데이터 가져오기)
         queryClient.invalidateQueries({
           queryKey: ['backtestList'],
-          exact: false,
-          refetchType: 'active'
+          exact: false
         });
 
         navigate('/backtest');

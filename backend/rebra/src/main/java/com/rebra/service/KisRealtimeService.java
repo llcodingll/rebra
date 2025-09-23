@@ -1,10 +1,7 @@
 package com.rebra.service;
 
 import com.rebra.component.KisApiComponent;
-import com.rebra.dto.realtime.OptimizedOrderbookData;
-import com.rebra.dto.realtime.OptimizedPriceData;
 import com.rebra.entity.Account;
-import com.rebra.util.RealtimeDataTransformer;
 import com.rebra.util.WebSocketHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,14 +28,14 @@ public class KisRealtimeService {
                     stockCode,
                     data -> {
                         log.info("📡 KIS 체결가 데이터 수신 - userId={}, stockCode={}", userId, stockCode);
-                        OptimizedPriceData optimizedData = RealtimeDataTransformer.transformPriceData(data, stockCode);
-                        if (optimizedData != null) {
-                            log.info("📊 체결가 데이터 변환 성공, 전송 시작 - userId={}, stockCode={}, price={}",
-                                    userId, stockCode, optimizedData.getStckPrpr());
-                            webSocketHelper.broadcastPriceData(userId, stockCode, optimizedData);
+                        // H0STCNT0Data 원본 데이터를 직접 전달 (변환 없이)
+                        if (data != null) {
+                            log.info("📊 체결가 원본 데이터 전송 시작 - userId={}, stockCode={}",
+                                    userId, stockCode);
+                            webSocketHelper.broadcastPriceData(userId, stockCode, data);
                             log.info("📤 체결가 데이터 전송 완료 - userId={}, stockCode={}", userId, stockCode);
                         } else {
-                            log.warn("❌ 체결가 데이터 변환 실패 - userId={}, stockCode={}", userId, stockCode);
+                            log.warn("❌ 체결가 데이터가 null - userId={}, stockCode={}", userId, stockCode);
                         }
                     }
             );
@@ -62,14 +59,14 @@ public class KisRealtimeService {
                     stockCode,
                     data -> {
                         log.info("📡 KIS 호가 데이터 수신 - userId={}, stockCode={}", userId, stockCode);
-                        OptimizedOrderbookData optimizedData = RealtimeDataTransformer.transformOrderbookData(data, stockCode);
-                        if (optimizedData != null) {
-                            log.info("📊 호가 데이터 변환 성공, 전송 시작 - userId={}, stockCode={}, ask1={}, bid1={}",
-                                    userId, stockCode, optimizedData.getAskp1(), optimizedData.getBidp1());
-                            webSocketHelper.broadcastOrderbookData(userId, stockCode, optimizedData);
+                        // H0STASP0Data 원본 데이터를 직접 전달 (변환 없이)
+                        if (data != null) {
+                            log.info("📊 호가 원본 데이터 전송 시작 - userId={}, stockCode={}",
+                                    userId, stockCode);
+                            webSocketHelper.broadcastOrderbookData(userId, stockCode, data);
                             log.info("📤 호가 데이터 전송 완료 - userId={}, stockCode={}", userId, stockCode);
                         } else {
-                            log.warn("❌ 호가 데이터 변환 실패 - userId={}, stockCode={}", userId, stockCode);
+                            log.warn("❌ 호가 데이터가 null - userId={}, stockCode={}", userId, stockCode);
                         }
                     }
             );

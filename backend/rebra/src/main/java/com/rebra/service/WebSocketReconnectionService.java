@@ -3,17 +3,19 @@ package com.rebra.service;
 import com.rebra.config.WebSocketSessionDisconnectEvent;
 import com.youhogeon.finance.kis_api.api.realtime.H0STASP0Data;
 import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Data;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * WebSocket 연결 안정성 및 재연결 관리 서비스
@@ -24,8 +26,9 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class WebSocketReconnectionService {
+
+    private static final Logger log = LoggerFactory.getLogger(WebSocketReconnectionService.class);
 
     private final SimpMessagingTemplate messagingTemplate;
     private final KisRealtimeService kisRealtimeService;
@@ -79,24 +82,162 @@ public class WebSocketReconnectionService {
     }
 
     /**
-     * 세션별 구독 정보
+     * 세션별 구독 정보 (개선된 통합 구조)
      */
     public static class SessionSubscriptions {
+        // 기존 방식 (하위 호환성 유지)
         private final Map<String, String> priceSubscriptions = new ConcurrentHashMap<>();
         private final Map<String, String> orderbookSubscriptions = new ConcurrentHashMap<>();
+
+        // 새로운 통합 방식 (종목코드 -> 데이터타입 집합)
+        private final Map<String, Set<String>> stockSubscriptions = new ConcurrentHashMap<>();
+
+        // 구독 히스토리 (디버깅 및 모니터링용)
+        private final Map<String, SubscriptionHistory> subscriptionHistory = new ConcurrentHashMap<>();
+
         private Long userId;
         private int reconnectionAttempts = 0;
-        
+        private LocalDateTime lastBulkSubscription;
+
         public SessionSubscriptions(Long userId) {
             this.userId = userId;
         }
 
         public Map<String, String> getPriceSubscriptions() { return priceSubscriptions; }
         public Map<String, String> getOrderbookSubscriptions() { return orderbookSubscriptions; }
+        public Map<String, Set<String>> getStockSubscriptions() { return stockSubscriptions; }
+        public Map<String, SubscriptionHistory> getSubscriptionHistory() { return subscriptionHistory; }
         public Long getUserId() { return userId; }
         public int getReconnectionAttempts() { return reconnectionAttempts; }
+        public LocalDateTime getLastBulkSubscription() { return lastBulkSubscription; }
+
         public void incrementReconnectionAttempts() { this.reconnectionAttempts++; }
         public void resetReconnectionAttempts() { this.reconnectionAttempts = 0; }
+        public void updateLastBulkSubscription() { this.lastBulkSubscription = LocalDateTime.now(); }
+
+        /**
+         * 통합 구독 추가 (새로운 방식)
+         */
+        public void addSubscription(String stockCode, String dataType) {
+            stockSubscriptions.computeIfAbsent(stockCode, k -> ConcurrentHashMap.newKeySet()).add(dataType);
+
+            // 기존 방식과의 호환성 유지
+            if ("price".equals(dataType)) {
+                priceSubscriptions.put(stockCode, stockCode);
+            } else if ("orderbook".equals(dataType)) {
+                orderbookSubscriptions.put(stockCode, stockCode);
+            }
+
+            // 히스토리 추가
+            subscriptionHistory.computeIfAbsent(stockCode, k -> new SubscriptionHistory())
+                .addSubscription(dataType);
+        }
+
+        /**
+         * 통합 구독 제거 (새로운 방식)
+         */
+        public void removeSubscription(String stockCode, String dataType) {
+            Set<String> dataTypes = stockSubscriptions.get(stockCode);
+            if (dataTypes != null) {
+                dataTypes.remove(dataType);
+                if (dataTypes.isEmpty()) {
+                    stockSubscriptions.remove(stockCode);
+                }
+            }
+
+            // 기존 방식과의 호환성 유지
+            if ("price".equals(dataType)) {
+                priceSubscriptions.remove(stockCode);
+            } else if ("orderbook".equals(dataType)) {
+                orderbookSubscriptions.remove(stockCode);
+            }
+
+            // 히스토리 업데이트
+            SubscriptionHistory history = subscriptionHistory.get(stockCode);
+            if (history != null) {
+                history.removeSubscription(dataType);
+            }
+        }
+
+        /**
+         * 특정 종목의 모든 구독 제거
+         */
+        public void removeAllSubscriptionsForStock(String stockCode) {
+            Set<String> dataTypes = stockSubscriptions.remove(stockCode);
+            if (dataTypes != null) {
+                for (String dataType : dataTypes) {
+                    if ("price".equals(dataType)) {
+                        priceSubscriptions.remove(stockCode);
+                    } else if ("orderbook".equals(dataType)) {
+                        orderbookSubscriptions.remove(stockCode);
+                    }
+                }
+            }
+            subscriptionHistory.remove(stockCode);
+        }
+
+        /**
+         * 특정 종목의 구독 여부 확인
+         */
+        public boolean hasSubscription(String stockCode, String dataType) {
+            Set<String> dataTypes = stockSubscriptions.get(stockCode);
+            return dataTypes != null && dataTypes.contains(dataType);
+        }
+
+        /**
+         * 전체 구독 수 반환
+         */
+        public int getTotalSubscriptionCount() {
+            return stockSubscriptions.values().stream()
+                .mapToInt(Set::size)
+                .sum();
+        }
+
+        /**
+         * 구독된 종목 코드 리스트 반환
+         */
+        public Set<String> getSubscribedStockCodes() {
+            return new HashSet<>(stockSubscriptions.keySet());
+        }
+    }
+
+    /**
+     * 구독 히스토리 추적 클래스
+     */
+    public static class SubscriptionHistory {
+        private final Map<String, LocalDateTime> subscriptionTimes = new ConcurrentHashMap<>();
+        private final Map<String, LocalDateTime> unsubscriptionTimes = new ConcurrentHashMap<>();
+        private final Set<String> activeDataTypes = ConcurrentHashMap.newKeySet();
+
+        public void addSubscription(String dataType) {
+            subscriptionTimes.put(dataType, LocalDateTime.now());
+            activeDataTypes.add(dataType);
+        }
+
+        public void removeSubscription(String dataType) {
+            unsubscriptionTimes.put(dataType, LocalDateTime.now());
+            activeDataTypes.remove(dataType);
+        }
+
+        public boolean isActive(String dataType) {
+            return activeDataTypes.contains(dataType);
+        }
+
+        public LocalDateTime getSubscriptionTime(String dataType) {
+            return subscriptionTimes.get(dataType);
+        }
+
+        public LocalDateTime getUnsubscriptionTime(String dataType) {
+            return unsubscriptionTimes.get(dataType);
+        }
+
+        public Set<String> getActiveDataTypes() {
+            return new HashSet<>(activeDataTypes);
+        }
+
+        public int getActiveCount() {
+            return activeDataTypes.size();
+        }
     }
 
     /**

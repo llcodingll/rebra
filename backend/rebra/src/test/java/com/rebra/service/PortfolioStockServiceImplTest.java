@@ -11,6 +11,7 @@ import com.rebra.entity.PortfolioStock;
 import com.rebra.entity.User;
 import com.rebra.exception.portfolio.PortfolioException;
 import com.rebra.exception.portfoliostock.PortfolioStockException;
+import com.rebra.repository.PerformanceMetricsRepository;
 import com.rebra.repository.PortfolioRepository;
 import com.rebra.repository.PortfolioStockRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -46,6 +47,9 @@ class PortfolioStockServiceImplTest {
     @Mock
     private PortfolioStockRepository portfolioStockRepository;
 
+    @Mock
+    private PerformanceMetricsRepository performanceMetricsRepository;
+
     @InjectMocks
     private PortfolioStockServiceImpl portfolioStockService;
 
@@ -80,6 +84,10 @@ class PortfolioStockServiceImplTest {
             given(portfolioStockRepository.existsByPortfolioIdAndStockCode(portfolioId, stockCode)).willReturn(false);
             given(portfolioStockRepository.save(any(PortfolioStock.class))).willReturn(portfolioStock);
 
+            // PerformanceMetrics 관련 Mock 설정
+            given(performanceMetricsRepository.existsByPortfolioIdAndMetricDate(any(), any())).willReturn(false);
+            given(performanceMetricsRepository.save(any())).willReturn(null);
+
             // When
             PortfolioStockResponse response = portfolioStockService.registerStock(userId, portfolioId, request);
 
@@ -94,6 +102,8 @@ class PortfolioStockServiceImplTest {
             verify(portfolioRepository).findByIdAndUserId(portfolioId, userId);
             verify(portfolioStockRepository).existsByPortfolioIdAndStockCode(portfolioId, stockCode);
             verify(portfolioStockRepository).save(any(PortfolioStock.class));
+            verify(performanceMetricsRepository).existsByPortfolioIdAndMetricDate(any(), any());
+            verify(performanceMetricsRepository).save(any());
         }
 
         @Test
@@ -169,6 +179,10 @@ class PortfolioStockServiceImplTest {
             given(portfolioStockRepository.findByPortfolioIdAndStockCode(portfolioId, stockCode)).willReturn(Optional.of(portfolioStock));
             willDoNothing().given(portfolioStockRepository).delete(portfolioStock);
 
+            // PerformanceMetrics 관련 Mock 설정
+            given(performanceMetricsRepository.existsByPortfolioIdAndMetricDate(any(), any())).willReturn(false);
+            given(performanceMetricsRepository.save(any())).willReturn(null);
+
             // When
             portfolioStockService.deleteStock(userId, portfolioId, request);
 
@@ -176,6 +190,8 @@ class PortfolioStockServiceImplTest {
             verify(portfolioRepository).findByIdAndUserId(portfolioId, userId);
             verify(portfolioStockRepository).findByPortfolioIdAndStockCode(portfolioId, stockCode);
             verify(portfolioStockRepository).delete(portfolioStock);
+            verify(performanceMetricsRepository).existsByPortfolioIdAndMetricDate(any(), any());
+            verify(performanceMetricsRepository).save(any());
         }
 
         @Test
