@@ -2,21 +2,17 @@ import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import type {
   OptimizedPriceData,
   OptimizedOrderbookData,
-  RealtimePriceMessage,
-  RealtimeOrderbookMessage,
   BulkSubscriptionRequest,
   BulkSubscriptionResponse,
   BulkUnsubscriptionRequest,
   WebSocketMessage,
 } from '../api/types';
-import { SUBSCRIPTION_DATA_TYPES, 
-  WS_MESSAGE_TYPES } from '../api/types';
-import { transformOptimizedPriceData, transformOptimizedOrderbookData } from '../utils/krxDataTransform';
+import { SUBSCRIPTION_DATA_TYPES, WS_MESSAGE_TYPES } from '../api/types';
 
 interface StompClientCallbacks {
   onBulkSubscriptionResult?: (response: BulkSubscriptionResponse) => void;
-  onPriceData?: (stockCode: string, data: RealtimePriceMessage) => void;
-  onOrderbookData?: (stockCode: string, data: RealtimeOrderbookMessage) => void;
+  onPriceData?: (stockCode: string, data: OptimizedPriceData) => void;
+  onOrderbookData?: (stockCode: string, data: OptimizedOrderbookData) => void;
   onError?: (error: string) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
@@ -35,10 +31,10 @@ export class StockStompClient {
 
     this.client = new Client({
       brokerURL: wsEndpoint,
-      debug: (str) => {
-        console.log('STOMP Debug:', str);
-      },
-      reconnectDelay: 5000,
+      // debug: (str) => {
+      //   console.log('STOMP Debug:', str);
+      // },
+      reconnectDelay: 0,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
 
@@ -138,10 +134,10 @@ export class StockStompClient {
 
     // 일괄 구독 요청 생성
     const request: BulkSubscriptionRequest = {
-      stocks: stockCodes.map(stockCode => ({
+      stocks: stockCodes.map((stockCode) => ({
         stockCode,
-        dataTypes: [SUBSCRIPTION_DATA_TYPES.PRICE, SUBSCRIPTION_DATA_TYPES.ORDERBOOK]
-      }))
+        dataTypes: [SUBSCRIPTION_DATA_TYPES.PRICE, SUBSCRIPTION_DATA_TYPES.ORDERBOOK],
+      })),
     };
 
     console.log('📡 일괄 구독 요청:', request);
@@ -153,22 +149,21 @@ export class StockStompClient {
     });
 
     // 구독된 종목 목록 업데이트
-    stockCodes.forEach(code => this.subscribedStocks.add(code));
+    stockCodes.forEach((code) => this.subscribedStocks.add(code));
   }
 
   /**
    * 실시간 데이터 수신 채널 설정
    */
   private setupRealtimeDataChannels(stockCodes: string[]): void {
-    stockCodes.forEach(stockCode => {
+    stockCodes.forEach((stockCode) => {
       // 체결가 데이터 채널
       const priceChannel = `/user/queue/stock/${stockCode}/price`;
       if (!this.subscriptions.has(`price-${stockCode}`)) {
         const priceSubscription = this.client.subscribe(priceChannel, (message: IMessage) => {
           try {
             const optimizedData: OptimizedPriceData = JSON.parse(message.body);
-            const priceData = transformOptimizedPriceData(optimizedData);
-            this.callbacks.onPriceData?.(stockCode, priceData);
+            this.callbacks.onPriceData?.(stockCode, optimizedData);
           } catch (error) {
             console.error(`❌ 체결가 데이터 파싱 오류 [${stockCode}]:`, error);
           }
@@ -183,8 +178,7 @@ export class StockStompClient {
         const orderbookSubscription = this.client.subscribe(orderbookChannel, (message: IMessage) => {
           try {
             const optimizedData: OptimizedOrderbookData = JSON.parse(message.body);
-            const orderbookData = transformOptimizedOrderbookData(optimizedData);
-            this.callbacks.onOrderbookData?.(stockCode, orderbookData);
+            this.callbacks.onOrderbookData?.(stockCode, optimizedData);
           } catch (error) {
             console.error(`❌ 호가 데이터 파싱 오류 [${stockCode}]:`, error);
           }
@@ -204,10 +198,10 @@ export class StockStompClient {
     }
 
     const request: BulkUnsubscriptionRequest = {
-      stocks: stockCodes.map(stockCode => ({
+      stocks: stockCodes.map((stockCode) => ({
         stockCode,
-        dataTypes: ['all'] // 모든 데이터 타입 해제
-      }))
+        dataTypes: ['all'], // 모든 데이터 타입 해제
+      })),
     };
 
     console.log('📡 일괄 구독 해제 요청:', request);
@@ -219,7 +213,7 @@ export class StockStompClient {
     });
 
     // 클라이언트 측 구독 해제
-    stockCodes.forEach(stockCode => {
+    stockCodes.forEach((stockCode) => {
       this.unsubscribeRealtimeChannels(stockCode);
       this.subscribedStocks.delete(stockCode);
     });
