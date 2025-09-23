@@ -2,11 +2,14 @@ package com.rebra.service;
 
 import com.rebra.component.KisApiComponent;
 import com.rebra.dto.response.PerformanceMetricsChartResponse;
+import com.rebra.dto.response.TradeHistoryResponse;
+import com.rebra.dto.response.TradeDetailResponse;
 import com.rebra.dto.internal.TradingActivityInfo;
 import com.rebra.entity.PerformanceMetrics;
 import com.rebra.entity.Portfolio;
 import com.rebra.entity.PortfolioStock;
 import com.rebra.entity.RebalancingOrder;
+import com.rebra.entity.TradeRecord;
 import com.rebra.enums.ExecutionType;
 import com.rebra.exception.ExceptionCode;
 import com.rebra.exception.portfolio.PortfolioException;
@@ -21,8 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
@@ -274,6 +279,64 @@ public class PerformanceMetricsServiceImpl implements PerformanceMetricsService 
             log.error("포트폴리오 성과 차트 조회 중 예상치 못한 오류 - Portfolio ID: {}, User ID: {}",
                     portfolioId, userId, e);
             throw new RuntimeException("성과 차트 조회 실패", e);
+        }
+    }
+
+    /**
+     * 특정 날짜의 거래 히스토리 조회
+     */
+    @Override
+    public TradeHistoryResponse getTradeHistoryByDate(Long portfolioId, Long userId, LocalDate targetDate) {
+        try {
+            log.info("거래 히스토리 조회 시작 - Portfolio ID: {}, User ID: {}, Date: {}",
+                    portfolioId, userId, targetDate);
+
+            // 포트폴리오 조회 및 권한 검증
+            Portfolio portfolio = portfolioRepository.findByIdAndUserId(portfolioId, userId)
+                    .orElseThrow(() -> new PortfolioException(ExceptionCode.PORTFOLIO_NOT_FOUND));
+
+            // 날짜 범위 설정 (해당 날짜 00:00:00 ~ 다음날 00:00:00)
+            LocalDateTime startOfDay = targetDate.atStartOfDay();
+            LocalDateTime endOfDay = targetDate.plusDays(1).atStartOfDay();
+
+            log.debug("거래 히스토리 조회 범위 - Start: {}, End: {}", startOfDay, endOfDay);
+
+            // 해당 날짜의 리밸런싱 주문과 거래 기록 조회
+            Optional<RebalancingOrder> rebalancingOrderOpt = rebalancingOrderRepository
+                    .findByPortfolioIdAndDateWithTrades(portfolioId, startOfDay, endOfDay);
+
+            List<TradeDetailResponse> tradeDetails = new ArrayList<>();
+
+            if (rebalancingOrderOpt.isPresent()) {
+                RebalancingOrder rebalancingOrder = rebalancingOrderOpt.get();
+
+                log.debug("리밸런싱 주문 발견 - Order ID: {}, Trade Records: {}",
+                        rebalancingOrder.getId(), rebalancingOrder.getTradeRecords().size());
+
+                // TradeRecord를 TradeDetailResponse로 변환
+                tradeDetails = rebalancingOrder.getTradeRecords().stream()
+                        .map(TradeDetailResponse::from)
+                        .toList();
+            } else {
+                log.debug("해당 날짜에 거래 기록 없음 - Portfolio ID: {}, Date: {}", portfolioId, targetDate);
+            }
+
+            // TradeHistoryResponse 생성
+            TradeHistoryResponse response = TradeHistoryResponse.of(targetDate, tradeDetails);
+
+            log.info("거래 히스토리 조회 완료 - Portfolio ID: {}, Date: {}, Trade Count: {}",
+                    portfolioId, targetDate, tradeDetails.size());
+
+            return response;
+
+        } catch (PortfolioException e) {
+            log.error("거래 히스토리 조회 실패 - Portfolio ID: {}, User ID: {}, Date: {}, Error: {}",
+                    portfolioId, userId, targetDate, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("거래 히스토리 조회 중 예상치 못한 오류 - Portfolio ID: {}, User ID: {}, Date: {}",
+                    portfolioId, userId, targetDate, e);
+            throw new RuntimeException("거래 히스토리 조회 실패", e);
         }
     }
 }

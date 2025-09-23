@@ -1162,11 +1162,6 @@ public class KisApiComponent {
         try {
             log.info("거래량순위 조회 시작 - 사용자ID: {}, 계좌ID: {}, 계좌타입: {}", userId, accountId, accountType);
 
-            // 모의계좌 체크
-            if (accountType == AccountType.MOCK) {
-                throw KisException.mockAccountNotSupported();
-            }
-
             // Credentials가 Config에 없으면 자동으로 등록
             ensureUserCredentials(userId, accountId, accountType, credentials);
 
@@ -1176,7 +1171,7 @@ public class KisApiComponent {
                 throw new RuntimeException("Credentials 등록 실패");
             }
 
-            KisClient client = realClient; // 실계좌만 지원
+            KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
 
             VolumeRank req = new VolumeRank();
             // 기본 파라미터는 이미 설정되어 있음
@@ -1229,11 +1224,6 @@ public class KisApiComponent {
             log.info("{} 등락률순위 조회 시작 - 사용자ID: {}, 계좌ID: {}, 계좌타입: {}",
                     rankingType, userId, accountId, accountType);
 
-            // 모의계좌 체크
-            if (accountType == AccountType.MOCK) {
-                throw KisException.mockAccountNotSupported();
-            }
-
             // Credentials가 Config에 없으면 자동으로 등록
             ensureUserCredentials(userId, accountId, accountType, credentials);
 
@@ -1242,7 +1232,7 @@ public class KisApiComponent {
                 throw new RuntimeException("Credentials 등록 실패");
             }
 
-            KisClient client = realClient; // 실계좌만 지원
+            KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
 
             FluctuationRanking req = new FluctuationRanking();
 
