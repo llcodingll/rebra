@@ -1,7 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { createChart, ColorType, LineSeries } from 'lightweight-charts';
-import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
+import type {
+  IChartApi,
+  ISeriesApi,
+  UTCTimestamp,
+  ISeriesPrimitive,
+  IPrimitivePaneView,
+  IPrimitivePaneRenderer,
+  Coordinate,
+  Time
+} from 'lightweight-charts';
 import styles from './CumulativeReturnsChart.module.css';
 
 interface TradeData {
@@ -23,6 +32,102 @@ interface TooltipData {
   portfolioValue: number;
   cashBalance: number;
   dailyBorrowingInterest: number;
+}
+
+// 세로선 옵션 인터페이스
+interface VertLineOptions {
+  color: string;
+  width: number;
+}
+
+// 세로선 렌더러
+class VertLinePaneRenderer implements IPrimitivePaneRenderer {
+  _x: Coordinate | null = null;
+  _options: VertLineOptions;
+
+  constructor(x: Coordinate | null, options: VertLineOptions) {
+    this._x = x;
+    this._options = options;
+  }
+
+  draw(target: any) {
+    if (this._x === null) return;
+
+    target.useBitmapCoordinateSpace((scope: any) => {
+      const ctx = scope.context;
+      const x = Math.round(this._x! * scope.horizontalPixelRatio);
+
+      ctx.save();
+      ctx.strokeStyle = this._options.color;
+      ctx.lineWidth = this._options.width * scope.horizontalPixelRatio;
+      ctx.setLineDash([2 * scope.horizontalPixelRatio, 2 * scope.horizontalPixelRatio]); // 촘촘한 점선 패턴
+
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, scope.bitmapSize.height);
+      ctx.stroke();
+
+      ctx.restore();
+    });
+  }
+}
+
+// 세로선 뷰
+class VertLinePaneView implements IPrimitivePaneView {
+  _source: VertLine;
+  _x: Coordinate | null = null;
+  _options: VertLineOptions;
+
+  constructor(source: VertLine, options: VertLineOptions) {
+    this._source = source;
+    this._options = options;
+  }
+
+  update() {
+    const timeScale = this._source._chart.timeScale();
+    this._x = timeScale.timeToCoordinate(this._source._time);
+  }
+
+  renderer() {
+    return new VertLinePaneRenderer(this._x, this._options);
+  }
+}
+
+// 메인 세로선 클래스
+class VertLine implements ISeriesPrimitive<Time> {
+  _chart: IChartApi;
+  _series: ISeriesApi<any>;
+  _time: Time;
+  _paneViews: VertLinePaneView[];
+  _options: VertLineOptions;
+
+  constructor(chart: IChartApi, series: ISeriesApi<any>, time: Time, options: VertLineOptions) {
+    this._chart = chart;
+    this._series = series;
+    this._time = time;
+    this._options = options;
+    this._paneViews = [new VertLinePaneView(this, options)];
+  }
+
+  updateAllViews() {
+    this._paneViews.forEach(pw => pw.update());
+  }
+
+  paneViews() {
+    return this._paneViews;
+  }
+
+  priceAxisViews() {
+    return [];
+  }
+
+  timeAxisViews() {
+    return [];
+  }
+
+  hitTest() {
+    return null;
+  }
 }
 
 interface CumulativeReturnsChartProps {
@@ -160,32 +265,15 @@ export default function CumulativeReturnsChart({
         kospiSeries.setData(kospiData);
       }
 
-      // 리밸런싱 마커 추가
+      // 리밸런싱 세로선 추가
       if (rebalancingDates.length > 0) {
-        const rebalancingMarkers = rebalancingDates.map(date => {
-          const dataIndex = dates.findIndex(d => d === date);
-          if (dataIndex >= 0) {
-            return {
-              time: date as any,
-              position: 'inBar' as const,
-              color: '#2563eb',
-              shape: 'circle' as const,
-              text: '🔵',
-              size: 2
-            };
-          }
-          return null;
-        }).filter(marker => marker !== null);
-
-
-        if (rebalancingMarkers.length > 0) {
-          try {
-            if (typeof portfolioSeries.setMarkers === 'function') {
-              portfolioSeries.setMarkers(rebalancingMarkers);
-            }
-          } catch (error) {
-          }
-        }
+        rebalancingDates.forEach(date => {
+          const vertLine = new VertLine(chart, portfolioSeries, date as Time, {
+            color: '#ef4444',
+            width: 0.5
+          });
+          portfolioSeries.attachPrimitive(vertLine);
+        });
       }
 
       chart.timeScale().fitContent();
@@ -302,6 +390,19 @@ export default function CumulativeReturnsChart({
                   : '+0.0%'
                 }
               </span>
+            </div>
+          )}
+          {rebalancingDates && rebalancingDates.length > 0 && (
+            <div className={styles.legendItem}>
+              <div style={{
+                width: '12px',
+                height: '2px',
+                backgroundColor: '#ef4444',
+                borderStyle: 'dashed',
+                borderWidth: '1px 0',
+                borderColor: '#ef4444'
+              }}></div>
+              <span>리밸런싱 실행일</span>
             </div>
           )}
         </div>

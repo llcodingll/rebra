@@ -19,7 +19,7 @@ export default function BacktestPage() {
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 백테스트 목록 조회
-  const { data: backtestResponse, isLoading, error } = useQuery({
+  const { data: backtestResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['backtestList', currentPage - 1, itemsPerPage],
     queryFn: async () => {
       const result = await getBacktestList(currentPage - 1, itemsPerPage);
@@ -28,11 +28,6 @@ export default function BacktestPage() {
       } else {
         throw new Error(result.error.message);
       }
-    },
-    refetchInterval: (data) => {
-      if (!data?.content) return false;
-      const hasProcessing = data.content.some(item => item.status === 'PROCESSING');
-      return hasProcessing ? 3000 : false;
     },
     staleTime: 0,
     refetchOnWindowFocus: true,
@@ -53,7 +48,7 @@ export default function BacktestPage() {
   const backtestData = backtestResponse?.content || [];
   const totalPages = backtestResponse?.totalPages || 0;
 
-  // 수동 폴링 로직 (React Query 백업용)
+  // 간단한 폴링 로직
   useEffect(() => {
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
@@ -63,11 +58,8 @@ export default function BacktestPage() {
 
     if (hasProcessing) {
       pollingIntervalRef.current = setInterval(() => {
-        queryClient.invalidateQueries({
-          queryKey: ['backtestList'],
-          exact: false
-        });
-      }, 3000);
+        refetch();
+      }, 2000); // 2초마다 폴링
     }
 
     return () => {
@@ -75,7 +67,7 @@ export default function BacktestPage() {
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [backtestData, queryClient]);
+  }, [backtestData, refetch]);
 
   const handleDirectCreation = () => {
     navigate('/backtest/create');
