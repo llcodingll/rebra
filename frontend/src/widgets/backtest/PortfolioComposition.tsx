@@ -40,14 +40,14 @@ export default function PortfolioComposition({ portfolioStocks }: PortfolioCompo
     return null;
   }
 
-  // 대시보드와 동일한 색상 팔레트
+
   const COLORS = [
-    '#2563eb', // 파란색 (신뢰감)
-    '#10b981', // 초록색 (성장)
-    '#f59e0b', // 주황색 (에너지)
-    '#ef4444', // 빨간색 (주의)
-    '#8b5cf6', // 보라색 (혁신)
-    '#06b6d4', // 청록색 (안정)
+    '#2563eb', // 파란색 
+    '#10b981', // 초록색 
+    '#f59e0b', // 주황색
+    '#ef4444', // 빨간색 
+    '#8b5cf6', // 보라색 
+    '#06b6d4', // 청록색
   ];
 
   // Recharts용 데이터 변환
@@ -200,7 +200,7 @@ export default function PortfolioComposition({ portfolioStocks }: PortfolioCompo
               {selectedStock.thresholdPercentage && (
                 <div className={styles.metric}>
                   <span className={styles.metricLabel}>임계값</span>
-                  <span className={styles.metricValue}>{selectedStock.thresholdPercentage}%</span>
+                  <span className={styles.metricValue}>{selectedStock.thresholdPercentage * 100}%</span>
                 </div>
               )}
 

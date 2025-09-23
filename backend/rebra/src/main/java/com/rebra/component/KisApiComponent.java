@@ -1,8 +1,13 @@
 package com.rebra.component;
 
+import com.rebra.component.kisApi.FluctuationRanking;
+import com.rebra.component.kisApi.FluctuationRankingResult;
+import com.rebra.component.kisApi.VolumeRank;
+import com.rebra.component.kisApi.VolumeRankResult;
 import com.rebra.dto.DecryptedAccountCredentials;
 import com.rebra.entity.Account;
 import com.rebra.entity.AccountType;
+import com.rebra.exception.kis.KisException;
 import com.rebra.util.AccountEncryptionUtil;
 import com.youhogeon.finance.kis_api.KisClient;
 import com.youhogeon.finance.kis_api.api.realtime.H0STASP0Api;
@@ -452,11 +457,11 @@ public class KisApiComponent {
         connectionLock.lock();
         try {
             // 기존 연결이 있는지 확인
-            SubscribableApiResult existingConnection = connectionPool.get(connectionKey);
-            if (existingConnection != null) {
-                log.info("🔗 기존 체결가 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
-                return existingConnection;
-            }
+//            SubscribableApiResult existingConnection = connectionPool.get(connectionKey);
+////            if (existingConnection != null) {
+////                log.info("🔗 기존 체결가 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
+////                return existingConnection;
+////            }
 
             // 새 체결가 연결 생성
             log.info("🆕 새 체결가 WebSocket 연결 생성 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
@@ -503,11 +508,11 @@ public class KisApiComponent {
         connectionLock.lock();
         try {
             // 기존 연결이 있는지 확인
-            SubscribableApiResult existingConnection = connectionPool.get(connectionKey);
-            if (existingConnection != null) {
-                log.info("🔗 기존 호가 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
-                return existingConnection;
-            }
+//            SubscribableApiResult existingConnection = connectionPool.get(connectionKey);
+//            if (existingConnection != null) {
+//                log.info("🔗 기존 호가 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
+//                return existingConnection;
+//            }
 
             // 새 호가 연결 생성
             log.info("🆕 새 호가 WebSocket 연결 생성 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
@@ -1139,6 +1144,139 @@ public class KisApiComponent {
             throw new RuntimeException("KIS API 차트 데이터 조회 실패: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * 거래량순위 조회 (Account 객체 사용)
+     */
+    public VolumeRankResult getVolumeRanking(Account account) {
+        Long userId = account.getUser().getId();
+        DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+        return getVolumeRanking(userId, account.getId(), account.getAccountType(), credentials);
+    }
+
+    /**
+     * 거래량순위 조회
+     */
+    public VolumeRankResult getVolumeRanking(Long userId, Long accountId, AccountType accountType,
+                                             DecryptedAccountCredentials credentials) {
+        try {
+            log.info("거래량순위 조회 시작 - 사용자ID: {}, 계좌ID: {}, 계좌타입: {}", userId, accountId, accountType);
+
+            // 모의계좌 체크
+            if (accountType == AccountType.MOCK) {
+                throw KisException.mockAccountNotSupported();
+            }
+
+            // Credentials가 Config에 없으면 자동으로 등록
+            ensureUserCredentials(userId, accountId, accountType, credentials);
+
+            String credentialsName = getUserCredentialsName(userId, accountId);
+            if (credentialsName == null) {
+                log.error("ensureUserCredentials 후에도 Credentials를 찾을 수 없음 - 사용자ID: {}, 계좌ID: {}", userId, accountId);
+                throw new RuntimeException("Credentials 등록 실패");
+            }
+
+            KisClient client = realClient; // 실계좌만 지원
+
+            VolumeRank req = new VolumeRank();
+            // 기본 파라미터는 이미 설정되어 있음
+
+            VolumeRankResult result = client.execute(req, credentialsName);
+            System.out.println(result.toString());
+            // rtCd가 "0"이 아니면 실패 (KIS API 표준)
+            if (!result.getRtCd().equals("0")) {
+                throw new RuntimeException("KIS API 거래량순위 조회 실패");
+            }
+
+            log.info("거래량순위 조회 완료 - 사용자ID: {}, 계좌ID: {}", userId, accountId);
+            return result;
+
+        } catch (KisException e) {
+            // KisException은 그대로 전파
+            throw e;
+        } catch (Exception e) {
+            log.error("거래량순위 조회 실패 - 사용자ID: {}, 계좌ID: {}, 오류: {}",
+                    userId, accountId, e.getMessage(), e);
+            throw new RuntimeException("거래량순위 조회 실패: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 등락률순위 조회 - 급상승 (Account 객체 사용)
+     */
+    public FluctuationRankingResult getFluctuationRankingRising(Account account) {
+        Long userId = account.getUser().getId();
+        DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+        return getFluctuationRanking(userId, account.getId(), account.getAccountType(), credentials, true);
+    }
+
+    /**
+     * 등락률순위 조회 - 급하락 (Account 객체 사용)
+     */
+    public FluctuationRankingResult getFluctuationRankingFalling(Account account) {
+        Long userId = account.getUser().getId();
+        DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+        return getFluctuationRanking(userId, account.getId(), account.getAccountType(), credentials, false);
+    }
+
+    /**
+     * 등락률순위 조회 (급상승/급하락 구분)
+     */
+    public FluctuationRankingResult getFluctuationRanking(Long userId, Long accountId, AccountType accountType,
+                                                          DecryptedAccountCredentials credentials, boolean isRising) {
+        try {
+            String rankingType = isRising ? "급상승" : "급하락";
+            log.info("{} 등락률순위 조회 시작 - 사용자ID: {}, 계좌ID: {}, 계좌타입: {}",
+                    rankingType, userId, accountId, accountType);
+
+            // 모의계좌 체크
+            if (accountType == AccountType.MOCK) {
+                throw KisException.mockAccountNotSupported();
+            }
+
+            // Credentials가 Config에 없으면 자동으로 등록
+            ensureUserCredentials(userId, accountId, accountType, credentials);
+
+            String credentialsName = getUserCredentialsName(userId, accountId);
+            if (credentialsName == null) {
+                throw new RuntimeException("Credentials 등록 실패");
+            }
+
+            KisClient client = realClient; // 실계좌만 지원
+
+            FluctuationRanking req = new FluctuationRanking();
+
+            // 급상승/급하락별 파라미터 설정
+            if (!isRising) {
+                System.out.println("급하락");
+                req.setFidRankSortClsCode("1");
+                req.setFidPrcClsCode("11");
+            }
+
+//            req.setFidInputCnt_1("10");
+
+            FluctuationRankingResult result = client.execute(req, credentialsName);
+
+            System.out.println(result.toString());
+            // rtCd가 "0"이 아니면 실패 (KIS API 표준)
+            if (!result.getRtCd().equals("0")) {
+                throw new RuntimeException("KIS API " + rankingType + " 등락률순위 조회 실패");
+            }
+
+            log.info("{} 등락률순위 조회 완료 - 사용자ID: {}, 계좌ID: {}", rankingType, userId, accountId);
+            return result;
+
+        } catch (KisException e) {
+            // KisException은 그대로 전파
+            throw e;
+        } catch (Exception e) {
+            String rankingType = isRising ? "급상승" : "급하락";
+            log.error("{} 등락률순위 조회 실패 - 사용자ID: {}, 계좌ID: {}, 오류: {}",
+                    rankingType, userId, accountId, e.getMessage(), e);
+            throw new RuntimeException(rankingType + " 등락률순위 조회 실패: " + e.getMessage(), e);
+        }
+    }
+
 
 
 }

@@ -38,7 +38,7 @@ export default function DetailedMetrics({ backtestResult }: DetailedMetricsProps
       description: '투자기간 중 가장 큰 손실폭입니다. 최악의 상황에서 얼마나 손해를 볼 수 있는지 보여줍니다.'
     },
     {
-      label: '샠프 비율',
+      label: '샤프 비율',
       value: `${backtestResult.summary.sharpeRatio?.toFixed(3) || 0}`,
       isNegative: (backtestResult.summary.sharpeRatio || 0) < 0,
       description: '위험 대비 수익률을 나타냅니다. 1.0 이상이면 우수하며, 높을수록 효율적인 투자입니다.'
@@ -87,7 +87,7 @@ export default function DetailedMetrics({ backtestResult }: DetailedMetricsProps
     { label: 'CAGR', value: '데이터 없음', description: '투자기간 동안의 연평균 수익률입니다. 복리효과를 고려한 실제 성장률을 나타냅니다.' },
     { label: '변동성', value: '데이터 없음', description: '수익률이 얼마나 크게 오르내렸는지를 나타냅니다. 높을수록 위험하지만 큰 수익 가능성도 있습니다.' },
     { label: '최대 낙폭', value: '데이터 없음', description: '투자기간 중 가장 큰 손실폭입니다. 최악의 상황에서 얼마나 손해를 볼 수 있는지 보여줍니다.' },
-    { label: '샠프 비율', value: '데이터 없음', description: '위험 대비 수익률을 나타냅니다. 1.0 이상이면 우수하며, 높을수록 효율적인 투자입니다.' },
+    { label: '샤프 비율', value: '데이터 없음', description: '위험 대비 수익률을 나타냅니다. 1.0 이상이면 우수하며, 높을수록 효율적인 투자입니다.' },
     { label: '총 수익률', value: '데이터 없음', description: '투자기간 전체의 누적 수익률입니다. 초기 투자금 대비 얼마나 수익이 났는지 보여줍니다.' },
     { label: '리밸런싱 횟수', value: '데이터 없음', description: '포트폴리오 비중을 다시 맞춘 횟수입니다. 너무 잦으면 거래비용이 증가할 수 있습니다.' },
     { label: '거래 비용', value: '데이터 없음', description: '주식 매매 시 발생한 수수료와 세금의 총합입니다. 수익률에서 차감되는 실제 비용입니다.' },

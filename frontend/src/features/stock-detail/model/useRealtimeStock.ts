@@ -7,11 +7,7 @@ import {
   createMockOrderbook,
   createPriceSimulation,
 } from '../lib/mockData';
-import type {
-  RealtimePriceMessage,
-  RealtimeOrderbookMessage,
-  BulkSubscriptionResponse
-} from '../api/types';
+import type { OptimizedPriceData, OptimizedOrderbookData, BulkSubscriptionResponse } from '../api/types';
 import type { StockInfo } from '../../../entities/stock/type';
 
 interface UseRealtimeStockReturn {
@@ -19,8 +15,8 @@ interface UseRealtimeStockReturn {
   stockInfo: StockInfo | null;
 
   // 실시간 데이터
-  realtimePrice: RealtimePriceMessage | null;
-  orderbook: RealtimeOrderbookMessage | null;
+  realtimePrice: OptimizedPriceData | null;
+  orderbook: OptimizedOrderbookData | null;
 
   // 연결 상태
   isConnected: boolean;
@@ -48,8 +44,8 @@ interface UseRealtimeStockReturn {
 export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
   // 기본 상태
   const [stockInfo, setStockInfo] = useState<StockInfo | null>(null);
-  const [realtimePrice, setRealtimePrice] = useState<RealtimePriceMessage | null>(null);
-  const [orderbook, setOrderbook] = useState<RealtimeOrderbookMessage | null>(null);
+  const [realtimePrice, setRealtimePrice] = useState<OptimizedPriceData | null>(null);
+  const [orderbook, setOrderbook] = useState<OptimizedOrderbookData | null>(null);
 
   // 연결 상태
   const [isConnected, setIsConnected] = useState(false);
@@ -115,19 +111,23 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
     }
   }, []);
 
-  const handlePriceData = useCallback((receivedStockCode: string, data: RealtimePriceMessage) => {
-    if (!mountedRef.current || receivedStockCode !== stockCode) return;
+  const handlePriceData = useCallback(
+    (receivedStockCode: string, data: OptimizedPriceData) => {
+      if (!mountedRef.current || receivedStockCode !== stockCode) return;
 
-    setRealtimePrice(data);
-    console.log(`📈 체결가 데이터 수신 [${receivedStockCode}]:`, data.currentPrice);
-  }, [stockCode]);
+      setRealtimePrice(data);
+    },
+    [stockCode]
+  );
 
-  const handleOrderbookData = useCallback((receivedStockCode: string, data: RealtimeOrderbookMessage) => {
-    if (!mountedRef.current || receivedStockCode !== stockCode) return;
+  const handleOrderbookData = useCallback(
+    (receivedStockCode: string, data: OptimizedOrderbookData) => {
+      if (!mountedRef.current || receivedStockCode !== stockCode) return;
 
-    setOrderbook(data);
-    console.log(`📊 호가 데이터 수신 [${receivedStockCode}]:`, data.asks.length, '개 호가');
-  }, [stockCode]);
+      setOrderbook(data);
+    },
+    [stockCode]
+  );
 
   // STOMP 클라이언트 생성 (stockCode 변경 시에만)
   const stompClient = useMemo(() => {
@@ -141,7 +141,15 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
       onPriceData: handlePriceData,
       onOrderbookData: handleOrderbookData,
     });
-  }, [stockCode, handleConnect, handleDisconnect, handleError, handleBulkSubscriptionResult, handlePriceData, handleOrderbookData]);
+  }, [
+    stockCode,
+    handleConnect,
+    handleDisconnect,
+    handleError,
+    handleBulkSubscriptionResult,
+    handlePriceData,
+    handleOrderbookData,
+  ]);
 
   // 연결 및 구독 초기화
   const initializeConnection = useCallback(async () => {
@@ -155,7 +163,8 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
       setError(null);
 
       // 개발 모드에서는 목업 데이터 사용
-      if (false) { // isDevMode()
+      if (false) {
+        // isDevMode()
         console.log('🛠️ 개발 모드: 목업 데이터 사용');
 
         setTimeout(() => {
@@ -196,7 +205,6 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
 
       setIsLoading(false);
       console.log(`✅ 구독 요청 완료: ${stockCode}`);
-
     } catch (error) {
       if (!mountedRef.current) return;
 

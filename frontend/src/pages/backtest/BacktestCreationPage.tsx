@@ -189,38 +189,21 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
     mutationFn: createBacktest,
     onSuccess: (result) => {
       if (result.success) {
-        // 새로 생성된 백테스트 데이터 구성
-        const newBacktest = {
-          id: result.data,
-          testName: backtestName,
-          startDate,
-          endDate,
-          rebalancingType: rebalancingType,
-          status: 'PROCESSING',
-          createdAt: new Date().toISOString()
-        };
-
-        // 첫 페이지 캐시에 새 항목 추가
-        const firstPageKey = ['backtestList', 0, 10];
-        queryClient.setQueryData(firstPageKey, (oldData: any) => {
-          if (oldData) {
-            return {
-              ...oldData,
-              content: [newBacktest, ...oldData.content.slice(0, 9)],
-              totalElements: oldData.totalElements + 1
-            };
-          }
-          return oldData;
+        // 캐시 완전 무효화 및 강제 새로고침
+        queryClient.removeQueries({
+          queryKey: ['backtestList']
         });
 
-        // 백테스트 목록 캐시 무효화
-        queryClient.invalidateQueries({
-          queryKey: ['backtestList'],
-          exact: false,
-          refetchType: 'active'
-        });
-
+        // 페이지 이동 후 즉시 새로고침을 위해 타이머 설정
         navigate('/backtest');
+
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ['backtestList'],
+            exact: false,
+            refetchType: 'all'
+          });
+        }, 100);
       } else {
         setIsBacktestExecuted(false);
       }

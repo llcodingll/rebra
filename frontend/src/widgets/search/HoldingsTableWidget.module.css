@@ -174,3 +174,27 @@
     border-right: none;
   }
 }
+
+/* 로딩/에러/빈 상태 메시지 스타일 */
+.loadingMessage,
+.errorMessage,
+.emptyMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding-bottom: 15%;
+  height: 100%;
+  font-size: 24px;
+  font-weight: 600;
+  color: #6b7280;
+  background: white;
+}
+
+.errorMessage {
+  color: #dc2626;
+}
+
+.emptyMessage {
+  color: #9ca3af;
+}
