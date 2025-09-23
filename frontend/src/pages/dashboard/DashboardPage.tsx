@@ -57,7 +57,7 @@ export default function DashboardPage() {
     apiFunction: () => selectedPortfolio ? portfolioApi.getPortfolioDetail(Number(selectedPortfolio.id)) : Promise.reject('No portfolio selected'),
     enabled: !!selectedPortfolio?.id, // 첫 조회는 항상 실행
     //refetchInterval: 1000, // 항상 1초마다 polling (테스트용)
-    refetchInterval: isMarketOpen() ? 1000 : false, 
+    refetchInterval: isMarketOpen() ? 10000 : false, 
     refetchIntervalInBackground: true, // 백그라운드에서도 새로고침
   });
 
