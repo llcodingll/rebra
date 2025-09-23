@@ -457,11 +457,11 @@ public class KisApiComponent {
         connectionLock.lock();
         try {
             // 기존 연결이 있는지 확인
-            SubscribableApiResult existingConnection = connectionPool.get(connectionKey);
-            if (existingConnection != null) {
-                log.info("🔗 기존 체결가 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
-                return existingConnection;
-            }
+//            SubscribableApiResult existingConnection = connectionPool.get(connectionKey);
+////            if (existingConnection != null) {
+////                log.info("🔗 기존 체결가 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
+////                return existingConnection;
+////            }
 
             // 새 체결가 연결 생성
             log.info("🆕 새 체결가 WebSocket 연결 생성 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
@@ -508,11 +508,11 @@ public class KisApiComponent {
         connectionLock.lock();
         try {
             // 기존 연결이 있는지 확인
-            SubscribableApiResult existingConnection = connectionPool.get(connectionKey);
-            if (existingConnection != null) {
-                log.info("🔗 기존 호가 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
-                return existingConnection;
-            }
+//            SubscribableApiResult existingConnection = connectionPool.get(connectionKey);
+//            if (existingConnection != null) {
+//                log.info("🔗 기존 호가 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
+//                return existingConnection;
+//            }
 
             // 새 호가 연결 생성
             log.info("🆕 새 호가 WebSocket 연결 생성 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
