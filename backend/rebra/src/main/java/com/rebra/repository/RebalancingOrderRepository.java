@@ -103,4 +103,22 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
      * 포트폴리오별 최근 리밸런싱 주문 조회
      */
     Optional<RebalancingOrder> findTopByPortfolioIdOrderByRebalancingDateDesc(Long portfolioId);
+
+    /**
+     * 특정 날짜의 리밸런싱 주문과 거래 기록을 함께 조회
+     *
+     * @param portfolioId 포트폴리오 ID
+     * @param startOfDay 조회 날짜 시작 시간 (00:00:00)
+     * @param endOfDay 조회 날짜 종료 시간 (다음날 00:00:00)
+     * @return TradeRecord와 함께 조회된 RebalancingOrder
+     */
+    @Query("SELECT ro FROM RebalancingOrder ro " +
+           "JOIN FETCH ro.tradeRecords " +
+           "WHERE ro.portfolio.id = :portfolioId " +
+           "AND ro.rebalancingDate >= :startOfDay " +
+           "AND ro.rebalancingDate < :endOfDay")
+    Optional<RebalancingOrder> findByPortfolioIdAndDateWithTrades(
+            @Param("portfolioId") Long portfolioId,
+            @Param("startOfDay") LocalDateTime startOfDay,
+            @Param("endOfDay") LocalDateTime endOfDay);
 }
