@@ -46,14 +46,19 @@ public class PerformanceMetrics extends BaseEntity {
     @Column(name = "is_bought", nullable = false)
     private boolean isBought;
 
+    @Column(name = "is_composition_changed", nullable = false)
+    private boolean isCompositionChanged;
+
     @Builder
     public PerformanceMetrics(Portfolio portfolio, LocalDate metricDate, double totalValue,
-                              boolean isRebalanced, boolean isSold, boolean isBought) {
+                              boolean isRebalanced, boolean isSold, boolean isBought,
+                              boolean isCompositionChanged) {
         this.portfolio = portfolio;
         this.metricDate = metricDate;
         this.totalValue = totalValue;
         this.isRebalanced = isRebalanced;
         this.isSold = isSold;
         this.isBought = isBought;
+        this.isCompositionChanged = isCompositionChanged;
     }
 }

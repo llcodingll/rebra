@@ -45,6 +45,11 @@ public interface PerformanceMetricsRepository extends JpaRepository<PerformanceM
     boolean existsByPortfolioIdAndMetricDate(Long portfolioId, LocalDate metricDate);
 
     /**
+     * 포트폴리오의 특정 날짜에 일일 성과 메트릭 존재 여부 확인 (구성 변경이 아닌)
+     */
+    boolean existsByPortfolioIdAndMetricDateAndIsCompositionChangedFalse(Long portfolioId, LocalDate metricDate);
+
+    /**
      * 포트폴리오의 최근 성과 메트릭 조회
      */
     Optional<PerformanceMetrics> findTopByPortfolioIdOrderByMetricDateDesc(Long portfolioId);

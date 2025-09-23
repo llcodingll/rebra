@@ -55,6 +55,7 @@ class PerformanceMetricsControllerTest {
                     .isRebalanced(false)
                     .isSold(false)
                     .isBought(true)
+                    .isCompositionChanged(false)
                     .build();
 
             PerformanceMetricsChartResponse.PerformanceDataPoint dataPoint2 =
@@ -64,6 +65,7 @@ class PerformanceMetricsControllerTest {
                     .isRebalanced(true)
                     .isSold(false)
                     .isBought(false)
+                    .isCompositionChanged(false)
                     .build();
 
             PerformanceMetricsChartResponse.PerformanceStatistics statistics =
