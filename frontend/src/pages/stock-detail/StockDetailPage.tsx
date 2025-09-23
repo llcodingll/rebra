@@ -261,7 +261,10 @@ export default function StockDetailPage() {
         </div>
 
         <div className={styles.holdingInfoWrapper}>
-          <HoldingInfoTable stockCode={stockCode} />
+          <HoldingInfoTable
+            stockCode={stockCode}
+            currentPrice={safeStockInfo.currentPrice}
+          />
         </div>
       </div>
 

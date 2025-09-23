@@ -1,34 +1,57 @@
 import styles from './HoldingInfoTable.module.css';
-import { useStockDetail } from '../hooks/useStockDetail';
+import { useStockHolding } from '../hooks/useStockHolding';
 
 interface HoldingInfoTableProps {
   stockCode: string;
+  currentPrice?: number;
 }
 
-export default function HoldingInfoTable({ stockCode }: HoldingInfoTableProps) {
-  const { data: holdingData, isLoading } = useStockDetail(stockCode);
-  const formatNumber = (value: string | undefined) => {
-    if (!value) return '-';
-    const num = Number(value);
-    return new Intl.NumberFormat('ko-KR').format(num);
+export default function HoldingInfoTable({ stockCode, currentPrice = 0 }: HoldingInfoTableProps) {
+  const { holdingData, isLoading, hasAccount, hasHolding } = useStockHolding(stockCode, currentPrice);
+  const formatNumber = (value: number | undefined) => {
+    if (value === undefined || value === null) return '-';
+    return new Intl.NumberFormat('ko-KR').format(value);
   };
 
-  const formatPercent = (value: string | undefined) => {
-    if (!value) return '-';
-    const num = Number(value);
-    const sign = num >= 0 ? '+' : '';
-    return `${sign}${num}%`;
+  const formatPercent = (value: number | undefined) => {
+    if (value === undefined || value === null) return '-';
+    const sign = value >= 0 ? '+' : '';
+    return `${sign}${value.toFixed(2)}%`;
   };
 
-  const getProfitStyle = (value: string | undefined) => {
-    if (!value) return styles.dataValue;
-    const num = Number(value);
-    if (num > 0) return `${styles.dataValue} ${styles.profitValue}`;
-    if (num < 0) return `${styles.dataValue} ${styles.lossValue}`;
+  const getProfitStyle = (value: number | undefined) => {
+    if (value === undefined || value === null) return styles.dataValue;
+    if (value > 0) return `${styles.dataValue} ${styles.profitValue}`;
+    if (value < 0) return `${styles.dataValue} ${styles.lossValue}`;
     return styles.dataValue;
   };
 
-  if (!holdingData && !isLoading) {
+  // 로딩 상태
+  if (isLoading) {
+    return (
+      <div className={styles.holdingContainer}>
+        <div className={styles.externalHeader}>현재 보유 정보</div>
+        <div className={styles.holdingTable}>
+          <div className={styles.emptyState}>보유 정보를 불러오는 중...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // 계정 연결 안됨
+  if (!hasAccount) {
+    return (
+      <div className={styles.holdingContainer}>
+        <div className={styles.externalHeader}>현재 보유 정보</div>
+        <div className={styles.holdingTable}>
+          <div className={styles.emptyState}>계정을 먼저 연결해주세요.</div>
+        </div>
+      </div>
+    );
+  }
+
+  // 보유하지 않는 경우
+  if (!hasHolding) {
     return (
       <div className={styles.holdingContainer}>
         <div className={styles.externalHeader}>현재 보유 정보</div>
@@ -48,7 +71,7 @@ export default function HoldingInfoTable({ stockCode }: HoldingInfoTableProps) {
             <div className={styles.columnHeader}>평균가</div>
             <div className={styles.singleColumnData}>
               <div className={styles.singleDataValue}>
-                {holdingData ? formatNumber(holdingData.averagePrice) : '-'}원
+                {holdingData ? formatNumber(holdingData.averagePurchasePrice) : '-'}원
               </div>
             </div>
           </div>
@@ -56,11 +79,11 @@ export default function HoldingInfoTable({ stockCode }: HoldingInfoTableProps) {
             <div className={styles.columnHeader}>평가손익</div>
             <div className={styles.columnHeaderSecond}>수익률</div>
             <div className={styles.columnData}>
-              <div className={holdingData ? getProfitStyle(holdingData.profitLoss) : styles.dataValue}>
-                {holdingData ? formatNumber(holdingData.profitLoss) : '-'}
+              <div className={holdingData ? getProfitStyle(holdingData.evaluationProfitLoss) : styles.dataValue}>
+                {holdingData ? formatNumber(holdingData.evaluationProfitLoss) : '-'}
               </div>
-              <div className={holdingData ? getProfitStyle(holdingData.profitLossRate) : styles.dataValue}>
-                {holdingData ? formatPercent(holdingData.profitLossRate) : '-'}
+              <div className={holdingData ? getProfitStyle(holdingData.returnRate) : styles.dataValue}>
+                {holdingData ? formatPercent(holdingData.returnRate) : '-'}
               </div>
             </div>
           </div>
@@ -69,7 +92,7 @@ export default function HoldingInfoTable({ stockCode }: HoldingInfoTableProps) {
             <div className={styles.columnHeaderSecond}>평가금액</div>
             <div className={styles.columnData}>
               <div className={styles.dataValue}>{holdingData ? formatNumber(holdingData.purchaseAmount) : '-'}</div>
-              <div className={styles.dataValue}>{holdingData ? formatNumber(holdingData.currentValue) : '-'}</div>
+              <div className={styles.dataValue}>{holdingData ? formatNumber(holdingData.evaluationAmount) : '-'}</div>
             </div>
           </div>
           <div className={styles.tableColumn}>
@@ -77,7 +100,7 @@ export default function HoldingInfoTable({ stockCode }: HoldingInfoTableProps) {
             <div className={styles.columnHeaderSecond}>가능수량</div>
             <div className={styles.columnData}>
               <div className={styles.dataValue}>{holdingData ? formatNumber(holdingData.holdingQuantity) : '-'}</div>
-              <div className={styles.dataValue}>{holdingData ? formatNumber(holdingData.holdingQuantity) : '-'}</div>
+              <div className={styles.dataValue}>{holdingData ? formatNumber(holdingData.orderableQuantity) : '-'}</div>
             </div>
           </div>
         </div>

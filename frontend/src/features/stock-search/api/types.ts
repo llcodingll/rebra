@@ -56,3 +56,37 @@ export interface VolumeRankingStock {
 export interface StockSearchTransformOptions {
   favoriteStockCodes?: string[]; // 관심종목 코드 목록 (선택적)
 }
+
+// Holdings API 관련 타입들
+export interface HoldingStock {
+  stockCode: string;
+  stockName: string;
+  averagePurchasePrice: number;
+  currentPrice: number;
+  evaluationProfitLoss: number;
+  returnRate: number;
+  priceChange: number;
+  changeRate: number;
+  purchaseAmount: number;
+  evaluationAmount: number;
+  holdingQuantity: number;
+  orderableQuantity: number;
+}
+
+export interface HoldingsRequest {
+  accountId: number;
+  page: number;
+  size: number;
+}
+
+export interface HoldingsResponse {
+  content: {
+    holdings: HoldingStock[];
+  };
+}
+
+// UI에서 사용할 보유 종목 타입 (수수료/세금 포함)
+export interface DisplayHoldingStock extends HoldingStock {
+  fee: number; // 매매수수료 (0.0145%)
+  tax: number; // 증권거래세 (0.23%)
+}

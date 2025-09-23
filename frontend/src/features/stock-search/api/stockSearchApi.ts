@@ -1,6 +1,6 @@
 import { ApiClient } from '../../../shared/api/apiClient';
 import type { Result, AppError } from '../../../shared/util/result';
-import type { StockSearchRequest, StockSearchResponse, SearchableStock, StockSearchTransformOptions, StockRankingResponse, VolumeRankingStock } from './types';
+import type { StockSearchRequest, StockSearchResponse, SearchableStock, StockSearchTransformOptions, StockRankingResponse, VolumeRankingStock, HoldingsRequest, HoldingsResponse, DisplayHoldingStock } from './types';
 
 class StockSearchApiService extends ApiClient {
   /**
@@ -18,6 +18,15 @@ class StockSearchApiService extends ApiClient {
    */
   getStockRanking = async (): Promise<Result<StockRankingResponse, AppError>> => {
     return await this.get<StockRankingResponse>('/api/stocks/ranking');
+  };
+
+  /**
+   * 보유 종목 조회
+   * @param params 요청 파라미터
+   * @returns 보유 종목 결과
+   */
+  getHoldings = async (params: HoldingsRequest): Promise<Result<HoldingsResponse, AppError>> => {
+    return await this.get<HoldingsResponse>(`/api/stocks/holdings?accountId=${params.accountId}&page=${params.page}&size=${params.size}`);
   };
 }
 
@@ -64,6 +73,40 @@ export const transformVolumeRankingResults = (
     rank: parseInt(item.data_rank, 10),
     isFavorite: favorites.includes(item.mksc_shrn_iscd),
   }));
+};
+
+/**
+ * KIS 수수료/세금 계산 함수
+ * @param evaluationAmount 평가금액
+ * @returns 수수료와 세금
+ */
+const calculateKISFeesAndTaxes = (evaluationAmount: number) => {
+  // 매매수수료: 0.0145% (소숫점 이하 절사)
+  const fee = Math.floor(evaluationAmount * 0.000145);
+
+  // 증권거래세: 0.23% (소숫점 이하 절사)
+  const tax = Math.floor(evaluationAmount * 0.0023);
+
+  return { fee, tax };
+};
+
+/**
+ * Holdings API 응답을 UI에서 사용할 형태로 변환
+ * @param apiData Holdings API 응답 데이터
+ * @returns UI용 보유 종목 결과
+ */
+export const transformHoldingsResults = (
+  apiData: HoldingsResponse
+): DisplayHoldingStock[] => {
+  return apiData.content.holdings.map((holding) => {
+    const { fee, tax } = calculateKISFeesAndTaxes(holding.evaluationAmount);
+
+    return {
+      ...holding,
+      fee,
+      tax,
+    };
+  });
 };
 
 export const stockSearchApi = new StockSearchApiService();

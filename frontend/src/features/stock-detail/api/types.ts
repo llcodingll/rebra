@@ -9,6 +9,29 @@ export interface StockDetailResponse {
   profitLossRate: string;
 }
 
+// 새로운 보유종목 API 관련 타입들
+export interface StockHoldingApiResponse {
+  averagePurchasePrice: number;
+  purchaseAmount: number;
+  holdingQuantity: number;
+  orderableQuantity: number;
+}
+
+export interface StockHoldingRequest {
+  accountId: number;
+}
+
+// UI에서 사용할 계산된 보유종목 정보
+export interface StockHoldingData {
+  averagePurchasePrice: number;
+  purchaseAmount: number;
+  holdingQuantity: number;
+  orderableQuantity: number;
+  evaluationAmount: number;
+  evaluationProfitLoss: number;
+  returnRate: number;
+}
+
 // 최적화된 실시간 체결가 데이터 타입
 export interface OptimizedPriceData {
   // 종목 정보
