@@ -18,8 +18,8 @@ export const transformPortfolioDetailToStocks = (portfolioDetailData: PortfolioD
   console.log("=== transformPortfolioDetailToStocks 시작 ===");
   console.log("portfolioDetailData:", portfolioDetailData);
 
-  // 등록된 주식들의 총 가중치 계산
-  const totalWeight = portfolioDetailData.registeredStocks.reduce((sum, stock) => sum + stock.targetWeight, 0);
+  // 등록된 주식들의 총 가중치 계산 (null 값 제외)
+  const totalWeight = portfolioDetailData.registeredStocks.reduce((sum, stock) => sum + (stock.targetWeight || 0), 0);
   console.log("총 가중치:", totalWeight);
 
   // 등록된 주식들의 총 현재가 계산
@@ -28,7 +28,7 @@ export const transformPortfolioDetailToStocks = (portfolioDetailData: PortfolioD
 
   const registeredStocks: Stock[] = portfolioDetailData.registeredStocks.map(stock => {
     // 목표 비중 = (개별 주식 가중치 / 전체 가중치) * 100
-    const calculatedTargetPercentage = totalWeight > 0 ? (stock.targetWeight / totalWeight) * 100 : 0;
+    const calculatedTargetPercentage = totalWeight > 0 && stock.targetWeight ? (stock.targetWeight / totalWeight) * 100 : 0;
 
     // 현재 비중 = (개별 주식 현재가 / 전체 현재가) * 100
     const currentValue = stock.quantity * stock.currentPrice;

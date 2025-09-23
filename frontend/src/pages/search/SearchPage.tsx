@@ -14,8 +14,8 @@ export default function SearchPage() {
     navigate(`/search/stocks/${stock.code}`, {
       state: {
         stockCode: stock.code,
-        stockName: stock.name
-      }
+        stockName: stock.name,
+      },
     });
   };
 
@@ -67,9 +67,7 @@ export default function SearchPage() {
         <div className={styles.tableArea}>{renderContent()}</div>
 
         {/* 우측 뉴스 영역 (30%) */}
-        <div className={styles.newsArea}>
-          <NewsWidget />
-        </div>
+        <div className={styles.newsArea}>{/* <NewsWidget /> */}</div>
       </div>
     </div>
   );
