@@ -54,27 +54,6 @@ public class StockController {
         return ResponseEntity.ok(CommonApiResponse.success(responses));
     }
 
-    @Operation(summary = "종목 상세 정보 조회", description = "종목 기본 정보와 보유 정보를 조회합니다. (보유 정보는 옵션)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "조회 성공"),
-            @ApiResponse(responseCode = "404", description = "종목을 찾을 수 없음"),
-            @ApiResponse(responseCode = "401", description = "인증 필요")
-    })
-    @GetMapping("/{stockCode}")
-    public ResponseEntity<CommonApiResponse<StockDetailResponse>> getStockDetail(
-            @Parameter(description = "조회할 종목 코드", example = "005930")
-            @PathVariable String stockCode,
-            @Parameter(description = "보유 정보 포함 여부", example = "true")
-            @RequestParam(defaultValue = "false") boolean includeHolding,
-            @Parameter(hidden = true) @LoginUser Long userId) {
-
-        log.info("종목 상세 정보 조회 요청 - UserId: {}, StockCode: {}, IncludeHolding: {}",
-                userId, stockCode, includeHolding);
-
-        StockDetailResponse response = stockService.getStockDetail(stockCode, includeHolding, userId);
-
-        return ResponseEntity.ok(CommonApiResponse.success(response));
-    }
 
 
     @Operation(summary = "주식 매수 주문", description = "지정된 종목을 매수합니다.")
