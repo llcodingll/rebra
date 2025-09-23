@@ -62,6 +62,7 @@ public class FluctuationRankingResponse {
         }
 
         List<FluctuationRankingItem> rankings = Arrays.stream(result.getOutput())
+                .limit(10)
                 .map(output -> new FluctuationRankingItem(
                         parseLongSafely(output.getDataRank()),           // 순위 (Long)
                         output.getStckShrnIscd(),                        // 종목코드 (String)

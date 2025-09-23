@@ -43,6 +43,7 @@ public class VolumeRankingResponse {
         }
 
         List<VolumeRankingItem> rankings = Arrays.stream(result.getOutput())
+                .limit(10)
                 .map(output -> new VolumeRankingItem(
                         parseLongSafely(output.getDataRank()),           // 순위 (Long)
                         output.getMkscShrnIscd(),                        // 종목코드 (String)
