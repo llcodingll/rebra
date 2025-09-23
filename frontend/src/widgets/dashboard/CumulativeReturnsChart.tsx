@@ -1,50 +1,160 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { DollarSign } from 'lucide-react';
-import { createChart, ColorType, LineSeries, createSeriesMarkers } from 'lightweight-charts';
-import type { IChartApi, ISeriesApi, SeriesMarker } from 'lightweight-charts';
-import { generateHistoryMockData, generateRebalancingDates } from '../../mocks/dashboard/historyChart';
+import { createChart, ColorType, LineSeries } from 'lightweight-charts';
+import type {
+  IChartApi,
+  ISeriesApi,
+  UTCTimestamp,
+  ISeriesPrimitive,
+  IPrimitivePaneView,
+  IPrimitivePaneRenderer,
+  Coordinate,
+  Time
+} from 'lightweight-charts';
+import { useApi } from '../../shared/hook/useApi';
+import { portfolioApi } from '../../features/portfolio/api/portfolioApi';
+import { generatePerformanceMockData } from '../../mocks/dashboard/performanceData';
+import type { PerformanceDataPoint } from '../../features/portfolio/api/types';
 import styles from './CumulativeReturnsChart.module.css';
-
-interface TradeData {
-  id: number;
-  date: string;
-  cumulativeReturn: number;
-}
 
 interface TooltipData {
   x: number;
   y: number;
-  id: number;
   date: string;
-  cumulativeReturn: number;
-  eventType?: string;
+  totalValue: number;
+  eventTypes: string[];
 }
 
-interface DashboardChartProps {
-  tradeData: TradeData[];
-  portfolioPercents: number[];
-  onIdClick?: (id: number) => void;
+// 세로선 옵션 인터페이스
+interface VertLineOptions {
+  color: string;
+  width: number;
 }
 
-export default function DashboardChart({
-  tradeData,
-  portfolioPercents,
-  onIdClick
-}: DashboardChartProps) {
+// 세로선 렌더러
+class VertLinePaneRenderer implements IPrimitivePaneRenderer {
+  _x: Coordinate | null = null;
+  _options: VertLineOptions;
+
+  constructor(x: Coordinate | null, options: VertLineOptions) {
+    this._x = x;
+    this._options = options;
+  }
+
+  draw(target: any) {
+    if (this._x === null) return;
+
+    target.useBitmapCoordinateSpace((scope: any) => {
+      const ctx = scope.context;
+      const x = Math.round(this._x! * scope.horizontalPixelRatio);
+
+      ctx.save();
+      ctx.strokeStyle = this._options.color;
+      ctx.lineWidth = this._options.width * scope.horizontalPixelRatio;
+      ctx.setLineDash([2 * scope.horizontalPixelRatio, 2 * scope.horizontalPixelRatio]);
+
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, scope.bitmapSize.height);
+      ctx.stroke();
+
+      ctx.restore();
+    });
+  }
+}
+
+// 세로선 뷰
+class VertLinePaneView implements IPrimitivePaneView {
+  _source: VertLine;
+  _x: Coordinate | null = null;
+  _options: VertLineOptions;
+
+  constructor(source: VertLine, options: VertLineOptions) {
+    this._source = source;
+    this._options = options;
+  }
+
+  update() {
+    const timeScale = this._source._chart.timeScale();
+    this._x = timeScale.timeToCoordinate(this._source._time);
+  }
+
+  renderer() {
+    return new VertLinePaneRenderer(this._x, this._options);
+  }
+}
+
+// 메인 세로선 클래스
+class VertLine implements ISeriesPrimitive<Time> {
+  _chart: IChartApi;
+  _series: ISeriesApi<any>;
+  _time: Time;
+  _paneViews: VertLinePaneView[];
+  _options: VertLineOptions;
+
+  constructor(chart: IChartApi, series: ISeriesApi<any>, time: Time, options: VertLineOptions) {
+    this._chart = chart;
+    this._series = series;
+    this._time = time;
+    this._options = options;
+    this._paneViews = [new VertLinePaneView(this, options)];
+  }
+
+  updateAllViews() {
+    this._paneViews.forEach(pw => pw.update());
+  }
+
+  paneViews() {
+    return this._paneViews;
+  }
+
+  priceAxisViews() {
+    return [];
+  }
+
+  timeAxisViews() {
+    return [];
+  }
+
+  hitTest() {
+    return null;
+  }
+}
+
+interface CumulativeReturnsChartProps {
+  portfolioId?: number;
+}
+
+export default function CumulativeReturnsChart({
+  portfolioId
+}: CumulativeReturnsChartProps) {
   const [hoveredPoint, setHoveredPoint] = useState<TooltipData | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
   const chartApiRef = useRef<IChartApi | null>(null);
   const portfolioSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
 
+  // API로 성과 메트릭 데이터 조회
+  const { data: performanceData, isLoading, error } = useApi({
+    queryKey: ['portfolio-performance', portfolioId],
+    apiFunction: () => portfolioId ? portfolioApi.getPerformanceMetrics(portfolioId) : Promise.reject('No portfolio ID'),
+    enabled: !!portfolioId,
+  });
+
+  console.log('performanceData:', performanceData);
+  console.log('portfolioId:', portfolioId);
+  console.log('isLoading:', isLoading);
+  console.log('error:', error);
+
+  // 목데이터 사용 (임시) - useState로 한번만 생성
+  // const [performanceData] = useState(() => generatePerformanceMockData());
+  // const isLoading = false;
+  // const error = null;
 
   useEffect(() => {
-    if (!chartRef.current) return;
+    if (!chartRef.current || !performanceData?.performanceData) return;
 
-    // 목데이터 강제 사용 (테스트용)
-    const mockData = generateHistoryMockData();
-    const actualTradeData = mockData.tradeData;
-    const actualPortfolioPercents = mockData.portfolioPercents;
+    const chartData = performanceData.performanceData;
 
     const chart = createChart(chartRef.current, {
       width: chartRef.current.clientWidth || 800,
@@ -96,48 +206,54 @@ export default function DashboardChart({
 
     portfolioSeriesRef.current = portfolioSeries;
 
-    const portfolioData = actualPortfolioPercents.map((value, index) => ({
-      time: actualTradeData[index].date as any,
-      value: value,
-    }));
-
-    portfolioSeries.setData(portfolioData);
-
-    // 리밸런싱 날짜 가져오기
-    const rebalancingDates = generateRebalancingDates();
-
-    // createSeriesMarkers API를 사용한 리밸런싱 마커 추가
-    console.log('리밸런싱 날짜들:', rebalancingDates);
-    console.log('실제 거래 데이터:', actualTradeData.map(d => d.date));
-
-    if (rebalancingDates.length > 0) {
-      const markers: SeriesMarker[] = rebalancingDates.map(date => {
-        const dataIndex = actualTradeData.findIndex(d => d.date === date);
-        console.log(`날짜 ${date}의 데이터 인덱스:`, dataIndex);
-
-        if (dataIndex >= 0) {
-          return {
-            time: date,
-            position: 'aboveBar' as const,
-            color: '#2563eb',
-            shape: 'arrowDown' as const,
-            text: '📊 히스토리',
-          };
+    // 평가액 기준으로 차트 데이터 생성
+    const lineData = chartData
+      .map((dataPoint, index) => ({
+        time: dataPoint.metricDate as any,
+        value: dataPoint.totalValue,
+        originalIndex: index
+      }))
+      // 시간순으로 정렬
+      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+      // 중복된 시간값 제거 (같은 날짜가 여러개면 마지막 값만 사용)
+      .reduce((acc, current) => {
+        const existing = acc.find(item => item.time === current.time);
+        if (existing) {
+          // 같은 시간이 있으면 더 큰 originalIndex를 가진 것으로 교체
+          if (current.originalIndex > existing.originalIndex) {
+            const index = acc.indexOf(existing);
+            acc[index] = current;
+          }
+        } else {
+          acc.push(current);
         }
-        return null;
-      }).filter(marker => marker !== null) as SeriesMarker[];
+        return acc;
+      }, [] as any[])
+      .map(({ originalIndex, ...item }) => item); // originalIndex 제거
 
-      console.log('생성된 마커들:', markers);
+    console.log('lineData:', lineData);
+    portfolioSeries.setData(lineData);
 
-      if (markers.length > 0) {
-        try {
-          createSeriesMarkers(portfolioSeries, markers);
-          console.log('마커 생성 성공!');
-        } catch (error) {
-          console.log('마커 생성 실패:', error);
-        }
+    // 이벤트가 있는 날짜에 세로선 추가
+    chartData.forEach((dataPoint) => {
+      const hasEvent = dataPoint.compositionChanged || dataPoint.rebalanced || dataPoint.sold || dataPoint.bought;
+
+      if (hasEvent) {
+        // 이벤트 타입에 따른 색상 결정
+        let color = '#6b7280'; // 기본 회색
+        if (dataPoint.rebalanced) color = '#ef4444'; // 빨간색 - 리밸런싱
+        else if (dataPoint.sold) color = '#f59e0b'; // 주황색 - 매도
+        else if (dataPoint.bought) color = '#10b981'; // 초록색 - 매수
+        else if (dataPoint.compositionChanged) color = '#3b82f6'; // 파란색 - 구성 변경
+
+        const vertLine = new VertLine(chart, portfolioSeries, dataPoint.metricDate as any, {
+          color: color,
+          width: 1
+        });
+
+        portfolioSeries.attachPrimitive(vertLine);
       }
-    }
+    });
 
     chart.timeScale().fitContent();
 
@@ -148,31 +264,22 @@ export default function DashboardChart({
       }
 
       const paramTime = param.time;
-      let matchingDataIndex = -1;
+      const matchingDataPoint = chartData.find(d => d.metricDate === paramTime);
 
-      for (let i = 0; i < portfolioData.length; i++) {
-        if (portfolioData[i].time === paramTime) {
-          matchingDataIndex = i;
-          break;
-        }
-      }
-
-      if (matchingDataIndex >= 0 && matchingDataIndex < actualTradeData.length) {
-        const data = actualTradeData[matchingDataIndex];
-
-        // 이벤트 체크 (리밸런싱만)
-        let eventType = '';
-        if (rebalancingDates.includes(paramTime)) {
-          eventType = '리밸런싱';
-        }
+      if (matchingDataPoint) {
+        // 이벤트 타입들 확인
+        const eventTypes: string[] = [];
+        if (matchingDataPoint.compositionChanged) eventTypes.push('구성 변경');
+        if (matchingDataPoint.rebalanced) eventTypes.push('리밸런싱');
+        if (matchingDataPoint.sold) eventTypes.push('매도');
+        if (matchingDataPoint.bought) eventTypes.push('매수');
 
         setHoveredPoint({
           x: param.point.x,
           y: param.point.y,
-          id: data.id,
-          date: data.date,
-          cumulativeReturn: data.cumulativeReturn,
-          eventType: eventType // 이벤트 타입 추가
+          date: matchingDataPoint.metricDate,
+          totalValue: matchingDataPoint.totalValue,
+          eventTypes: eventTypes
         });
       }
     });
@@ -181,34 +288,22 @@ export default function DashboardChart({
       if (!param.time) return;
 
       const paramTime = param.time;
-      let matchingDataIndex = -1;
+      const matchingDataPoint = chartData.find(d => d.metricDate === paramTime);
 
-      for (let i = 0; i < portfolioData.length; i++) {
-        if (portfolioData[i].time === paramTime) {
-          matchingDataIndex = i;
-          break;
-        }
-      }
+      if (matchingDataPoint) {
+        // 이벤트 타입들 확인
+        const eventTypes: string[] = [];
+        if (matchingDataPoint.compositionChanged) eventTypes.push('구성 변경');
+        if (matchingDataPoint.rebalanced) eventTypes.push('리밸런싱');
+        if (matchingDataPoint.sold) eventTypes.push('매도');
+        if (matchingDataPoint.bought) eventTypes.push('매수');
 
-      if (matchingDataIndex >= 0 && matchingDataIndex < actualTradeData.length) {
-        const data = actualTradeData[matchingDataIndex];
-
-        // 이벤트 체크 (리밸런싱만)
-        let eventType = '';
-        if (rebalancingDates.includes(paramTime)) {
-          eventType = '리밸런싱';
-        }
-
-        if (eventType) {
+        if (eventTypes.length > 0) {
           // 이벤트 시점 클릭 시 alert
-          alert(`${eventType} 이벤트 발생!\n날짜: ${data.date}\n수익률: ${data.cumulativeReturn >= 0 ? '+' : ''}${data.cumulativeReturn.toFixed(2)}%`);
-        } else if (onIdClick) {
-          // 일반 데이터 포인트 클릭 시 기존 동작
-          console.log('Chart clicked ID:', data.id);
-          onIdClick(data.id);
+          alert(`이벤트 발생!\n날짜: ${matchingDataPoint.metricDate}\n평가액: ${matchingDataPoint.totalValue.toLocaleString()}원\n이벤트: ${eventTypes.join(', ')}`);
         } else {
           // 일반 날짜 클릭 시 정보 표시
-          alert(`날짜: ${data.date}\n수익률: ${data.cumulativeReturn >= 0 ? '+' : ''}${data.cumulativeReturn.toFixed(2)}%`);
+          alert(`날짜: ${matchingDataPoint.metricDate}\n평가액: ${matchingDataPoint.totalValue.toLocaleString()}원`);
         }
       }
     });
@@ -227,7 +322,45 @@ export default function DashboardChart({
       window.removeEventListener('resize', handleResize);
       chart.remove();
     };
-  }, [tradeData, portfolioPercents, onIdClick]);
+  }, [performanceData]);
+
+  if (isLoading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className={styles.chartCard}
+      >
+        <div className={styles.chartHeader}>
+          <h2 className={styles.chartTitle}>포트폴리오 평가액 히스토리</h2>
+        </div>
+        <div style={{ padding: '100px', textAlign: 'center' }}>
+          데이터를 불러오는 중...
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (error || !performanceData) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className={styles.chartCard}
+      >
+        <div className={styles.chartHeader}>
+          <h2 className={styles.chartTitle}>포트폴리오 평가액 히스토리</h2>
+        </div>
+        <div style={{ padding: '100px', textAlign: 'center' }}>
+          데이터를 불러올 수 없습니다.
+        </div>
+      </motion.div>
+    );
+  }
+
+  const portfolioData = performanceData;
 
   return (
     <motion.div
@@ -237,14 +370,16 @@ export default function DashboardChart({
       className={styles.chartCard}
     >
       <div className={styles.chartHeader}>
-        <h2 className={styles.chartTitle}>히스토리 시점 등록 주식 수익률(변경 예정)</h2>
+        <h2 className={styles.chartTitle}>포트폴리오 평가액 히스토리</h2>
       </div>
-      
+
       <div className={styles.legend}>
         <div className={styles.legendItem}>
           <div className={`${styles.legendDot} ${styles.portfolio}`}></div>
-          <span>포트폴리오 수익률</span>
-          <span className={styles.legendValue}>+35.2%</span>
+          <span>{portfolioData.portfolioName}</span>
+          <span className={styles.legendValue}>
+            {portfolioData.statistics.finalValue.toLocaleString()}원
+          </span>
         </div>
       </div>
 
@@ -266,9 +401,9 @@ export default function DashboardChart({
             <div className={styles.tooltipContent}>
               <div className={styles.tooltipRow}>
                 <DollarSign className={styles.tooltipIcon} />
-                <span>수익률: {hoveredPoint.cumulativeReturn >= 0 ? '+' : ''}{hoveredPoint.cumulativeReturn.toFixed(2)}%</span>
+                <span>평가액: {hoveredPoint.totalValue.toLocaleString()}원</span>
               </div>
-              {hoveredPoint.eventType && (
+              {hoveredPoint.eventTypes.length > 0 && (
                 <>
                   <div className={styles.tooltipDivider}></div>
                   <div className={styles.tooltipRow}>
@@ -276,7 +411,7 @@ export default function DashboardChart({
                       color: '#2563eb',
                       fontWeight: 'bold'
                     }}>
-                      📌 {hoveredPoint.eventType} 시점
+                      📌 {hoveredPoint.eventTypes.join(', ')}
                     </span>
                   </div>
                 </>
