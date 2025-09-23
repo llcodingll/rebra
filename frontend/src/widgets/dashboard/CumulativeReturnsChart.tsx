@@ -12,6 +12,8 @@ import type {
   Coordinate,
   Time
 } from 'lightweight-charts';
+import { useApi } from '../../shared/hook/useApi';
+import { portfolioApi } from '../../features/portfolio/api/portfolioApi';
 import { generatePerformanceMockData } from '../../mocks/dashboard/performanceData';
 import type { PerformanceDataPoint } from '../../features/portfolio/api/types';
 import styles from './CumulativeReturnsChart.module.css';
@@ -132,22 +134,27 @@ export default function CumulativeReturnsChart({
   const chartApiRef = useRef<IChartApi | null>(null);
   const portfolioSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
 
-  // API로 성과 메트릭 데이터 조회 (주석 처리 - 추후 사용 예정)
-  // const { data: performanceData, isLoading, error } = useApi({
-  //   queryKey: ['portfolio-performance', portfolioId],
-  //   apiFunction: () => portfolioId ? portfolioApi.getPerformanceMetrics(portfolioId) : Promise.reject('No portfolio ID'),
-  //   enabled: !!portfolioId,
-  // });
+  // API로 성과 메트릭 데이터 조회
+  const { data: performanceData, isLoading, error } = useApi({
+    queryKey: ['portfolio-performance', portfolioId],
+    apiFunction: () => portfolioId ? portfolioApi.getPerformanceMetrics(portfolioId) : Promise.reject('No portfolio ID'),
+    enabled: !!portfolioId,
+  });
+
+  console.log('performanceData:', performanceData);
+  console.log('portfolioId:', portfolioId);
+  console.log('isLoading:', isLoading);
+  console.log('error:', error);
 
   // 목데이터 사용 (임시) - useState로 한번만 생성
-  const [performanceData] = useState(() => generatePerformanceMockData());
-  const isLoading = false;
-  const error = null;
+  // const [performanceData] = useState(() => generatePerformanceMockData());
+  // const isLoading = false;
+  // const error = null;
 
   useEffect(() => {
-    if (!chartRef.current || !performanceData?.data?.performanceData) return;
+    if (!chartRef.current || !performanceData?.performanceData) return;
 
-    const chartData = performanceData.data.performanceData;
+    const chartData = performanceData.performanceData;
 
     const chart = createChart(chartRef.current, {
       width: chartRef.current.clientWidth || 800,
@@ -200,11 +207,31 @@ export default function CumulativeReturnsChart({
     portfolioSeriesRef.current = portfolioSeries;
 
     // 평가액 기준으로 차트 데이터 생성
-    const lineData = chartData.map((dataPoint) => ({
-      time: dataPoint.metricDate as any,
-      value: dataPoint.totalValue,
-    }));
+    const lineData = chartData
+      .map((dataPoint, index) => ({
+        time: dataPoint.metricDate as any,
+        value: dataPoint.totalValue,
+        originalIndex: index
+      }))
+      // 시간순으로 정렬
+      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+      // 중복된 시간값 제거 (같은 날짜가 여러개면 마지막 값만 사용)
+      .reduce((acc, current) => {
+        const existing = acc.find(item => item.time === current.time);
+        if (existing) {
+          // 같은 시간이 있으면 더 큰 originalIndex를 가진 것으로 교체
+          if (current.originalIndex > existing.originalIndex) {
+            const index = acc.indexOf(existing);
+            acc[index] = current;
+          }
+        } else {
+          acc.push(current);
+        }
+        return acc;
+      }, [] as any[])
+      .map(({ originalIndex, ...item }) => item); // originalIndex 제거
 
+    console.log('lineData:', lineData);
     portfolioSeries.setData(lineData);
 
     // 이벤트가 있는 날짜에 세로선 추가
@@ -315,7 +342,7 @@ export default function CumulativeReturnsChart({
     );
   }
 
-  if (error || !performanceData?.data) {
+  if (error || !performanceData) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -333,7 +360,7 @@ export default function CumulativeReturnsChart({
     );
   }
 
-  const portfolioData = performanceData.data;
+  const portfolioData = performanceData;
 
   return (
     <motion.div

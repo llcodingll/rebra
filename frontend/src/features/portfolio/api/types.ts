@@ -298,16 +298,11 @@ export interface PerformanceStatistics {
 }
 
 export interface PortfolioPerformanceResponse {
-  success: boolean;
-  status: number;
-  data: {
-    portfolioId: number;
-    portfolioName: string;
-    portfolioCreatedDate: string;
-    startDate: string;
-    endDate: string;
-    performanceData: PerformanceDataPoint[];
-    statistics: PerformanceStatistics;
-  };
-  timestamp: string;
+  portfolioId: number;
+  portfolioName: string;
+  portfolioCreatedDate: string;
+  startDate: string;
+  endDate: string;
+  performanceData: PerformanceDataPoint[];
+  statistics: PerformanceStatistics;
 }
