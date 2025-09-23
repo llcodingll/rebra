@@ -39,12 +39,6 @@ public interface StockService {
      */
     StockChartResponse getStockChartData(String stockCode, String startDate, String endDate, String periodType,
                                          Long userId);
-
-    /**
-     * 종목 상세 정보 조회 (보유 정보 포함 옵션)
-     */
-    StockDetailResponse getStockDetail(String stockCode, boolean includeHolding, Long userId);
-
     /**
      * 전체 보유 종목 조회 (페이지네이션)
      */

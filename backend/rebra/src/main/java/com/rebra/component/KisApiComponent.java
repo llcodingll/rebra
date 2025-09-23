@@ -16,7 +16,6 @@ import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import com.youhogeon.finance.kis_api.client.socket.SubscribableApiResult;
 import com.youhogeon.finance.kis_api.config.Configuration;
 import com.youhogeon.finance.kis_api.config.Credentials;
-import com.youhogeon.finance.kis_api.config.RoundRobinCredentialsSelector;
 import com.youhogeon.finance.kis_api.exception.KisClientException;
 import jakarta.annotation.PostConstruct;
 import java.time.Duration;
@@ -823,7 +822,7 @@ public class KisApiComponent {
     /**
      * 안전한 필드 접근 헬퍼
      */
-    private String getFieldSafely(java.util.function.Supplier<String> supplier, String defaultValue) {
+    private String getFieldSafely(Supplier<String> supplier, String defaultValue) {
         try {
             String value = supplier.get();
             return value != null ? value : defaultValue;
