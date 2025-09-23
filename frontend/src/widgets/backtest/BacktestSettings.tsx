@@ -177,14 +177,13 @@ export default function BacktestSettings({
   const handleNextToStep3 = useCallback(() => {
     setCurrentStep(3);
     setTimeout(() => {
-      if (step3RefToUse.current) {
-        step3RefToUse.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
-      }
-    }, 100);
-  }, [step3RefToUse]);
+      // 페이지 하단으로 스크롤
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: 'smooth'
+      });
+    }, 300);
+  }, []);
 
   const handleRunBacktest = () => {
     showConfirm({

@@ -46,6 +46,8 @@ public enum ExceptionCode {
     STOCK_NOT_FOUND(10001, "주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     STOCK_CODE_NOT_FOUND(10002, "해당 종목 코드로 주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     STOCK_NAME_NOT_FOUND(10003, "해당 종목명으로 주식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    STOCK_HOLDING_FETCH_FAILED(10004, "보유 종목 조회에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    STOCK_HOLDING_DETAIL_FETCH_FAILED(10005, "종목 보유 정보 조회에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // ==== Account 관련 ====
     ACCOUNT_NOT_FOUND(11001, "계좌를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),

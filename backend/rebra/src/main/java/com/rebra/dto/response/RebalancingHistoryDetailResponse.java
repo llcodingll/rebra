@@ -35,7 +35,7 @@ public class RebalancingHistoryDetailResponse {
     public static RebalancingHistoryDetailResponse createStartingPoint(LocalDateTime createdAt) {
         return RebalancingHistoryDetailResponse.builder()
                 .orderId(null) // 더미 데이터이므로 null
-                .executionType(ExecutionType.INITIAL) // 시작점 표시
+                .executionType(null) // 시작점은 ExecutionType 없음
                 .executedAt(createdAt)
                 .cumulativeReturn(1.0) // 100% 기준
                 .totalPortfolioValue(10000000L) // 초기 1000만원 기준

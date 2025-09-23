@@ -40,8 +40,9 @@ class BacktestApiService extends ApiClient {
    */
   async createBacktest(request: BacktestCreateRequest): Promise<Result<number, AppError>> {
     return await this.post<number>('/api/v1/backtests', request, {
-      timeout: 60000
-    });
+      timeout: 60000,
+      headers: {}
+    } as any);
   }
 
   /**

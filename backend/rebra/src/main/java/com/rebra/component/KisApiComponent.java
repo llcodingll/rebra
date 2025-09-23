@@ -16,7 +16,6 @@ import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import com.youhogeon.finance.kis_api.client.socket.SubscribableApiResult;
 import com.youhogeon.finance.kis_api.config.Configuration;
 import com.youhogeon.finance.kis_api.config.Credentials;
-import com.youhogeon.finance.kis_api.config.RoundRobinCredentialsSelector;
 import com.youhogeon.finance.kis_api.exception.KisClientException;
 import jakarta.annotation.PostConstruct;
 import java.time.Duration;
@@ -26,15 +25,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
  * KIS API 클라이언트 및 연결 관리 컴포넌트
  */
-@Slf4j
 @Component
 public class KisApiComponent {
+
+    private static final Logger log = LoggerFactory.getLogger(KisApiComponent.class);
 
     private Configuration mockConfig;  // 모의투자용 Configuration
     private Configuration realConfig;  // 실계좌용 Configuration
@@ -298,19 +299,19 @@ public class KisApiComponent {
 
         ensureUserCredentials(userId, accountId, accountType, credentials);
         try {
-            // 공유 WebSocket 연결 획득
-            SubscribableApiResult sharedConnection = getOrCreateConnection(userId, accountId, accountType, stockCode, credentials);
+            // 체결가 전용 WebSocket 연결 획득
+            SubscribableApiResult priceConnection = getOrCreatePriceConnection(userId, accountId, accountType, stockCode, credentials);
 
             // 구독 참조 카운트 증가
             int count = subscriptionCount.computeIfAbsent(subscriptionKey, k -> new AtomicInteger(0)).incrementAndGet();
 
-            log.info("📈 실시간 체결가 구독 시작 - UserId: {}, StockCode: {}, 구독자: {}명 (공유연결 사용)",
+            log.info("📈 실시간 체결가 구독 시작 - UserId: {}, StockCode: {}, 구독자: {}명 (체결가 전용 연결)",
                     userId, stockCode, count);
 
-            // 공유 연결에 체결가 데이터 핸들러 추가
-            addPriceHandlerToConnection(sharedConnection, stockCode, dataHandler);
+            // 체결가 연결에 체결가 데이터 핸들러 추가
+            addPriceHandlerToConnection(priceConnection, stockCode, dataHandler);
 
-            activeSubscriptions.put(subscriptionKey, sharedConnection);
+            activeSubscriptions.put(subscriptionKey, priceConnection);
 
             log.info("✅ 실시간 체결가 구독 완료 - StockCode: {}", stockCode);
 
@@ -348,36 +349,19 @@ public class KisApiComponent {
 
         ensureUserCredentials(userId, accountId, accountType, credentials);
         try {
-            // 공유 WebSocket 연결 획득
-            SubscribableApiResult sharedConnection = getOrCreateConnection(userId, accountId, accountType, stockCode, credentials);
+            // 호가 전용 WebSocket 연결 획득
+            SubscribableApiResult orderbookConnection = getOrCreateOrderbookConnection(userId, accountId, accountType, stockCode, credentials);
 
             // 구독 참조 카운트 증가
             int count = subscriptionCount.computeIfAbsent(subscriptionKey, k -> new AtomicInteger(0)).incrementAndGet();
 
-            log.info("📊 실시간 호가 구독 시작 - UserId: {}, StockCode: {}, 구독자: {}명 (공유연결 사용)",
+            log.info("📊 실시간 호가 구독 시작 - UserId: {}, StockCode: {}, 구독자: {}명 (호가 전용 연결)",
                     userId, stockCode, count);
 
-            // 호가 구독을 위한 별도 구독 요청 (기존 연결에 추가)
-            if (count == 1) {
-                // 첫 번째 호가 구독인 경우 명시적 호가 구독 요청
-                KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
-                String credentialsName = getUserCredentialsName(userId, accountId);
-                H0STASP0Api orderbookApi = new H0STASP0Api(stockCode);
+            // 호가 연결에 호가 데이터 핸들러 추가
+            addOrderbookHandlerToConnection(orderbookConnection, stockCode, dataHandler);
 
-                executeWithRetry(() -> {
-                    log.info("🔄 호가 구독 요청 전송 - StockCode: {}", stockCode);
-                    // 기존 연결에 호가 구독 추가
-                    client.execute(orderbookApi, credentialsName);
-                    return null;
-                }, 3, "호가 구독 요청");
-
-                log.info("📊 호가 구독 요청 완료 - StockCode: {}", stockCode);
-            }
-
-            // 공유 연결에 호가 데이터 핸들러 추가
-            addOrderbookHandlerToConnection(sharedConnection, stockCode, dataHandler);
-
-            activeSubscriptions.put(subscriptionKey, sharedConnection);
+            activeSubscriptions.put(subscriptionKey, orderbookConnection);
 
             log.info("✅ 실시간 호가 구독 완료 - StockCode: {}", stockCode);
 
@@ -447,11 +431,11 @@ public class KisApiComponent {
     }
 
     /**
-     * 공유 WebSocket 연결 획득 또는 생성
+     * 체결가용 WebSocket 연결 획득 또는 생성
      */
-    private SubscribableApiResult getOrCreateConnection(Long userId, Long accountId, AccountType accountType,
-                                                        String stockCode, DecryptedAccountCredentials credentials) {
-        String connectionKey = generateConnectionKey(userId, accountId);
+    private SubscribableApiResult getOrCreatePriceConnection(Long userId, Long accountId, AccountType accountType,
+                                                            String stockCode, DecryptedAccountCredentials credentials) {
+        String connectionKey = generateConnectionKey(userId, accountId) + "_PRICE";
 
         // Credentials가 Config에 없으면 자동으로 등록
         ensureUserCredentials(userId, accountId, accountType, credentials);
@@ -470,25 +454,76 @@ public class KisApiComponent {
             // 기존 연결이 있는지 확인
             SubscribableApiResult existingConnection = connectionPool.get(connectionKey);
             if (existingConnection != null) {
-                log.info("🔗 기존 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
+                log.info("🔗 기존 체결가 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
                 return existingConnection;
             }
 
-            // 새 연결 생성 (실제 종목코드 사용)
-            log.info("🆕 새 WebSocket 연결 생성 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
+            // 새 체결가 연결 생성
+            log.info("🆕 새 체결가 WebSocket 연결 생성 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
             KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
 
-            // 실제 종목코드로 체결가 구독하여 연결 생성
+            // 체결가 API로 연결 생성
             H0STCNT0Api priceApi = new H0STCNT0Api(stockCode);
 
             SubscribableApiResult newConnection = executeWithRetry(() -> {
-                log.info("🔄 WebSocket 연결 생성 시도 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
+                log.info("🔄 체결가 WebSocket 연결 생성 시도 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
                 return client.execute(priceApi, credentialsName);
-            }, 3, "WebSocket 연결 생성");
+            }, 3, "체결가 WebSocket 연결 생성");
 
             // 연결 풀에 저장
             connectionPool.put(connectionKey, newConnection);
-            log.info("✅ WebSocket 연결 생성 완료 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
+            log.info("✅ 체결가 WebSocket 연결 생성 완료 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
+
+            return newConnection;
+
+        } finally {
+            connectionLock.unlock();
+        }
+    }
+
+    /**
+     * 호가용 WebSocket 연결 획득 또는 생성
+     */
+    private SubscribableApiResult getOrCreateOrderbookConnection(Long userId, Long accountId, AccountType accountType,
+                                                                String stockCode, DecryptedAccountCredentials credentials) {
+        String connectionKey = generateConnectionKey(userId, accountId) + "_ORDERBOOK";
+
+        // Credentials가 Config에 없으면 자동으로 등록
+        ensureUserCredentials(userId, accountId, accountType, credentials);
+
+        String credentialsName = getUserCredentialsName(userId, accountId);
+        if (credentialsName == null) {
+            log.error("ensureUserCredentials 후에도 Credentials를 찾을 수 없음 - 사용자ID: {}, 계좌ID: {}", userId, accountId);
+            throw new RuntimeException("Credentials 등록 실패");
+        }
+
+        // 연결별 락 획득
+        ReentrantLock connectionLock = connectionLocks.computeIfAbsent(connectionKey, k -> new ReentrantLock());
+
+        connectionLock.lock();
+        try {
+            // 기존 연결이 있는지 확인
+            SubscribableApiResult existingConnection = connectionPool.get(connectionKey);
+            if (existingConnection != null) {
+                log.info("🔗 기존 호가 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
+                return existingConnection;
+            }
+
+            // 새 호가 연결 생성
+            log.info("🆕 새 호가 WebSocket 연결 생성 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
+            KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
+
+            // 호가 API로 연결 생성
+            H0STASP0Api orderbookApi = new H0STASP0Api(stockCode);
+
+            SubscribableApiResult newConnection = executeWithRetry(() -> {
+                log.info("🔄 호가 WebSocket 연결 생성 시도 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
+                return client.execute(orderbookApi, credentialsName);
+            }, 3, "호가 WebSocket 연결 생성");
+
+            // 연결 풀에 저장
+            connectionPool.put(connectionKey, newConnection);
+            log.info("✅ 호가 WebSocket 연결 생성 완료 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
 
             return newConnection;
 
@@ -500,8 +535,8 @@ public class KisApiComponent {
     /**
      * WebSocket 연결 해제
      */
-    private void closeConnection(Long userId, Long accountId) {
-        String connectionKey = generateConnectionKey(userId, accountId);
+    private void closePriceConnection(Long userId, Long accountId) {
+        String connectionKey = generateConnectionKey(userId, accountId) + "_PRICE";
         ReentrantLock connectionLock = connectionLocks.get(connectionKey);
 
         if (connectionLock != null) {
@@ -510,7 +545,26 @@ public class KisApiComponent {
                 SubscribableApiResult connection = connectionPool.remove(connectionKey);
                 if (connection != null) {
                     connection.unsubscribe();
-                    log.info("🔌 WebSocket 연결 해제 - ConnectionKey: {}", connectionKey);
+                    log.info("🔌 체결가 WebSocket 연결 해제 - ConnectionKey: {}", connectionKey);
+                }
+            } finally {
+                connectionLock.unlock();
+                connectionLocks.remove(connectionKey);
+            }
+        }
+    }
+
+    private void closeOrderbookConnection(Long userId, Long accountId) {
+        String connectionKey = generateConnectionKey(userId, accountId) + "_ORDERBOOK";
+        ReentrantLock connectionLock = connectionLocks.get(connectionKey);
+
+        if (connectionLock != null) {
+            connectionLock.lock();
+            try {
+                SubscribableApiResult connection = connectionPool.remove(connectionKey);
+                if (connection != null) {
+                    connection.unsubscribe();
+                    log.info("🔌 호가 WebSocket 연결 해제 - ConnectionKey: {}", connectionKey);
                 }
             } finally {
                 connectionLock.unlock();
@@ -768,7 +822,7 @@ public class KisApiComponent {
     /**
      * 안전한 필드 접근 헬퍼
      */
-    private String getFieldSafely(java.util.function.Supplier<String> supplier, String defaultValue) {
+    private String getFieldSafely(Supplier<String> supplier, String defaultValue) {
         try {
             String value = supplier.get();
             return value != null ? value : defaultValue;

@@ -1,22 +1,34 @@
 package com.rebra.controller;
 
 import com.rebra.component.KisApiComponent;
+import com.rebra.dto.request.BulkSubscriptionRequest;
+import com.rebra.dto.request.BulkUnsubscriptionRequest;
+import com.rebra.dto.request.StockSubscription;
+import com.rebra.dto.response.BulkSubscriptionResponse;
+import com.rebra.dto.response.SubscriptionResult;
 import com.rebra.entity.Account;
 import com.rebra.repository.AccountRepository;
 import com.rebra.service.KisRealtimeService;
 import com.rebra.service.WebSocketReconnectionService;
 import com.rebra.util.WebSocketHelper;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.stereotype.Controller;
 
 @Controller
 @RequiredArgsConstructor
-@Slf4j
 public class RealtimeController {
+
+    private static final Logger log = LoggerFactory.getLogger(RealtimeController.class);
 
     private final KisRealtimeService kisRealtimeService;
     private final KisApiComponent kisApiComponent;
@@ -24,12 +36,90 @@ public class RealtimeController {
     private final WebSocketHelper webSocketHelper;
     private final WebSocketReconnectionService webSocketReconnectionService;
 
+    // 병렬 처리를 위한 ExecutorService (최대 10개 스레드)
+    private final ExecutorService bulkSubscriptionExecutor = Executors.newFixedThreadPool(10);
+
+    // 개별 체결가 구독 메서드 제거됨 - bulk 구독 방식 사용
+
+    // 개별 호가 구독 메서드 제거됨 - bulk 구독 방식 사용
+
+    // 개별 구독 해제 메서드 제거됨 - bulk 구독 해제 방식 사용
+
     /**
-     * 체결가 구독 요청
-     * 클라이언트: SEND("/app/subscribe/{stockCode}/price")
+     * 일괄 구독 요청
+     * 클라이언트: SEND("/app/subscribe/bulk", {stocks: [...]})
+     *
+     * 사용 예시:
+     * {
+     *   "stocks": [
+     *     {"stockCode": "005930", "dataTypes": ["price", "orderbook"]},
+     *     {"stockCode": "000660", "dataTypes": ["price"]}
+     *   ]
+     * }
      */
-    @MessageMapping("/subscribe/{stockCode}/price")
-    public void subscribePriceRequest(@DestinationVariable String stockCode,
+    @MessageMapping("/subscribe/bulk")
+    public void subscribeBulkRequest(@Payload BulkSubscriptionRequest request,
+                                    SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+
+        // 세션에서 userId 추출
+        Long userId = webSocketHelper.getAuthenticatedUserId(headerAccessor);
+        if (userId == null) {
+            log.warn("Websocket 세션에 userId 없음 - sessionId: {}", sessionId);
+            BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
+                "인증 실패: 로그인이 필요합니다", sessionId);
+            webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
+            return;
+        }
+
+        log.info("📡 일괄 구독 요청 - userId={}, sessionId={}, 요청종목수={}, 총구독수={}",
+            userId, sessionId, request.getStocks().size(), request.getTotalSubscriptionCount());
+
+        // 입력 검증
+        if (!validateBulkSubscriptionRequest(request, userId)) {
+            return;
+        }
+
+        try {
+            // 사용자 계좌 조회
+            Account account = getUserAccount(userId);
+
+            // 비동기 병렬 처리로 구독 요청 실행
+            CompletableFuture.supplyAsync(() -> processBulkSubscription(request, account, sessionId, userId),
+                                        bulkSubscriptionExecutor)
+                .thenAccept(response -> {
+                    // 구독 성공 알림 전송
+                    webSocketHelper.sendBulkSubscriptionResponse(userId, response);
+
+                    // 성공한 구독들을 재연결 서비스에 등록
+                    registerSuccessfulSubscriptions(response, sessionId);
+
+                    log.info("✅ 일괄 구독 처리 완료 - userId={}, 성공={}, 실패={}",
+                        userId, response.getTotalSuccessful(),
+                        response.getTotalFailed());
+                })
+                .exceptionally(throwable -> {
+                    log.error("❌ 일괄 구독 처리 중 예외 발생 - userId={}", userId, throwable);
+                    BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
+                        "서버 오류: " + throwable.getMessage(), sessionId);
+                    webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
+                    return null;
+                });
+
+        } catch (Exception e) {
+            log.error("❌ 일괄 구독 초기 처리 실패 - userId={}", userId, e);
+            BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
+                "초기 처리 실패: " + e.getMessage(), sessionId);
+            webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
+        }
+    }
+
+    /**
+     * 일괄 구독 해제 요청
+     * 클라이언트: SEND("/app/unsubscribe/bulk", {stocks: [...]})
+     */
+    @MessageMapping("/unsubscribe/bulk")
+    public void unsubscribeBulkRequest(@Payload BulkUnsubscriptionRequest request,
                                       SimpMessageHeaderAccessor headerAccessor) {
         String sessionId = headerAccessor.getSessionId();
 
@@ -37,158 +127,221 @@ public class RealtimeController {
         Long userId = webSocketHelper.getAuthenticatedUserId(headerAccessor);
         if (userId == null) {
             log.warn("Websocket 세션에 userId 없음 - sessionId: {}", sessionId);
-            webSocketHelper.sendStockError(null, stockCode, "price", "인증 실패", "로그인 필요");
+            webSocketHelper.sendBulkUnsubscriptionError(userId, "인증 실패: 로그인이 필요합니다");
             return;
         }
 
-        log.info("📡 체결가 구독 요청 - userId={}, stockCode={}, sessionId={}", userId, stockCode, sessionId);
+        log.info("🔌 일괄 구독 해제 요청 - userId={}, sessionId={}, 요청종목수={}",
+            userId, sessionId, request.getStocks().size());
 
         try {
-            log.info("📊 계좌 조회 시작 - userId: {}", userId);
+            List<SubscriptionResult> results = new ArrayList<>();
 
-            // 먼저 해당 유저의 모든 계좌를 확인
-            var allAccounts = accountRepository.findByUserId(userId);
-            log.info("📋 사용자 {}의 전체 계좌 수: {}", userId, allAccounts.size());
+            // 각 종목별로 구독 해제 처리
+            for (var stockUnsub : request.getStocks()) {
+                String stockCode = stockUnsub.getStockCode();
 
-            if (!allAccounts.isEmpty()) {
-                log.info("📝 전체 계좌 목록:");
-                for (var acc : allAccounts) {
-                    log.info("  - 계좌ID: {}, 연결상태: {}, 생성일: {}, 브로커: {}",
-                        acc.getId(), acc.isConnected(), acc.getCreatedAt(), acc.getBrokerName());
+                for (String dataType : stockUnsub.getDataTypes()) {
+                    if ("all".equals(dataType)) {
+                        // 모든 타입 해제
+                        results.addAll(unsubscribeAllDataTypes(userId, stockCode, sessionId));
+                    } else {
+                        // 특정 타입 해제
+                        SubscriptionResult result = unsubscribeSingleDataType(userId, stockCode, dataType, sessionId);
+                        results.add(result);
+                    }
                 }
             }
 
-            // 연결된 계좌만 확인
-            var connectedAccounts = allAccounts.stream()
-                .filter(Account::isConnected)
-                .toList();
-            log.info("🔗 사용자 {}의 연결된 계좌 수: {}", userId, connectedAccounts.size());
+            // 결과 전송
+            int successCount = (int) results.stream().filter(SubscriptionResult::isSuccess).count();
+            int failureCount = results.size() - successCount;
 
-            if (!connectedAccounts.isEmpty()) {
-                log.info("✅ 연결된 계좌 목록:");
-                for (var acc : connectedAccounts) {
-                    log.info("  - 계좌ID: {}, 브로커: {}, 생성일: {}",
-                        acc.getId(), acc.getBrokerName(), acc.getCreatedAt());
-                }
-            }
+            log.info("✅ 일괄 구독 해제 완료 - userId={}, 성공={}, 실패={}", userId, successCount, failureCount);
 
-            // 사용자의 첫 번째 활성 계좌 조회
-            Account account = accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true)
-                    .orElseThrow(() -> new RuntimeException(
-                        String.format("활성화된 계좌를 찾을 수 없습니다. userId: %d, 전체계좌: %d개, 연결된계좌: %d개",
-                            userId, allAccounts.size(), connectedAccounts.size())
-                    ));
-
-            kisRealtimeService.startPriceSubscription(account, stockCode, sessionId);
-
-            // 세션별 구독 정보 추가
-            webSocketReconnectionService.addSubscription(sessionId, stockCode, "price");
-
-            // 구독 성공 알림 전송
-            webSocketHelper.sendSubscriptionStarted(userId, stockCode, "price");
+            webSocketHelper.sendBulkUnsubscriptionResponse(userId, results, successCount, failureCount);
 
         } catch (Exception e) {
-            log.error("체결가 구독 처리 실패 - userId={}, stockCode={}", userId, stockCode, e);
-            webSocketHelper.sendStockError(userId, stockCode, "price", "구독 실패", e.getMessage());
+            log.error("❌ 일괄 구독 해제 처리 실패 - userId={}", userId, e);
+            webSocketHelper.sendBulkUnsubscriptionError(userId, "서버 오류: " + e.getMessage());
         }
     }
 
     /**
-     * 호가 구독 요청
-     * 클라이언트: SEND("/app/subscribe/{stockCode}/orderbook")
+     * 일괄 구독 요청 검증
      */
-    @MessageMapping("/subscribe/{stockCode}/orderbook")
-    public void subscribeOrderbookRequest(@DestinationVariable String stockCode,
-                                          SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
-
-        // 세션에서 userId 추출
-        Long userId = webSocketHelper.getAuthenticatedUserId(headerAccessor);
-        if (userId == null) {
-            log.warn("Websocket 세션에 userId 없음 - sessionId: {}", sessionId);
-            webSocketHelper.sendStockError(null, stockCode, "price", "인증 실패", "로그인 필요");
-            return;
+    private boolean validateBulkSubscriptionRequest(BulkSubscriptionRequest request, Long userId) {
+        if (request == null || request.getStocks() == null || request.getStocks().isEmpty()) {
+            BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
+                "요청이 비어있습니다", null);
+            webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
+            return false;
         }
 
-        log.info("📡 호가 구독 요청 - userId={}, stockCode={}, sessionId={}", userId, stockCode, sessionId);
+        if (!request.isValid()) {
+            BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
+                "잘못된 요청입니다", null);
+            webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
+            return false;
+        }
 
-        try {
-            log.info("📊 계좌 조회 시작 - userId: {}", userId);
+        // 중복 구독 검증
+        if (request.hasDuplicateSubscriptions()) {
+            BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
+                "중복된 구독 요청이 있습니다", null);
+            webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
+            return false;
+        }
 
-            // 먼저 해당 유저의 모든 계좌를 확인
-            var allAccounts = accountRepository.findByUserId(userId);
-            log.info("📋 사용자 {}의 전체 계좌 수: {}", userId, allAccounts.size());
+        // 구독 수 제한 검증 (100개)
+        if (request.getTotalSubscriptionCount() > 100) {
+            BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
+                "구독 요청 수가 너무 많습니다 (최대 100개)", null);
+            webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
+            return false;
+        }
 
-            if (!allAccounts.isEmpty()) {
-                log.info("📝 전체 계좌 목록:");
-                for (var acc : allAccounts) {
-                    log.info("  - 계좌ID: {}, 연결상태: {}, 생성일: {}, 브로커: {}",
-                        acc.getId(), acc.isConnected(), acc.getCreatedAt(), acc.getBrokerName());
+        return true;
+    }
+
+    /**
+     * 사용자 계좌 조회
+     */
+    private Account getUserAccount(Long userId) {
+        var allAccounts = accountRepository.findByUserId(userId);
+        log.info("📋 사용자 {}의 전체 계좌 수: {}", userId, allAccounts.size());
+
+        var connectedAccounts = allAccounts.stream()
+            .filter(Account::isConnected)
+            .toList();
+        log.info("🔗 사용자 {}의 연결된 계좌 수: {}", userId, connectedAccounts.size());
+
+        return accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true)
+            .orElseThrow(() -> new RuntimeException(
+                String.format("활성화된 계좌를 찾을 수 없습니다. userId: %d, 전체계좌: %d개, 연결된계좌: %d개",
+                    userId, allAccounts.size(), connectedAccounts.size())));
+    }
+
+    /**
+     * 일괄 구독 처리 (비동기)
+     */
+    private BulkSubscriptionResponse processBulkSubscription(BulkSubscriptionRequest request,
+                                                           Account account, String sessionId, Long userId) {
+        List<SubscriptionResult> results = new ArrayList<>();
+
+        log.info("🔄 일괄 구독 처리 시작 - userId={}, 총 {}개 종목", userId, request.getStocks().size());
+
+        // 추가 디버깅 로그
+        log.info("🔍 request 객체 정보: {}", request);
+        log.info("🔍 request.getStocks() null 여부: {}", request.getStocks() == null);
+        if (request.getStocks() != null) {
+            log.info("🔍 실제 stocks 리스트: {}", request.getStocks());
+            log.info("🔍 stocks 클래스 타입: {}", request.getStocks().getClass());
+            log.info("🔍 stocks isEmpty: {}", request.getStocks().isEmpty());
+        }
+
+      List<StockSubscription> stocksList = request.getStocks();
+      log.info("🔍 루프 시작 전 - 리스트 크기: {}", stocksList.size());
+
+        // 각 종목별로 구독 처리                                           │
+         for (int i = 0; i < stocksList.size(); i++) {
+          StockSubscription stock = stocksList.get(i);
+           String stockCode = stock.getStockCode();
+
+             log.debug("✅stockCodestockCodestockCodestockCodestockCode");
+
+            log.debug("" + stock.getImplementedDataTypes().size());
+            // 구현된 데이터 타입만 처리
+
+            for (String dataType : stock.getImplementedDataTypes()) {
+                try {
+                    processIndividualSubscription(account, stockCode, dataType, sessionId);
+                    results.add(SubscriptionResult.success(stockCode, dataType,
+                        "구독이 성공했습니다"));
+
+                    log.debug("✅ 개별 구독 성공 - stockCode={}, dataType={}", stockCode, dataType);
+
+                } catch (Exception e) {
+                    results.add(SubscriptionResult.failure(stockCode, dataType, e));
+                    log.error("❌ 개별 구독 실패 - stockCode={}, dataType={}", stockCode, dataType, e);
                 }
             }
 
-            // 연결된 계좌만 확인
-            var connectedAccounts = allAccounts.stream()
-                .filter(Account::isConnected)
-                .toList();
-            log.info("🔗 사용자 {}의 연결된 계좌 수: {}", userId, connectedAccounts.size());
-
-            if (!connectedAccounts.isEmpty()) {
-                log.info("✅ 연결된 계좌 목록:");
-                for (var acc : connectedAccounts) {
-                    log.info("  - 계좌ID: {}, 브로커: {}, 생성일: {}",
-                        acc.getId(), acc.getBrokerName(), acc.getCreatedAt());
-                }
+            // 구현되지 않은 데이터 타입에 대한 알림
+            for (String dataType : stock.getUnimplementedDataTypes()) {
+                results.add(SubscriptionResult.failure(stockCode, dataType,
+                    "아직 구현되지 않은 데이터 타입입니다", "NOT_IMPLEMENTED"));
             }
+        }
 
-            Account account = accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true)
-                    .orElseThrow(() -> new RuntimeException(
-                        String.format("활성화된 계좌를 찾을 수 없습니다. userId: %d, 전체계좌: %d개, 연결된계좌: %d개",
-                            userId, allAccounts.size(), connectedAccounts.size())
-                    ));
+        return BulkSubscriptionResponse.success(results, sessionId);
+    }
 
-            kisRealtimeService.startOrderbookSubscription(account, stockCode, sessionId);
-
-            // 세션별 구독 정보 추가
-            webSocketReconnectionService.addSubscription(sessionId, stockCode, "orderbook");
-
-            webSocketHelper.sendSubscriptionStarted(userId, stockCode, "orderbook");
-
-        } catch (Exception e) {
-            log.error("호가 구독 처리 실패 - userId={}, stockCode={}", userId, stockCode, e);
-            webSocketHelper.sendStockError(userId, stockCode, "orderbook", "구독 실패", e.getMessage());
+    /**
+     * 개별 구독 처리
+     */
+    private void processIndividualSubscription(Account account, String stockCode,
+                                             String dataType, String sessionId) {
+        switch (dataType) {
+            case "price":
+                kisRealtimeService.startPriceSubscription(account, stockCode, sessionId);
+                break;
+            case "orderbook":
+                kisRealtimeService.startOrderbookSubscription(account, stockCode, sessionId);
+                break;
+            default:
+                throw new IllegalArgumentException("지원되지 않는 데이터 타입: " + dataType);
         }
     }
 
     /**
-     * 구독 해제 요청
-     * 클라이언트: SEND("/app/unsubscribe/{stockCode}") with payload="price" or "orderbook"
+     * 성공한 구독들을 재연결 서비스에 등록
      */
-    @MessageMapping("/unsubscribe/{stockCode}")
-    public void unsubscribe(@DestinationVariable String stockCode,
-                            String dataType,
-                            SimpMessageHeaderAccessor headerAccessor) {
+    private void registerSuccessfulSubscriptions(BulkSubscriptionResponse response, String sessionId) {
+        for (SubscriptionResult result : response.getSuccessfulResults()) {
+            webSocketReconnectionService.addSubscription(sessionId,
+                result.getStockCode(), result.getDataType());
+        }
+    }
 
-        String sessionId = headerAccessor.getSessionId();
+    /**
+     * 모든 데이터 타입 구독 해제
+     */
+    private List<SubscriptionResult> unsubscribeAllDataTypes(Long userId, String stockCode, String sessionId) {
+        List<SubscriptionResult> results = new ArrayList<>();
 
-        // 세션에서 userId 추출
-        Long userId = webSocketHelper.requireAuthenticatedUserId(headerAccessor);
-        if (userId == null) {
-            log.warn("Websocket 세션에 userId 없음 - sessionId: {}", sessionId);
-            webSocketHelper.sendStockError(null, stockCode, "price", "인증 실패", "로그인 필요");
-            return;
+        // 현재 구현된 모든 데이터 타입 해제
+        for (String dataType : StockSubscription.getAllImplementedDataTypes()) {
+            SubscriptionResult result = unsubscribeSingleDataType(userId, stockCode, dataType, sessionId);
+            results.add(result);
         }
 
-        log.info("🔌 구독 해제 요청 - userId={}, stockCode={}, type={}, sessionId={}", userId, stockCode, dataType, sessionId);
+        return results;
+    }
 
-        if ("price".equals(dataType)) {
-            kisRealtimeService.stopPriceSubscription(userId, stockCode, sessionId);
-            webSocketReconnectionService.removeSubscription(sessionId, stockCode, "price");
-            webSocketHelper.sendSubscriptionStopped(userId, stockCode, "price");
-        } else if ("orderbook".equals(dataType)) {
-            kisRealtimeService.stopOrderbookSubscription(userId, stockCode, sessionId);
-            webSocketReconnectionService.removeSubscription(sessionId, stockCode, "orderbook");
-            webSocketHelper.sendSubscriptionStopped(userId, stockCode, "orderbook");
+    /**
+     * 단일 데이터 타입 구독 해제
+     */
+    private SubscriptionResult unsubscribeSingleDataType(Long userId, String stockCode,
+                                                        String dataType, String sessionId) {
+        try {
+            switch (dataType) {
+                case "price":
+                    kisRealtimeService.stopPriceSubscription(userId, stockCode, sessionId);
+                    webSocketReconnectionService.removeSubscription(sessionId, stockCode, "price");
+                    break;
+                case "orderbook":
+                    kisRealtimeService.stopOrderbookSubscription(userId, stockCode, sessionId);
+                    webSocketReconnectionService.removeSubscription(sessionId, stockCode, "orderbook");
+                    break;
+                default:
+                    return SubscriptionResult.failure(stockCode, dataType, "지원되지 않는 데이터 타입");
+            }
+
+            return SubscriptionResult.success(stockCode, dataType, "구독 해제가 성공했습니다");
+
+        } catch (Exception e) {
+            return SubscriptionResult.failure(stockCode, dataType, e);
         }
     }
 }

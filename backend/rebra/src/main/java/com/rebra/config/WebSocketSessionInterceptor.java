@@ -2,7 +2,8 @@ package com.rebra.config;
 
 import com.rebra.service.WebSocketReconnectionService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.Message;
@@ -19,9 +20,10 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * WebSocket 메시지 채널 인터셉터 - 세션 및 구독 관리
  */
-@Slf4j
 @Component
 public class WebSocketSessionInterceptor implements ChannelInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(WebSocketSessionInterceptor.class);
 
     private final ApplicationEventPublisher eventPublisher;
     private final WebSocketReconnectionService webSocketReconnectionService;
