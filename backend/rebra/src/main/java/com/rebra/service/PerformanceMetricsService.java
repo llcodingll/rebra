@@ -1,6 +1,7 @@
 package com.rebra.service;
 
 import com.rebra.dto.response.PerformanceMetricsChartResponse;
+import com.rebra.dto.response.TradeHistoryResponse;
 import com.rebra.entity.PerformanceMetrics;
 import com.rebra.entity.Portfolio;
 
@@ -55,4 +56,14 @@ public interface PerformanceMetricsService {
      * @return 차트용 성과 메트릭 응답
      */
     PerformanceMetricsChartResponse getPortfolioPerformanceChart(Long portfolioId, Long userId);
+
+    /**
+     * 특정 날짜의 거래 히스토리 조회
+     *
+     * @param portfolioId 포트폴리오 ID
+     * @param userId 사용자 ID (권한 검증용)
+     * @param targetDate 조회할 날짜
+     * @return 거래 히스토리 응답 (날짜 + 거래 목록)
+     */
+    TradeHistoryResponse getTradeHistoryByDate(Long portfolioId, Long userId, LocalDate targetDate);
 }
