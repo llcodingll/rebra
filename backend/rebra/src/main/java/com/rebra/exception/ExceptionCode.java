@@ -62,6 +62,7 @@ public enum ExceptionCode {
     ACCOUNT_DECRYPTION_FAILED(11010, "계좌 정보 복호화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     ACCOUNT_DELETION_FAILED(11011, "계좌 삭제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     ACCOUNT_ALREADY_INACTIVE(11012, "이미 비활성화된 계좌입니다.", HttpStatus.BAD_REQUEST),
+    MOCK_ACCOUNT_NOT_SUPPORTED(11013, "모의계좌는 지원하지 않습니다.", HttpStatus.BAD_REQUEST),
 
     // ==== Portfolio 관련 ====
     PORTFOLIO_NOT_FOUND(12001, "포트폴리오를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
