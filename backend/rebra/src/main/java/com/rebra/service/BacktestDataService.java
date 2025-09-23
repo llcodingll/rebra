@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -198,8 +199,8 @@ public class BacktestDataService {
             else {
                 LocalDate actualStart = dataStartDate.isAfter(startDate) ? dataStartDate : startDate;
                 LocalDate actualEnd = dataEndDate.isBefore(endDate) ? dataEndDate : endDate;
-                long requestedDays = startDate.until(endDate).getDays() + 1;
-                long coverageDays = actualStart.until(actualEnd).getDays() + 1;
+                long requestedDays = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+                long coverageDays = ChronoUnit.DAYS.between(actualStart, actualEnd) + 1;
                 
                 if (coverageDays < requestedDays * 0.5) {
                     errorMessages.append(String.format("종목 %s: 데이터 커버리지가 부족합니다 (%.1f%%)\n", 
