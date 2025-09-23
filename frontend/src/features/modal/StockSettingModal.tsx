@@ -297,7 +297,17 @@ export default function StockSettingsModal({
                               max="100"
                               step="0.1"
                             />
-                            <span className={styles.inputSuffix}>%</span>
+                            <span className={styles.inputSuffix}></span>
+                          </div>
+                        </div>
+
+                        <div className={styles.inputGroup}>
+                          <label className={styles.inputLabel}>
+                            목표비중
+                            <span className={styles.inputHint}>계산된 비중</span>
+                          </label>
+                          <div className={styles.targetWeight}>
+                            {settingWithTarget ? `${settingWithTarget.targetWeight.toFixed(1)}%` : '0.0%'}
                           </div>
                         </div>
 
@@ -318,16 +328,6 @@ export default function StockSettingsModal({
                               step="0.1"
                             />
                             <span className={styles.inputSuffix}>%</span>
-                          </div>
-                        </div>
-
-                        <div className={styles.inputGroup}>
-                          <label className={styles.inputLabel}>
-                            목표비중
-                            <span className={styles.inputHint}>계산된 비중</span>
-                          </label>
-                          <div className={styles.targetWeight}>
-                            {settingWithTarget ? `${settingWithTarget.targetWeight.toFixed(1)}%` : '0.0%'}
                           </div>
                         </div>
                       </div>
