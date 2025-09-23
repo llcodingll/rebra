@@ -3,6 +3,7 @@ package com.rebra.controller;
 import com.rebra.annotation.LoginUser;
 import com.rebra.common.CommonApiResponse;
 import com.rebra.common.PageResponse;
+import com.rebra.dto.WatchlistDto;
 import com.rebra.dto.request.StockTradeRequest;
 import com.rebra.dto.response.StockBasicInfoResponse;
 import com.rebra.dto.response.StockChartResponse;
@@ -54,7 +55,30 @@ public class StockController {
         return ResponseEntity.ok(CommonApiResponse.success(responses));
     }
 
+    @Operation(summary = "주식 관심 종목 등록", description = "특정 주식을 관심 종목에 추가합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "관심 종목 등록 성공"),
+            @ApiResponse(responseCode = "")
+    })
+    public ResponseEntity<WatchlistDto> addTowatchlist() {
+        return null;
+    }
 
+    @Operation(summary = "주식 검색창 관심 종목 리스트 조회", description = "관심 종목 리스트를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "관심 종목 리스트 조회 성공"),
+            @ApiResponse(responseCode = "")
+    })
+    public ResponseEntity<List<WatchlistDto>> searchAllWatchlist() {
+        return null;
+    }
+
+    @Operation(summary = "관심 종목 등록 취소", description = "특정 주식을 관심 종목에서 제거합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "관심 종목에서 제외 성공"),
+            @ApiResponse(responseCode = "")
+    })
+    public
 
     @Operation(summary = "주식 매수 주문", description = "지정된 종목을 매수합니다.")
     @ApiResponses(value = {

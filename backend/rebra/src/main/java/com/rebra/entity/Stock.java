@@ -37,6 +37,7 @@ public class Stock extends BaseEntity {
         sequenceName = "stock_seq",
         allocationSize = 10
     )
+    @Column(name = "stock_id")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "stock_seq_generator")
     private Long id;
 
