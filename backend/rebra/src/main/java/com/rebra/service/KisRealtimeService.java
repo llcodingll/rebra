@@ -1,10 +1,7 @@
 package com.rebra.service;
 
 import com.rebra.component.KisApiComponent;
-import com.rebra.dto.realtime.OptimizedOrderbookData;
-import com.rebra.dto.realtime.OptimizedPriceData;
 import com.rebra.entity.Account;
-import com.rebra.util.RealtimeDataTransformer;
 import com.rebra.util.WebSocketHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
