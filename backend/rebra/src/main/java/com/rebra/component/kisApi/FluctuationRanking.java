@@ -49,7 +49,7 @@ public class FluctuationRanking extends CommonRestApi<FluctuationRankingResult> 
      * 0000 : 전체
      */
     @Parameter
-    private String fidInputIscd = "0001";
+    private String fidInputIscd = "0000";
 
     /**
      * 순위 정렬 구분 코드

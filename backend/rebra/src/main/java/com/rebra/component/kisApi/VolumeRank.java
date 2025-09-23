@@ -52,7 +52,7 @@ public class VolumeRank extends CommonRestApi<VolumeRankResult> {
      * 기타 : 업종코드
      */
     @Parameter
-    private String fidInputIscd = "0001";
+    private String fidInputIscd = "0000";
 
     /**
      * 분류 구분 코드
