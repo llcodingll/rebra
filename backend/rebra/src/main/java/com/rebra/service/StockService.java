@@ -1,33 +1,16 @@
 package com.rebra.service;
 
-import com.rebra.dto.response.PageResponse;
 import com.rebra.dto.response.StockBasicInfoResponse;
 import com.rebra.dto.response.StockChartResponse;
 import com.rebra.dto.response.StockDetailResponse;
-import com.rebra.dto.response.StockHistoricalDataResponse;
 import com.rebra.dto.response.StockHoldingDetailResponse;
 import com.rebra.dto.response.StockHoldingListResponse;
-import com.rebra.dto.response.StockSearchResponse;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
 
 public interface StockService {
 
 
-    /**
-     * 종목 코드로 주식 조회
-     */
-    StockSearchResponse findByStockCode(String stockCode);
-
-    /**
-     * 주식 검색 (종목명 부분 일치, 활성 상태만)
-     */
-    PageResponse<StockSearchResponse> searchStocks(String stockName, Pageable pageable);
-
-    /**
-     * FSS API를 통한 주식 검색 (종목명 부분 일치, 최근 영업일 기준)
-     */
-    List<StockHistoricalDataResponse> searchStocksFromApi(String stockName);
 
     /**
      * FSS API를 통한 종목 기본정보 검색 (종목명 부분 일치)
