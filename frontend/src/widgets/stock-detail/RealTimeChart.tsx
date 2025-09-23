@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { createChart, ColorType, CandlestickSeries, HistogramSeries, CrosshairMode } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
-import type { RealtimePriceMessage } from '../../features/stock-detail/api/types';
+import type { OptimizedPriceData } from '../../features/stock-detail/api/types';
 import { useInfiniteChartData, mergeInfiniteChartData } from '../../features/stock-detail/hooks/useInfiniteChartData';
 import type { ChartPeriodType } from '../../features/stock-detail/utils/dateUtils';
 import { transformChartData } from '../../features/stock-detail/utils/chartDataTransform';
@@ -10,7 +10,7 @@ import styles from './RealTimeChart.module.css';
 interface RealTimeChartProps {
   stockCode: string;
   stockName: string;
-  realtimeData?: RealtimePriceMessage | null;
+  realtimeData?: OptimizedPriceData | null;
   onPriceUpdate?: (price: number, change: { amount: number; rate: number }) => void;
 }
 
@@ -42,6 +42,8 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const loadingMoreDataRef = useRef<boolean>(false); // 데이터 로딩 중복 방지
   const candleDataRef = useRef<CandleData[]>([]); // 최신 candleData 참조용
+  const lastCandleRef = useRef<CandleData | null>(null); // 실시간 업데이트용 마지막 캔들
+  const lastVolumeRef = useRef<VolumeData | null>(null); // 실시간 업데이트용 마지막 볼륨
 
   const [selectedPeriod, setSelectedPeriod] = useState<ChartPeriodType>('daily');
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
@@ -50,9 +52,6 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
   const [candleData, setCandleData] = useState<CandleData[]>([]);
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
 
-  // API 연동 모드 전환 (개발 중 편의를 위한 분기)
-  const USE_API_DATA = true; // true: API 데이터 사용, false: 시뮬레이션 데이터 사용
-
   // API에서 차트 데이터 가져오기 (무한 스크롤)
   const {
     data: infiniteData,
@@ -60,7 +59,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
     error,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage
+    isFetchingNextPage,
   } = useInfiniteChartData(stockCode, selectedPeriod);
 
   // 무한 쿼리 데이터를 병합 (메모이제이션으로 불필요한 재계산 방지)
@@ -79,7 +78,8 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
       const visibleStart = timeRange.from;
       const dataStart = candleDataRef.current.length > 0 ? candleDataRef.current[0].time : null;
 
-      if (dataStart && visibleStart && visibleStart <= dataStart + 5) { // 5초 여유값으로 트리거
+      if (dataStart && visibleStart && visibleStart <= dataStart + 5) {
+        // 5초 여유값으로 트리거
         loadingMoreDataRef.current = true;
 
         fetchNextPage().finally(() => {
@@ -93,119 +93,50 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
     [hasNextPage, isFetchingNextPage, fetchNextPage]
   );
 
-  // 종목별 초기 가격 설정
-  const getInitialPrice = (code: string) => {
-    const prices: Record<string, number> = {
-      '005930': 71400, // 삼성전자
-      '000660': 125000, // SK하이닉스
-      '035420': 180000, // NAVER
-      '051910': 420000, // LG화학
-      '006400': 250000, // 삼성SDI
-      '028260': 45000, // 삼성물산
-      '012330': 250000, // 현대모비스
-      '207940': 850000, // 삼성바이오로직스
-    };
-    return prices[code] || 50000;
-  };
-
-  // 150개 데이터 생성
-  const generateHistoricalData = (basePrice: number) => {
-    const now = new Date();
-    const startTime = new Date();
-    startTime.setHours(9, 0, 0, 0);
-
-    const candleData: CandleData[] = [];
-    const volumeData: VolumeData[] = [];
-
-    let currentPrice = basePrice;
-    const totalCandles = 150;
-
-    for (let i = 0; i < totalCandles; i++) {
-      const time = new Date(startTime.getTime() + i * 5 * 60 * 1000);
-      const timestamp = Math.floor(time.getTime() / 1000) as UTCTimestamp;
-
-      const open = currentPrice;
-      const volatility = 0.02;
-      const high = open * (1 + Math.random() * volatility);
-      const low = open * (1 - Math.random() * volatility);
-      const changePercent = (Math.random() - 0.5) * 0.02;
-      const close = Math.max(open * (1 + changePercent), basePrice * 0.8);
-
-      currentPrice = close;
-
-      candleData.push({
-        time: timestamp,
-        open: Math.round(open),
-        high: Math.round(Math.max(open, high, close)),
-        low: Math.round(Math.min(open, low, close)),
-        close: Math.round(close),
-      });
-
-      const volumeValue = Math.round(Math.random() * 1000000 + 100000);
-      volumeData.push({
-        time: timestamp,
-        value: volumeValue,
-        color: close >= open ? '#dc2626' : '#2563eb',
-      });
-    }
-
-    setCandleData(candleData);
-    setVolumeData(volumeData);
-    setCurrentPrice(Math.round(currentPrice));
-
-    const firstPrice = candleData[0]?.close || basePrice;
-    const change = currentPrice - firstPrice;
-    const changeRate = (change / firstPrice) * 100;
-
-    setPriceChange({
-      amount: Math.round(change),
-      rate: Number(changeRate.toFixed(2)),
-    });
-
-    if (onPriceUpdate) {
-      onPriceUpdate(Math.round(currentPrice), {
-        amount: Math.round(change),
-        rate: Number(changeRate.toFixed(2)),
-      });
-    }
-  };
-
   // 실시간 데이터 업데이트
   useEffect(() => {
-    if (realtimeData) {
-      const price = Number(realtimeData.currentPrice);
-      const volume = Number(realtimeData.volume);
+    if (realtimeData && priceSeriesRef.current && volumeSeriesRef.current && initialDataSetRef.current) {
+      const price = Number(realtimeData.stckPrpr);
+      const volume = Number(realtimeData.acmlVol);
 
-      if (price > 0) {
-        setCandleData((prev) => {
-          if (prev.length === 0) return prev;
+      if (price > 0 && lastCandleRef.current && lastVolumeRef.current) {
+        const lastCandle = lastCandleRef.current;
+        const lastVolume = lastVolumeRef.current;
 
-          const newData = [...prev];
-          const lastCandle = newData[newData.length - 1];
+        const updatedCandle: CandleData = {
+          ...lastCandle,
+          close: price,
+          high: Math.max(lastCandle.high, price),
+          low: Math.min(lastCandle.low, price),
+        };
 
-          const updatedCandle: CandleData = {
-            ...lastCandle,
-            close: price,
-            high: Math.max(lastCandle.high, price),
-            low: Math.min(lastCandle.low, price),
-          };
+        const updatedVolume: VolumeData = {
+          ...lastVolume,
+          value: volume,
+          color: price >= lastCandle.open ? '#ea3939' : '#3b82f6',
+        };
 
-          newData[newData.length - 1] = updatedCandle;
-          return newData;
-        });
+        // ref 업데이트
+        lastCandleRef.current = updatedCandle;
+        lastVolumeRef.current = updatedVolume;
 
-        setVolumeData((prev) => {
-          if (prev.length === 0) return prev;
-          const newData = [...prev];
-          const lastVolume = newData[newData.length - 1];
+        // 차트 업데이트
+        try {
+          const currentCandleData = candleDataRef.current;
+          const updatedCandleArray = [...currentCandleData];
+          const updatedVolumeArray = [...volumeData];
 
-          newData[newData.length - 1] = {
-            ...lastVolume,
-            value: volume,
-          };
+          if (updatedCandleArray.length > 0) {
+            updatedCandleArray[updatedCandleArray.length - 1] = updatedCandle;
+            updatedVolumeArray[updatedVolumeArray.length - 1] = updatedVolume;
 
-          return newData;
-        });
+            priceSeriesRef.current.setData(updatedCandleArray);
+            volumeSeriesRef.current.setData(updatedVolumeArray);
+            candleDataRef.current = updatedCandleArray;
+          }
+        } catch (error) {
+          console.error('차트 업데이트 실패:', error);
+        }
 
         setCurrentPrice(price);
       }
@@ -337,11 +268,11 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
 
     // 시리즈 추가
     const priceSeries = priceChart.addSeries(CandlestickSeries, {
-      upColor: '#dc2626',
-      downColor: '#2563eb',
+      upColor: '#ea3939',
+      downColor: '#3b82f6',
       borderVisible: false,
-      wickUpColor: '#dc2626',
-      wickDownColor: '#2563eb',
+      wickUpColor: '#ea3939',
+      wickDownColor: '#3b82f6',
       priceFormat: {
         type: 'price',
         precision: 0,
@@ -350,7 +281,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
     });
 
     const volumeSeries = volumeChart.addSeries(HistogramSeries, {
-      color: '#dc2626',
+      color: '#ea3939',
       priceFormat: { type: 'volume' },
     });
 
@@ -480,37 +411,44 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
     }
   }, [handleVisibleRangeChange]);
 
-  // 데이터 설정 (자연스러운 자동 피팅 활용)
+  // 초기 차트 데이터 설정 플래그
+  const initialDataSetRef = useRef<boolean>(false);
+
+  // API 데이터를 차트 데이터로 변환 및 초기 설정
   useEffect(() => {
-    if (priceSeriesRef.current && volumeSeriesRef.current && candleData.length > 0) {
-      // 동기화 차단
-      panSyncingRef.current = true;
-
-      // 데이터 설정 (TradingView 자동 피팅 활용)
-      priceSeriesRef.current.setData(candleData);
-      volumeSeriesRef.current.setData(volumeData);
-
-      // 잠시 후 자동 피팅이 완료되면 동기화 재개 및 시간축 동기화
-      setTimeout(() => {
-        if (priceChartRef.current && volumeChartRef.current) {
-          // 가격 차트의 현재 보이는 범위를 거래량 차트에 적용
-          const priceVisibleRange = priceChartRef.current.timeScale().getVisibleLogicalRange();
-          if (priceVisibleRange) {
-            volumeChartRef.current.timeScale().setVisibleLogicalRange(priceVisibleRange);
-          }
-        }
-        panSyncingRef.current = false;
-      }, 100);
-    }
-  }, [candleData, volumeData]);
-
-  // API 데이터를 차트 데이터로 변환
-  useEffect(() => {
-    if (USE_API_DATA && chartApiData) {
+    if (chartApiData) {
       const { candleData, volumeData, summary } = transformChartData(chartApiData);
 
       setCandleData(candleData);
       setVolumeData(volumeData);
+
+      // 차트 시리즈가 준비되면 직접 초기 데이터 설정
+      if (priceSeriesRef.current && volumeSeriesRef.current && candleData.length > 0) {
+        // 동기화 차단
+        panSyncingRef.current = true;
+
+        // 초기 데이터 설정
+        priceSeriesRef.current.setData(candleData);
+        volumeSeriesRef.current.setData(volumeData);
+
+        // 실시간 업데이트용 ref에 마지막 데이터 저장
+        lastCandleRef.current = candleData[candleData.length - 1];
+        lastVolumeRef.current = volumeData[volumeData.length - 1];
+        candleDataRef.current = candleData; // candleDataRef도 업데이트
+
+        initialDataSetRef.current = true; // 초기 설정 완료 표시
+
+        // 잠시 후 자동 피팅이 완료되면 동기화 재개
+        setTimeout(() => {
+          if (priceChartRef.current && volumeChartRef.current) {
+            const priceVisibleRange = priceChartRef.current.timeScale().getVisibleLogicalRange();
+            if (priceVisibleRange) {
+              volumeChartRef.current.timeScale().setVisibleLogicalRange(priceVisibleRange);
+            }
+          }
+          panSyncingRef.current = false;
+        }, 100);
+      }
 
       // 현재 가격 정보 설정
       const currentPrice = Number(summary.currentPrice);
@@ -530,15 +468,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
         });
       }
     }
-  }, [USE_API_DATA, chartApiData, onPriceUpdate]);
-
-  // 시뮬레이션 시작 (API 모드가 아닐 때만)
-  useEffect(() => {
-    if (!USE_API_DATA) {
-      const basePrice = getInitialPrice(stockCode);
-      generateHistoricalData(basePrice);
-    }
-  }, [USE_API_DATA, stockCode]);
+  }, [chartApiData]);
 
   const periods: { label: string; value: ChartPeriodType }[] = [
     { label: '일', value: 'daily' },

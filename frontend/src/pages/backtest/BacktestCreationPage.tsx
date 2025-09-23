@@ -189,13 +189,21 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
     mutationFn: createBacktest,
     onSuccess: (result) => {
       if (result.success) {
-        // 백테스트 목록 캐시 무효화 (서버에서 최신 데이터 가져오기)
-        queryClient.invalidateQueries({
-          queryKey: ['backtestList'],
-          exact: false
+        // 캐시 완전 무효화 및 강제 새로고침
+        queryClient.removeQueries({
+          queryKey: ['backtestList']
         });
 
+        // 페이지 이동 후 즉시 새로고침을 위해 타이머 설정
         navigate('/backtest');
+
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ['backtestList'],
+            exact: false,
+            refetchType: 'all'
+          });
+        }, 100);
       } else {
         setIsBacktestExecuted(false);
       }

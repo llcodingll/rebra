@@ -1,11 +1,18 @@
 package com.rebra.service;
 
 import com.rebra.config.WebSocketSessionDisconnectEvent;
+import com.rebra.dto.response.SubscriptionResult;
+import com.rebra.entity.Account;
+import com.rebra.repository.AccountRepository;
+import com.rebra.util.WebSocketHelper;
 import com.youhogeon.finance.kis_api.api.realtime.H0STASP0Data;
 import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Data;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,13 +39,18 @@ public class WebSocketReconnectionService {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final KisRealtimeService kisRealtimeService;
+    private final WebSocketHelper webSocketHelper;
+    private final AccountRepository accountRepository;
 
     // 세션별 마지막 활동 시간 추적
     private final Map<String, LastActivity> sessionActivity = new ConcurrentHashMap<>();
-    
+
     // 세션별 구독 정보 저장 (재연결 시 복구용)
     private final Map<String, SessionSubscriptions> sessionSubscriptions = new ConcurrentHashMap<>();
-    
+
+    // 사용자별 구독 정보 저장 (새로고침 대응용)
+    private final Map<Long, Set<UserSubscriptionInfo>> userActiveSubscriptions = new ConcurrentHashMap<>();
+
     // 하트비트 카운터
     private final AtomicLong heartbeatCounter = new AtomicLong(0);
     
@@ -47,6 +59,7 @@ public class WebSocketReconnectionService {
     private static final long SESSION_TIMEOUT = 120000;   // 2분
     private static final long RECONNECTION_DELAY = 5000;  // 5초
     private static final int MAX_RECONNECTION_ATTEMPTS = 3;
+    private static final long USER_SUBSCRIPTION_EXPIRATION = 3600000; // 1시간 (사용자별 구독 만료 시간)
 
     /**
      * 세션 활동 정보
@@ -202,6 +215,51 @@ public class WebSocketReconnectionService {
     }
 
     /**
+     * 사용자별 구독 정보 (새로고침 대응용)
+     */
+    public static class UserSubscriptionInfo {
+        private String stockCode;
+        private String dataType;
+        private LocalDateTime subscribedAt;
+        private LocalDateTime lastActivity;
+
+        public UserSubscriptionInfo(String stockCode, String dataType, LocalDateTime subscribedAt) {
+            this.stockCode = stockCode;
+            this.dataType = dataType;
+            this.subscribedAt = subscribedAt;
+            this.lastActivity = subscribedAt;
+        }
+
+        public String getStockCode() { return stockCode; }
+        public String getDataType() { return dataType; }
+        public LocalDateTime getSubscribedAt() { return subscribedAt; }
+        public LocalDateTime getLastActivity() { return lastActivity; }
+
+        public void setLastActivity(LocalDateTime lastActivity) {
+            this.lastActivity = lastActivity;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            UserSubscriptionInfo that = (UserSubscriptionInfo) o;
+            return Objects.equals(stockCode, that.stockCode) && Objects.equals(dataType, that.dataType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(stockCode, dataType);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("UserSubscriptionInfo{stockCode='%s', dataType='%s', subscribedAt=%s}",
+                    stockCode, dataType, subscribedAt);
+        }
+    }
+
+    /**
      * 구독 히스토리 추적 클래스
      */
     public static class SubscriptionHistory {
@@ -241,16 +299,30 @@ public class WebSocketReconnectionService {
     }
 
     /**
-     * 새 세션 등록
+     * 새 세션 등록 (새로고침 복구 지원)
      */
     public void registerSession(String sessionId, Long userId) {
         sessionActivity.put(sessionId, new LastActivity());
         sessionSubscriptions.put(sessionId, new SessionSubscriptions(userId));
-        log.info("WebSocket 세션 등록 - SessionId: {}, UserId: {}", sessionId, userId);
+
+        // 사용자별 구독 정보 확인 (새로고침 복구)
+        Set<UserSubscriptionInfo> userSubscriptions = userActiveSubscriptions.get(userId);
+        if (userSubscriptions != null && !userSubscriptions.isEmpty()) {
+            log.info("🔄 새로고침 감지 - 사용자 구독 복구 시작: SessionId: {}, UserId: {}, 복구할 구독: {}개",
+                    sessionId, userId, userSubscriptions.size());
+
+            // 사용자의 기존 구독 정보를 새 세션에 복구
+            restoreUserSubscriptions(sessionId, userId, userSubscriptions);
+
+            // 클라이언트에 복구 알림 전송
+            sendRefreshRecoveryNotification(sessionId, userSubscriptions);
+        } else {
+            log.info("WebSocket 세션 등록 - SessionId: {}, UserId: {} (신규 연결)", sessionId, userId);
+        }
     }
 
     /**
-     * 세션 제거
+     * 세션 제거 (스마트 정리 로직)
      */
     public void removeSession(String sessionId) {
         sessionActivity.remove(sessionId);
@@ -264,27 +336,11 @@ public class WebSocketReconnectionService {
                     subscriptions.getPriceSubscriptions().size(),
                     subscriptions.getOrderbookSubscriptions().size());
 
-            // 모든 체결가 구독 해제
-            subscriptions.getPriceSubscriptions().keySet().forEach(stockCode -> {
-                try {
-                    log.info("🔌 세션 해제로 인한 체결가 구독 해제 - SessionId: {}, UserId: {}, StockCode: {}",
-                            sessionId, userId, stockCode);
-                    kisRealtimeService.stopPriceSubscription(userId, stockCode, sessionId);
-                } catch (Exception e) {
-                    log.error("❌ 세션 해제 시 체결가 구독 해제 실패 - SessionId: {}, StockCode: {}", sessionId, stockCode, e);
-                }
-            });
+            // 1. KIS 실시간 구독 해제 (기존 방식)
+            unsubscribeFromKisRealtime(userId, subscriptions, sessionId);
 
-            // 모든 호가 구독 해제
-            subscriptions.getOrderbookSubscriptions().keySet().forEach(stockCode -> {
-                try {
-                    log.info("🔌 세션 해제로 인한 호가 구독 해제 - SessionId: {}, UserId: {}, StockCode: {}",
-                            sessionId, userId, stockCode);
-                    kisRealtimeService.stopOrderbookSubscription(userId, stockCode, sessionId);
-                } catch (Exception e) {
-                    log.error("❌ 세션 해제 시 호가 구독 해제 실패 - SessionId: {}, StockCode: {}", sessionId, stockCode, e);
-                }
-            });
+            // 2. 스마트 사용자별 구독 정리 (다른 활성 세션 확인)
+            performSmartUserSubscriptionCleanup(userId, subscriptions);
 
             log.info("✅ WebSocket 세션 제거 및 구독 정리 완료 - SessionId: {}, UserId: {}", sessionId, userId);
         } else {
@@ -293,32 +349,167 @@ public class WebSocketReconnectionService {
     }
 
     /**
-     * 구독 정보 추가
+     * KIS 실시간 구독 해제
      */
-    public void addSubscription(String sessionId, String stockCode, String dataType) {
-        SessionSubscriptions subscriptions = sessionSubscriptions.get(sessionId);
-        if (subscriptions != null) {
-            if ("price".equals(dataType)) {
-                subscriptions.getPriceSubscriptions().put(stockCode, dataType);
-            } else if ("orderbook".equals(dataType)) {
-                subscriptions.getOrderbookSubscriptions().put(stockCode, dataType);
+    private void unsubscribeFromKisRealtime(Long userId, SessionSubscriptions subscriptions, String sessionId) {
+        // 모든 체결가 구독 해제
+        subscriptions.getPriceSubscriptions().keySet().forEach(stockCode -> {
+            try {
+                log.info("🔌 세션 해제로 인한 체결가 구독 해제 - SessionId: {}, UserId: {}, StockCode: {}",
+                        sessionId, userId, stockCode);
+                kisRealtimeService.stopPriceSubscription(userId, stockCode, sessionId);
+            } catch (Exception e) {
+                log.error("❌ 세션 해제 시 체결가 구독 해제 실패 - SessionId: {}, StockCode: {}", sessionId, stockCode, e);
             }
-            log.debug("구독 정보 추가 - SessionId: {}, StockCode: {}, DataType: {}", sessionId, stockCode, dataType);
+        });
+
+        // 모든 호가 구독 해제
+        subscriptions.getOrderbookSubscriptions().keySet().forEach(stockCode -> {
+            try {
+                log.info("🔌 세션 해제로 인한 호가 구독 해제 - SessionId: {}, UserId: {}, StockCode: {}",
+                        sessionId, userId, stockCode);
+                kisRealtimeService.stopOrderbookSubscription(userId, stockCode, sessionId);
+            } catch (Exception e) {
+                log.error("❌ 세션 해제 시 호가 구독 해제 실패 - SessionId: {}, StockCode: {}", sessionId, stockCode, e);
+            }
+        });
+    }
+
+    /**
+     * 스마트 사용자별 구독 정리 (다른 활성 세션이 없는 경우에만 제거)
+     */
+    private void performSmartUserSubscriptionCleanup(Long userId, SessionSubscriptions removedSession) {
+        Set<UserSubscriptionInfo> userSubs = userActiveSubscriptions.get(userId);
+        if (userSubs == null || userSubs.isEmpty()) {
+            log.debug("사용자별 구독 정보 없음 - UserId: {}", userId);
+            return;
+        }
+
+        // 해당 사용자의 다른 활성 세션 확인
+        List<SessionSubscriptions> userOtherSessions = sessionSubscriptions.values().stream()
+                .filter(session -> userId.equals(session.getUserId()))
+                .toList();
+
+        if (userOtherSessions.isEmpty()) {
+            // 다른 활성 세션이 없으면 사용자별 구독 정보 전체 제거
+            userActiveSubscriptions.remove(userId);
+            log.info("🧹 사용자별 구독 정보 전체 제거 - UserId: {}, 제거된 구독: {}개 (다른 활성 세션 없음)",
+                    userId, userSubs.size());
+        } else {
+            // 다른 활성 세션이 있으면 해당 세션들이 가지지 않은 구독만 제거
+            Set<UserSubscriptionInfo> subscriptionsToRemove = new HashSet<>();
+
+            for (UserSubscriptionInfo userSub : userSubs) {
+                boolean hasInOtherSession = userOtherSessions.stream()
+                        .anyMatch(session -> session.hasSubscription(userSub.getStockCode(), userSub.getDataType()));
+
+                if (!hasInOtherSession) {
+                    subscriptionsToRemove.add(userSub);
+                }
+            }
+
+            if (!subscriptionsToRemove.isEmpty()) {
+                userSubs.removeAll(subscriptionsToRemove);
+                log.info("🧹 사용자별 구독 정보 부분 제거 - UserId: {}, 제거된 구독: {}개, 유지된 구독: {}개",
+                        userId, subscriptionsToRemove.size(), userSubs.size());
+
+                // 제거된 구독 상세 로그
+                for (UserSubscriptionInfo removedSub : subscriptionsToRemove) {
+                    log.debug("제거된 구독 - UserId: {}, StockCode: {}, DataType: {} (다른 세션에서 미사용)",
+                            userId, removedSub.getStockCode(), removedSub.getDataType());
+                }
+            } else {
+                log.info("🔄 사용자별 구독 정보 유지 - UserId: {}, 유지된 구독: {}개 (모두 다른 세션에서 사용중)",
+                        userId, userSubs.size());
+            }
+
+            // 빈 세트가 되면 제거
+            if (userSubs.isEmpty()) {
+                userActiveSubscriptions.remove(userId);
+            }
         }
     }
 
     /**
-     * 구독 정보 제거
+     * 구독 정보 추가 (이중화 시스템: 세션별 + 사용자별)
+     */
+    public void addSubscription(String sessionId, String stockCode, String dataType) {
+        SessionSubscriptions subscriptions = sessionSubscriptions.get(sessionId);
+        if (subscriptions != null) {
+            Long userId = subscriptions.getUserId();
+
+            // 1. 세션별 구독 정보 추가 (기존 방식 + 새로운 통합 방식)
+            subscriptions.addSubscription(stockCode, dataType);
+
+            // 2. 사용자별 구독 정보 추가 (새로고침 대응)
+            addUserSubscription(userId, stockCode, dataType);
+
+            log.info("✅ 구독 정보 추가 완료 (이중화) - SessionId: {}, UserId: {}, StockCode: {}, DataType: {}",
+                    sessionId, userId, stockCode, dataType);
+        } else {
+            log.warn("❌ 구독 정보 추가 실패 - 세션 정보 없음: SessionId: {}, StockCode: {}, DataType: {}",
+                    sessionId, stockCode, dataType);
+        }
+    }
+
+    /**
+     * 사용자별 구독 정보 추가
+     */
+    private void addUserSubscription(Long userId, String stockCode, String dataType) {
+        userActiveSubscriptions.computeIfAbsent(userId, k -> ConcurrentHashMap.newKeySet())
+                .add(new UserSubscriptionInfo(stockCode, dataType, LocalDateTime.now()));
+
+        log.debug("사용자별 구독 정보 추가 - UserId: {}, StockCode: {}, DataType: {}", userId, stockCode, dataType);
+    }
+
+    /**
+     * 구독 정보 제거 (이중화 시스템: 세션별 + 사용자별)
      */
     public void removeSubscription(String sessionId, String stockCode, String dataType) {
         SessionSubscriptions subscriptions = sessionSubscriptions.get(sessionId);
         if (subscriptions != null) {
-            if ("price".equals(dataType)) {
-                subscriptions.getPriceSubscriptions().remove(stockCode);
-            } else if ("orderbook".equals(dataType)) {
-                subscriptions.getOrderbookSubscriptions().remove(stockCode);
+            Long userId = subscriptions.getUserId();
+
+            // 1. 세션별 구독 정보 제거 (기존 방식 + 새로운 통합 방식)
+            subscriptions.removeSubscription(stockCode, dataType);
+
+            // 2. 사용자별 구독 정보 제거 (새로고침 대응) - 조건부 제거
+            removeUserSubscriptionIfNeeded(userId, stockCode, dataType);
+
+            log.info("✅ 구독 정보 제거 완료 (이중화) - SessionId: {}, UserId: {}, StockCode: {}, DataType: {}",
+                    sessionId, userId, stockCode, dataType);
+        } else {
+            log.warn("❌ 구독 정보 제거 실패 - 세션 정보 없음: SessionId: {}, StockCode: {}, DataType: {}",
+                    sessionId, stockCode, dataType);
+        }
+    }
+
+    /**
+     * 사용자별 구독 정보 제거 (다른 활성 세션이 없는 경우에만)
+     */
+    private void removeUserSubscriptionIfNeeded(Long userId, String stockCode, String dataType) {
+        // 해당 사용자의 다른 활성 세션이 같은 구독을 가지고 있는지 확인
+        boolean hasActiveSubscriptionInOtherSession = sessionSubscriptions.values().stream()
+                .filter(sub -> userId.equals(sub.getUserId()))
+                .anyMatch(sub -> sub.hasSubscription(stockCode, dataType));
+
+        if (!hasActiveSubscriptionInOtherSession) {
+            // 다른 세션에서 동일한 구독이 없으면 사용자별 구독에서도 제거
+            Set<UserSubscriptionInfo> userSubs = userActiveSubscriptions.get(userId);
+            if (userSubs != null) {
+                userSubs.removeIf(userSub ->
+                    stockCode.equals(userSub.getStockCode()) && dataType.equals(userSub.getDataType()));
+
+                if (userSubs.isEmpty()) {
+                    userActiveSubscriptions.remove(userId);
+                }
+
+                log.debug("사용자별 구독 정보 제거 - UserId: {}, StockCode: {}, DataType: {} (다른 활성 세션 없음)",
+                        userId, stockCode, dataType);
             }
-            log.debug("구독 정보 제거 - SessionId: {}, StockCode: {}, DataType: {}", sessionId, stockCode, dataType);
+        } else {
+            log.debug("사용자별 구독 정보 유지 - UserId: {}, StockCode: {}, DataType: {} (다른 활성 세션 존재)",
+                    userId, stockCode, dataType);
         }
     }
 
@@ -366,27 +557,91 @@ public class WebSocketReconnectionService {
     @Scheduled(fixedRate = 60000)
     public void monitorSessions() {
         LocalDateTime now = LocalDateTime.now();
-        
+
         sessionActivity.entrySet().removeIf(entry -> {
             String sessionId = entry.getKey();
             LastActivity activity = entry.getValue();
-            
+
             // 타임아웃된 세션 정리
             if (activity.getLastSeen().plusSeconds(SESSION_TIMEOUT / 1000).isBefore(now)) {
                 log.warn("세션 타임아웃 - SessionId: {}, LastSeen: {}", sessionId, activity.getLastSeen());
                 handleSessionTimeout(sessionId);
                 return true;
             }
-            
+
             // 비활성 세션 체크
             if (!activity.isActive()) {
-                log.warn("비활성 세션 감지 - SessionId: {}, MissedHeartbeats: {}", 
+                log.warn("비활성 세션 감지 - SessionId: {}, MissedHeartbeats: {}",
                         sessionId, activity.getMissedHeartbeats());
                 attemptSessionRecovery(sessionId);
             }
-            
+
             return false;
         });
+    }
+
+    /**
+     * 사용자별 구독 정보 만료 관리 (10분마다)
+     */
+    @Scheduled(fixedRate = 600000) // 10분
+    public void cleanupExpiredUserSubscriptions() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expirationThreshold = now.minusSeconds(USER_SUBSCRIPTION_EXPIRATION / 1000);
+
+        int totalUsersChecked = 0;
+        int totalSubscriptionsRemoved = 0;
+        int usersWithExpiredSubscriptions = 0;
+
+        // 사용자별 구독 정보를 순회하며 만료된 구독 정리
+        for (Map.Entry<Long, Set<UserSubscriptionInfo>> entry : userActiveSubscriptions.entrySet()) {
+            Long userId = entry.getKey();
+            Set<UserSubscriptionInfo> userSubs = entry.getValue();
+            totalUsersChecked++;
+
+            // 해당 사용자의 활성 세션이 있는지 확인
+            boolean hasActiveSessions = sessionSubscriptions.values().stream()
+                    .anyMatch(session -> userId.equals(session.getUserId()));
+
+            if (hasActiveSessions) {
+                // 활성 세션이 있으면 만료 검사하지 않음 (사용 중인 것으로 간주)
+                log.debug("사용자별 구독 정보 유지 - UserId: {} (활성 세션 존재)", userId);
+                continue;
+            }
+
+            // 활성 세션이 없으면 만료된 구독 찾기
+            Set<UserSubscriptionInfo> expiredSubscriptions = new HashSet<>();
+
+            for (UserSubscriptionInfo userSub : userSubs) {
+                if (userSub.getLastActivity().isBefore(expirationThreshold)) {
+                    expiredSubscriptions.add(userSub);
+                }
+            }
+
+            if (!expiredSubscriptions.isEmpty()) {
+                userSubs.removeAll(expiredSubscriptions);
+                totalSubscriptionsRemoved += expiredSubscriptions.size();
+                usersWithExpiredSubscriptions++;
+
+                log.info("🗑️ 만료된 사용자별 구독 정보 정리 - UserId: {}, 제거된 구독: {}개, 남은 구독: {}개",
+                        userId, expiredSubscriptions.size(), userSubs.size());
+
+                // 만료된 구독 상세 로그
+                for (UserSubscriptionInfo expiredSub : expiredSubscriptions) {
+                    log.debug("만료된 구독 제거 - UserId: {}, StockCode: {}, DataType: {}, LastActivity: {}",
+                            userId, expiredSub.getStockCode(), expiredSub.getDataType(), expiredSub.getLastActivity());
+                }
+            }
+        }
+
+        // 구독이 모두 제거된 사용자는 맵에서 제거
+        userActiveSubscriptions.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+
+        if (totalSubscriptionsRemoved > 0) {
+            log.info("✅ 사용자별 구독 정보 만료 정리 완료 - 검사한 사용자: {}명, 만료 구독 제거: {}개, 영향받은 사용자: {}명",
+                    totalUsersChecked, totalSubscriptionsRemoved, usersWithExpiredSubscriptions);
+        } else {
+            log.debug("사용자별 구독 정보 만료 정리 - 검사한 사용자: {}명, 만료된 구독 없음", totalUsersChecked);
+        }
     }
 
     /**
@@ -496,6 +751,99 @@ public class WebSocketReconnectionService {
     }
 
     /**
+     * 사용자 구독 정보를 새 세션에 복구 (새로고침 대응) - 클라이언트 복구 알림 방식
+     */
+    private void restoreUserSubscriptions(String sessionId, Long userId, Set<UserSubscriptionInfo> userSubscriptions) {
+        SessionSubscriptions sessionSubscriptions = this.sessionSubscriptions.get(sessionId);
+        if (sessionSubscriptions == null) {
+            log.error("세션 정보가 없어 구독 복구 실패 - SessionId: {}, UserId: {}", sessionId, userId);
+            return;
+        }
+
+        int restoredCount = 0;
+
+        // 1. 세션별 구독 정보에만 추가 (WebSocketReconnectionService용)
+        for (UserSubscriptionInfo userSub : userSubscriptions) {
+            try {
+                // 세션별 구독 정보에 추가 (통합 방식)
+                sessionSubscriptions.addSubscription(userSub.getStockCode(), userSub.getDataType());
+
+                // 사용자 구독 정보의 활동 시간 업데이트
+                userSub.setLastActivity(LocalDateTime.now());
+
+                restoredCount++;
+
+                log.debug("구독 정보 복구 - SessionId: {}, UserId: {}, StockCode: {}, DataType: {}",
+                        sessionId, userId, userSub.getStockCode(), userSub.getDataType());
+
+            } catch (Exception e) {
+                log.error("개별 구독 복구 실패 - SessionId: {}, UserId: {}, StockCode: {}, DataType: {}",
+                        sessionId, userId, userSub.getStockCode(), userSub.getDataType(), e);
+            }
+        }
+
+        log.info("✅ 사용자 구독 복구 완료 - SessionId: {}, UserId: {}, 복구된 구독: {}/{}개",
+                sessionId, userId, restoredCount, userSubscriptions.size());
+
+        // 2. 실제 KIS API 재구독은 클라이언트가 bulk subscription을 통해 수행하도록 안내
+        log.info("💡 실제 KIS API 재구독은 클라이언트의 bulk subscription 요청으로 처리됩니다 - SessionId: {}", sessionId);
+    }
+
+    /**
+     * 새로고침 복구 알림을 클라이언트에 전송 (bulk subscription 요청 안내 포함)
+     */
+    private void sendRefreshRecoveryNotification(String sessionId, Set<UserSubscriptionInfo> userSubscriptions) {
+        try {
+            String destination = "/topic/refresh-recovery/" + sessionId;
+
+            // 구독 정보를 bulk subscription 요청 형식으로 변환
+            Map<String, Set<String>> stockDataTypes = new java.util.LinkedHashMap<>();
+            for (UserSubscriptionInfo userSub : userSubscriptions) {
+                stockDataTypes.computeIfAbsent(userSub.getStockCode(), k -> new HashSet<>())
+                        .add(userSub.getDataType());
+            }
+
+            // 클라이언트가 사용할 수 있는 bulk subscription 요청 데이터 생성
+            List<Map<String, Object>> bulkSubscriptionData = new ArrayList<>();
+            for (Map.Entry<String, Set<String>> entry : stockDataTypes.entrySet()) {
+                bulkSubscriptionData.add(Map.of(
+                    "stockCode", entry.getKey(),
+                    "dataTypes", new ArrayList<>(entry.getValue())
+                ));
+            }
+
+            // 상세 구독 정보 (기존 정보)
+            List<Map<String, Object>> subscriptionList = new ArrayList<>();
+            for (UserSubscriptionInfo userSub : userSubscriptions) {
+                subscriptionList.add(Map.of(
+                    "stockCode", userSub.getStockCode(),
+                    "dataType", userSub.getDataType(),
+                    "subscribedAt", userSub.getSubscribedAt().toString(),
+                    "lastActivity", userSub.getLastActivity().toString()
+                ));
+            }
+
+            Map<String, Object> refreshRecoveryData = Map.of(
+                "type", "refresh_recovery",
+                "timestamp", System.currentTimeMillis(),
+                "message", "새로고침이 감지되었습니다. 실시간 데이터 수신을 위해 bulk subscription을 요청하세요.",
+                "action", "bulk_subscription_required",
+                "bulkSubscriptionRequest", Map.of("stocks", bulkSubscriptionData),
+                "restoredSubscriptions", subscriptionList,
+                "totalRestored", subscriptionList.size(),
+                "autoResubscribe", true  // 클라이언트가 자동으로 재구독하도록 안내
+            );
+
+            messagingTemplate.convertAndSend(destination, refreshRecoveryData);
+            log.info("🔄 새로고침 복구 알림 전송 (bulk subscription 안내) - SessionId: {}, 복구 대상: {}개 종목, {}개 구독",
+                    sessionId, stockDataTypes.size(), subscriptionList.size());
+
+        } catch (Exception e) {
+            log.error("새로고침 복구 알림 전송 실패 - SessionId: {}", sessionId, e);
+        }
+    }
+
+    /**
      * 클라이언트에 복구 알림 전송
      */
     private void sendRecoveryNotification(String sessionId, String stockCode, String dataType) {
@@ -508,10 +856,10 @@ public class WebSocketReconnectionService {
                 "timestamp", System.currentTimeMillis(),
                 "message", "연결이 복구되었습니다. 구독을 재시작하세요."
             );
-            
+
             messagingTemplate.convertAndSend(destination, recoveryData);
             log.info("복구 알림 전송 - SessionId: {}, StockCode: {}, DataType: {}", sessionId, stockCode, dataType);
-            
+
         } catch (Exception e) {
             log.error("복구 알림 전송 실패 - SessionId: {}", sessionId, e);
         }

@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import styles from './DashboardPage.module.css';
 import { useApi } from '../../shared/hook/useApi';
 import { portfolioApi } from '../../features/portfolio/api/portfolioApi';
@@ -13,6 +14,8 @@ import PortfolioSelectionModal from '../../widgets/portfolio/PortfolioSelectionM
 import NoPortfolioState from '../../widgets/dashboard/NoPortfolioState';
 import PortfolioCreateModal from '../../widgets/portfolio/PortfolioCreateModal';
 import PortfolioHeader from '../../widgets/dashboard/PortfolioHeader';
+import TutorialOverlay from '../../widgets/tutorial/TutorialOverlay';
+import { dashboardTutorialSteps } from '../../widgets/tutorial/dashboardTutorialSteps';
 
 // 서울 시간 기준 주식 시장 시간 체크
 const isMarketOpen = (): boolean => {
@@ -35,9 +38,11 @@ const isMarketOpen = (): boolean => {
 };
 
 export default function DashboardPage() {
+  const { registerTutorialTarget } = useOutletContext<{ registerTutorialTarget: (page: string, startFunction: () => void) => void }>();
   const [activeSubTab, setActiveSubTab] = useState<'assets' | 'profit'>('assets');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   // 포트폴리오 있음 상태일 때 기본값 설정 (portfolios 배열의 첫 번째 항목)
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(null);
@@ -131,6 +136,21 @@ export default function DashboardPage() {
     }
   };
 
+  const handleTutorialStart = useCallback(() => {
+    console.log('대시보드 튜토리얼 시작!');
+    setIsTutorialOpen(true);
+  }, []);
+
+  const handleTutorialClose = useCallback(() => {
+    setIsTutorialOpen(false);
+  }, []);
+
+  // Layout에 튜토리얼 시작 함수 등록
+  useEffect(() => {
+    console.log('대시보드 페이지에서 튜토리얼 등록');
+    registerTutorialTarget('dashboard', handleTutorialStart);
+  }, []);
+
   // 등록된 주식 데이터 메모이제이션
   const registeredStocks = useMemo(() => 
     stockData.filter(stock => stock.type === 'registered'), 
@@ -186,6 +206,13 @@ export default function DashboardPage() {
             // 포트폴리오 생성 성공 시 목록 새로고침
             refetchPortfolios();
           }}
+        />
+
+        {/* Tutorial Overlay - 포트폴리오 없어도 작동 */}
+        <TutorialOverlay
+          isOpen={isTutorialOpen}
+          onClose={handleTutorialClose}
+          steps={dashboardTutorialSteps}
         />
       </div>
     );
@@ -278,6 +305,13 @@ export default function DashboardPage() {
           }}
         />
       </div>
+
+      {/* Tutorial Overlay */}
+      <TutorialOverlay
+        isOpen={isTutorialOpen}
+        onClose={handleTutorialClose}
+        steps={dashboardTutorialSteps}
+      />
     </div>
   );
 }

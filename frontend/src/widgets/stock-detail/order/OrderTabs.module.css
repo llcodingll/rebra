@@ -32,6 +32,11 @@
   border-color: #3b82f6;
 }
 
+.orderTab.active:first-child {
+  background: #ea3939;
+  border-color: #ea3939;
+}
+
 .orderTab:hover:not(.active) {
   background: #f3f4f6;
 }

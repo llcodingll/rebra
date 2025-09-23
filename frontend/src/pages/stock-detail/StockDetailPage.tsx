@@ -28,9 +28,17 @@ export default function StockDetailPage() {
 
   // 실시간 주식 데이터 연동
   const stockCode = symbol || '005930';
-  const { stockInfo, realtimePrice, orderbook, isConnected, isLoading, error, subscriptionStatus, disconnect, reconnect } =
-    useRealtimeStock(stockCode);
-
+  const {
+    stockInfo,
+    realtimePrice,
+    orderbook,
+    isConnected,
+    isLoading,
+    error,
+    subscriptionStatus,
+    disconnect,
+    reconnect,
+  } = useRealtimeStock(stockCode);
 
   // 차트 데이터에서 현재 가격 정보 가져오기 (일봉 기준)
   const { data: infiniteData } = useInfiniteChartData(stockCode, 'daily', true);
@@ -40,14 +48,14 @@ export default function StockDetailPage() {
 
   // 실시간 가격 업데이트 시 주문가격도 업데이트
   useEffect(() => {
-    if (realtimePrice?.currentPrice) {
-      setOrderPrice(realtimePrice.currentPrice);
+    if (realtimePrice?.stckPrpr) {
+      setOrderPrice(realtimePrice.stckPrpr);
     }
   }, [realtimePrice]);
 
   // 차트 데이터 로드 시 초기 주문가격 설정
   useEffect(() => {
-    if (chartApiData?.summary?.currentPrice && !realtimePrice?.currentPrice) {
+    if (chartApiData?.summary?.currentPrice && !realtimePrice?.stckPrpr) {
       setOrderPrice(Number(chartApiData.summary.currentPrice));
     }
   }, [chartApiData, realtimePrice]);
@@ -58,13 +66,13 @@ export default function StockDetailPage() {
       ? {
           code: stockInfoFromState?.stockCode || chartApiData?.stockCode || stockInfo?.stockCode || stockCode,
           name: stockInfoFromState?.stockName || chartApiData?.stockName || stockInfo?.stockName || '로딩 중...',
-          currentPrice: realtimePrice?.currentPrice || Number(chartApiData?.summary?.currentPrice) || 0,
-          change: realtimePrice?.change || Number(chartApiData?.summary?.priceChange) || 0,
-          changePercent: realtimePrice?.changePercent || Number(chartApiData?.summary?.changeRate) || 0,
+          currentPrice: realtimePrice?.stckPrpr || Number(chartApiData?.summary?.currentPrice) || 0,
+          change: realtimePrice?.prdyVrss || Number(chartApiData?.summary?.priceChange) || 0,
+          changePercent: realtimePrice?.prdyCtrt || Number(chartApiData?.summary?.changeRate) || 0,
           prevClose:
-            (realtimePrice?.currentPrice || Number(chartApiData?.summary?.currentPrice) || 0) -
-            (realtimePrice?.change || Number(chartApiData?.summary?.priceChange) || 0),
-          volume: realtimePrice?.volume || Number(chartApiData?.summary?.volume) || 0,
+            (realtimePrice?.stckPrpr || Number(chartApiData?.summary?.currentPrice) || 0) -
+            (realtimePrice?.prdyVrss || Number(chartApiData?.summary?.priceChange) || 0),
+          volume: realtimePrice?.acmlVol || Number(chartApiData?.summary?.volume) || 0,
           amount: 0, // API에서 제공되지 않으면 기본값
           high: 0, // API에서 제공되지 않으면 기본값
           low: 0, // API에서 제공되지 않으면 기본값
@@ -84,38 +92,6 @@ export default function StockDetailPage() {
     high: 0,
     low: 0,
   };
-
-
-  // 실시간 호가 데이터 (fallback 포함)
-  const displayOrderBook = orderbook
-    ? {
-        asks: orderbook.asks.map((item) => ({
-          price: item.price,
-          quantity: item.quantity,
-          size: item.size ?? 0, // size가 없으면 0으로 기본값 설정
-        })),
-        bids: orderbook.bids.map((item) => ({
-          price: item.price,
-          quantity: item.quantity,
-          size: item.size ?? 0, // size가 없으면 0으로 기본값 설정
-        })),
-      }
-    : {
-        asks: [
-          { price: 72000, quantity: 119417, size: 1.34 },
-          { price: 71800, quantity: 329778, size: 3.68 },
-          { price: 71600, quantity: 244413, size: 2.73 },
-          { price: 71400, quantity: 181658, size: 2.03 },
-          { price: 71200, quantity: 187845, size: 2.1 },
-        ],
-        bids: [
-          { price: 71000, quantity: 114635, size: 1.28 },
-          { price: 70800, quantity: 19452, size: 0.22 },
-          { price: 70600, quantity: 329778, size: 3.68 },
-          { price: 70400, quantity: 244413, size: 2.73 },
-          { price: 70200, quantity: 181658, size: 2.03 },
-        ],
-      };
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);
@@ -243,12 +219,12 @@ export default function StockDetailPage() {
         <div className={styles.stockBasicInfoWrapper}>
           <StockBasicInfo
             stockInfo={safeStockInfo}
-            realTimePrice={realtimePrice?.currentPrice || Number(chartApiData?.summary?.currentPrice) || null}
+            realTimePrice={realtimePrice?.stckPrpr || Number(chartApiData?.summary?.currentPrice) || null}
             realTimePriceChange={
               realtimePrice
                 ? {
-                    amount: realtimePrice.change,
-                    rate: realtimePrice.changePercent,
+                    amount: realtimePrice.prdyVrss,
+                    rate: realtimePrice.prdyCtrt,
                   }
                 : chartApiData?.summary
                 ? {
@@ -261,7 +237,7 @@ export default function StockDetailPage() {
         </div>
 
         <div className={styles.holdingInfoWrapper}>
-          <HoldingInfoTable stockCode={stockCode} />
+          <HoldingInfoTable stockCode={stockCode} currentPrice={safeStockInfo.currentPrice} />
         </div>
       </div>
 
@@ -281,80 +257,7 @@ export default function StockDetailPage() {
         </div>
 
         <OrderBook
-          orderBook={{
-            // KRX 호가 데이터 더미
-            MKSC_SHRN_ISCD: stockCode,
-            BSOP_HOUR: '150000',
-            HOUR_CLS_CODE: '0',
-            // 기준 가격 (현재가가 0이면 기본값 사용)
-            ...((): any => {
-              const basePrice = safeStockInfo.currentPrice || 71400; // 기본값 71,400원
-              return {
-                // 매도 호가 (10개)
-                ASKP1: basePrice + 100,
-                ASKP2: basePrice + 200,
-                ASKP3: basePrice + 300,
-                ASKP4: basePrice + 400,
-                ASKP5: basePrice + 500,
-                ASKP6: basePrice + 600,
-                ASKP7: basePrice + 700,
-                ASKP8: basePrice + 800,
-                ASKP9: basePrice + 900,
-                ASKP10: basePrice + 1000,
-                // 매수 호가 (10개)
-                BIDP1: basePrice - 100,
-                BIDP2: basePrice - 200,
-                BIDP3: basePrice - 300,
-                BIDP4: basePrice - 400,
-                BIDP5: basePrice - 500,
-                BIDP6: basePrice - 600,
-                BIDP7: basePrice - 700,
-                BIDP8: basePrice - 800,
-                BIDP9: basePrice - 900,
-                BIDP10: basePrice - 1000,
-              };
-            })(),
-            // 매도 호가 잔량 (10개)
-            ASKP_RSQN1: 125430,
-            ASKP_RSQN2: 234567,
-            ASKP_RSQN3: 156789,
-            ASKP_RSQN4: 89432,
-            ASKP_RSQN5: 234123,
-            ASKP_RSQN6: 167543,
-            ASKP_RSQN7: 98234,
-            ASKP_RSQN8: 187432,
-            ASKP_RSQN9: 234567,
-            ASKP_RSQN10: 134256,
-            // 매수 호가 잔량 (10개)
-            BIDP_RSQN1: 187654,
-            BIDP_RSQN2: 134567,
-            BIDP_RSQN3: 98432,
-            BIDP_RSQN4: 176543,
-            BIDP_RSQN5: 123456,
-            BIDP_RSQN6: 198765,
-            BIDP_RSQN7: 87432,
-            BIDP_RSQN8: 156789,
-            BIDP_RSQN9: 234567,
-            BIDP_RSQN10: 98234,
-            // 총 잔량
-            TOTAL_ASKP_RSQN: 1664235,
-            TOTAL_BIDP_RSQN: 1431987,
-            OVTM_TOTAL_ASKP_RSQN: 0,
-            OVTM_TOTAL_BIDP_RSQN: 0,
-            // 예상 체결 정보
-            ANTC_CNPR: safeStockInfo.currentPrice,
-            ANTC_CNQN: 123456,
-            ANTC_VOL: 987654,
-            ANTC_CNTG_VRSS: 100,
-            ANTC_CNTG_VRSS_SIGN: '2',
-            ANTC_CNTG_PRDY_CTRT: 1.23,
-            ACML_VOL: safeStockInfo.volume,
-            TOTAL_ASKP_RSQN_ICDC: 12345,
-            TOTAL_BIDP_RSQN_ICDC: -6789,
-            OVTM_TOTAL_ASKP_ICDC: 0,
-            OVTM_TOTAL_BIDP_ICDC: 0,
-            STCK_DEAL_CLS_CODE: '1',
-          }}
+          orderBook={orderbook}
           stockInfo={{
             currentPrice: safeStockInfo.currentPrice || 71400, // 기본값 확보
             high52: 79800, // 임시 데이터 - 실제로는 API에서 가져와야 함

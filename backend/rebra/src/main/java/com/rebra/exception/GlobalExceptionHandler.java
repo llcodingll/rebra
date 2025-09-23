@@ -12,6 +12,7 @@ import com.rebra.exception.signup.SignupException;
 import com.rebra.exception.token.TokenException;
 import com.rebra.exception.stock.StockException;
 import com.rebra.exception.user.UserException;
+import com.rebra.exception.kis.KisException;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -114,6 +115,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PortfolioStockException.class)
     public ResponseEntity<CommonApiResponse<Void>> handlePortfolioStockException(PortfolioStockException e) {
         log.warn("PortfolioStock exception: {}", e.getMessage());
+        return ResponseEntity.status(e.getStatus())
+                .body(CommonApiResponse.error(e));
+    }
+
+    @ExceptionHandler(KisException.class)
+    public ResponseEntity<CommonApiResponse<Void>> handleKisException(KisException e) {
+        log.warn("KIS exception: {}", e.getMessage());
         return ResponseEntity.status(e.getStatus())
                 .body(CommonApiResponse.error(e));
     }
