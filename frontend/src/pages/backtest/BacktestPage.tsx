@@ -16,10 +16,9 @@ export default function BacktestPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const itemsPerPage = 10;
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 백테스트 목록 조회
-  const { data: backtestResponse, isLoading, error, refetch } = useQuery({
+  const { data: backtestResponse, isLoading, error } = useQuery({
     queryKey: ['backtestList', currentPage - 1, itemsPerPage],
     queryFn: async () => {
       const result = await getBacktestList(currentPage - 1, itemsPerPage);
@@ -28,6 +27,12 @@ export default function BacktestPage() {
       } else {
         throw new Error(result.error.message);
       }
+    },
+    refetchInterval: (data) => {
+      // 처리 중인 백테스트가 있을 때만 폴링
+      if (!data?.content) return false;
+      const hasProcessing = data.content.some(item => item.status === 'PROCESSING');
+      return hasProcessing ? 2000 : false;
     },
     staleTime: 0,
     refetchOnWindowFocus: true,
@@ -48,26 +53,15 @@ export default function BacktestPage() {
   const backtestData = backtestResponse?.content || [];
   const totalPages = backtestResponse?.totalPages || 0;
 
-  // 간단한 폴링 로직
+  // 페이지 마운트 시 즉시 데이터 가져오기
   useEffect(() => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-    }
+    queryClient.invalidateQueries({
+      queryKey: ['backtestList'],
+      exact: false
+    });
+  }, [queryClient]);
 
-    const hasProcessing = backtestData.some(item => item.status === 'PROCESSING');
-
-    if (hasProcessing) {
-      pollingIntervalRef.current = setInterval(() => {
-        refetch();
-      }, 2000); // 2초마다 폴링
-    }
-
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, [backtestData, refetch]);
+  // 수동 폴링 제거 - React Query의 refetchInterval만 사용
 
   const handleDirectCreation = () => {
     navigate('/backtest/create');
