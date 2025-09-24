@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import styles from './DashboardPage.module.css';
 import { useApi } from '../../shared/hook/useApi';
 import { portfolioApi } from '../../features/portfolio/api/portfolioApi';
@@ -49,6 +50,9 @@ export default function DashboardPage() {
 
   // 계정 정보 store
   const { setAccountId } = useAccountStore();
+
+  // React Query client
+  const queryClient = useQueryClient();
 
   // API로 포트폴리오 목록 조회
   const { data: portfolioData, isLoading: isPortfolioLoading, error: portfolioError, refetch: refetchPortfolios } = useApi({
@@ -237,8 +241,16 @@ export default function DashboardPage() {
               refetchPortfolioDetail();
             }}
             onRebalancingExecuted={() => {
-              // 리밸런싱 실행 시 포트폴리오 상세 정보 새로고침
+              // 리밸런싱 실행 시 포트폴리오 상세 정보 및 히스토리 관련 캐시 새로고침
               refetchPortfolioDetail();
+
+              // 히스토리 관련 쿼리들 무효화
+              if (selectedPortfolio?.id) {
+                const portfolioId = Number(selectedPortfolio.id);
+                queryClient.invalidateQueries({ queryKey: ['rebalancing-history-table', portfolioId] });
+                queryClient.invalidateQueries({ queryKey: ['rebalancing-history', portfolioId] });
+                queryClient.invalidateQueries({ queryKey: ['portfolio-performance', portfolioId] });
+              }
             }}
           />
 
