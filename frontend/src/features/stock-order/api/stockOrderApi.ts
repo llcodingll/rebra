@@ -10,7 +10,8 @@ class StockOrderApiService extends ApiClient {
    * @returns 주문 결과
    */
   async buyStock(stockCode: string, orderData: BuyOrderRequest): Promise<Result<OrderResponseData, AppError>> {
-    return await this.post<OrderResponseData>(`/api/stocks/${stockCode}/buy`, orderData);
+    const requestData = { ...orderData, stockCode };
+    return await this.post<OrderResponseData>(`/api/stocks/buy`, requestData);
   }
 
   /**
@@ -20,9 +21,9 @@ class StockOrderApiService extends ApiClient {
    * @returns 주문 결과
    */
   async sellStock(stockCode: string, orderData: SellOrderRequest): Promise<Result<OrderResponseData, AppError>> {
-    return await this.post<OrderResponseData>(`/api/stocks/${stockCode}/sell`, orderData);
+    const requestData = { ...orderData, stockCode };
+    return await this.post<OrderResponseData>(`/api/stocks/sell`, requestData);
   }
-
 }
 
 export const stockOrderApi = new StockOrderApiService();

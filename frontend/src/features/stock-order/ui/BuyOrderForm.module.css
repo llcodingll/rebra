@@ -6,6 +6,13 @@
   border-radius: 12px;
 }
 
+/* 에러 상태 스타일 */
+.inputError {
+  border: 2px solid #ff4444 !important;
+  background-color: #fff5f5 !important;
+  border-radius: 8px;
+}
+
 .sectionLabel {
   font-size: 14px;
   font-weight: 500;

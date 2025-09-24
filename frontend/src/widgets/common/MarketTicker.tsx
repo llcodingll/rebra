@@ -9,10 +9,15 @@ export default function MarketTicker() {
   const contentRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
 
-  const { data: marketIndexData, isLoading, error } = useApi({
+  const {
+    data: marketIndexData,
+    isLoading,
+    error,
+  } = useApi({
     queryKey: ['market-index'],
     apiFunction: getMarketIndex,
-    refetchInterval: 10000, // 10초마다 자동 업데이트
+    refetchInterval: 100000, // 10초마다 자동 업데이트
+    staleTime: 0,
   });
 
   const [lastUpdateTime, setLastUpdateTime] = useState(() => new Date().toLocaleTimeString());
@@ -86,7 +91,7 @@ export default function MarketTicker() {
     if (isLoading || marketData.length === 0) {
       // 로딩 중이거나 데이터가 없을 때 기본 데이터 표시
       const defaultData = [
-        { name: 'Loading...', value: '---', change: '---', changePercent: '(---%)', isNegative: false }
+        { name: 'Loading...', value: '---', change: '---', changePercent: '(---%)', isNegative: false },
       ];
       return defaultData.map((item, index) => (
         <div key={index} className={styles.tickerItem}>
@@ -105,12 +110,8 @@ export default function MarketTicker() {
               </svg>
             </div>
             <div className={styles.changeText}>
-              <span className={`${styles.changeValue} ${styles.positive}`}>
-                {item.change}
-              </span>
-              <span className={`${styles.changePercent} ${styles.positive}`}>
-                {item.changePercent}
-              </span>
+              <span className={`${styles.changeValue} ${styles.positive}`}>{item.change}</span>
+              <span className={`${styles.changePercent} ${styles.positive}`}>{item.changePercent}</span>
             </div>
           </div>
         </div>

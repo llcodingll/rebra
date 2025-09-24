@@ -56,6 +56,8 @@ export const useStockHolding = (stockCode: string, currentPrice: number = 0, ena
     // 사용할 데이터가 없으면 null 반환
     if (!dataToUse) return null;
 
+    console.log(dataToUse);
+    console.log(currentPrice);
     const evaluationAmount = currentPrice * dataToUse.holdingQuantity;
     const evaluationProfitLoss = evaluationAmount - dataToUse.purchaseAmount;
     const returnRate = dataToUse.purchaseAmount > 0 ? (evaluationProfitLoss / dataToUse.purchaseAmount) * 100 : 0;
