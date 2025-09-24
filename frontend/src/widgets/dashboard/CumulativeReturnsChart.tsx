@@ -124,10 +124,12 @@ class VertLine implements ISeriesPrimitive<Time> {
 
 interface CumulativeReturnsChartProps {
   portfolioId?: number;
+  onDateClick?: (date: string) => void;
 }
 
 export default function CumulativeReturnsChart({
-  portfolioId
+  portfolioId,
+  onDateClick
 }: CumulativeReturnsChartProps) {
   const [hoveredPoint, setHoveredPoint] = useState<TooltipData | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
@@ -229,6 +231,7 @@ export default function CumulativeReturnsChart({
         }
         return acc;
       }, [] as any[])
+      .slice(0, -1) // 마지막 데이터 포인트 제거 (오늘 날짜 제외)
       .map(({ originalIndex, ...item }) => item); // originalIndex 제거
 
     console.log('lineData:', lineData);
@@ -275,6 +278,15 @@ export default function CumulativeReturnsChart({
         if (matchingDataPoint.sold) eventTypes.push('매도');
         if (matchingDataPoint.bought) eventTypes.push('매수');
 
+        console.log('Hover 데이터:', {
+          date: matchingDataPoint.metricDate,
+          compositionChanged: matchingDataPoint.compositionChanged,
+          rebalanced: matchingDataPoint.rebalanced,
+          sold: matchingDataPoint.sold,
+          bought: matchingDataPoint.bought,
+          eventTypes: eventTypes
+        });
+
         setHoveredPoint({
           x: param.point.x,
           y: param.point.y,
@@ -300,20 +312,15 @@ export default function CumulativeReturnsChart({
         if (matchingDataPoint.bought) eventTypes.push('매수');
 
         if (eventTypes.length > 0) {
-          // 구성 변경 이벤트인 경우 특별한 메시지
-          if (matchingDataPoint.compositionChanged) {
-            alert(`구성 변경에 따른 평가액 변경이 포함되어 있습니다.\n\n날짜: ${matchingDataPoint.metricDate}\n평가액: ${matchingDataPoint.totalValue.toLocaleString()}원`);
-          } else {
-            // 다른 이벤트들 (매수, 매도, 리밸런싱)
-            alert(`이벤트 발생!\n날짜: ${matchingDataPoint.metricDate}\n평가액: ${matchingDataPoint.totalValue.toLocaleString()}원\n이벤트: ${eventTypes.join(', ')}`);
+          // 매수, 매도, 리밸런싱이 있는 경우 거래 내역 조회 (구성 변경 여부와 상관없이)
+          const hasTradeEvents = matchingDataPoint.rebalanced || matchingDataPoint.sold || matchingDataPoint.bought;
+          if (hasTradeEvents && onDateClick) {
+            onDateClick(matchingDataPoint.metricDate);
           }
-        } else {
-          // 일반 날짜 클릭 시 정보 표시
-          alert(`날짜: ${matchingDataPoint.metricDate}\n평가액: ${matchingDataPoint.totalValue.toLocaleString()}원`);
         }
       }
     });
-
+    // 크기 조절
     const handleResize = () => {
       if (chartRef.current && chart) {
         chart.applyOptions({
