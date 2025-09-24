@@ -8,6 +8,7 @@ interface HoldingInfoTableProps {
 
 export default function HoldingInfoTable({ stockCode, currentPrice = 0 }: HoldingInfoTableProps) {
   const { holdingData, isLoading, hasAccount, hasHolding } = useStockHolding(stockCode, currentPrice);
+  console.log(holdingData);
   const formatNumber = (value: number | undefined) => {
     if (value === undefined || value === null) return '-';
     return new Intl.NumberFormat('ko-KR').format(value);
@@ -68,7 +69,7 @@ export default function HoldingInfoTable({ stockCode, currentPrice = 0 }: Holdin
       <div className={styles.holdingTable}>
         <div className={styles.tableContent}>
           <div className={`${styles.tableColumn} ${styles.singleColumn}`}>
-            <div className={styles.columnHeader}>평균가</div>
+            <div className={styles.columnHeader}>평균단가</div>
             <div className={styles.singleColumnData}>
               <div className={styles.singleDataValue}>
                 {holdingData ? formatNumber(holdingData.averagePurchasePrice) : '-'}원
@@ -107,8 +108,8 @@ export default function HoldingInfoTable({ stockCode, currentPrice = 0 }: Holdin
             <div className={styles.columnHeader}>수수료</div>
             <div className={styles.columnHeaderSecond}>세금</div>
             <div className={styles.columnData}>
-              <div className={styles.dataValue}></div>
-              <div className={styles.dataValue}></div>
+              <div className={styles.dataValue}>{holdingData ? formatNumber(holdingData.fee) : '-'}</div>
+              <div className={styles.dataValue}>{holdingData ? formatNumber(holdingData.tax) : '-'}</div>
             </div>
           </div>
         </div>
