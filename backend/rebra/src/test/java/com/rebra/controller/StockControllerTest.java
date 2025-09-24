@@ -549,7 +549,8 @@ class StockControllerTest {
             // When & Then
             mockMvc.perform(post("/api/stocks/watchlist/toggle")
                             .with(csrf())
-                            .param("stockCode", stockCode))
+                            .param("stockCode", stockCode)
+                            .param("accountId", "1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.status").value(200))
@@ -581,7 +582,8 @@ class StockControllerTest {
             // When & Then
             mockMvc.perform(post("/api/stocks/watchlist/toggle")
                             .with(csrf())
-                            .param("stockCode", stockCode))
+                            .param("stockCode", stockCode)
+                            .param("accountId", "1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.status").value(200))
@@ -592,9 +594,9 @@ class StockControllerTest {
         }
 
         @Test
-        @DisplayName("실패: 사용자 존재하지 않음")
+        @DisplayName("실패: 포트폴리오 존재하지 않음")
         @WithMockUser
-        void toggleWatchlist_UserNotFound() throws Exception {
+        void toggleWatchlist_PortfolioNotFound() throws Exception {
             // Mock LoginUserArgumentResolver to return userId 1L
             when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
             when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(999L);
@@ -603,16 +605,17 @@ class StockControllerTest {
             String stockCode = "005930";
 
             given(watchlistService.toggleWatchlist(999L, stockCode))
-                    .willThrow(new CustomRuntimeException(ExceptionCode.USER_NOT_FOUND));
+                    .willThrow(new CustomRuntimeException(ExceptionCode.PORTFOLIO_NOT_FOUND));
 
             // When & Then
             mockMvc.perform(post("/api/stocks/watchlist/toggle")
                             .with(csrf())
-                            .param("stockCode", stockCode))
+                            .param("stockCode", stockCode)
+                            .param("accountId", "999"))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.status").value(404))
-                    .andExpect(jsonPath("$.errorMessage").value("사용자를 찾을 수 없습니다."));
+                    .andExpect(jsonPath("$.errorMessage").value("포트폴리오를 찾을 수 없습니다."));
         }
 
         @Test
@@ -632,7 +635,8 @@ class StockControllerTest {
             // When & Then
             mockMvc.perform(post("/api/stocks/watchlist/toggle")
                             .with(csrf())
-                            .param("stockCode", invalidStockCode))
+                            .param("stockCode", invalidStockCode)
+                            .param("accountId", "1"))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.status").value(404))
@@ -645,7 +649,8 @@ class StockControllerTest {
         void toggleWatchlist_MissingStockCode() throws Exception {
             // When & Then
             mockMvc.perform(post("/api/stocks/watchlist/toggle")
-                            .with(csrf()))
+                            .with(csrf())
+                            .param("accountId", "1"))
                     .andExpect(status().isBadRequest());
         }
     }
@@ -671,7 +676,8 @@ class StockControllerTest {
             given(watchlistService.getAllWatchlist(1L)).willReturn(watchlistDtos);
 
             // When & Then
-            mockMvc.perform(get("/api/stocks/watchlist"))
+            mockMvc.perform(get("/api/stocks/watchlist")
+                            .param("accountId", "1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.status").value(200))
@@ -695,7 +701,8 @@ class StockControllerTest {
             given(watchlistService.getAllWatchlist(1L)).willReturn(Collections.emptyList());
 
             // When & Then
-            mockMvc.perform(get("/api/stocks/watchlist"))
+            mockMvc.perform(get("/api/stocks/watchlist")
+                            .param("accountId", "1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.status").value(200))
@@ -704,23 +711,24 @@ class StockControllerTest {
         }
 
         @Test
-        @DisplayName("실패: 사용자 존재하지 않음")
+        @DisplayName("실패: 포트폴리오 존재하지 않음")
         @WithMockUser
-        void getAllWatchlist_UserNotFound() throws Exception {
+        void getAllWatchlist_PortfolioNotFound() throws Exception {
             // Mock LoginUserArgumentResolver to return userId 1L
             when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
             when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(999L);
 
             // Given
             given(watchlistService.getAllWatchlist(999L))
-                    .willThrow(new CustomRuntimeException(ExceptionCode.USER_NOT_FOUND));
+                    .willThrow(new CustomRuntimeException(ExceptionCode.PORTFOLIO_NOT_FOUND));
 
             // When & Then
-            mockMvc.perform(get("/api/stocks/watchlist"))
+            mockMvc.perform(get("/api/stocks/watchlist")
+                            .param("accountId", "1"))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.status").value(404))
-                    .andExpect(jsonPath("$.errorMessage").value("사용자를 찾을 수 없습니다."));
+                    .andExpect(jsonPath("$.errorMessage").value("포트폴리오를 찾을 수 없습니다."));
         }
     }
 
@@ -742,7 +750,8 @@ class StockControllerTest {
 
             // When & Then
             mockMvc.perform(get("/api/stocks/watchlist/status")
-                            .param("stockCode", stockCode))
+                            .param("stockCode", stockCode)
+                            .param("accountId", "1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.status").value(200))
@@ -763,7 +772,8 @@ class StockControllerTest {
 
             // When & Then
             mockMvc.perform(get("/api/stocks/watchlist/status")
-                            .param("stockCode", stockCode))
+                            .param("stockCode", stockCode)
+                            .param("accountId", "1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.status").value(200))
@@ -771,9 +781,9 @@ class StockControllerTest {
         }
 
         @Test
-        @DisplayName("실패: 사용자 존재하지 않음")
+        @DisplayName("실패: 포트폴리오 존재하지 않음")
         @WithMockUser
-        void checkWatchlistStatus_UserNotFound() throws Exception {
+        void checkWatchlistStatus_PortfolioNotFound() throws Exception {
             // Mock LoginUserArgumentResolver to return userId 1L
             when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
             when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(999L);
@@ -781,15 +791,16 @@ class StockControllerTest {
             // Given
             String stockCode = "005930";
             given(watchlistService.isInWatchlist(999L, stockCode))
-                    .willThrow(new CustomRuntimeException(ExceptionCode.USER_NOT_FOUND));
+                    .willThrow(new CustomRuntimeException(ExceptionCode.PORTFOLIO_NOT_FOUND));
 
             // When & Then
             mockMvc.perform(get("/api/stocks/watchlist/status")
-                            .param("stockCode", stockCode))
+                            .param("stockCode", stockCode)
+                            .param("accountId", "999"))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.status").value(404))
-                    .andExpect(jsonPath("$.errorMessage").value("사용자를 찾을 수 없습니다."));
+                    .andExpect(jsonPath("$.errorMessage").value("포트폴리오를 찾을 수 없습니다."));
         }
 
         @Test

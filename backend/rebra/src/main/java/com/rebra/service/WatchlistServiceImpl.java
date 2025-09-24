@@ -3,12 +3,12 @@ package com.rebra.service;
 import com.rebra.dto.WatchlistDto;
 import com.rebra.dto.response.WatchlistToggleResponse;
 import com.rebra.entity.Stock;
-import com.rebra.entity.User;
+import com.rebra.entity.Portfolio;
 import com.rebra.entity.Watchlist;
 import com.rebra.exception.CustomRuntimeException;
 import com.rebra.exception.ExceptionCode;
+import com.rebra.repository.PortfolioRepository;
 import com.rebra.repository.StockRepository;
-import com.rebra.repository.UserRepository;
 import com.rebra.repository.WatchlistRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,33 +26,33 @@ import java.util.stream.Collectors;
 public class WatchlistServiceImpl implements WatchlistService {
 
     private final WatchlistRepository watchlistRepository;
-    private final UserRepository userRepository;
+    private final PortfolioRepository portfolioRepository;
     private final StockRepository stockRepository;
 
     @Override
-    public WatchlistToggleResponse toggleWatchlist(Long userId, String stockCode) {
-        log.info("관심종목 토글 요청 - UserId: {}, StockCode: {}", userId, stockCode);
+    public WatchlistToggleResponse toggleWatchlist(Long accountId, String stockCode) {
+        log.info("관심종목 토글 요청 - AccountId: {}, StockCode: {}", accountId, stockCode);
 
-        validateUser(userId);
+        Portfolio portfolio = validateAndGetPortfolio(accountId);
         Stock stock = validateAndGetStock(stockCode);
 
-        Optional<Watchlist> existingWatchlist = watchlistRepository.findByUserIdAndStockCode(userId, stockCode);
+        Optional<Watchlist> existingWatchlist = watchlistRepository.findByPortfolioIdAndStockCode(portfolio.getId(), stockCode);
 
         if (existingWatchlist.isPresent()) {
-            return removeFromWatchlist(userId, stockCode, stock);
+            return removeFromWatchlist(portfolio, stockCode, stock);
         }
 
-        return addToWatchlist(userId, stockCode, stock);
+        return addToWatchlist(portfolio, stockCode, stock);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<WatchlistDto> getAllWatchlist(Long userId) {
-        log.info("관심종목 전체 조회 요청 - UserId: {}", userId);
+    public List<WatchlistDto> getAllWatchlist(Long accountId) {
+        log.info("관심종목 전체 조회 요청 - AccountId: {}", accountId);
 
-        validateUser(userId);
+        Portfolio portfolio = validateAndGetPortfolio(accountId);
 
-        return watchlistRepository.findByUserIdWithStock(userId)
+        return watchlistRepository.findByPortfolioIdWithStock(portfolio.getId())
             .stream()
             .map(this::convertToDto)
             .collect(Collectors.toList());
@@ -60,21 +60,18 @@ public class WatchlistServiceImpl implements WatchlistService {
 
     @Override
     @Transactional(readOnly = true)
-    public boolean isInWatchlist(Long userId, String stockCode) {
-        log.info("관심종목 상태 확인 요청 - UserId: {}, StockCode: {}", userId, stockCode);
+    public boolean isInWatchlist(Long accountId, String stockCode) {
+        log.info("관심종목 상태 확인 요청 - AccountId: {}, StockCode: {}", accountId, stockCode);
 
-        validateUser(userId);
+        Portfolio portfolio = validateAndGetPortfolio(accountId);
         validateStockExists(stockCode);
 
-        return watchlistRepository.existsByUserIdAndStockCode(userId, stockCode);
+        return watchlistRepository.existsByPortfolioIdAndStockCode(portfolio.getId(), stockCode);
     }
 
-    // === Private Helper Methods ===
-
-    private void validateUser(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new CustomRuntimeException(ExceptionCode.USER_NOT_FOUND);
-        }
+    private Portfolio validateAndGetPortfolio(Long accountId) {
+        return portfolioRepository.findByAccountId(accountId)
+            .orElseThrow(() -> new CustomRuntimeException(ExceptionCode.PORTFOLIO_NOT_FOUND));
     }
 
     private Stock validateAndGetStock(String stockCode) {
@@ -88,9 +85,9 @@ public class WatchlistServiceImpl implements WatchlistService {
         }
     }
 
-    private WatchlistToggleResponse removeFromWatchlist(Long userId, String stockCode, Stock stock) {
-        watchlistRepository.deleteByUserIdAndStockCode(userId, stockCode);
-        log.info("관심종목 제거됨 - UserId: {}, StockCode: {}, StockName: {}", userId, stockCode, stock.getStockName());
+    private WatchlistToggleResponse removeFromWatchlist(Portfolio portfolio, String stockCode, Stock stock) {
+        watchlistRepository.deleteByPortfolioIdAndStockCode(portfolio.getId(), stockCode);
+        log.info("관심종목 제거됨 - PortfolioId: {}, StockCode: {}, StockName: {}", portfolio.getId(), stockCode, stock.getStockName());
 
         return new WatchlistToggleResponse(
             false,
@@ -100,17 +97,14 @@ public class WatchlistServiceImpl implements WatchlistService {
         );
     }
 
-    private WatchlistToggleResponse addToWatchlist(Long userId, String stockCode, Stock stock) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new CustomRuntimeException(ExceptionCode.USER_NOT_FOUND));
-
+    private WatchlistToggleResponse addToWatchlist(Portfolio portfolio, String stockCode, Stock stock) {
         Watchlist watchlist = Watchlist.builder()
-            .user(user)
+            .portfolio(portfolio)
             .stock(stock)
             .build();
 
         watchlistRepository.save(watchlist);
-        log.info("관심종목 추가됨 - UserId: {}, StockCode: {}, StockName: {}", userId, stockCode, stock.getStockName());
+        log.info("관심종목 추가됨 - PortfolioId: {}, StockCode: {}, StockName: {}", portfolio.getId(), stockCode, stock.getStockName());
 
         return new WatchlistToggleResponse(
             true,

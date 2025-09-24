@@ -12,17 +12,17 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface WatchlistRepository extends JpaRepository<Watchlist, Long> {
 
-    @Query("SELECT w FROM Watchlist w WHERE w.user.id = :userId AND w.stock.stockCode = :stockCode")
-    Optional<Watchlist> findByUserIdAndStockCode(@Param("userId") Long userId, @Param("stockCode") String stockCode);
+    @Query("SELECT w FROM Watchlist w WHERE w.portfolio.id = :portfolioId AND w.stock.stockCode = :stockCode")
+    Optional<Watchlist> findByPortfolioIdAndStockCode(@Param("portfolioId") Long portfolioId, @Param("stockCode") String stockCode);
 
-    @Query("SELECT w FROM Watchlist w JOIN FETCH w.stock WHERE w.user.id = :userId ORDER BY w.createdAt DESC")
-    List<Watchlist> findByUserIdWithStock(@Param("userId") Long userId);
+    @Query("SELECT w FROM Watchlist w JOIN FETCH w.stock WHERE w.portfolio.id = :portfolioId ORDER BY w.createdAt DESC")
+    List<Watchlist> findByPortfolioIdWithStock(@Param("portfolioId") Long portfolioId);
 
     @Modifying
-    @Query("DELETE FROM Watchlist w WHERE w.user.id = :userId AND w.stock.stockCode = :stockCode")
-    void deleteByUserIdAndStockCode(@Param("userId") Long userId, @Param("stockCode") String stockCode);
+    @Query("DELETE FROM Watchlist w WHERE w.portfolio.id = :portfolioId AND w.stock.stockCode = :stockCode")
+    void deleteByPortfolioIdAndStockCode(@Param("portfolioId") Long portfolioId, @Param("stockCode") String stockCode);
 
-    @Query("SELECT COUNT(w) > 0 FROM Watchlist w WHERE w.user.id = :userId AND w.stock.stockCode = :stockCode")
-    boolean existsByUserIdAndStockCode(@Param("userId") Long userId, @Param("stockCode") String stockCode);
+    @Query("SELECT COUNT(w) > 0 FROM Watchlist w WHERE w.portfolio.id = :portfolioId AND w.stock.stockCode = :stockCode")
+    boolean existsByPortfolioIdAndStockCode(@Param("portfolioId") Long portfolioId, @Param("stockCode") String stockCode);
 
 }
