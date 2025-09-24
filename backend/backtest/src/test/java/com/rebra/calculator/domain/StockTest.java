@@ -32,7 +32,7 @@ class StockTest {
             assertThat(stock.getStockCode()).isEqualTo(stockCode);
             assertThat(stock.getOriginalWeight()).isEqualTo(originalWeight);
             assertThat(stock.getInitialQuantity()).isEqualTo(initialQuantity);
-            assertThat(stock.getThresholdPercentage()).isEqualTo(thresholdPercentage * 100.0); // getThresholdPercentage returns percentage
+            assertThat(stock.getThresholdPercentage()).isEqualTo(thresholdPercentage);
             assertThat(stock.getTargetWeight()).isZero(); // 초기값 0
         }
 
@@ -67,13 +67,59 @@ class StockTest {
         }
 
         @Test
-        @DisplayName("잘못된 종목코드 형식으로 생성 시 예외")
-        void createStockWithInvalidCodeFormat() {
+        @DisplayName("잘못된 종목코드 형식으로 생성 시 예외 - 5자리")
+        void createStockWithInvalidCodeFormat5Digits() {
             // when & then
             assertThatThrownBy(() -> 
                 new Stock("12345", 40, 0.05, 100))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("종목 코드는 6자리 숫자여야 합니다");
+                .hasMessageContaining("종목 코드는 6자리 영숫자여야 합니다");
+        }
+
+        @Test
+        @DisplayName("잘못된 종목코드 형식으로 생성 시 예외 - 7자리")
+        void createStockWithInvalidCodeFormat7Digits() {
+            // when & then
+            assertThatThrownBy(() -> 
+                new Stock("1234567", 40, 0.05, 100))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("종목 코드는 6자리 영숫자여야 합니다");
+        }
+
+        @Test
+        @DisplayName("잘못된 종목코드 형식으로 생성 시 예외 - 특수문자")
+        void createStockWithInvalidCodeFormatSpecialChars() {
+            // when & then
+            assertThatThrownBy(() -> 
+                new Stock("12-34!", 40, 0.05, 100))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("종목 코드는 6자리 영숫자여야 합니다");
+        }
+
+        @Test
+        @DisplayName("영숫자 종목코드로 정상 생성")
+        void createStockWithAlphanumericCode() {
+            // given
+            String stockCode = "ABC123";
+            
+            // when
+            Stock stock = new Stock(stockCode, 40, 0.05, 100);
+            
+            // then
+            assertThat(stock.getStockCode()).isEqualTo("ABC123");
+        }
+
+        @Test
+        @DisplayName("소문자 종목코드는 대문자로 변환")
+        void createStockWithLowercaseCode() {
+            // given
+            String stockCode = "abc123";
+            
+            // when
+            Stock stock = new Stock(stockCode, 40, 0.05, 100);
+            
+            // then
+            assertThat(stock.getStockCode()).isEqualTo("ABC123");
         }
 
         @Test

@@ -35,24 +35,24 @@ public class StockTradingServiceImpl implements StockTradingService {
 
     @Override
     @Transactional
-    public StockTradeResponse buyStock(String stockCode, StockTradeRequest request, Long userId) {
+    public StockTradeResponse buyStock(String stockCode, StockTradeRequest request, Long userId, ExecutionType executionType) {
         log.info("주식 매수 주문 시작 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
                 userId, stockCode, request.getQuantity(), request.getPrice());
 
-        return executeOrder(stockCode, request, userId, "buy");
+        return executeOrder(stockCode, request, userId, "buy", executionType);
     }
 
     @Override
     @Transactional
-    public StockTradeResponse sellStock(String stockCode, StockTradeRequest request, Long userId) {
+    public StockTradeResponse sellStock(String stockCode, StockTradeRequest request, Long userId, ExecutionType executionType) {
         log.info("주식 매도 주문 시작 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
                 userId, stockCode, request.getQuantity(), request.getPrice());
 
-        return executeOrder(stockCode, request, userId, "sell");
+        return executeOrder(stockCode, request, userId, "sell", executionType);
     }
 
     private StockTradeResponse executeOrder(String stockCode, StockTradeRequest request, Long userId,
-                                            String orderDirection) {
+                                            String orderDirection, ExecutionType executionType) {
         try {
             // 1. 계좌 정보 조회 및 검증
             Account account = accountRepository.findByIdAndUserId(request.getAccountId(), userId)
@@ -75,7 +75,7 @@ public class StockTradingServiceImpl implements StockTradingService {
 
                 // 5. 매수 거래 기록 생성 (포트폴리오에 등록된 주식인 경우에만)
                 if (isRegisteredStock) {
-                    createTradeRecords(portfolio, stockCode, request, result, ExecutionType.BUY_PERSONAL, "BUY");
+                    createTradeRecords(portfolio, stockCode, request, result, executionType, "BUY");
                 } else {
                     log.info("미등록 주식 매수 - 거래 기록 생성 생략 - UserId: {}, StockCode: {}", userId, stockCode);
                 }
@@ -87,7 +87,7 @@ public class StockTradingServiceImpl implements StockTradingService {
 
                 // 5. 매도 거래 기록 생성 (포트폴리오에 등록된 주식인 경우에만)
                 if (isRegisteredStock) {
-                    createTradeRecords(portfolio, stockCode, request, result, ExecutionType.SELL_PERSONAL, "SELL");
+                    createTradeRecords(portfolio, stockCode, request, result, executionType, "SELL");
                 } else {
                     log.info("미등록 주식 매도 - 거래 기록 생성 생략 - UserId: {}, StockCode: {}", userId, stockCode);
                 }

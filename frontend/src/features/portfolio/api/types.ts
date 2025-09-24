@@ -204,9 +204,6 @@ export interface TradeDetail {
   tradeType: string;
   executedShares: number;
   price: number;
-  fee: number;
-  profitAmount: number;
-  profitRate: number;
   reason: string;
   tradeDate: string;
 }

@@ -12,6 +12,7 @@ import com.rebra.dto.response.StockHistoricalDataResponse;
 import com.rebra.dto.response.StockHoldingDetailResponse;
 import com.rebra.dto.response.StockHoldingListResponse;
 import com.rebra.dto.response.StockTradeResponse;
+import com.rebra.enums.ExecutionType;
 import com.rebra.dto.response.WatchlistToggleResponse;
 import com.rebra.service.StockService;
 import com.rebra.service.StockTradingService;
@@ -129,7 +130,7 @@ public class StockController {
         log.info("주식 매수 요청 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
                 userId, stockCode, request.getQuantity(), request.getPrice());
 
-        StockTradeResponse response = stockTradingService.buyStock(stockCode, request, userId);
+        StockTradeResponse response = stockTradingService.buyStock(stockCode, request, userId, ExecutionType.BUY_PERSONAL);
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
@@ -151,7 +152,7 @@ public class StockController {
         log.info("주식 매도 요청 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
                 userId, stockCode, request.getQuantity(), request.getPrice());
 
-        StockTradeResponse response = stockTradingService.sellStock(stockCode, request, userId);
+        StockTradeResponse response = stockTradingService.sellStock(stockCode, request, userId, ExecutionType.SELL_PERSONAL);
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }

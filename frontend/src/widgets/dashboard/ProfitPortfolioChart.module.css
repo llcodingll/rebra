@@ -391,36 +391,6 @@
   color: white;
 }
 
-.tradeResult {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-}
-
-.profit {
-  font-size: 14px;
-  font-family: 'Inter', 'Noto Sans KR', sans-serif;
-  color: #155dfc;
-}
-
-.loss {
-  font-size: 14px;
-  font-family: 'Inter', 'Noto Sans KR', sans-serif;
-  color: #e7000b;
-}
-
-.profitRate {
-  font-size: 12px;
-  font-family: 'Inter', sans-serif;
-  color: #155dfc;
-}
-
-.lossRate {
-  font-size: 12px;
-  font-family: 'Inter', sans-serif;
-  color: #e7000b;
-}
 
 .tradeDetail {
   font-size: 12px;
