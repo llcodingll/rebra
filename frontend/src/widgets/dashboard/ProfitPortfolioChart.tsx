@@ -312,15 +312,7 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
             className={styles.chartWrapper}
           >
             <DashboardChart
-              tradeData={chartData}
-              portfolioPercents={portfolioPercents}
-              kospiPercents={kospiPercents}
-              chartMin={chartMin}
-              chartMax={chartMax}
-              chartRange={chartRange}
-              yAxisLabels={yAxisLabels}
-              createPath={createPath}
-              onIdClick={setSelectedId}
+              portfolioId={portfolioId}
             />
           </motion.div>
 
