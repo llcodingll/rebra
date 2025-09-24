@@ -99,6 +99,7 @@ export const transformHoldingsResults = (
 
     return {
       ...holding,
+      averagePurchasePrice: Math.floor(holding.averagePurchasePrice), // 매입가 소수점 버림
       fee,
       tax,
     };
