@@ -19,6 +19,7 @@ interface UseApiOptions<TData, TVariables = void>
   errorMessages?: {
     [statusCode: number]: string;
   } | string; // 전체 에러 메시지 오버라이드 또는 상태별 메시지
+  onSuccess?: (data: TData) => void; // onSuccess 콜백 추가
 }
 
 /**
@@ -32,6 +33,7 @@ export const useApi = <TData, TVariables = void>({
   apiFunction,
   variables,
   errorMessages,
+  onSuccess,
   ...options
 }: UseApiOptions<TData, TVariables>) => {
   return useQuery<TData, AppError, TData, QueryKey>({
@@ -40,7 +42,14 @@ export const useApi = <TData, TVariables = void>({
       const result = await apiFunction(variables as TVariables);
 
       if (isOk(result)) {
-        return result.data; // 성공 데이터만 반환
+        const data = result.data;
+
+        // onSuccess 콜백 호출
+        if (onSuccess) {
+          onSuccess(data);
+        }
+
+        return data; // 성공 데이터만 반환
       } else {
         // 에러 타입에 따라 적절히 처리
         const error = result.error;

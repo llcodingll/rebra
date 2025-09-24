@@ -349,6 +349,34 @@ public class WebSocketReconnectionService {
     }
 
     /**
+     * 이벤트 기반 userId를 사용한 세션 제거 (근본 원인 해결)
+     */
+    public void removeSessionWithUserId(String sessionId, Long eventUserId) {
+        sessionActivity.remove(sessionId);
+        SessionSubscriptions subscriptions = sessionSubscriptions.remove(sessionId);
+
+        if (subscriptions != null) {
+            // 이벤트에서 받은 userId를 우선 사용, 없으면 저장된 userId 사용
+            Long userId = eventUserId != null ? eventUserId : subscriptions.getUserId();
+
+            log.info("WebSocket 세션 제거 및 구독 정리 시작 - SessionId: {}, EventUserId: {}, StoredUserId: {}, 실제사용UserId: {}, 체결가: {}개, 호가: {}개",
+                    sessionId, eventUserId, subscriptions.getUserId(), userId,
+                    subscriptions.getPriceSubscriptions().size(),
+                    subscriptions.getOrderbookSubscriptions().size());
+
+            // 1. KIS 실시간 구독 해제 (기존 방식)
+            unsubscribeFromKisRealtime(userId, subscriptions, sessionId);
+
+            // 2. 스마트 사용자별 구독 정리 (다른 활성 세션 확인)
+            performSmartUserSubscriptionCleanup(userId, subscriptions);
+
+            log.info("✅ WebSocket 세션 제거 및 구독 정리 완료 - SessionId: {}, UserId: {}", sessionId, userId);
+        } else {
+            log.info("WebSocket 세션 제거 - SessionId: {} (구독 정보 없음)", sessionId);
+        }
+    }
+
+    /**
      * KIS 실시간 구독 해제
      */
     private void unsubscribeFromKisRealtime(Long userId, SessionSubscriptions subscriptions, String sessionId) {
@@ -379,6 +407,11 @@ public class WebSocketReconnectionService {
      * 스마트 사용자별 구독 정리 (다른 활성 세션이 없는 경우에만 제거)
      */
     private void performSmartUserSubscriptionCleanup(Long userId, SessionSubscriptions removedSession) {
+        if (userId == null) {
+            log.warn("사용자 ID가 null입니다. 구독 정리를 건너뜁니다.");
+            return;
+        }
+
         Set<UserSubscriptionInfo> userSubs = userActiveSubscriptions.get(userId);
         if (userSubs == null || userSubs.isEmpty()) {
             log.debug("사용자별 구독 정보 없음 - UserId: {}", userId);
@@ -1014,12 +1047,22 @@ public class WebSocketReconnectionService {
     @EventListener
     public void handleSessionDisconnectEvent(WebSocketSessionDisconnectEvent event) {
         String sessionId = event.getSessionId();
-        String userId = event.getUserId();
+        String userIdStr = event.getUserId();
 
-        log.info("세션 연결 해제 이벤트 수신 - SessionId: {}, UserId: {}", sessionId, userId);
+        log.info("세션 연결 해제 이벤트 수신 - SessionId: {}, UserId: {}", sessionId, userIdStr);
 
-        // 세션 정리 수행 (기존 removeSession 로직)
-        removeSession(sessionId);
+        // 이벤트에서 받은 userId 정보를 활용하여 세션 정리
+        Long userId = null;
+        if (userIdStr != null && !userIdStr.equals("guest")) {
+            try {
+                userId = Long.parseLong(userIdStr);
+            } catch (NumberFormatException e) {
+                log.warn("유효하지 않은 userId 형식 - SessionId: {}, UserId: {}", sessionId, userIdStr);
+            }
+        }
+
+        // 이벤트 기반 userId를 사용하여 세션 정리
+        removeSessionWithUserId(sessionId, userId);
     }
 
     /**
