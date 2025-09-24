@@ -91,11 +91,11 @@ class StockControllerTest {
                 "02"
         );
 
-        given(stockTradingService.buyStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.BUY_PERSONAL)))
+        given(stockTradingService.buyStock(any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.BUY_PERSONAL)))
                 .willReturn(response);
 
         // When & Then
-        mockMvc.perform(post("/api/stocks/{stockCode}/buy", stockCode)
+        mockMvc.perform(post("/api/stocks/buy")
                         .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -133,11 +133,11 @@ class StockControllerTest {
                 "01"
         );
 
-        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.SELL_PERSONAL)))
+        given(stockTradingService.sellStock(any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.SELL_PERSONAL)))
                 .willReturn(response);
 
         // When & Then
-        mockMvc.perform(post("/api/stocks/{stockCode}/sell", stockCode)
+        mockMvc.perform(post("/api/stocks/sell")
                         .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -162,7 +162,7 @@ class StockControllerTest {
         StockTradeRequest request = createTradeRequest("00", -1, 70000L, 1L);
 
         // When & Then
-        mockMvc.perform(post("/api/stocks/{stockCode}/buy", stockCode)
+        mockMvc.perform(post("/api/stocks/buy")
                         .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -178,7 +178,7 @@ class StockControllerTest {
         StockTradeRequest request = createTradeRequest(null, 10, 70000L, 1L);
 
         // When & Then
-        mockMvc.perform(post("/api/stocks/{stockCode}/buy", stockCode)
+        mockMvc.perform(post("/api/stocks/buy")
                         .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -196,11 +196,11 @@ class StockControllerTest {
         String stockCode = "005930";
         StockTradeRequest request = createTradeRequest("00", 10, 70000L, 999L);
 
-        given(stockTradingService.buyStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.BUY_PERSONAL)))
+        given(stockTradingService.buyStock(any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.BUY_PERSONAL)))
                 .willThrow(new CustomRuntimeException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
         // When & Then
-        mockMvc.perform(post("/api/stocks/{stockCode}/buy", stockCode)
+        mockMvc.perform(post("/api/stocks/buy")
                         .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -221,11 +221,11 @@ class StockControllerTest {
         String stockCode = "005930";
         StockTradeRequest request = createTradeRequest("00", 5, 72000L, 1L);
 
-        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.SELL_PERSONAL)))
+        given(stockTradingService.sellStock(any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.SELL_PERSONAL)))
                 .willThrow(new CustomRuntimeException(ExceptionCode.KIS_API_ERROR));
 
         // When & Then
-        mockMvc.perform(post("/api/stocks/{stockCode}/sell", stockCode)
+        mockMvc.perform(post("/api/stocks/sell")
                         .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -244,7 +244,7 @@ class StockControllerTest {
         StockTradeRequest request = createTradeRequest("00", 0, 70000L, 1L);
 
         // When & Then
-        mockMvc.perform(post("/api/stocks/{stockCode}/buy", stockCode)
+        mockMvc.perform(post("/api/stocks/buy")
                         .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -260,7 +260,7 @@ class StockControllerTest {
         StockTradeRequest request = createTradeRequest("00", 5, 72000L, null);
 
         // When & Then
-        mockMvc.perform(post("/api/stocks/{stockCode}/sell", stockCode)
+        mockMvc.perform(post("/api/stocks/sell")
                         .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -280,11 +280,11 @@ class StockControllerTest {
 
         StockTradeResponse errorResponse = StockTradeResponse.error("주문 처리 중 알 수 없는 오류가 발생했습니다");
 
-        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.SELL_PERSONAL)))
+        given(stockTradingService.sellStock(any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.SELL_PERSONAL)))
                 .willReturn(errorResponse);
 
         // When & Then
-        mockMvc.perform(post("/api/stocks/{stockCode}/sell", stockCode)
+        mockMvc.perform(post("/api/stocks/sell")
                         .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -544,7 +544,7 @@ class StockControllerTest {
                     "삼성전자"
             );
 
-            given(watchlistService.toggleWatchlist(1L, stockCode)).willReturn(response);
+            given(watchlistService.toggleWatchlist(eq(1L), eq(stockCode))).willReturn(response);
 
             // When & Then
             mockMvc.perform(post("/api/stocks/watchlist/toggle")
@@ -577,7 +577,7 @@ class StockControllerTest {
                     "삼성전자"
             );
 
-            given(watchlistService.toggleWatchlist(1L, stockCode)).willReturn(response);
+            given(watchlistService.toggleWatchlist(eq(1L), eq(stockCode))).willReturn(response);
 
             // When & Then
             mockMvc.perform(post("/api/stocks/watchlist/toggle")
@@ -604,7 +604,7 @@ class StockControllerTest {
             // Given
             String stockCode = "005930";
 
-            given(watchlistService.toggleWatchlist(999L, stockCode))
+            given(watchlistService.toggleWatchlist(eq(999L), eq(stockCode)))
                     .willThrow(new CustomRuntimeException(ExceptionCode.PORTFOLIO_NOT_FOUND));
 
             // When & Then
@@ -629,7 +629,7 @@ class StockControllerTest {
             // Given
             String invalidStockCode = "INVALID";
 
-            given(watchlistService.toggleWatchlist(1L, invalidStockCode))
+            given(watchlistService.toggleWatchlist(eq(1L), eq(invalidStockCode)))
                     .willThrow(new CustomRuntimeException(ExceptionCode.STOCK_CODE_NOT_FOUND));
 
             // When & Then
@@ -640,7 +640,7 @@ class StockControllerTest {
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.status").value(404))
-                    .andExpect(jsonPath("$.errorMessage").value("종목코드를 찾을 수 없습니다."));
+                    .andExpect(jsonPath("$.errorMessage").value("해당 종목 코드로 주식을 찾을 수 없습니다."));
         }
 
         @Test
@@ -673,7 +673,7 @@ class StockControllerTest {
                     new WatchlistDto("000660", "SK하이닉스")
             );
 
-            given(watchlistService.getAllWatchlist(1L)).willReturn(watchlistDtos);
+            given(watchlistService.getAllWatchlist(eq(1L))).willReturn(watchlistDtos);
 
             // When & Then
             mockMvc.perform(get("/api/stocks/watchlist")
@@ -719,12 +719,12 @@ class StockControllerTest {
             when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(999L);
 
             // Given
-            given(watchlistService.getAllWatchlist(999L))
+            given(watchlistService.getAllWatchlist(eq(999L)))
                     .willThrow(new CustomRuntimeException(ExceptionCode.PORTFOLIO_NOT_FOUND));
 
             // When & Then
             mockMvc.perform(get("/api/stocks/watchlist")
-                            .param("accountId", "1"))
+                            .param("accountId", "999"))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.status").value(404))
@@ -746,7 +746,7 @@ class StockControllerTest {
 
             // Given
             String stockCode = "005930";
-            given(watchlistService.isInWatchlist(1L, stockCode)).willReturn(true);
+            given(watchlistService.isInWatchlist(eq(1L), eq(stockCode))).willReturn(true);
 
             // When & Then
             mockMvc.perform(get("/api/stocks/watchlist/status")
@@ -768,7 +768,7 @@ class StockControllerTest {
 
             // Given
             String stockCode = "005930";
-            given(watchlistService.isInWatchlist(1L, stockCode)).willReturn(false);
+            given(watchlistService.isInWatchlist(eq(1L), eq(stockCode))).willReturn(false);
 
             // When & Then
             mockMvc.perform(get("/api/stocks/watchlist/status")
@@ -790,7 +790,7 @@ class StockControllerTest {
 
             // Given
             String stockCode = "005930";
-            given(watchlistService.isInWatchlist(999L, stockCode))
+            given(watchlistService.isInWatchlist(eq(999L), eq(stockCode)))
                     .willThrow(new CustomRuntimeException(ExceptionCode.PORTFOLIO_NOT_FOUND));
 
             // When & Then
@@ -813,16 +813,17 @@ class StockControllerTest {
 
             // Given
             String invalidStockCode = "INVALID";
-            given(watchlistService.isInWatchlist(1L, invalidStockCode))
+            given(watchlistService.isInWatchlist(eq(1L), eq(invalidStockCode)))
                     .willThrow(new CustomRuntimeException(ExceptionCode.STOCK_CODE_NOT_FOUND));
 
             // When & Then
             mockMvc.perform(get("/api/stocks/watchlist/status")
-                            .param("stockCode", invalidStockCode))
+                            .param("stockCode", invalidStockCode)
+                            .param("accountId", "1"))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.status").value(404))
-                    .andExpect(jsonPath("$.errorMessage").value("종목코드를 찾을 수 없습니다."));
+                    .andExpect(jsonPath("$.errorMessage").value("해당 종목 코드로 주식을 찾을 수 없습니다."));
         }
 
         @Test
@@ -836,7 +837,13 @@ class StockControllerTest {
     }
 
     private StockTradeRequest createTradeRequest(String orderType, Integer quantity, Long price, Long accountId) {
+        return createTradeRequest("005930", "삼성전자", orderType, quantity, price, accountId);
+    }
+
+    private StockTradeRequest createTradeRequest(String stockCode, String stockName, String orderType, Integer quantity, Long price, Long accountId) {
         StockTradeRequest request = new StockTradeRequest();
+        setField(request, "stockCode", stockCode);
+        setField(request, "stockName", stockName);
         setField(request, "orderType", orderType);
         setField(request, "quantity", quantity);
         setField(request, "price", price);

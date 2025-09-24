@@ -13,6 +13,12 @@ import lombok.Setter;
 @Schema(description = "주식 매수/매도 요청")
 public class StockTradeRequest {
 
+    @NotNull(message = "종목코드는 필수입니다")
+    @Schema(description = "종목코드", example = "005930")
+    private String stockCode;
+
+    @Schema(description = "종목명", example = "삼성전자")
+    private String stockName;
 
     @NotNull(message = "주문구분은 필수입니다")
     @Schema(description = "주문구분 (00: 지정가, 01: 시장가, 02: 조건부지정가 등)", example = "01")

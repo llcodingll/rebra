@@ -126,17 +126,15 @@ public class StockController {
             @ApiResponse(responseCode = "401", description = "인증 필요"),
             @ApiResponse(responseCode = "404", description = "계좌를 찾을 수 없음")
     })
-    @PostMapping("/{stockCode}/buy")
+    @PostMapping("/buy")
     public ResponseEntity<CommonApiResponse<StockTradeResponse>> buyStock(
-            @Parameter(description = "매수할 종목 코드", example = "005930")
-            @PathVariable String stockCode,
             @Valid @RequestBody StockTradeRequest request,
             @Parameter(hidden = true) @LoginUser Long userId) {
 
         log.info("주식 매수 요청 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
-                userId, stockCode, request.getQuantity(), request.getPrice());
+                userId, request.getStockCode(), request.getQuantity(), request.getPrice());
 
-        StockTradeResponse response = stockTradingService.buyStock(stockCode, request, userId, ExecutionType.BUY_PERSONAL);
+        StockTradeResponse response = stockTradingService.buyStock(request, userId, ExecutionType.BUY_PERSONAL);
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
@@ -148,17 +146,15 @@ public class StockController {
             @ApiResponse(responseCode = "401", description = "인증 필요"),
             @ApiResponse(responseCode = "404", description = "계좌를 찾을 수 없음")
     })
-    @PostMapping("/{stockCode}/sell")
+    @PostMapping("/sell")
     public ResponseEntity<CommonApiResponse<StockTradeResponse>> sellStock(
-            @Parameter(description = "매도할 종목 코드", example = "005930")
-            @PathVariable String stockCode,
             @Valid @RequestBody StockTradeRequest request,
             @Parameter(hidden = true) @LoginUser Long userId) {
 
         log.info("주식 매도 요청 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
-                userId, stockCode, request.getQuantity(), request.getPrice());
+                userId, request.getStockCode(), request.getQuantity(), request.getPrice());
 
-        StockTradeResponse response = stockTradingService.sellStock(stockCode, request, userId, ExecutionType.SELL_PERSONAL);
+        StockTradeResponse response = stockTradingService.sellStock(request, userId, ExecutionType.SELL_PERSONAL);
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
