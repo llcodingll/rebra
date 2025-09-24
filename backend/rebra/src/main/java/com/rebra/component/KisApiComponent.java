@@ -16,6 +16,8 @@ import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Api;
 import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Data;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceApi;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult;
+import com.youhogeon.finance.kis_api.api.rest.quotations.InquireOvertimeAskingPriceApi;
+import com.youhogeon.finance.kis_api.api.rest.quotations.InquireOvertimeAskingPriceResult;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceApi;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import com.youhogeon.finance.kis_api.client.socket.SubscribableApiResult;
@@ -1271,6 +1273,58 @@ public class KisApiComponent {
             log.error("{} 등락률순위 조회 실패 - 사용자ID: {}, 계좌ID: {}, 오류: {}",
                     rankingType, userId, accountId, e.getMessage(), e);
             throw new RuntimeException(rankingType + " 등락률순위 조회 실패: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 시간외호가 조회 (Account 객체 사용)
+     */
+    public InquireOvertimeAskingPriceResult getOvertimeAskingPrice(Account account, String stockCode) {
+        Long userId = account.getUser().getId();
+        DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+        return getOvertimeAskingPrice(userId, account.getId(), account.getAccountType(), credentials, stockCode);
+    }
+
+    /**
+     * 시간외호가 조회
+     */
+    public InquireOvertimeAskingPriceResult getOvertimeAskingPrice(Long userId, Long accountId, AccountType accountType,
+                                                 DecryptedAccountCredentials credentials, String stockCode) {
+        try {
+            log.info("시간외호가 조회 시작 - 사용자ID: {}, 계좌ID: {}, 계좌타입: {}, 종목코드: {}", userId, accountId, accountType, stockCode);
+
+            // Credentials가 Config에 없으면 자동으로 등록
+            ensureUserCredentials(userId, accountId, accountType, credentials);
+
+            String credentialsName = getUserCredentialsName(userId, accountId);
+            if (credentialsName == null) {
+                log.error("ensureUserCredentials 후에도 Credentials를 찾을 수 없음 - 사용자ID: {}, 계좌ID: {}", userId, accountId);
+                throw new RuntimeException("Credentials 등록 실패");
+            }
+
+            KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
+
+            InquireOvertimeAskingPriceApi req = new InquireOvertimeAskingPriceApi();
+            req.setFidInputIscd(stockCode);
+            // fidCondMrktDivCode는 기본값 "J" 사용
+
+            InquireOvertimeAskingPriceResult result = client.execute(req, credentialsName);
+
+            // rtCd가 "0"이 아니면 실패 (KIS API 표준)
+            if (!result.getRtCd().equals("0")) {
+                throw new RuntimeException("KIS API 시간외호가 조회 실패");
+            }
+
+            log.info("시간외호가 조회 완료 - 사용자ID: {}, 계좌ID: {}, 종목코드: {}", userId, accountId, stockCode);
+            return result;
+
+        } catch (KisException e) {
+            // KisException은 그대로 전파
+            throw e;
+        } catch (Exception e) {
+            log.error("시간외호가 조회 실패 - 사용자ID: {}, 계좌ID: {}, 종목코드: {}, 오류: {}",
+                    userId, accountId, stockCode, e.getMessage(), e);
+            throw new RuntimeException("시간외호가 조회 실패: " + e.getMessage(), e);
         }
     }
 
