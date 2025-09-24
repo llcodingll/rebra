@@ -41,17 +41,31 @@ export default function Header({ activeTab, onTabChange, onTutorialClick }: Head
   }, []);
 
   const logoutMutation = useMutation({
-    mutationFn: userApi.logout,
+    mutationFn: async () => {
+      const baseURL = import.meta.env.VITE_API_BASE_URL ||
+                     (window.location.hostname === 'localhost' ? 'http://localhost:8080' : '');
+
+      const response = await fetch(`${baseURL}/api/users/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('로그아웃 실패');
+      }
+
+      return response.json();
+    },
     onSuccess: () => {
-      // 확인 모달 닫고 성공 모달 표시
       setIsLogoutConfirmOpen(false);
       setTimeout(() => {
         setIsLogoutSuccessOpen(true);
       }, 200);
     },
     onError: (error) => {
-      console.error('로그아웃 실패:', error);
-      // 에러가 발생해도 성공 모달 표시 (클라이언트 측 정리)
       setIsLogoutConfirmOpen(false);
       setTimeout(() => {
         setIsLogoutSuccessOpen(true);
@@ -74,7 +88,7 @@ export default function Header({ activeTab, onTabChange, onTutorialClick }: Head
 
   const handleSuccessClose = () => {
     setIsLogoutSuccessOpen(false);
-    navigate('/');
+    window.location.href = '/landing';
   };
 
   return (
