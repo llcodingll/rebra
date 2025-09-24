@@ -270,7 +270,7 @@ public class PortfolioRebalancingProcessor {
             if (balanceResult.getOutput1() != null) {
                 for (InquireBalanceResult.Output1 holding : balanceResult.getOutput1()) {
                     String stockCode = holding.getPdno(); // 종목코드
-                    String stockName = stockCode; // 종목명 (임시로 종목코드 사용)
+                    String stockName = holding.getPrdtName(); // 종목명
                     int quantity = Integer.parseInt(holding.getHldgQty()); // 보유수량
                     long currentPrice = Long.parseLong(holding.getPrpr()); // 현재가
                     
