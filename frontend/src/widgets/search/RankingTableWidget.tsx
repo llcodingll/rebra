@@ -1,28 +1,22 @@
 import { useState, useRef, useEffect } from 'react';
 import styles from './RankingTableWidget.module.css';
 import TableLayoutContainer from './components/TableLayoutContainer';
-import { useStockRanking } from '../../features/stock-search/hooks/useStockRanking';
-import { transformVolumeRankingResults } from '../../features/stock-search/api/stockSearchApi';
+import { useStockRanking, type RankingType } from '../../features/stock-search/hooks/useStockRanking';
 
 interface RankingTableWidgetProps {
   onStockSelect: (stock: { code: string; name: string }) => void;
 }
 
-type SortType = 'volume' | 'rising' | 'falling';
-
 export default function RankingTableWidget({ onStockSelect }: RankingTableWidgetProps) {
-  const [sortType, setSortType] = useState<SortType>('volume');
+  const [sortType, setSortType] = useState<RankingType>('volume');
   const buttonsContainerRef = useRef<HTMLDivElement>(null);
   const underlineRef = useRef<HTMLDivElement>(null);
 
-  // 실제 API 데이터 조회 (거래량 탭만 실제 데이터 사용)
-  const { rankingData, isLoading, error } = useStockRanking();
+  // 선택된 탭에 따른 실제 API 데이터 조회
+  const { rankingData, isLoading, error } = useStockRanking(sortType);
 
-  // API 데이터를 UI 형태로 변환
-  const volumeRankingStocks = rankingData ? transformVolumeRankingResults(rankingData) : [];
-
-  // 거래량 탭일 때는 실제 API 데이터, 나머지는 빈 배열
-  const sortedData = sortType === 'volume' ? volumeRankingStocks.slice(0, 10) : [];
+  // API 데이터를 최대 10개로 제한
+  const sortedData = rankingData.slice(0, 10);
 
   useEffect(() => {
     const moveUnderline = () => {
@@ -89,40 +83,33 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
         ) : sortedData.length > 0 ? (
           sortedData.map((stock, index) => (
             <div
-              key={stock.code}
+              key={stock.stockCode}
               className={`${styles.stockRow} ${index % 2 === 0 ? styles.evenRow : ''}`}
-              onClick={() => onStockSelect({ code: stock.code, name: stock.name })}
+              onClick={() => onStockSelect({ code: stock.stockCode, name: stock.stockName })}
             >
               <div className={styles.stockInfo}>
                 <div className={styles.favoriteIcon}>
-                  {stock.isFavorite ? (
-                    <svg width='16' height='16' viewBox='0 0 24 24' fill='#ef1515'>
-                      <path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' />
-                    </svg>
-                  ) : (
-                    <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='#999' strokeWidth='2'>
-                      <path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' />
-                    </svg>
-                  )}
+                  {/* 임시로 모든 종목을 비관심종목으로 표시 - 나중에 관심종목 API 연동 시 수정 예정 */}
+                  <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='#999' strokeWidth='2'>
+                    <path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' />
+                  </svg>
                 </div>
-                <div className={styles.rank}>{index + 1}</div>
-                <span className={styles.stockName}>{stock.name}</span>
+                <div className={styles.rank}>{stock.rank}</div>
+                <span className={styles.stockName}>{stock.stockName}</span>
               </div>
 
-              <div className={styles.price}>{stock.price.toLocaleString()}</div>
+              <div className={styles.price}>{stock.currentPrice.toLocaleString()}</div>
 
-              <div className={`${styles.change} ${stock.changePercent ? styles.positive : styles.negative}`}>
-                {stock.changePercent ? '+' : ''}
-                {stock.change.toFixed(1)}%
+              <div className={`${styles.change} ${stock.priceChangeRate >= 0 ? styles.positive : styles.negative}`}>
+                {stock.priceChangeRate >= 0 ? '+' : ''}
+                {stock.priceChangeRate.toFixed(1)}%
               </div>
 
-              <div className={styles.volume}>{stock.volume}</div>
+              <div className={styles.volume}>{stock.volume.toLocaleString()}</div>
             </div>
           ))
         ) : (
-          <div className={styles.emptyMessage}>
-            {sortType === 'volume' ? '데이터가 없습니다.' : '해당 탭은 준비 중입니다.'}
-          </div>
+          <div className={styles.emptyMessage}>데이터가 없습니다.</div>
         )}
       </div>
     </div>

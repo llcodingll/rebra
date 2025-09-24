@@ -103,6 +103,14 @@ export default function HoldingInfoTable({ stockCode, currentPrice = 0 }: Holdin
               <div className={styles.dataValue}>{holdingData ? formatNumber(holdingData.orderableQuantity) : '-'}</div>
             </div>
           </div>
+          <div className={styles.tableColumn}>
+            <div className={styles.columnHeader}>수수료</div>
+            <div className={styles.columnHeaderSecond}>세금</div>
+            <div className={styles.columnData}>
+              <div className={styles.dataValue}></div>
+              <div className={styles.dataValue}></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
