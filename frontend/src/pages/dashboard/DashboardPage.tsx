@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import styles from './DashboardPage.module.css';
 import { useApi } from '../../shared/hook/useApi';
+import { isMarketOpen } from '../../shared/util/marketTime';
 import { portfolioApi } from '../../features/portfolio/api/portfolioApi';
 import { transformPortfolioData, transformPortfolioDetailToStocks } from '../../features/portfolio/utils/portfolioTransform';
 import type { Portfolio, Stock } from '../../entities/portfolio';
@@ -18,33 +19,17 @@ import PortfolioHeader from '../../widgets/dashboard/PortfolioHeader';
 import TutorialOverlay from '../../widgets/tutorial/TutorialOverlay';
 import { dashboardTutorialSteps } from '../../widgets/tutorial/dashboardTutorialSteps';
 
-// 서울 시간 기준 주식 시장 시간 체크
-const isMarketOpen = (): boolean => {
-  const now = new Date();
-  const seoulTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
-
-  const day = seoulTime.getDay(); // 0=일요일, 6=토요일
-  const hour = seoulTime.getHours();
-  const minute = seoulTime.getMinutes();
-
-  // 주말 제외
-  if (day === 0 || day === 6) return false;
-
-  // 09:00 ~ 15:30 (서울시간 기준)
-  if (hour < 9) return false;
-  if (hour > 15) return false;
-  if (hour === 15 && minute > 30) return false;
-
-  return true;
-};
 
 export default function DashboardPage() {
+  // 튜토리얼 관련
   const { registerTutorialTarget } = useOutletContext<{ registerTutorialTarget: (page: string, startFunction: () => void) => void }>();
-  const [activeSubTab, setActiveSubTab] = useState<'assets' | 'profit'>('assets');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
-  const [isEditingWeights, setIsEditingWeights] = useState(false);
+
+  // UI 상태 관리
+  const [activeSubTab, setActiveSubTab] = useState<'assets' | 'profit'>('assets'); // 현재 활성 탭 (자산/수익률)
+  const [isModalOpen, setIsModalOpen] = useState(false); // 포트폴리오 선택 모달
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // 포트폴리오 생성 모달
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false); // 튜토리얼 오버레이
+  const [isEditingWeights, setIsEditingWeights] = useState(false); // 비중 편집 중 여부 (폴링 제어용)
 
   // 포트폴리오 있음 상태일 때 기본값 설정 (portfolios 배열의 첫 번째 항목)
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(null);
