@@ -1,6 +1,6 @@
 import { ApiClient } from '../../../shared/api/apiClient';
 import type { Result, AppError } from '../../../shared/util/result';
-import type { StockSearchRequest, StockSearchResponse, SearchableStock, StockSearchTransformOptions, StockRankingResponse, VolumeRankingStock, HoldingsRequest, HoldingsResponse, DisplayHoldingStock } from './types';
+import type { StockSearchRequest, StockSearchResponse, SearchableStock, StockSearchTransformOptions, VolumeRankingApiResponse, HoldingsRequest, HoldingsResponse, DisplayHoldingStock } from './types';
 
 class StockSearchApiService extends ApiClient {
   /**
@@ -13,11 +13,30 @@ class StockSearchApiService extends ApiClient {
   };
 
   /**
-   * 주식 랭킹 조회
-   * @returns 주식 랭킹 결과
+   * 거래량 랭킹 조회
+   * @param accountId 계정 ID
+   * @returns 거래량 랭킹 결과
    */
-  getStockRanking = async (): Promise<Result<StockRankingResponse, AppError>> => {
-    return await this.get<StockRankingResponse>('/api/stocks/ranking');
+  getStockRanking = async (accountId: number): Promise<Result<VolumeRankingApiResponse, AppError>> => {
+    return await this.get<VolumeRankingApiResponse>(`/api/v1/rankings/volume?accountId=${accountId}`);
+  };
+
+  /**
+   * 급상승 랭킹 조회
+   * @param accountId 계정 ID
+   * @returns 급상승 랭킹 결과
+   */
+  getRisingStockRanking = async (accountId: number): Promise<Result<VolumeRankingApiResponse, AppError>> => {
+    return await this.get<VolumeRankingApiResponse>(`/api/v1/rankings/fluctuation/rising?accountId=${accountId}`);
+  };
+
+  /**
+   * 급하락 랭킹 조회
+   * @param accountId 계정 ID
+   * @returns 급하락 랭킹 결과
+   */
+  getFallingStockRanking = async (accountId: number): Promise<Result<VolumeRankingApiResponse, AppError>> => {
+    return await this.get<VolumeRankingApiResponse>(`/api/v1/rankings/fluctuation/falling?accountId=${accountId}`);
   };
 
   /**
@@ -51,29 +70,6 @@ export const transformSearchResults = (
     .slice(0, 10); // 최대 10개로 제한
 };
 
-/**
- * 거래량 랭킹 API 응답을 UI에서 사용할 형태로 변환
- * @param apiData 거래량 랭킹 API 응답 데이터
- * @param favoriteStockCodes 관심종목 코드 목록 (선택적)
- * @returns UI용 거래량 랭킹 결과
- */
-export const transformVolumeRankingResults = (
-  apiData: StockRankingResponse,
-  favoriteStockCodes?: string[]
-): VolumeRankingStock[] => {
-  const favorites = favoriteStockCodes || [];
-
-  return apiData.map((item) => ({
-    code: item.mksc_shrn_iscd,
-    name: item.hts_kor_isnm,
-    price: parseInt(item.stck_prpr, 10),
-    change: parseFloat(item.prdy_ctrt),
-    changePercent: item.prdy_vrss_sign === '2' || item.prdy_vrss_sign === '1', // 상승: 2, 보합: 3, 하락: 5
-    volume: parseInt(item.acml_vol, 10).toLocaleString(),
-    rank: parseInt(item.data_rank, 10),
-    isFavorite: favorites.includes(item.mksc_shrn_iscd),
-  }));
-};
 
 /**
  * KIS 수수료/세금 계산 함수

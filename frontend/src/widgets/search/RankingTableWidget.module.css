@@ -67,7 +67,7 @@
 
 .tableHeader {
   display: grid;
-  grid-template-columns: 3fr 2fr 2fr 2fr;
+  grid-template-columns: 5fr 2fr 2fr 2fr;
   gap: 20px;
   padding: 8px 20px;
   align-items: center;
@@ -97,7 +97,7 @@
 
 .stockRow {
   display: grid;
-  grid-template-columns: 3fr 2fr 2fr 2fr;
+  grid-template-columns: 5fr 2fr 2fr 2fr;
   gap: clamp(16px, 2.5vh, 24px);
   padding: clamp(6px, 1vh, 10px) 20px;
   cursor: pointer;
