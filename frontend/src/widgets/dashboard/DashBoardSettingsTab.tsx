@@ -53,7 +53,14 @@ export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalanci
         },
         onSuccess: (data) => {
             console.log('리밸런싱 실행 성공:', data);
-            alert('리밸런싱이 성공적으로 실행되었습니다!');
+
+            // API 응답의 success가 false이고 failureReason이 "리밸런싱할 주문이 없습니다"인 경우
+            if (!data.success && data.failureReason === "리밸런싱할 주문이 없습니다") {
+                alert('목표 비중에 대해 최적의 포트폴리오 상태이기에 리밸런싱이 수행되지 않았습니다.');
+            } else {
+                alert('리밸런싱이 성공적으로 실행되었습니다!');
+            }
+
             if (onRebalancingExecuted) {
                 onRebalancingExecuted();
             }

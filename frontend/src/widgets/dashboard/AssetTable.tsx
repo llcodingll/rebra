@@ -15,9 +15,10 @@ interface AssetTableProps {
   onStockRegistered?: () => void; // 주식 등록 성공 시 콜백
   onStockRemoved?: () => void; // 주식 삭제 성공 시 콜백
   onStockSettingsUpdated?: () => void; // 주식 설정 업데이트 성공 시 콜백
+  onEditModeChange?: (isEditing: boolean) => void; // 편집 모드 변경 시 콜백
 }
 
-export default function AssetTable({ title, type, data, portfolioId, onStockRegistered, onStockRemoved, onStockSettingsUpdated }: AssetTableProps) {
+export default function AssetTable({ title, type, data, portfolioId, onStockRegistered, onStockRemoved, onStockSettingsUpdated, onEditModeChange }: AssetTableProps) {
   const { isOpen: isStockSettingModalOpen, open: openStockSettingModal, close: closeStockSettingModal } = useModalState();
 
   // 숫자 포맷팅 함수들
@@ -119,6 +120,7 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
       console.log('업데이트 결과:', data);
       alert('주식 설정이 성공적으로 업데이트되었습니다.');
       closeStockSettingModal();
+      onEditModeChange?.(false);
       onStockSettingsUpdated?.(); // 주식 설정 업데이트 전용 콜백 호출
     },
     onError: (error) => {
@@ -188,7 +190,10 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
         <div className={styles.tableHeader}>
           <h3>{title}</h3>
           {type === 'registered' && (
-            <button className={styles.settingsButton} onClick={openStockSettingModal}>
+            <button className={styles.settingsButton} onClick={() => {
+              openStockSettingModal();
+              onEditModeChange?.(true);
+            }}>
               비중 설정
             </button>
           )}
@@ -285,7 +290,10 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
 
       <StockSettingModal
         isOpen={isStockSettingModalOpen}
-        onClose={closeStockSettingModal}
+        onClose={() => {
+          closeStockSettingModal();
+          onEditModeChange?.(false);
+        }}
         stocks={data}
         onSaveSettings={handleSaveSettings}
         isSaving={isUpdating}
