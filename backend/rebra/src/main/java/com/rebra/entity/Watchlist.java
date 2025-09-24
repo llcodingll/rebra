@@ -33,12 +33,9 @@ public class Watchlist extends BaseEntity {
     @JoinColumn(name = "stock_id", nullable = false)
     private Stock stock;
 
-    private String memo;
-
     @Builder
-    public Watchlist(User user, Stock stock, String memo) {
+    public Watchlist(User user, Stock stock) {
         this.user = user;
         this.stock = stock;
-        this.memo = memo;
     }
 }

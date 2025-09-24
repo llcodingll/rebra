@@ -96,7 +96,11 @@ public enum ExceptionCode {
     // ==== Rebalancing 관련 ====
     REBALANCING_ORDER_NOT_FOUND(15001, "리밸런싱 주문을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     REBALANCING_ACCESS_DENIED(15002, "리밸런싱 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
-    TRADE_RECORD_NOT_FOUND(15003, "거래 기록을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+    TRADE_RECORD_NOT_FOUND(15003, "거래 기록을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+    // ==== Watchlist 관련 ====
+    WATCHLIST_PROCESSING_FAILED(16001, "관심종목 처리에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    WATCHLIST_STOCK_NOT_FOUND(16002, "관심종목 처리할 종목을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
 
     private final int code;
     private final String message;

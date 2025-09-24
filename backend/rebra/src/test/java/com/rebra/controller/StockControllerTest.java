@@ -20,6 +20,8 @@ import com.rebra.dto.response.StockTradeResponse;
 import com.rebra.dto.response.StockHoldingListResponse;
 import com.rebra.dto.response.StockHoldingResponse;
 import com.rebra.dto.response.StockHoldingDetailResponse;
+import com.rebra.dto.WatchlistDto;
+import com.rebra.dto.response.WatchlistToggleResponse;
 import com.rebra.common.PageResponse;
 import com.rebra.common.PageInfo;
 import com.rebra.exception.CustomRuntimeException;
@@ -28,6 +30,7 @@ import com.rebra.exception.account.AccountException;
 import com.rebra.exception.stock.StockException;
 import com.rebra.service.StockService;
 import com.rebra.service.StockTradingService;
+import com.rebra.service.WatchlistService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;
@@ -42,6 +45,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 @WebMvcTest(StockController.class)
 class StockControllerTest {
@@ -57,6 +61,9 @@ class StockControllerTest {
 
     @MockitoBean
     private StockTradingService stockTradingService;
+
+    @MockitoBean
+    private WatchlistService watchlistService;
 
     @MockitoBean
     private LoginUserArgumentResolver loginUserArgumentResolver;
@@ -512,6 +519,307 @@ class StockControllerTest {
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.status").value(500))
                     .andExpect(jsonPath("$.errorMessage").value("종목 보유 정보 조회에 실패했습니다."));
+        }
+    }
+
+    @Nested
+    @DisplayName("관심종목 토글 API 테스트")
+    class ToggleWatchlistTest {
+
+        @Test
+        @DisplayName("성공: 관심종목 추가")
+        @WithMockUser
+        void toggleWatchlist_Add_Success() throws Exception {
+            // Mock LoginUserArgumentResolver to return userId 1L
+            when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+            when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
+
+            // Given
+            String stockCode = "005930";
+            WatchlistToggleResponse response = new WatchlistToggleResponse(
+                    true,
+                    "관심종목에 추가되었습니다",
+                    stockCode,
+                    "삼성전자"
+            );
+
+            given(watchlistService.toggleWatchlist(1L, stockCode)).willReturn(response);
+
+            // When & Then
+            mockMvc.perform(post("/api/stocks/watchlist/toggle")
+                            .with(csrf())
+                            .param("stockCode", stockCode))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.status").value(200))
+                    .andExpect(jsonPath("$.data.added").value(true))
+                    .andExpect(jsonPath("$.data.message").value("관심종목에 추가되었습니다"))
+                    .andExpect(jsonPath("$.data.stockCode").value(stockCode))
+                    .andExpect(jsonPath("$.data.stockName").value("삼성전자"));
+        }
+
+        @Test
+        @DisplayName("성공: 관심종목 제거")
+        @WithMockUser
+        void toggleWatchlist_Remove_Success() throws Exception {
+            // Mock LoginUserArgumentResolver to return userId 1L
+            when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+            when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
+
+            // Given
+            String stockCode = "005930";
+            WatchlistToggleResponse response = new WatchlistToggleResponse(
+                    false,
+                    "관심종목에서 제거되었습니다",
+                    stockCode,
+                    "삼성전자"
+            );
+
+            given(watchlistService.toggleWatchlist(1L, stockCode)).willReturn(response);
+
+            // When & Then
+            mockMvc.perform(post("/api/stocks/watchlist/toggle")
+                            .with(csrf())
+                            .param("stockCode", stockCode))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.status").value(200))
+                    .andExpect(jsonPath("$.data.added").value(false))
+                    .andExpect(jsonPath("$.data.message").value("관심종목에서 제거되었습니다"))
+                    .andExpect(jsonPath("$.data.stockCode").value(stockCode))
+                    .andExpect(jsonPath("$.data.stockName").value("삼성전자"));
+        }
+
+        @Test
+        @DisplayName("실패: 사용자 존재하지 않음")
+        @WithMockUser
+        void toggleWatchlist_UserNotFound() throws Exception {
+            // Mock LoginUserArgumentResolver to return userId 1L
+            when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+            when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(999L);
+
+            // Given
+            String stockCode = "005930";
+
+            given(watchlistService.toggleWatchlist(999L, stockCode))
+                    .willThrow(new CustomRuntimeException(ExceptionCode.USER_NOT_FOUND));
+
+            // When & Then
+            mockMvc.perform(post("/api/stocks/watchlist/toggle")
+                            .with(csrf())
+                            .param("stockCode", stockCode))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.errorMessage").value("사용자를 찾을 수 없습니다."));
+        }
+
+        @Test
+        @DisplayName("실패: 종목 존재하지 않음")
+        @WithMockUser
+        void toggleWatchlist_StockNotFound() throws Exception {
+            // Mock LoginUserArgumentResolver to return userId 1L
+            when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+            when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
+
+            // Given
+            String invalidStockCode = "INVALID";
+
+            given(watchlistService.toggleWatchlist(1L, invalidStockCode))
+                    .willThrow(new CustomRuntimeException(ExceptionCode.STOCK_CODE_NOT_FOUND));
+
+            // When & Then
+            mockMvc.perform(post("/api/stocks/watchlist/toggle")
+                            .with(csrf())
+                            .param("stockCode", invalidStockCode))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.errorMessage").value("종목코드를 찾을 수 없습니다."));
+        }
+
+        @Test
+        @DisplayName("실패: 종목 코드 누락")
+        @WithMockUser
+        void toggleWatchlist_MissingStockCode() throws Exception {
+            // When & Then
+            mockMvc.perform(post("/api/stocks/watchlist/toggle")
+                            .with(csrf()))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("관심종목 전체 조회 API 테스트")
+    class GetAllWatchlistTest {
+
+        @Test
+        @DisplayName("성공: 관심종목 리스트 조회")
+        @WithMockUser
+        void getAllWatchlist_Success() throws Exception {
+            // Mock LoginUserArgumentResolver to return userId 1L
+            when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+            when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
+
+            // Given
+            List<WatchlistDto> watchlistDtos = Arrays.asList(
+                    new WatchlistDto("005930", "삼성전자"),
+                    new WatchlistDto("000660", "SK하이닉스")
+            );
+
+            given(watchlistService.getAllWatchlist(1L)).willReturn(watchlistDtos);
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/watchlist"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.status").value(200))
+                    .andExpect(jsonPath("$.data").isArray())
+                    .andExpect(jsonPath("$.data", hasSize(2)))
+                    .andExpect(jsonPath("$.data[0].stockCode").value("005930"))
+                    .andExpect(jsonPath("$.data[0].stockName").value("삼성전자"))
+                    .andExpect(jsonPath("$.data[1].stockCode").value("000660"))
+                    .andExpect(jsonPath("$.data[1].stockName").value("SK하이닉스"));
+        }
+
+        @Test
+        @DisplayName("성공: 관심종목 없음")
+        @WithMockUser
+        void getAllWatchlist_EmptyList() throws Exception {
+            // Mock LoginUserArgumentResolver to return userId 1L
+            when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+            when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
+
+            // Given
+            given(watchlistService.getAllWatchlist(1L)).willReturn(Collections.emptyList());
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/watchlist"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.status").value(200))
+                    .andExpect(jsonPath("$.data").isArray())
+                    .andExpect(jsonPath("$.data", hasSize(0)));
+        }
+
+        @Test
+        @DisplayName("실패: 사용자 존재하지 않음")
+        @WithMockUser
+        void getAllWatchlist_UserNotFound() throws Exception {
+            // Mock LoginUserArgumentResolver to return userId 1L
+            when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+            when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(999L);
+
+            // Given
+            given(watchlistService.getAllWatchlist(999L))
+                    .willThrow(new CustomRuntimeException(ExceptionCode.USER_NOT_FOUND));
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/watchlist"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.errorMessage").value("사용자를 찾을 수 없습니다."));
+        }
+    }
+
+    @Nested
+    @DisplayName("관심종목 상태 확인 API 테스트")
+    class CheckWatchlistStatusTest {
+
+        @Test
+        @DisplayName("성공: 관심종목에 등록된 상태")
+        @WithMockUser
+        void checkWatchlistStatus_True() throws Exception {
+            // Mock LoginUserArgumentResolver to return userId 1L
+            when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+            when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
+
+            // Given
+            String stockCode = "005930";
+            given(watchlistService.isInWatchlist(1L, stockCode)).willReturn(true);
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/watchlist/status")
+                            .param("stockCode", stockCode))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.status").value(200))
+                    .andExpect(jsonPath("$.data").value(true));
+        }
+
+        @Test
+        @DisplayName("성공: 관심종목에 등록되지 않은 상태")
+        @WithMockUser
+        void checkWatchlistStatus_False() throws Exception {
+            // Mock LoginUserArgumentResolver to return userId 1L
+            when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+            when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
+
+            // Given
+            String stockCode = "005930";
+            given(watchlistService.isInWatchlist(1L, stockCode)).willReturn(false);
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/watchlist/status")
+                            .param("stockCode", stockCode))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.status").value(200))
+                    .andExpect(jsonPath("$.data").value(false));
+        }
+
+        @Test
+        @DisplayName("실패: 사용자 존재하지 않음")
+        @WithMockUser
+        void checkWatchlistStatus_UserNotFound() throws Exception {
+            // Mock LoginUserArgumentResolver to return userId 1L
+            when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+            when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(999L);
+
+            // Given
+            String stockCode = "005930";
+            given(watchlistService.isInWatchlist(999L, stockCode))
+                    .willThrow(new CustomRuntimeException(ExceptionCode.USER_NOT_FOUND));
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/watchlist/status")
+                            .param("stockCode", stockCode))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.errorMessage").value("사용자를 찾을 수 없습니다."));
+        }
+
+        @Test
+        @DisplayName("실패: 종목 존재하지 않음")
+        @WithMockUser
+        void checkWatchlistStatus_StockNotFound() throws Exception {
+            // Mock LoginUserArgumentResolver to return userId 1L
+            when(loginUserArgumentResolver.supportsParameter(any(MethodParameter.class))).thenReturn(true);
+            when(loginUserArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(1L);
+
+            // Given
+            String invalidStockCode = "INVALID";
+            given(watchlistService.isInWatchlist(1L, invalidStockCode))
+                    .willThrow(new CustomRuntimeException(ExceptionCode.STOCK_CODE_NOT_FOUND));
+
+            // When & Then
+            mockMvc.perform(get("/api/stocks/watchlist/status")
+                            .param("stockCode", invalidStockCode))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.errorMessage").value("종목코드를 찾을 수 없습니다."));
+        }
+
+        @Test
+        @DisplayName("실패: 종목 코드 누락")
+        @WithMockUser
+        void checkWatchlistStatus_MissingStockCode() throws Exception {
+            // When & Then
+            mockMvc.perform(get("/api/stocks/watchlist/status"))
+                    .andExpect(status().isBadRequest());
         }
     }
 
