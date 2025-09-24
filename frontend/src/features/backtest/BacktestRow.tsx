@@ -25,6 +25,7 @@ export default function BacktestRow({
   const getStatusColor = (status: string) => {
     switch(status) {
       case '완료': return styles.statusCompleted;
+      case '계산 중': return styles.statusInProgress;
       case '진행중': return styles.statusInProgress;
       case '실패': return styles.statusFailed;
       default: return styles.statusDefault;
