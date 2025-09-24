@@ -40,9 +40,9 @@ export const useStockRanking = (rankingType: RankingType, refetchInterval: numbe
     refetchInterval,
     staleTime: 0, // 항상 stale 상태로 간주
     gcTime: 5 * 60 * 1000, // 5분간 가비지 컬렉션 대기
-    onSuccess: (data) => {
-      console.log('📊 랭킹 데이터 refetch:', rankingType, data?.rankings?.length, '개');
-    },
+    // onSuccess: (data) => {
+    //   console.log('📊 랭킹 데이터 refetch:', rankingType, data?.rankings?.length, '개');
+    // },
   });
 
   console.log('🔄 useStockRanking 훅 실행:', rankingType);
