@@ -19,6 +19,11 @@ export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalanci
     const { isOpen: isPeriodModalOpen, open: openPeriodModal, close: closePeriodModal } = useModalState();
     const [isAutoRebalancingEnabled, setIsAutoRebalancingEnabled] = useState(initialAutoRebalancing);
 
+    // initialAutoRebalancing props 변경 시 로컬 상태 동기화
+    useEffect(() => {
+        setIsAutoRebalancingEnabled(initialAutoRebalancing);
+    }, [initialAutoRebalancing]);
+
     // 자동 리밸런싱 설정 API 뮤테이션
     const { mutate: setAutoRebalancing, isPending: isSettingAutoRebalancing } = useApiMutation({
         apiFunction: (enabled: boolean) => {
