@@ -1,5 +1,10 @@
-import { Scale, User, HelpCircle } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Scale, User, HelpCircle, LogOut } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
+import { userApi } from '../../features/user/api/userApi';
+import LogoutModal from './LogoutModal';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -15,6 +20,63 @@ const tabs = [
 ] as const;
 
 export default function Header({ activeTab, onTabChange, onTutorialClick }: HeaderProps) {
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [isLogoutSuccessOpen, setIsLogoutSuccessOpen] = useState(false);
+  const navigate = useNavigate();
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // 외부 클릭 시 메뉴 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const logoutMutation = useMutation({
+    mutationFn: userApi.logout,
+    onSuccess: () => {
+      // 확인 모달 닫고 성공 모달 표시
+      setIsLogoutConfirmOpen(false);
+      setTimeout(() => {
+        setIsLogoutSuccessOpen(true);
+      }, 200);
+    },
+    onError: (error) => {
+      console.error('로그아웃 실패:', error);
+      // 에러가 발생해도 성공 모달 표시 (클라이언트 측 정리)
+      setIsLogoutConfirmOpen(false);
+      setTimeout(() => {
+        setIsLogoutSuccessOpen(true);
+      }, 200);
+    }
+  });
+
+  const handleLogoutClick = () => {
+    setIsUserMenuOpen(false);
+    setIsLogoutConfirmOpen(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    logoutMutation.mutate();
+  };
+
+  const handleLogoutCancel = () => {
+    setIsLogoutConfirmOpen(false);
+  };
+
+  const handleSuccessClose = () => {
+    setIsLogoutSuccessOpen(false);
+    navigate('/');
+  };
+
   return (
     <header className={styles.header}>
       <div className={styles.container}>
@@ -54,15 +116,50 @@ export default function Header({ activeTab, onTabChange, onTutorialClick }: Head
             <HelpCircle className={styles.tutorialIcon} />
           </motion.button>
 
-          <motion.div
-            className={styles.userAvatar}
-            // whileHover={{ y: -2, boxShadow: '0 8px 25px rgba(3, 2, 19, 0.4)' }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <User className={styles.avatarIcon} />
-          </motion.div>
+          {/* 사용자 메뉴 */}
+          <div className={styles.userMenuContainer} ref={userMenuRef}>
+            <motion.button
+              className={styles.userAvatar}
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              whileTap={{ scale: 0.95 }}
+              title="사용자 메뉴"
+            >
+              <User className={styles.avatarIcon} />
+            </motion.button>
+
+            {/* 드롭다운 메뉴 */}
+            <AnimatePresence>
+              {isUserMenuOpen && (
+                <motion.div
+                  className={styles.userDropdown}
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <button
+                    className={styles.dropdownItem}
+                    onClick={handleLogoutClick}
+                  >
+                    <LogOut className={styles.dropdownIcon} />
+                    로그아웃
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
+
+      {/* 로그아웃 모달 */}
+      <LogoutModal
+        isConfirmOpen={isLogoutConfirmOpen}
+        isSuccessOpen={isLogoutSuccessOpen}
+        onConfirm={handleLogoutConfirm}
+        onCancel={handleLogoutCancel}
+        onSuccessClose={handleSuccessClose}
+        isLoading={logoutMutation.isPending}
+      />
     </header>
   );
 }
