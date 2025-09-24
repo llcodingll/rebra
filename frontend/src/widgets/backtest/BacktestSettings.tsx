@@ -194,13 +194,19 @@ export default function BacktestSettings({
       cancelText: '취소',
       onConfirm: async () => {
         try {
-          await onRunBacktest();
+          // 백테스트 실행
+          onRunBacktest();
 
-          if (onNavigateToBacktestList) {
-            onNavigateToBacktestList();
-          }
+          // 1초 후 모달 닫기 + 페이지 이동
+          setTimeout(() => {
+            hideConfirm();
+            if (onNavigateToBacktestList) {
+              onNavigateToBacktestList();
+            }
+          }, 1000);
         } catch (error) {
           console.error('백테스트 실행 중 오류 발생:', error);
+          hideConfirm();
         }
       }
     });

@@ -7,7 +7,7 @@ import BacktestSearchWidget from '../../widgets/backtest/BacktestSearchWidget';
 import BacktestHistoryWidget from '../../widgets/backtest/BacktestHistoryWidget';
 import TutorialOverlay from '../../widgets/tutorial/TutorialOverlay';
 import { backtestTutorialSteps } from '../../widgets/tutorial/backtestTutorialSteps';
-import { getBacktestList, deleteBacktest, type BacktestListResponse } from '../../features/backtest/api/backtestApi';
+import { getBacktestList, deleteBacktest, type BacktestListResponse, type PageResponse } from '../../features/backtest/api/backtestApi';
 
 export default function BacktestPage() {
   const navigate = useNavigate();
@@ -29,10 +29,11 @@ export default function BacktestPage() {
       }
     },
     refetchInterval: (data) => {
-      // 처리 중인 백테스트가 있을 때만 폴링
       if (!data?.content) return false;
-      const hasProcessing = data.content.some(item => item.status === 'PROCESSING');
-      return hasProcessing ? 2000 : false;
+      const hasActiveBacktest = data.content.some((item: any) =>
+        item.status === 'PROCESSING' || item.status === 'PENDING'
+      );
+      return hasActiveBacktest ? 2000 : false;
     },
     staleTime: 0,
     refetchOnWindowFocus: true,
@@ -52,8 +53,7 @@ export default function BacktestPage() {
 
   const backtestData = backtestResponse?.content || [];
   const totalPages = backtestResponse?.totalPages || 0;
-
-  // 페이지 마운트 시 즉시 데이터 가져오기
+  
   useEffect(() => {
     queryClient.invalidateQueries({
       queryKey: ['backtestList'],
@@ -61,7 +61,6 @@ export default function BacktestPage() {
     });
   }, [queryClient]);
 
-  // 수동 폴링 제거 - React Query의 refetchInterval만 사용
 
   const handleDirectCreation = () => {
     navigate('/backtest/create');

@@ -78,7 +78,10 @@ export class ApiClient {
 
     // 응답 인터셉터 - httpOnly 쿠키 기반이므로 토큰 갱신 로직 제거
     this.client.interceptors.response.use(
-      (response: AxiosResponse) => response.data, // ApiResponse<T> 반환
+      (response: AxiosResponse) => {
+        // console.log(response.data);
+        return response.data;
+      }, // ApiResponse<T> 반환
       async (error: AxiosError) => {
         const originalRequest = error.config;
 

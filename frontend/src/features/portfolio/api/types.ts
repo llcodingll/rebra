@@ -204,9 +204,6 @@ export interface TradeDetail {
   tradeType: string;
   executedShares: number;
   price: number;
-  fee: number;
-  profitAmount: number;
-  profitRate: number;
   reason: string;
   tradeDate: string;
 }
@@ -274,4 +271,35 @@ export interface RebalancingExecuteResponse {
   errorMessage?: string;
   errorData?: string;
   timestamp: string;
+}
+
+export interface PerformanceDataPoint {
+  metricDate: string;
+  totalValue: number;
+  compositionChanged: boolean;
+  rebalanced: boolean;
+  sold: boolean;
+  bought: boolean;
+}
+
+export interface PerformanceStatistics {
+  totalDataPoints: number;
+  rebalancingCount: number;
+  buyCount: number;
+  sellCount: number;
+  initialValue: number;
+  finalValue: number;
+  totalReturnRate: number | null;
+  maxValue: number | null;
+  minValue: number;
+}
+
+export interface PortfolioPerformanceResponse {
+  portfolioId: number;
+  portfolioName: string;
+  portfolioCreatedDate: string;
+  startDate: string;
+  endDate: string;
+  performanceData: PerformanceDataPoint[];
+  statistics: PerformanceStatistics;
 }
