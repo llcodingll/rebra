@@ -79,8 +79,8 @@ public class BacktestStockDto {
                 return false;
             }
             
-            // 6자리 숫자 형식 검증
-            if (!stockCode.trim().matches("\\d{6}")) {
+            // 6자리 영숫자 형식 검증
+            if (!stockCode.trim().toUpperCase().matches("[A-Z0-9]{6}")) {
                 return false;
             }
             
