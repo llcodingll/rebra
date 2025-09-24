@@ -6,10 +6,10 @@ import java.util.List;
 
 public interface WatchlistService {
 
-    WatchlistToggleResponse toggleWatchlist(Long userId, String stockCode);
+    WatchlistToggleResponse toggleWatchlist(Long accountId, String stockCode);
 
-    List<WatchlistDto> getAllWatchlist(Long userId);
+    List<WatchlistDto> getAllWatchlist(Long accountId);
 
-    boolean isInWatchlist(Long userId, String stockCode);
+    boolean isInWatchlist(Long accountId, String stockCode);
 
 }

@@ -19,7 +19,8 @@ import type {
   AutoRebalancingRequest,
   AutoRebalancingResponse,
   RebalancingExecuteResponse,
-  PortfolioPerformanceResponse
+  PortfolioPerformanceResponse,
+  TradeHistoryByDateResponse
 } from './types';
 
 class PortfolioApi {
@@ -123,6 +124,15 @@ class PortfolioApi {
     console.log("요청 URL:", `/api/v1/portfolios/${portfolioId}/performance-metrics`);
 
     return this.apiClient.get<PortfolioPerformanceResponse>(`/api/v1/portfolios/${portfolioId}/performance-metrics`);
+  }
+
+  getTradeHistoryByDate = async (portfolioId: number, date: string): Promise<Result<TradeHistoryByDateResponse, AppError>> => {
+    console.log("=== 날짜별 거래 내역 API 요청 ===");
+    console.log("포트폴리오 ID:", portfolioId);
+    console.log("날짜:", date);
+    console.log("요청 URL:", `/api/v1/portfolios/${portfolioId}/trade-history?date=${date}`);
+
+    return this.apiClient.get<TradeHistoryByDateResponse>(`/api/v1/portfolios/${portfolioId}/trade-history?date=${date}`);
   }
 }
 

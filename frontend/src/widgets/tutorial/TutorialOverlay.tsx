@@ -46,6 +46,11 @@ export default function TutorialOverlay({
     onClose();
   };
 
+  const handleClose = () => {
+    setActiveStepIndex(0);
+    onClose();
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -57,7 +62,7 @@ export default function TutorialOverlay({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            onClick={onClose}
+            onClick={handleClose}
           />
 
           {/* Tutorial content */}
@@ -69,7 +74,7 @@ export default function TutorialOverlay({
             transition={{ duration: 0.3, delay: 0.1 }}
           >
             {/* Close button */}
-            <button className={styles.closeButton} onClick={onClose}>
+            <button className={styles.closeButton} onClick={handleClose}>
               <X className={styles.closeIcon} />
             </button>
 

@@ -12,6 +12,7 @@ import com.rebra.dto.response.StockHistoricalDataResponse;
 import com.rebra.dto.response.StockHoldingDetailResponse;
 import com.rebra.dto.response.StockHoldingListResponse;
 import com.rebra.dto.response.StockTradeResponse;
+import com.rebra.enums.ExecutionType;
 import com.rebra.dto.response.WatchlistToggleResponse;
 import com.rebra.service.StockService;
 import com.rebra.service.StockTradingService;
@@ -68,11 +69,13 @@ public class StockController {
     public ResponseEntity<CommonApiResponse<WatchlistToggleResponse>> toggleWatchlist(
             @Parameter(description = "종목 코드", example = "005930", required = true)
             @RequestParam String stockCode,
+            @Parameter(description = "계좌 ID", example = "1", required = true)
+            @RequestParam Long accountId,
             @Parameter(hidden = true) @LoginUser Long userId) {
 
-        log.info("관심종목 토글 요청 - UserId: {}, StockCode: {}", userId, stockCode);
+        log.info("관심종목 토글 요청 - AccountId: {}, StockCode: {}", accountId, stockCode);
 
-        WatchlistToggleResponse response = watchlistService.toggleWatchlist(userId, stockCode);
+        WatchlistToggleResponse response = watchlistService.toggleWatchlist(accountId, stockCode);
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
@@ -84,11 +87,13 @@ public class StockController {
     })
     @GetMapping("/watchlist")
     public ResponseEntity<CommonApiResponse<List<WatchlistDto>>> getAllWatchlist(
+            @Parameter(description = "계좌 ID", example = "1", required = true)
+            @RequestParam Long accountId,
             @Parameter(hidden = true) @LoginUser Long userId) {
 
-        log.info("관심종목 전체 조회 요청 - UserId: {}", userId);
+        log.info("관심종목 전체 조회 요청 - AccountId: {}", accountId);
 
-        List<WatchlistDto> response = watchlistService.getAllWatchlist(userId);
+        List<WatchlistDto> response = watchlistService.getAllWatchlist(accountId);
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
@@ -103,11 +108,13 @@ public class StockController {
     public ResponseEntity<CommonApiResponse<Boolean>> checkWatchlistStatus(
             @Parameter(description = "종목 코드", example = "005930", required = true)
             @RequestParam String stockCode,
+            @Parameter(description = "계좌 ID", example = "1", required = true)
+            @RequestParam Long accountId,
             @Parameter(hidden = true) @LoginUser Long userId) {
 
-        log.info("관심종목 상태 확인 요청 - UserId: {}, StockCode: {}", userId, stockCode);
+        log.info("관심종목 상태 확인 요청 - AccountId: {}, StockCode: {}", accountId, stockCode);
 
-        boolean isInWatchlist = watchlistService.isInWatchlist(userId, stockCode);
+        boolean isInWatchlist = watchlistService.isInWatchlist(accountId, stockCode);
 
         return ResponseEntity.ok(CommonApiResponse.success(isInWatchlist));
     }
@@ -119,17 +126,15 @@ public class StockController {
             @ApiResponse(responseCode = "401", description = "인증 필요"),
             @ApiResponse(responseCode = "404", description = "계좌를 찾을 수 없음")
     })
-    @PostMapping("/{stockCode}/buy")
+    @PostMapping("/buy")
     public ResponseEntity<CommonApiResponse<StockTradeResponse>> buyStock(
-            @Parameter(description = "매수할 종목 코드", example = "005930")
-            @PathVariable String stockCode,
             @Valid @RequestBody StockTradeRequest request,
             @Parameter(hidden = true) @LoginUser Long userId) {
 
         log.info("주식 매수 요청 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
-                userId, stockCode, request.getQuantity(), request.getPrice());
+                userId, request.getStockCode(), request.getQuantity(), request.getPrice());
 
-        StockTradeResponse response = stockTradingService.buyStock(stockCode, request, userId);
+        StockTradeResponse response = stockTradingService.buyStock(request, userId, ExecutionType.BUY_PERSONAL);
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
@@ -141,17 +146,15 @@ public class StockController {
             @ApiResponse(responseCode = "401", description = "인증 필요"),
             @ApiResponse(responseCode = "404", description = "계좌를 찾을 수 없음")
     })
-    @PostMapping("/{stockCode}/sell")
+    @PostMapping("/sell")
     public ResponseEntity<CommonApiResponse<StockTradeResponse>> sellStock(
-            @Parameter(description = "매도할 종목 코드", example = "005930")
-            @PathVariable String stockCode,
             @Valid @RequestBody StockTradeRequest request,
             @Parameter(hidden = true) @LoginUser Long userId) {
 
         log.info("주식 매도 요청 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
-                userId, stockCode, request.getQuantity(), request.getPrice());
+                userId, request.getStockCode(), request.getQuantity(), request.getPrice());
 
-        StockTradeResponse response = stockTradingService.sellStock(stockCode, request, userId);
+        StockTradeResponse response = stockTradingService.sellStock(request, userId, ExecutionType.SELL_PERSONAL);
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }

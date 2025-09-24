@@ -1,81 +1,88 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import styles from './BacktestPage.module.css';
 import Pagination from '../../widgets/common/Pagination';
-import BacktestSearchWidget from '../../widgets/backtest/BacktestSearchWidget';
 import BacktestHistoryWidget from '../../widgets/backtest/BacktestHistoryWidget';
 import TutorialOverlay from '../../widgets/tutorial/TutorialOverlay';
+import DeleteConfirmModal from '../../widgets/common/DeleteConfirmModal';
 import { backtestTutorialSteps } from '../../widgets/tutorial/backtestTutorialSteps';
-import { getBacktestList, deleteBacktest, type BacktestListResponse } from '../../features/backtest/api/backtestApi';
+import { getBacktestList, deleteBacktest, type BacktestListResponse, type PageResponse } from '../../features/backtest/api/backtestApi';
 
 export default function BacktestPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { registerTutorialTarget } = useOutletContext<{ registerTutorialTarget: (page: string, startFunction: () => void) => void }>();
   const [currentPage, setCurrentPage] = useState(1);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [backtestData, setBacktestData] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [backtestToDelete, setBacktestToDelete] = useState<BacktestListResponse | null>(null);
   const itemsPerPage = 10;
 
-  // 백테스트 목록 조회
-  const { data: backtestResponse, isLoading, error } = useQuery({
-    queryKey: ['backtestList', currentPage - 1, itemsPerPage],
-    queryFn: async () => {
+  const handleDirectCreation = () => {
+    navigate('/backtest/create');
+  };
+
+  // 백테스트 목록 조회 함수
+  const fetchBacktestList = async () => {
+    try {
+      setError(null);
       const result = await getBacktestList(currentPage - 1, itemsPerPage);
       if (result.success) {
-        return result.data;
+        setBacktestData(result.data?.content || []);
+        setTotalPages(result.data?.totalPages || 0);
       } else {
-        throw new Error(result.error.message);
+        setError(new Error(result.error.message));
       }
-    },
-    refetchInterval: (data) => {
-      // 처리 중인 백테스트가 있을 때만 폴링
-      if (!data?.content) return false;
-      const hasProcessing = data.content.some(item => item.status === 'PROCESSING');
-      return hasProcessing ? 2000 : false;
-    },
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-  });
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 3초마다 폴링
+  useEffect(() => {
+    fetchBacktestList(); // 첫 로드
+
+    const interval = setInterval(fetchBacktestList, 3000);
+    return () => clearInterval(interval);
+  }, [currentPage]);
 
   // 백테스트 삭제 mutation
   const deleteMutation = useMutation({
     mutationFn: deleteBacktest,
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['backtestList'],
-        exact: false  // 하위 키들도 모두 무효화
-      });
+      // 삭제 후 즉시 새로고침
+      fetchBacktestList();
     },
   });
 
-  const backtestData = backtestResponse?.content || [];
-  const totalPages = backtestResponse?.totalPages || 0;
 
-  // 페이지 마운트 시 즉시 데이터 가져오기
-  useEffect(() => {
-    queryClient.invalidateQueries({
-      queryKey: ['backtestList'],
-      exact: false
-    });
-  }, [queryClient]);
-
-  // 수동 폴링 제거 - React Query의 refetchInterval만 사용
-
-  const handleDirectCreation = () => {
-    navigate('/backtest/create');
-  };
 
   const handleBacktestClick = (backtest: any) => {
     navigate(`/backtest/results/${backtest.id}`);
   };
 
   const handleBacktestDelete = (backtest: BacktestListResponse, index: number) => {
-    const confirmDelete = window.confirm(`"${backtest.testName}" 백테스트를 정말로 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`);
-    if (confirmDelete) {
-      deleteMutation.mutate(backtest.id);
+    setBacktestToDelete(backtest);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (backtestToDelete) {
+      deleteMutation.mutate(backtestToDelete.id);
+      setDeleteModalOpen(false);
+      setBacktestToDelete(null);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModalOpen(false);
+    setBacktestToDelete(null);
   };
 
   const handleTutorialStart = useCallback(() => {
@@ -97,16 +104,13 @@ export default function BacktestPage() {
   return (
     <div className={styles.backtest}>
       <div className={styles.container}>
-        {/* 백테스트 검색/생성 섹션 */}
-        <BacktestSearchWidget
-          onDirectCreation={handleDirectCreation}
-        />
 
         {/* 백테스트 히스토리 */}
         <BacktestHistoryWidget
           data={backtestData}
           onBacktestClick={handleBacktestClick}
           onBacktestDelete={handleBacktestDelete}
+          onDirectCreation={handleDirectCreation}
           currentPage={currentPage}
           itemsPerPage={itemsPerPage}
           isLoading={isLoading}
@@ -127,6 +131,16 @@ export default function BacktestPage() {
         isOpen={isTutorialOpen}
         onClose={handleTutorialClose}
         steps={backtestTutorialSteps}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        title={backtestToDelete?.testName || ''}
+        message=""
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

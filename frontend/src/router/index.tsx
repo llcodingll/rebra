@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import App from '../App';
 import Layout from '../widgets/common/Layout';
+import AuthGuard from '../widgets/common/AuthGuard';
 import LandingPage from '../pages/landing/LandingPage';
 import SignupPage from '../pages/signup';
 import DashboardPage from '../pages/dashboard/DashboardPage';
@@ -29,7 +30,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'dashboard',
-        element: <Layout />,
+        element: (
+          <AuthGuard>
+            <Layout />
+          </AuthGuard>
+        ),
         children: [
           {
             index: true,
@@ -39,7 +44,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'search',
-        element: <Layout />,
+        element: (
+          <AuthGuard>
+            <Layout />
+          </AuthGuard>
+        ),
         children: [
           {
             index: true,
@@ -53,7 +62,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'backtest',
-        element: <Layout />,
+        element: (
+          <AuthGuard>
+            <Layout />
+          </AuthGuard>
+        ),
         children: [
           {
             index: true,
@@ -71,11 +84,15 @@ export const router = createBrowserRouter([
       },
       {
         path: 'stock-test',
-        element: <StockDetailPage />,
+        element: (
+          <AuthGuard>
+            <StockDetailPage />
+          </AuthGuard>
+        ),
       },
       {
         path: '*',
-        element: <Navigate to='/dashboard' replace />,
+        element: <Navigate to='/landing' replace />,
       },
     ],
   },

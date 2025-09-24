@@ -99,10 +99,10 @@ public class Stock {
             throw new IllegalArgumentException("임계값은 0.0과 1.0 사이여야 합니다: " + thresholdPercentage);
         }
         
-        // 종목 코드 형식 검증 (6자리 숫자)
-        String cleanCode = stockCode.trim();
-        if (!cleanCode.matches("\\d{6}")) {
-            throw new IllegalArgumentException("종목 코드는 6자리 숫자여야 합니다: " + stockCode);
+        // 종목 코드 형식 검증 (6자리 영숫자)
+        String cleanCode = stockCode.trim().toUpperCase();
+        if (!cleanCode.matches("[A-Z0-9]{6}")) {
+            throw new IllegalArgumentException("종목 코드는 6자리 영숫자여야 합니다: " + stockCode);
         }
     }
 

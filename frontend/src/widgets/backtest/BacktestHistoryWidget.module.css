@@ -1,23 +1,44 @@
+/* 히스토리 섹션 */
 .historySection {
   width: 100%;
-  max-width: 1392px;
+  max-width: 1200px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 32px;
+  margin: 0 auto;
 }
 
 /* 통계 요약 카드 */
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 20px;
 }
 
 .statCard {
-  background: white;
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 12px;
-  padding: 20px;
+  background: linear-gradient(145deg, #ffffff 0%, #fefeff 100%);
+  border: 1px solid rgba(113, 113, 130, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.statCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(3, 2, 19, 0.08), transparent);
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(3, 2, 19, 0.12);
+  border-color: rgba(3, 2, 19, 0.15);
 }
 
 .statContent {
@@ -34,104 +55,256 @@
 .statLabel {
   font-size: 14px;
   font-weight: 500;
-  color: #6b7280;
-  margin: 0 0 4px 0;
+  color: #717182;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
 }
 
 .statValue {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 28px;
+  font-weight: 700;
   color: #030213;
   margin: 0;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .statValue.positive {
-  color: #dc2626;
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .statValue.negative {
-  color: #2563eb;
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .statIcon {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   color: #2563eb;
-}
-
-.historyCard {
-  background: white;
-  border: 1px solid rgba(0,0,0,0.08);
+  padding: 8px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-  overflow: hidden;
 }
 
+/* 히스토리 카드 */
+.historyCard {
+  background: linear-gradient(145deg, #ffffff 0%, #fefeff 100%);
+  border: 1px solid rgba(113, 113, 130, 0.1);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 
+    0 20px 40px -12px rgba(3, 2, 19, 0.08),
+    0 8px 16px -8px rgba(3, 2, 19, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  overflow: visible;
+  position: relative;
+}
+
+.historyCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(3, 2, 19, 0.06) 20%, 
+    rgba(3, 2, 19, 0.12) 50%, 
+    rgba(3, 2, 19, 0.06) 80%, 
+    transparent 100%);
+}
+
+/* 카드 헤더 */
 .cardHeader {
-  padding: 24px;
-  border-bottom: 1px solid rgba(0,0,0,0.08);
-  background: rgba(248, 249, 251, 0.5);
+  margin-bottom: 32px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(113, 113, 130, 0.08);
+  position: relative;
+}
+
+.cardHeader::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 80px;
+  height: 2px;
+  background: linear-gradient(90deg, #030213 0%, rgba(3, 2, 19, 0.4) 100%);
+  border-radius: 1px;
+}
+
+.cardTitleSection {
+  flex: 1;
 }
 
 .cardTitle {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .cardTitle h3 {
-  font-size: 18px;
-  font-weight: 600;
   color: #030213;
   margin: 0;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #030213 0%, #2a2a3a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .titleIcon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   color: #030213;
-}
-
-.badge {
-  background: #f3f4f6;
-  color: #6b7280;
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  margin-left: auto;
+  padding: 4px;
+  background: linear-gradient(135deg, #f8f9fb 0%, #ffffff 100%);
+  border-radius: 8px;
+  border: 1px solid rgba(3, 2, 19, 0.08);
 }
 
 .cardDescription {
-  font-size: 14px;
-  color: #6b7280;
+  color: #717182;
   margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
 }
 
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.createButton {
+  background: linear-gradient(135deg, #030213 0%, #1a1a2e 100%);
+  border: none;
+  border-radius: 16px;
+  padding: 16px 24px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 8px 16px rgba(3, 2, 19, 0.24),
+    0 4px 8px rgba(3, 2, 19, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.createButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    transparent 100%);
+  transition: left 0.6s ease;
+}
+
+.createButton:hover::before {
+  left: 100%;
+}
+
+.createButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 16px 32px rgba(3, 2, 19, 0.32),
+    0 8px 16px rgba(3, 2, 19, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  background: linear-gradient(135deg, #0f0f23 0%, #252542 100%);
+}
+
+.createButton:active {
+  transform: translateY(0);
+  transition: transform 0.1s ease;
+}
+
+.buttonIcon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.badge {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  color: #6b7280;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: auto;
+  border: 1px solid rgba(107, 114, 128, 0.1);
+}
+
+/* 테이블 래퍼 */
 .tableWrapper {
   overflow: visible;
+  border-radius: 16px;
+  border: 1px solid rgba(113, 113, 130, 0.08);
+  background: #ffffff;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .headerRow {
-  border-bottom: 0.8px solid rgba(0,0,0,0.1);
-  height: 40px;
+  background: linear-gradient(145deg, #fafbfc 0%, #f8f9fb 100%);
+  border-bottom: 2px solid rgba(3, 2, 19, 0.08);
+  height: 56px;
 }
 
 .headerRow th {
-  padding: 16px 20px;
+  padding: 20px 24px;
   text-align: left;
-  font-size: 12px;
+  font-size: 13px;
   font-family: 'Segoe UI Symbol', 'Noto Sans KR', sans-serif;
-  color: black;
-  line-height: 17.5px;
-  font-weight: normal;
+  color: #030213;
+  line-height: 1.4;
+  font-weight: 600;
   vertical-align: middle;
+  letter-spacing: -0.01em;
+  position: relative;
+}
+
+.headerRow th:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 24px;
+  background: rgba(113, 113, 130, 0.12);
 }
 
 .headerRow th:nth-child(1) { width: 200px; } /* 전략명 */
@@ -143,32 +316,136 @@
 
 /* Empty state */
 .emptyState {
-  padding: 60px 20px;
+  padding: 80px 20px;
   text-align: center;
+  background: linear-gradient(145deg, #fafbfc 0%, #ffffff 100%);
 }
 
 .emptyContent {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .emptyIcon {
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   color: #d1d5db;
+  padding: 12px;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(209, 213, 219, 0.2);
 }
 
 .emptyTitle {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #6b7280;
   margin: 0;
+  line-height: 1.4;
 }
 
 .emptySubtitle {
-  font-size: 12px;
+  font-size: 14px;
   color: #9ca3af;
   margin: 0;
+  line-height: 1.5;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .historySection {
+    max-width: 100%;
+    gap: 24px;
+  }
+  
+  .historyCard {
+    padding: 28px 24px;
+    border-radius: 20px;
+  }
+  
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+  }
+  
+  .cardTitle h3 {
+    font-size: 20px;
+  }
+  
+  .titleIcon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .cardDescription {
+    font-size: 14px;
+  }
+  
+  .createButton {
+    padding: 14px 20px;
+    font-size: 13px;
+  }
+  
+  .buttonIcon {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .tableWrapper {
+    border-radius: 12px;
+    overflow-x: auto;
+  }
+  
+  .headerRow {
+    height: 48px;
+  }
+  
+  .headerRow th {
+    padding: 16px 20px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  
+  .emptyState {
+    padding: 60px 20px;
+  }
+  
+  .emptyIcon {
+    width: 48px;
+    height: 48px;
+    padding: 10px;
+  }
+  
+  .emptyTitle {
+    font-size: 14px;
+  }
+  
+  .emptySubtitle {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .historyCard {
+    padding: 24px 20px;
+    border-radius: 18px;
+  }
+  
+  .cardTitle h3 {
+    font-size: 18px;
+  }
+  
+  .createButton {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .tableWrapper {
+    border-radius: 10px;
+  }
 }

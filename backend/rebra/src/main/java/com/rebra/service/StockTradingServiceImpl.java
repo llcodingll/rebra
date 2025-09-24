@@ -35,24 +35,43 @@ public class StockTradingServiceImpl implements StockTradingService {
 
     @Override
     @Transactional
-    public StockTradeResponse buyStock(String stockCode, StockTradeRequest request, Long userId) {
+    public StockTradeResponse buyStock(String stockCode, StockTradeRequest request, Long userId, ExecutionType executionType) {
         log.info("주식 매수 주문 시작 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
-                userId, stockCode, request.getQuantity(), request.getPrice());
+                userId, request.getStockCode(), request.getQuantity(), request.getPrice());
 
-        return executeOrder(stockCode, request, userId, "buy");
+        return executeOrder(stockCode, request, userId, "buy", executionType);
     }
 
     @Override
     @Transactional
-    public StockTradeResponse sellStock(String stockCode, StockTradeRequest request, Long userId) {
+    public StockTradeResponse sellStock(String stockCode, StockTradeRequest request, Long userId, ExecutionType executionType) {
         log.info("주식 매도 주문 시작 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
-                userId, stockCode, request.getQuantity(), request.getPrice());
+                userId, request.getStockCode(), request.getQuantity(), request.getPrice());
 
-        return executeOrder(stockCode, request, userId, "sell");
+        return executeOrder(stockCode, request, userId, "sell", executionType);
+    }
+
+    // StockTradeRequest만 받는 오버로드 메서드들
+    @Override
+    @Transactional
+    public StockTradeResponse buyStock(StockTradeRequest request, Long userId, ExecutionType executionType) {
+        log.info("주식 매수 주문 시작 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
+                userId, request.getStockCode(), request.getQuantity(), request.getPrice());
+
+        return executeOrder(request.getStockCode(), request, userId, "buy", executionType);
+    }
+
+    @Override
+    @Transactional
+    public StockTradeResponse sellStock(StockTradeRequest request, Long userId, ExecutionType executionType) {
+        log.info("주식 매도 주문 시작 - UserId: {}, StockCode: {}, Quantity: {}, Price: {}",
+                userId, request.getStockCode(), request.getQuantity(), request.getPrice());
+
+        return executeOrder(request.getStockCode(), request, userId, "sell", executionType);
     }
 
     private StockTradeResponse executeOrder(String stockCode, StockTradeRequest request, Long userId,
-                                            String orderDirection) {
+                                            String orderDirection, ExecutionType executionType) {
         try {
             // 1. 계좌 정보 조회 및 검증
             Account account = accountRepository.findByIdAndUserId(request.getAccountId(), userId)
@@ -73,11 +92,16 @@ public class StockTradingServiceImpl implements StockTradingService {
                         account, stockCode, request.getOrderType(), request.getQuantity(), request.getPrice()
                 );
 
-                // 5. 매수 거래 기록 생성 (포트폴리오에 등록된 주식인 경우에만)
-                if (isRegisteredStock) {
-                    createTradeRecords(portfolio, stockCode, request, result, ExecutionType.BUY_PERSONAL, "BUY");
+                // 5. 매수 거래 기록 생성 (포트폴리오에 등록된 주식이고, 개인 매수일 경우에만)
+                if (isRegisteredStock && shouldCreateTradeRecord(executionType)) {
+                    createTradeRecords(portfolio, stockCode, request, result, executionType, "BUY");
                 } else {
-                    log.info("미등록 주식 매수 - 거래 기록 생성 생략 - UserId: {}, StockCode: {}", userId, stockCode);
+                    if (!isRegisteredStock) {
+                        log.info("미등록 주식 매수 - 거래 기록 생성 생략 - UserId: {}, StockCode: {}", userId, stockCode);
+                    } else if (!shouldCreateTradeRecord(executionType)) {
+                        log.info("ExecutionType 조건 불일치 - 거래 기록 생성 생략 - UserId: {}, StockCode: {}, ExecutionType: {}",
+                                userId, stockCode, executionType);
+                    }
                 }
 
             } else {
@@ -85,11 +109,16 @@ public class StockTradingServiceImpl implements StockTradingService {
                         account, stockCode, request.getOrderType(), request.getQuantity(), request.getPrice()
                 );
 
-                // 5. 매도 거래 기록 생성 (포트폴리오에 등록된 주식인 경우에만)
-                if (isRegisteredStock) {
-                    createTradeRecords(portfolio, stockCode, request, result, ExecutionType.SELL_PERSONAL, "SELL");
+                // 5. 매도 거래 기록 생성 (포트폴리오에 등록된 주식이고, 개인 매도일 경우에만)
+                if (isRegisteredStock && shouldCreateTradeRecord(executionType)) {
+                    createTradeRecords(portfolio, stockCode, request, result, executionType, "SELL");
                 } else {
-                    log.info("미등록 주식 매도 - 거래 기록 생성 생략 - UserId: {}, StockCode: {}", userId, stockCode);
+                    if (!isRegisteredStock) {
+                        log.info("미등록 주식 매도 - 거래 기록 생성 생략 - UserId: {}, StockCode: {}", userId, stockCode);
+                    } else if (!shouldCreateTradeRecord(executionType)) {
+                        log.info("ExecutionType 조건 불일치 - 거래 기록 생성 생략 - UserId: {}, StockCode: {}, ExecutionType: {}",
+                                userId, stockCode, executionType);
+                    }
                 }
             }
 
@@ -140,6 +169,10 @@ public class StockTradingServiceImpl implements StockTradingService {
             // 거래 금액 계산
             Long totalAmount = Long.valueOf(request.getQuantity()) * request.getPrice();
 
+            System.out.println(request.getQuantity());
+            System.out.println(request.getPrice());
+            System.out.println(totalAmount);
+
             // 1. RebalancingOrder 생성
             RebalancingOrder rebalancingOrder = RebalancingOrder.builder()
                     .portfolio(portfolio)
@@ -156,7 +189,7 @@ public class StockTradingServiceImpl implements StockTradingService {
             TradeRecord tradeRecord = TradeRecord.builder()
                     .rebalancingOrder(savedRebalancingOrder)
                     .stockCode(stockCode)
-                    .stockName(getStockName(stockCode)) // 종목명 조회 (임시로 종목코드 사용)
+                    .stockName(request.getStockName())
                     .tradeType(tradeType)
                     .tradeDate(java.time.LocalDateTime.now())
                     .executedShares(request.getQuantity())
@@ -177,6 +210,14 @@ public class StockTradingServiceImpl implements StockTradingService {
                     portfolio.getId(), stockCode, tradeType, e);
             throw new RuntimeException("거래 기록 생성 실패", e);
         }
+    }
+
+    /**
+     * ExecutionType에 따라 거래 기록 생성 여부 결정
+     */
+    private boolean shouldCreateTradeRecord(ExecutionType executionType) {
+        return executionType == ExecutionType.BUY_PERSONAL ||
+               executionType == ExecutionType.SELL_PERSONAL;
     }
 
     /**

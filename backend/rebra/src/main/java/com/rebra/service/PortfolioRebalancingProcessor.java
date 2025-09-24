@@ -270,7 +270,7 @@ public class PortfolioRebalancingProcessor {
             if (balanceResult.getOutput1() != null) {
                 for (InquireBalanceResult.Output1 holding : balanceResult.getOutput1()) {
                     String stockCode = holding.getPdno(); // 종목코드
-                    String stockName = stockCode; // 종목명 (임시로 종목코드 사용)
+                    String stockName = holding.getPrdtName(); // 종목명
                     int quantity = Integer.parseInt(holding.getHldgQty()); // 보유수량
                     long currentPrice = Long.parseLong(holding.getPrpr()); // 현재가
                     
@@ -354,7 +354,7 @@ public class PortfolioRebalancingProcessor {
 
         for (RebalancingOrderData order : orders) {
             try {
-                RebalancingExecutionResponse.OrderResult result = executeOrder(order, portfolio);
+                RebalancingExecutionResponse.OrderResult result = executeOrder(order, portfolio, executionType);
                 orderResults.add(result);
 
                 if (result.isSuccess()) {
@@ -478,7 +478,7 @@ public class PortfolioRebalancingProcessor {
         return allOrders;
     }
 
-    private RebalancingExecutionResponse.OrderResult executeOrder(RebalancingOrderData order, Portfolio portfolio) {
+    private RebalancingExecutionResponse.OrderResult executeOrder(RebalancingOrderData order, Portfolio portfolio, ExecutionType executionType) {
         try {
             StockTradeRequest tradeRequest = new StockTradeRequest();
             tradeRequest.setOrderType("01"); // 시장가
@@ -488,9 +488,9 @@ public class PortfolioRebalancingProcessor {
 
             StockTradeResponse response;
             if ("BUY".equals(order.getOrderType())) {
-                response = stockTradingService.buyStock(order.getStockCode(), tradeRequest, portfolio.getUser().getId());
+                response = stockTradingService.buyStock(order.getStockCode(), tradeRequest, portfolio.getUser().getId(), executionType);
             } else {
-                response = stockTradingService.sellStock(order.getStockCode(), tradeRequest, portfolio.getUser().getId());
+                response = stockTradingService.sellStock(order.getStockCode(), tradeRequest, portfolio.getUser().getId(), executionType);
             }
 
             return RebalancingExecutionResponse.OrderResult.builder()

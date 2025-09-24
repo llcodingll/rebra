@@ -189,36 +189,13 @@ export default function BacktestCreationPage({ onBack }: BacktestCreationPagePro
     mutationFn: createBacktest,
     onSuccess: (result) => {
       if (result.success) {
-        // 캐시 완전 무효화 및 강제 새로고침
-        queryClient.removeQueries({
-          queryKey: ['backtestList']
-        });
-
-        // 페이지 이동 후 즉시 새로고침을 위해 타이머 설정
-        navigate('/backtest');
-
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ['backtestList'],
-            exact: false,
-            refetchType: 'all'
-          });
-        }, 100);
+        // BacktestSettings에서 페이지 이동 처리
       } else {
         setIsBacktestExecuted(false);
       }
     },
     onError: (error: any) => {
-      // 타임아웃 오류의 경우 특별 처리
-      if (error.message && error.message.includes('timeout')) {
-        queryClient.invalidateQueries({
-          queryKey: ['backtestList'],
-          exact: false
-        });
-        navigate('/backtest');
-      } else {
-        setIsBacktestExecuted(false);
-      }
+      setIsBacktestExecuted(false);
     }
   });
 
