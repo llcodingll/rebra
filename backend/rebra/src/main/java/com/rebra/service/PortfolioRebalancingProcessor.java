@@ -354,7 +354,7 @@ public class PortfolioRebalancingProcessor {
 
         for (RebalancingOrderData order : orders) {
             try {
-                RebalancingExecutionResponse.OrderResult result = executeOrder(order, portfolio);
+                RebalancingExecutionResponse.OrderResult result = executeOrder(order, portfolio, executionType);
                 orderResults.add(result);
 
                 if (result.isSuccess()) {
@@ -478,7 +478,7 @@ public class PortfolioRebalancingProcessor {
         return allOrders;
     }
 
-    private RebalancingExecutionResponse.OrderResult executeOrder(RebalancingOrderData order, Portfolio portfolio) {
+    private RebalancingExecutionResponse.OrderResult executeOrder(RebalancingOrderData order, Portfolio portfolio, ExecutionType executionType) {
         try {
             StockTradeRequest tradeRequest = new StockTradeRequest();
             tradeRequest.setOrderType("01"); // 시장가
@@ -488,9 +488,9 @@ public class PortfolioRebalancingProcessor {
 
             StockTradeResponse response;
             if ("BUY".equals(order.getOrderType())) {
-                response = stockTradingService.buyStock(order.getStockCode(), tradeRequest, portfolio.getUser().getId());
+                response = stockTradingService.buyStock(order.getStockCode(), tradeRequest, portfolio.getUser().getId(), executionType);
             } else {
-                response = stockTradingService.sellStock(order.getStockCode(), tradeRequest, portfolio.getUser().getId());
+                response = stockTradingService.sellStock(order.getStockCode(), tradeRequest, portfolio.getUser().getId(), executionType);
             }
 
             return RebalancingExecutionResponse.OrderResult.builder()

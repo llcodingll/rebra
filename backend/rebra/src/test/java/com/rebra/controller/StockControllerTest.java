@@ -22,6 +22,7 @@ import com.rebra.dto.response.StockHoldingResponse;
 import com.rebra.dto.response.StockHoldingDetailResponse;
 import com.rebra.common.PageResponse;
 import com.rebra.common.PageInfo;
+import com.rebra.enums.ExecutionType;
 import com.rebra.exception.CustomRuntimeException;
 import com.rebra.exception.ExceptionCode;
 import com.rebra.exception.account.AccountException;
@@ -83,7 +84,7 @@ class StockControllerTest {
                 "02"
         );
 
-        given(stockTradingService.buyStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class)))
+        given(stockTradingService.buyStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.BUY_PERSONAL)))
                 .willReturn(response);
 
         // When & Then
@@ -125,7 +126,7 @@ class StockControllerTest {
                 "01"
         );
 
-        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class)))
+        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.SELL_PERSONAL)))
                 .willReturn(response);
 
         // When & Then
@@ -188,7 +189,7 @@ class StockControllerTest {
         String stockCode = "005930";
         StockTradeRequest request = createTradeRequest("00", 10, 70000L, 999L);
 
-        given(stockTradingService.buyStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class)))
+        given(stockTradingService.buyStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.BUY_PERSONAL)))
                 .willThrow(new CustomRuntimeException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
         // When & Then
@@ -213,7 +214,7 @@ class StockControllerTest {
         String stockCode = "005930";
         StockTradeRequest request = createTradeRequest("00", 5, 72000L, 1L);
 
-        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class)))
+        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.SELL_PERSONAL)))
                 .willThrow(new CustomRuntimeException(ExceptionCode.KIS_API_ERROR));
 
         // When & Then
@@ -272,7 +273,7 @@ class StockControllerTest {
 
         StockTradeResponse errorResponse = StockTradeResponse.error("주문 처리 중 알 수 없는 오류가 발생했습니다");
 
-        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class)))
+        given(stockTradingService.sellStock(eq(stockCode), any(StockTradeRequest.class), any(Long.class), eq(ExecutionType.SELL_PERSONAL)))
                 .willReturn(errorResponse);
 
         // When & Then

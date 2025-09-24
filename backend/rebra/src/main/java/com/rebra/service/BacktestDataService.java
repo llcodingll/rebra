@@ -174,6 +174,7 @@ public class BacktestDataService {
 
     /**
      * 종목별 데이터 가용성을 검증한다
+     * 거래정지 종목은 0원 처리하여 백테스트 진행 가능
      */
     private void validateDataAvailability(List<String> tickers, LocalDate startDate, LocalDate endDate) {
         List<Object[]> dataAvailability = stockPriceRepository.findDataAvailabilityByTickers(tickers);
@@ -182,7 +183,7 @@ public class BacktestDataService {
             throw BacktestException.invalidRequest();
         }
 
-        StringBuilder errorMessages = new StringBuilder();
+        boolean hasAnyValidData = false;
         
         for (Object[] data : dataAvailability) {
             String ticker = (String) data[0];
@@ -190,31 +191,23 @@ public class BacktestDataService {
             LocalDate dataEndDate = (LocalDate) data[2];
             Long dataCount = (Long) data[3];
             
-            // 요청 기간에 데이터가 없는 경우
+            // 요청 기간에 데이터가 전혀 없는 경우 (거래정지 가능성)
             if (dataEndDate.isBefore(startDate) || dataStartDate.isAfter(endDate)) {
-                errorMessages.append(String.format("종목 %s: 요청 기간에 데이터가 없습니다 (데이터 보유 기간: %s ~ %s)\n", 
-                    ticker, dataStartDate, dataEndDate));
-            }
-            // 데이터 커버리지가 부족한 경우 (50% 미만)
-            else {
-                LocalDate actualStart = dataStartDate.isAfter(startDate) ? dataStartDate : startDate;
-                LocalDate actualEnd = dataEndDate.isBefore(endDate) ? dataEndDate : endDate;
-                long requestedDays = ChronoUnit.DAYS.between(startDate, endDate) + 1;
-                long coverageDays = ChronoUnit.DAYS.between(actualStart, actualEnd) + 1;
-                
-                if (coverageDays < requestedDays * 0.5) {
-                    errorMessages.append(String.format("종목 %s: 데이터 커버리지가 부족합니다 (%.1f%%)\n", 
-                        ticker, (double) coverageDays / requestedDays * 100));
-                }
+                log.info("종목 {}: 요청 기간에 데이터가 없음 - 거래정지로 간주하여 0원 처리 (데이터 보유 기간: {} ~ {})", 
+                    ticker, dataStartDate, dataEndDate);
+            } else {
+                // 일부 기간에라도 데이터가 있으면 유효한 데이터로 간주
+                hasAnyValidData = true;
             }
         }
         
-        if (errorMessages.length() > 0) {
-            log.warn("백테스트 데이터 가용성 검증 실패:\n{}", errorMessages.toString());
+        // 모든 종목이 전혀 데이터가 없는 경우에만 에러
+        if (!hasAnyValidData && tickers.size() > 0) {
+            log.error("모든 종목이 요청 기간에 데이터가 없습니다");
             throw BacktestException.invalidRequest();
         }
         
-        log.info("백테스트 데이터 가용성 검증 완료 - 종목수: {}", tickers.size());
+        log.info("백테스트 데이터 가용성 검증 완료 - 종목수: {} (거래정지 종목은 0원 처리)", tickers.size());
     }
 
     /**
@@ -358,6 +351,7 @@ public class BacktestDataService {
 
     /**
      * 날짜별 종목 가격 맵을 생성한다
+     * 거래정지 종목은 0.0으로 처리
      */
     private Map<String, Map<String, Double>> createDailyPricesMap(
             List<String> tickers, 
@@ -366,16 +360,19 @@ public class BacktestDataService {
         
         Map<String, Map<String, Double>> dailyPricesMap = new LinkedHashMap<>();
         
-        // 모든 거래일 초기화 (모든 종목을 null로 초기화)
+        // 모든 거래일 초기화 (모든 종목을 0.0으로 초기화 - 거래정지 기본값)
         for (LocalDate date : tradingDates) {
             Map<String, Double> dayPrices = new HashMap<>();
             for (String ticker : tickers) {
-                dayPrices.put(ticker, null);
+                dayPrices.put(ticker, 0.0);  // null 대신 0.0으로 초기화
             }
             dailyPricesMap.put(date.toString(), dayPrices);
         }
         
         // 실제 가격 데이터로 업데이트
+        int actualDataCount = 0;
+        Map<String, Integer> tickerDataCount = new HashMap<>();
+        
         for (StockPrice price : stockPrices) {
             String dateKey = price.getDate().toString();
             if (dailyPricesMap.containsKey(dateKey)) {
@@ -383,11 +380,34 @@ public class BacktestDataService {
                         price.getTicker(), 
                         price.getClosePrice().doubleValue()
                 );
+                actualDataCount++;
+                tickerDataCount.merge(price.getTicker(), 1, Integer::sum);
             }
         }
         
-        log.info("일별 가격 맵 생성 완료 - {}일 × {}종목 = {}개 데이터포인트", 
-                tradingDates.size(), tickers.size(), tradingDates.size() * tickers.size());
+        // 거래정지 종목 로깅
+        int totalDataPoints = tradingDates.size() * tickers.size();
+        int suspendedDataPoints = totalDataPoints - actualDataCount;
+        
+        if (suspendedDataPoints > 0) {
+            log.info("거래정지 처리된 데이터포인트: {}개 (0원으로 설정)", suspendedDataPoints);
+            
+            // 종목별 거래정지 비율 로깅
+            for (String ticker : tickers) {
+                int actualCount = tickerDataCount.getOrDefault(ticker, 0);
+                int expectedCount = tradingDates.size();
+                int suspendedCount = expectedCount - actualCount;
+                
+                if (suspendedCount > 0) {
+                    double suspendedRatio = (double) suspendedCount / expectedCount * 100;
+                    log.info("종목 {}: {}일 중 {}일 거래정지 ({}%)", 
+                            ticker, expectedCount, suspendedCount, String.format("%.1f", suspendedRatio));
+                }
+            }
+        }
+        
+        log.info("일별 가격 맵 생성 완료 - {}일 × {}종목 = {}개 데이터포인트 (실제 데이터: {}개, 거래정지: {}개)", 
+                tradingDates.size(), tickers.size(), totalDataPoints, actualDataCount, suspendedDataPoints);
         
         return dailyPricesMap;
     }

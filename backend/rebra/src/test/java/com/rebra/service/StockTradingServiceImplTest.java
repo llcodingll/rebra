@@ -11,6 +11,7 @@ import com.rebra.dto.DecryptedAccountCredentials;
 import com.rebra.dto.request.StockTradeRequest;
 import com.rebra.entity.Account;
 import com.rebra.entity.User;
+import com.rebra.enums.ExecutionType;
 import com.rebra.exception.CustomRuntimeException;
 import com.rebra.repository.AccountRepository;
 import com.rebra.repository.UserRepository;
@@ -83,7 +84,7 @@ class StockTradingServiceImplTest {
                 .willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, testRequest, 1L))
+        assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, testRequest, 1L, ExecutionType.BUY_PERSONAL))
                 .isInstanceOf(CustomRuntimeException.class)
                 .hasFieldOrPropertyWithValue("exceptionCode", ACCOUNT_NOT_FOUND);
     }
@@ -102,7 +103,7 @@ class StockTradingServiceImplTest {
                     .thenThrow(new RuntimeException("복호화 실패"));
 
             // When & Then
-            assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, testRequest, 1L))
+            assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, testRequest, 1L, ExecutionType.BUY_PERSONAL))
                     .isInstanceOf(CustomRuntimeException.class)
                     .hasFieldOrPropertyWithValue("exceptionCode", KIS_API_ERROR);
         }
@@ -124,7 +125,7 @@ class StockTradingServiceImplTest {
                 .willReturn(Optional.empty()); // 계좌 없음으로 KIS API 호출 전에 예외 발생
 
         // When & Then
-        assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, marketOrderRequest, 1L))
+        assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, marketOrderRequest, 1L, ExecutionType.BUY_PERSONAL))
                 .isInstanceOf(CustomRuntimeException.class)
                 .hasFieldOrPropertyWithValue("exceptionCode", ACCOUNT_NOT_FOUND);
     }
@@ -145,7 +146,7 @@ class StockTradingServiceImplTest {
                 .willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, testRequest, 2L))
+        assertThatThrownBy(() -> stockTradingService.buyStock(stockCode, testRequest, 2L, ExecutionType.BUY_PERSONAL))
                 .isInstanceOf(CustomRuntimeException.class)
                 .hasFieldOrPropertyWithValue("exceptionCode", ACCOUNT_NOT_FOUND);
     }
@@ -160,7 +161,7 @@ class StockTradingServiceImplTest {
                 .willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> stockTradingService.sellStock(stockCode, testRequest, 1L))
+        assertThatThrownBy(() -> stockTradingService.sellStock(stockCode, testRequest, 1L, ExecutionType.SELL_PERSONAL))
                 .isInstanceOf(CustomRuntimeException.class)
                 .hasFieldOrPropertyWithValue("exceptionCode", ACCOUNT_NOT_FOUND);
     }
