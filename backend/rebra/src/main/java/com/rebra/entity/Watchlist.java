@@ -26,16 +26,16 @@ public class Watchlist extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "portfolio_id", nullable = false)
+    private Portfolio portfolio;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "stock_id", nullable = false)
     private Stock stock;
 
     @Builder
-    public Watchlist(User user, Stock stock) {
-        this.user = user;
+    public Watchlist(Portfolio portfolio, Stock stock) {
+        this.portfolio = portfolio;
         this.stock = stock;
     }
 }

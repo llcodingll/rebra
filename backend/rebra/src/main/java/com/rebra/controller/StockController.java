@@ -69,11 +69,13 @@ public class StockController {
     public ResponseEntity<CommonApiResponse<WatchlistToggleResponse>> toggleWatchlist(
             @Parameter(description = "종목 코드", example = "005930", required = true)
             @RequestParam String stockCode,
+            @Parameter(description = "계좌 ID", example = "1", required = true)
+            @RequestParam Long accountId,
             @Parameter(hidden = true) @LoginUser Long userId) {
 
-        log.info("관심종목 토글 요청 - UserId: {}, StockCode: {}", userId, stockCode);
+        log.info("관심종목 토글 요청 - AccountId: {}, StockCode: {}", accountId, stockCode);
 
-        WatchlistToggleResponse response = watchlistService.toggleWatchlist(userId, stockCode);
+        WatchlistToggleResponse response = watchlistService.toggleWatchlist(accountId, stockCode);
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
@@ -85,11 +87,13 @@ public class StockController {
     })
     @GetMapping("/watchlist")
     public ResponseEntity<CommonApiResponse<List<WatchlistDto>>> getAllWatchlist(
+            @Parameter(description = "계좌 ID", example = "1", required = true)
+            @RequestParam Long accountId,
             @Parameter(hidden = true) @LoginUser Long userId) {
 
-        log.info("관심종목 전체 조회 요청 - UserId: {}", userId);
+        log.info("관심종목 전체 조회 요청 - AccountId: {}", accountId);
 
-        List<WatchlistDto> response = watchlistService.getAllWatchlist(userId);
+        List<WatchlistDto> response = watchlistService.getAllWatchlist(accountId);
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
@@ -104,11 +108,13 @@ public class StockController {
     public ResponseEntity<CommonApiResponse<Boolean>> checkWatchlistStatus(
             @Parameter(description = "종목 코드", example = "005930", required = true)
             @RequestParam String stockCode,
+            @Parameter(description = "계좌 ID", example = "1", required = true)
+            @RequestParam Long accountId,
             @Parameter(hidden = true) @LoginUser Long userId) {
 
-        log.info("관심종목 상태 확인 요청 - UserId: {}, StockCode: {}", userId, stockCode);
+        log.info("관심종목 상태 확인 요청 - AccountId: {}, StockCode: {}", accountId, stockCode);
 
-        boolean isInWatchlist = watchlistService.isInWatchlist(userId, stockCode);
+        boolean isInWatchlist = watchlistService.isInWatchlist(accountId, stockCode);
 
         return ResponseEntity.ok(CommonApiResponse.success(isInWatchlist));
     }
