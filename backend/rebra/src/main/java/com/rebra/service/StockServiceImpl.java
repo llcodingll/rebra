@@ -17,7 +17,9 @@ import com.rebra.exception.stock.StockException;
 import com.rebra.repository.AccountRepository;
 import com.rebra.repository.StockRepository;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult;
+import com.youhogeon.finance.kis_api.api.rest.quotations.InquireOvertimeAskingPriceResult;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
+import com.rebra.exception.kis.KisException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -350,6 +352,30 @@ public class StockServiceImpl implements StockService {
             log.error("특정 종목 보유 정보 조회 실패 - StockCode: {}, AccountId: {}, Error: {}",
                     stockCode, accountId, e.getMessage(), e);
             throw StockException.stockHoldingDetailFetchFailed();
+        }
+    }
+
+    @Override
+    public InquireOvertimeAskingPriceResult getOvertimeAskingPrice(String stockCode, Long accountId) {
+        try {
+            log.info("시간외호가 조회 시작 - 종목코드: {}, 계좌ID: {}", stockCode, accountId);
+
+            // 1. 계좌 조회
+            Account account = accountRepository.findById(accountId)
+                    .orElseThrow(AccountException::accountNotFound);
+
+            // 2. KIS API로 시간외호가 조회 및 직접 반환
+            InquireOvertimeAskingPriceResult result = kisApiComponent.getOvertimeAskingPrice(account, stockCode);
+
+            log.info("시간외호가 조회 완료 - 종목코드: {}, 계좌ID: {}", stockCode, accountId);
+            return result;
+
+        } catch (KisException e) {
+            // KisException은 그대로 전파
+            throw e;
+        } catch (Exception e) {
+            log.error("시간외호가 조회 중 오류 발생 - 종목코드: {}, 계좌ID: {}, 오류: {}", stockCode, accountId, e.getMessage(), e);
+            throw new RuntimeException("시간외호가 조회 실패", e);
         }
     }
 }
