@@ -75,7 +75,7 @@ export default function HoldingsTableWidget_v2({ onStockSelect }: HoldingsTableW
 
           {/* 매입가/현재가 */}
           <div className={styles.tableColumn}>
-            <div className={styles.columnHeader}>매입가</div>
+            <div className={styles.columnHeader}>평균단가</div>
             <div className={styles.columnHeaderSecond}>현재가</div>
             <div className={styles.columnData}>
               {holdings.map((stock, index) => (

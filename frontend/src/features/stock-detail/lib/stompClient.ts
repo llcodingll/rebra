@@ -40,7 +40,6 @@ export class StockStompClient {
 
       onConnect: () => {
         this.isConnected = true;
-        console.log('✅ STOMP 연결 성공');
         this.setupBulkSubscriptionListener();
         this.callbacks.onConnect?.();
       },
@@ -73,7 +72,6 @@ export class StockStompClient {
     return new Promise((resolve, reject) => {
       this.client.onConnect = () => {
         this.isConnected = true;
-        console.log('✅ STOMP 연결 성공');
         this.setupBulkSubscriptionListener();
         this.callbacks.onConnect?.();
         resolve();
@@ -106,7 +104,6 @@ export class StockStompClient {
     const subscription = this.client.subscribe(bulkResultChannel, (message: IMessage) => {
       try {
         const response: WebSocketMessage<BulkSubscriptionResponse> = JSON.parse(message.body);
-        console.log('📥 일괄 구독 결과:', response);
 
         if (response.type === WS_MESSAGE_TYPES.BULK_SUBSCRIPTION_RESPONSE) {
           this.callbacks.onBulkSubscriptionResult?.(response.data);
@@ -139,8 +136,6 @@ export class StockStompClient {
         dataTypes: [SUBSCRIPTION_DATA_TYPES.PRICE, SUBSCRIPTION_DATA_TYPES.ORDERBOOK],
       })),
     };
-
-    console.log('📡 일괄 구독 요청:', request);
 
     // 서버로 일괄 구독 요청 전송
     this.client.publish({

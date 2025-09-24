@@ -71,7 +71,6 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
     if (!mountedRef.current) return;
     setIsConnected(true);
     setError(null);
-    console.log('✅ STOMP 연결 완료');
   }, []);
 
   const handleDisconnect = useCallback(() => {
@@ -90,8 +89,6 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
   const handleBulkSubscriptionResult = useCallback((response: BulkSubscriptionResponse) => {
     if (!mountedRef.current) return;
 
-    console.log('📥 일괄 구독 결과:', response);
-
     const currentTime = new Date().toISOString();
     const hasSuccess = response.summary.totalSuccessful > 0;
     const hasFailed = response.summary.totalFailed > 0;
@@ -103,9 +100,6 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
       lastUpdate: currentTime,
     });
 
-    if (hasSuccess) {
-      console.log(`✅ 구독 성공: ${response.summary.totalSuccessful}개`);
-    }
     if (hasFailed) {
       console.warn(`⚠️ 구독 실패: ${response.summary.totalFailed}개`);
     }
@@ -204,7 +198,6 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
       await stompClient.subscribeBulkStocks([stockCode]);
 
       setIsLoading(false);
-      console.log(`✅ 구독 요청 완료: ${stockCode}`);
     } catch (error) {
       if (!mountedRef.current) return;
 

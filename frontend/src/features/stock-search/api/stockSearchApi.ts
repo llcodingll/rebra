@@ -1,5 +1,6 @@
 import { ApiClient } from '../../../shared/api/apiClient';
 import type { Result, AppError } from '../../../shared/util/result';
+import { calculateKISFeesAndTaxes, floorPrice } from '../../../shared/util/calculation';
 import type { StockSearchRequest, StockSearchResponse, SearchableStock, StockSearchTransformOptions, VolumeRankingApiResponse, HoldingsRequest, HoldingsResponse, DisplayHoldingStock } from './types';
 
 class StockSearchApiService extends ApiClient {
@@ -71,20 +72,6 @@ export const transformSearchResults = (
 };
 
 
-/**
- * KIS 수수료/세금 계산 함수
- * @param evaluationAmount 평가금액
- * @returns 수수료와 세금
- */
-const calculateKISFeesAndTaxes = (evaluationAmount: number) => {
-  // 매매수수료: 0.0145% (소숫점 이하 절사)
-  const fee = Math.floor(evaluationAmount * 0.000145);
-
-  // 증권거래세: 0.23% (소숫점 이하 절사)
-  const tax = Math.floor(evaluationAmount * 0.0023);
-
-  return { fee, tax };
-};
 
 /**
  * Holdings API 응답을 UI에서 사용할 형태로 변환
@@ -99,6 +86,7 @@ export const transformHoldingsResults = (
 
     return {
       ...holding,
+      averagePurchasePrice: floorPrice(holding.averagePurchasePrice), // 매입가 소수점 버림
       fee,
       tax,
     };

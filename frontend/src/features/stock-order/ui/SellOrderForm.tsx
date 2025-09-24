@@ -35,9 +35,10 @@ export default function SellOrderForm({
   // 계산 값들
   const totalSellAmount = orderPrice * quantity;
   const remainingHoldings = currentHoldings - quantity;
-  const expectedAvgPrice = remainingHoldings > 0 && quantity > 0 && quantity < currentHoldings
-    ? currentAvgPrice // 일부 판매 시 평균 단가는 동일
-    : 0; // 전량 판매 시 0
+  const expectedAvgPrice =
+    remainingHoldings > 0 && quantity > 0 && quantity < currentHoldings
+      ? currentAvgPrice // 일부 판매 시 평균 단가는 동일
+      : 0; // 전량 판매 시 0
 
   // 매도 주문 훅
   const sellOrder = useSellOrder({
@@ -51,7 +52,7 @@ export default function SellOrderForm({
     onError: (error) => {
       console.error('❌ 매도 주문 실패:', error);
       alert(`매도 주문에 실패했습니다: ${error}`);
-    }
+    },
   });
 
   const handleOrderSubmit = () => {
@@ -82,7 +83,6 @@ export default function SellOrderForm({
               value={orderPrice || ''}
               onChange={(e) => onPriceChange(Number(e.target.value))}
               className={styles.priceField}
-              placeholder='최대한 빠른 가격'
             />
             <span className={styles.priceUnit}>원</span>
           </div>
@@ -121,28 +121,16 @@ export default function SellOrderForm({
             </div>
           </div>
           <div className={styles.ratioButtons}>
-            <button
-              className={styles.ratioBtn}
-              onClick={() => onRatioSelect(10)}
-            >
+            <button className={styles.ratioBtn} onClick={() => onRatioSelect(10)}>
               10%
             </button>
-            <button
-              className={styles.ratioBtn}
-              onClick={() => onRatioSelect(25)}
-            >
+            <button className={styles.ratioBtn} onClick={() => onRatioSelect(25)}>
               25%
             </button>
-            <button
-              className={styles.ratioBtn}
-              onClick={() => onRatioSelect(50)}
-            >
+            <button className={styles.ratioBtn} onClick={() => onRatioSelect(50)}>
               50%
             </button>
-            <button
-              className={styles.ratioBtn}
-              onClick={() => onRatioSelect(100)}
-            >
+            <button className={styles.ratioBtn} onClick={() => onRatioSelect(100)}>
               최대
             </button>
           </div>
@@ -169,7 +157,11 @@ export default function SellOrderForm({
         </div>
       </div>
 
-      <button className={styles.submitButton} onClick={handleOrderSubmit} disabled={quantity <= 0 || sellOrder.isLoading}>
+      <button
+        className={styles.submitButton}
+        onClick={handleOrderSubmit}
+        disabled={quantity <= 0 || sellOrder.isLoading}
+      >
         {sellOrder.isLoading ? '주문 중...' : '판매하기'}
       </button>
     </div>
