@@ -204,9 +204,6 @@ export interface TradeDetail {
   tradeType: string;
   executedShares: number;
   price: number;
-  fee: number;
-  profitAmount: number;
-  profitRate: number;
   reason: string;
   tradeDate: string;
 }
@@ -305,4 +302,17 @@ export interface PortfolioPerformanceResponse {
   endDate: string;
   performanceData: PerformanceDataPoint[];
   statistics: PerformanceStatistics;
+}
+
+export interface TradeHistoryByDateResponse {
+  success: boolean;
+  status: number;
+  data: {
+    date: string;
+    trades: TradeDetail[];
+  };
+  errorCode?: string;
+  errorMessage?: string;
+  errorData?: string;
+  timestamp: string;
 }
