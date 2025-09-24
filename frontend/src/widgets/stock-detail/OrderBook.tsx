@@ -15,6 +15,7 @@ interface OrderBookProps {
     volume?: number;
     volumeRate?: number;
   };
+  onPriceClick?: (price: number) => void;
 }
 
 interface OrderBookRow {
@@ -31,7 +32,7 @@ interface TradeHistoryItem {
   time: string;
 }
 
-export default function OrderBook({ orderBook, stockInfo }: OrderBookProps) {
+export default function OrderBook({ orderBook, stockInfo, onPriceClick }: OrderBookProps) {
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);
   };
@@ -190,7 +191,10 @@ export default function OrderBook({ orderBook, stockInfo }: OrderBookProps) {
                 </div>
 
                 {/* 가운데: 가격 */}
-                <div className={`${styles.priceCell} ${isCurrentPrice ? styles.currentPriceHighlight : ''}`}>
+                <div
+                  className={`${styles.priceCell} ${isCurrentPrice ? styles.currentPriceHighlight : ''} ${onPriceClick ? styles.clickable : ''}`}
+                  onClick={() => onPriceClick?.(row.price)}
+                >
                   <div className={`${styles.price} ${row.type === 'ask' ? styles.askPrice : styles.bidPrice}`}>
                     {formatNumber(row.price)}
                   </div>

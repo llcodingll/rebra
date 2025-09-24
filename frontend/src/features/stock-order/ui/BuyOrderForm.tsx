@@ -83,7 +83,6 @@ export default function BuyOrderForm({
               value={orderPrice || ''}
               onChange={(e) => onPriceChange(Number(e.target.value))}
               className={styles.priceField}
-              placeholder='최대한 빠른 가격'
             />
             <span className={styles.priceUnit}>원</span>
           </div>

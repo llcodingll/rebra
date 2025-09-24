@@ -11,7 +11,6 @@ interface RealTimeChartProps {
   stockCode: string;
   stockName: string;
   realtimeData?: OptimizedPriceData | null;
-  onPriceUpdate?: (price: number, change: { amount: number; rate: number }) => void;
 }
 
 interface CandleData {
@@ -28,7 +27,7 @@ interface VolumeData {
   color?: string;
 }
 
-export default function RealTimeChart({ stockCode, stockName, realtimeData, onPriceUpdate }: RealTimeChartProps) {
+export default function RealTimeChart({ stockCode, stockName, realtimeData }: RealTimeChartProps) {
   const priceChartContainerRef = useRef<HTMLDivElement>(null);
   const volumeChartContainerRef = useRef<HTMLDivElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -461,12 +460,6 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData, onPr
         rate: changeRate,
       });
 
-      if (onPriceUpdate) {
-        onPriceUpdate(currentPrice, {
-          amount: priceChange,
-          rate: changeRate,
-        });
-      }
     }
   }, [chartApiData]);
 

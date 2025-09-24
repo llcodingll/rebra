@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import RealTimeChart from '../../widgets/stock-detail/RealTimeChart';
 import StockBasicInfo from '../../widgets/stock-detail/StockBasicInfo';
@@ -25,6 +25,7 @@ export default function StockDetailPage() {
   const [quantity, setQuantity] = useState(0);
   const [selectedRatio, setSelectedRatio] = useState<number | null>(null);
   const [orderPrice, setOrderPrice] = useState(71400);
+  const isPriceInitialized = useRef(false);
 
   // 실시간 주식 데이터 연동
   const stockCode = symbol || '005930';
@@ -46,19 +47,20 @@ export default function StockDetailPage() {
     return mergeInfiniteChartData(infiniteData?.pages);
   }, [infiniteData?.pages]);
 
-  // 실시간 가격 업데이트 시 주문가격도 업데이트
+  // 초기 한 번만 가격 설정 (실시간 데이터나 차트 데이터 중 먼저 로드되는 것으로 설정)
   useEffect(() => {
-    if (realtimePrice?.stckPrpr) {
-      setOrderPrice(realtimePrice.stckPrpr);
+    if (!isPriceInitialized.current) {
+      if (realtimePrice?.stckPrpr) {
+        setOrderPrice(realtimePrice.stckPrpr);
+        isPriceInitialized.current = true;
+      } else if (chartApiData?.summary?.currentPrice) {
+        setOrderPrice(Number(chartApiData.summary.currentPrice));
+        isPriceInitialized.current = true;
+      }
     }
-  }, [realtimePrice]);
+  }, [realtimePrice, chartApiData]);
 
-  // 차트 데이터 로드 시 초기 주문가격 설정
-  useEffect(() => {
-    if (chartApiData?.summary?.currentPrice && !realtimePrice?.stckPrpr) {
-      setOrderPrice(Number(chartApiData.summary.currentPrice));
-    }
-  }, [chartApiData, realtimePrice]);
+
 
   // 실제 주식 정보 (차트 API 데이터 우선, 실시간 데이터는 보조) + SearchPage에서 전달받은 정보 우선 사용
   const displayStockInfo =
@@ -111,6 +113,10 @@ export default function StockDetailPage() {
     // 임시로 계산된 수량 (실제로는 보유 자금 기준으로 계산)
     const maxAffordable = Math.floor(1000000 / orderPrice);
     setQuantity(Math.floor(maxAffordable * (ratio / 100)));
+  };
+
+  const handleOrderBookPriceClick = (price: number) => {
+    setOrderPrice(price);
   };
 
   // 로딩 상태 처리
@@ -249,10 +255,6 @@ export default function StockDetailPage() {
             stockCode={safeStockInfo.code}
             stockName={safeStockInfo.name}
             realtimeData={realtimePrice}
-            onPriceUpdate={(price, change) => {
-              // 실시간 차트에서 오는 업데이트는 이제 사용하지 않음 (STOMP로 대체)
-              setOrderPrice(price);
-            }}
           />
         </div>
 
@@ -270,6 +272,7 @@ export default function StockDetailPage() {
             volume: safeStockInfo.volume,
             volumeRate: 41.09, // 임시 데이터
           }}
+          onPriceClick={handleOrderBookPriceClick}
         />
 
         <OrderFormContainer
