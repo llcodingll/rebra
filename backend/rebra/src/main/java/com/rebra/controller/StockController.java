@@ -12,8 +12,10 @@ import com.rebra.dto.response.StockHistoricalDataResponse;
 import com.rebra.dto.response.StockHoldingDetailResponse;
 import com.rebra.dto.response.StockHoldingListResponse;
 import com.rebra.dto.response.StockTradeResponse;
+import com.rebra.dto.response.WatchlistToggleResponse;
 import com.rebra.service.StockService;
 import com.rebra.service.StockTradingService;
+import com.rebra.service.WatchlistService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -43,6 +45,7 @@ public class StockController {
 
     private final StockService stockService;
     private final StockTradingService stockTradingService;
+    private final WatchlistService watchlistService;
 
     @Operation(summary = "종목명으로 주식 검색", description = "FSS API를 통해 종목명에 포함된 문자열로 주식 기본정보를 검색합니다.")
     @GetMapping("/search")
@@ -55,30 +58,59 @@ public class StockController {
         return ResponseEntity.ok(CommonApiResponse.success(responses));
     }
 
-    @Operation(summary = "주식 관심 종목 등록", description = "특정 주식을 관심 종목에 추가합니다.")
+    @Operation(summary = "관심종목 토글", description = "관심종목 추가/제거를 토글 방식으로 처리합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "관심 종목 등록 성공"),
-            @ApiResponse(responseCode = "")
+            @ApiResponse(responseCode = "200", description = "토글 성공"),
+            @ApiResponse(responseCode = "404", description = "사용자 또는 종목을 찾을 수 없음"),
+            @ApiResponse(responseCode = "401", description = "인증 필요")
     })
-    public ResponseEntity<WatchlistDto> addTowatchlist() {
-        return null;
+    @PostMapping("/watchlist/toggle")
+    public ResponseEntity<CommonApiResponse<WatchlistToggleResponse>> toggleWatchlist(
+            @Parameter(description = "종목 코드", example = "005930", required = true)
+            @RequestParam String stockCode,
+            @Parameter(hidden = true) @LoginUser Long userId) {
+
+        log.info("관심종목 토글 요청 - UserId: {}, StockCode: {}", userId, stockCode);
+
+        WatchlistToggleResponse response = watchlistService.toggleWatchlist(userId, stockCode);
+
+        return ResponseEntity.ok(CommonApiResponse.success(response));
     }
 
-    @Operation(summary = "주식 검색창 관심 종목 리스트 조회", description = "관심 종목 리스트를 조회합니다.")
+    @Operation(summary = "관심종목 전체 조회", description = "사용자의 관심종목 리스트를 조회합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "관심 종목 리스트 조회 성공"),
-            @ApiResponse(responseCode = "")
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요")
     })
-    public ResponseEntity<List<WatchlistDto>> searchAllWatchlist() {
-        return null;
+    @GetMapping("/watchlist")
+    public ResponseEntity<CommonApiResponse<List<WatchlistDto>>> getAllWatchlist(
+            @Parameter(hidden = true) @LoginUser Long userId) {
+
+        log.info("관심종목 전체 조회 요청 - UserId: {}", userId);
+
+        List<WatchlistDto> response = watchlistService.getAllWatchlist(userId);
+
+        return ResponseEntity.ok(CommonApiResponse.success(response));
     }
 
-    @Operation(summary = "관심 종목 등록 취소", description = "특정 주식을 관심 종목에서 제거합니다.")
+    @Operation(summary = "관심종목 상태 확인", description = "특정 종목의 관심등록 여부를 확인합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "관심 종목에서 제외 성공"),
-            @ApiResponse(responseCode = "")
+            @ApiResponse(responseCode = "200", description = "확인 성공"),
+            @ApiResponse(responseCode = "404", description = "사용자 또는 종목을 찾을 수 없음"),
+            @ApiResponse(responseCode = "401", description = "인증 필요")
     })
-    public
+    @GetMapping("/watchlist/status")
+    public ResponseEntity<CommonApiResponse<Boolean>> checkWatchlistStatus(
+            @Parameter(description = "종목 코드", example = "005930", required = true)
+            @RequestParam String stockCode,
+            @Parameter(hidden = true) @LoginUser Long userId) {
+
+        log.info("관심종목 상태 확인 요청 - UserId: {}, StockCode: {}", userId, stockCode);
+
+        boolean isInWatchlist = watchlistService.isInWatchlist(userId, stockCode);
+
+        return ResponseEntity.ok(CommonApiResponse.success(isInWatchlist));
+    }
 
     @Operation(summary = "주식 매수 주문", description = "지정된 종목을 매수합니다.")
     @ApiResponses(value = {
