@@ -44,6 +44,7 @@ export default function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isEditingWeights, setIsEditingWeights] = useState(false);
 
   // 포트폴리오 있음 상태일 때 기본값 설정 (portfolios 배열의 첫 번째 항목)
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(null);
@@ -66,7 +67,7 @@ export default function DashboardPage() {
     apiFunction: () => selectedPortfolio ? portfolioApi.getPortfolioDetail(Number(selectedPortfolio.id)) : Promise.reject('No portfolio selected'),
     enabled: !!selectedPortfolio?.id, // 첫 조회는 항상 실행
     //refetchInterval: 1000, // 항상 1초마다 polling (테스트용)
-    refetchInterval: isMarketOpen() ? 1000000 : false, 
+    refetchInterval: (isMarketOpen() && !isEditingWeights) ? 1000 : false, 
     refetchIntervalInBackground: true, // 백그라운드에서도 새로고침
   });
 
@@ -287,6 +288,7 @@ export default function DashboardPage() {
               // 주식 설정 업데이트 성공 시 포트폴리오 상세 정보 새로고침
               refetchPortfolioDetail();
             }}
+            onEditModeChange={setIsEditingWeights}
           />
           <AssetTable
             title="미등록 주식"
