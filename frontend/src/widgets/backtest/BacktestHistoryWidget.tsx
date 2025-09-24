@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, Plus } from 'lucide-react';
 import styles from './BacktestHistoryWidget.module.css';
 import BacktestRow from '../../features/backtest/BacktestRow';
 import type { BacktestListResponse } from '../../features/backtest/api/backtestApi';
@@ -8,6 +8,7 @@ interface BacktestHistoryWidgetProps {
   data?: BacktestListResponse[];
   onBacktestClick?: (backtest: BacktestListResponse) => void;
   onBacktestDelete?: (backtest: BacktestListResponse, index: number) => void;
+  onDirectCreation?: () => void;
   currentPage: number;
   itemsPerPage: number;
   isLoading?: boolean;
@@ -18,6 +19,7 @@ export default function BacktestHistoryWidget({
   data = [],
   onBacktestClick,
   onBacktestDelete,
+  onDirectCreation,
   currentPage,
   itemsPerPage,
   isLoading,
@@ -64,13 +66,24 @@ export default function BacktestHistoryWidget({
     <div className={styles.historySection}>
       <div className={styles.historyCard}>
         <div className={styles.cardHeader}>
-          <div className={styles.cardTitle}>
-            <BarChart3 className={styles.titleIcon} />
-            <h3>백테스트 성과 분석</h3>
+          <div className={styles.cardTitleSection}>
+            <div className={styles.cardTitle}>
+              <BarChart3 className={styles.titleIcon} />
+              <h3>백테스트 실행</h3>
+            </div>
+            <p className={styles.cardDescription}>
+              새로운 전략을 생성해보세요
+            </p>
           </div>
-          <p className={styles.cardDescription}>
-            포트폴리오 전략별 백테스트 결과 및 위험조정 수익률 분석
-          </p>
+          <div className={styles.cardActions}>
+            <button
+              className={styles.createButton}
+              onClick={onDirectCreation}
+            >
+              <Plus className={styles.buttonIcon} />
+              백테스트 직접 생성
+            </button>
+          </div>
         </div>
 
         <div className={styles.tableWrapper}>
