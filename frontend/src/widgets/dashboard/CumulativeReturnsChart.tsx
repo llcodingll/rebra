@@ -124,10 +124,12 @@ class VertLine implements ISeriesPrimitive<Time> {
 
 interface CumulativeReturnsChartProps {
   portfolioId?: number;
+  onDateClick?: (date: string) => void;
 }
 
 export default function CumulativeReturnsChart({
-  portfolioId
+  portfolioId,
+  onDateClick
 }: CumulativeReturnsChartProps) {
   const [hoveredPoint, setHoveredPoint] = useState<TooltipData | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
@@ -229,6 +231,7 @@ export default function CumulativeReturnsChart({
         }
         return acc;
       }, [] as any[])
+      .slice(0, -1) // 마지막 데이터 포인트 제거 (오늘 날짜 제외)
       .map(({ originalIndex, ...item }) => item); // originalIndex 제거
 
     console.log('lineData:', lineData);
@@ -240,15 +243,16 @@ export default function CumulativeReturnsChart({
 
       if (hasEvent) {
         // 이벤트 타입에 따른 색상 결정
-        let color = '#6b7280'; // 기본 회색
-        if (dataPoint.rebalanced) color = '#ef4444'; // 빨간색 - 리밸런싱
-        else if (dataPoint.sold) color = '#f59e0b'; // 주황색 - 매도
-        else if (dataPoint.bought) color = '#10b981'; // 초록색 - 매수
-        else if (dataPoint.compositionChanged) color = '#3b82f6'; // 파란색 - 구성 변경
+        let color = '#3b82f6'; // 기본 파란색
+
+        // 구성 변경인 경우만 빨간색, 나머지는 모두 파란색
+        if (dataPoint.compositionChanged) {
+          color = '#ef4444'; // 빨간색 - 구성 변경
+        }
 
         const vertLine = new VertLine(chart, portfolioSeries, dataPoint.metricDate as any, {
           color: color,
-          width: 1
+          width: 2
         });
 
         portfolioSeries.attachPrimitive(vertLine);
@@ -273,6 +277,15 @@ export default function CumulativeReturnsChart({
         if (matchingDataPoint.rebalanced) eventTypes.push('리밸런싱');
         if (matchingDataPoint.sold) eventTypes.push('매도');
         if (matchingDataPoint.bought) eventTypes.push('매수');
+
+        console.log('Hover 데이터:', {
+          date: matchingDataPoint.metricDate,
+          compositionChanged: matchingDataPoint.compositionChanged,
+          rebalanced: matchingDataPoint.rebalanced,
+          sold: matchingDataPoint.sold,
+          bought: matchingDataPoint.bought,
+          eventTypes: eventTypes
+        });
 
         setHoveredPoint({
           x: param.point.x,
@@ -299,15 +312,15 @@ export default function CumulativeReturnsChart({
         if (matchingDataPoint.bought) eventTypes.push('매수');
 
         if (eventTypes.length > 0) {
-          // 이벤트 시점 클릭 시 alert
-          alert(`이벤트 발생!\n날짜: ${matchingDataPoint.metricDate}\n평가액: ${matchingDataPoint.totalValue.toLocaleString()}원\n이벤트: ${eventTypes.join(', ')}`);
-        } else {
-          // 일반 날짜 클릭 시 정보 표시
-          alert(`날짜: ${matchingDataPoint.metricDate}\n평가액: ${matchingDataPoint.totalValue.toLocaleString()}원`);
+          // 매수, 매도, 리밸런싱이 있는 경우 거래 내역 조회 (구성 변경 여부와 상관없이)
+          const hasTradeEvents = matchingDataPoint.rebalanced || matchingDataPoint.sold || matchingDataPoint.bought;
+          if (hasTradeEvents && onDateClick) {
+            onDateClick(matchingDataPoint.metricDate);
+          }
         }
       }
     });
-
+    // 크기 조절
     const handleResize = () => {
       if (chartRef.current && chart) {
         chart.applyOptions({
@@ -406,13 +419,24 @@ export default function CumulativeReturnsChart({
               {hoveredPoint.eventTypes.length > 0 && (
                 <>
                   <div className={styles.tooltipDivider}></div>
-                  <div className={styles.tooltipRow}>
-                    <span style={{
-                      color: '#2563eb',
-                      fontWeight: 'bold'
-                    }}>
-                      📌 {hoveredPoint.eventTypes.join(', ')}
-                    </span>
+                  <div className={styles.tooltipRow} style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                    {hoveredPoint.eventTypes.includes('구성 변경') && (
+                      <span style={{
+                        color: '#ef4444',
+                        fontWeight: 'bold',
+                        marginBottom: '4px'
+                      }}>
+                        ⚠️ 구성 변경에 따른 평가액 변경이 포함되어 있습니다.
+                      </span>
+                    )}
+                    {hoveredPoint.eventTypes.filter(type => type !== '구성 변경').length > 0 && (
+                      <span style={{
+                        color: '#2563eb',
+                        fontWeight: 'bold'
+                      }}>
+                        📌 {hoveredPoint.eventTypes.filter(type => type !== '구성 변경').join(', ')}
+                      </span>
+                    )}
                   </div>
                 </>
               )}

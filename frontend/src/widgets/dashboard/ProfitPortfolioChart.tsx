@@ -17,6 +17,7 @@ interface ProfitPortfolioChartProps {
 
 export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfolioChartProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -33,6 +34,13 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
     queryKey: ['rebalancing-history-detail', portfolioId, selectedId],
     apiFunction: () => portfolioId && selectedId ? portfolioApi.getRebalancingHistoryDetail(portfolioId, selectedId) : Promise.reject('No portfolio ID or selected ID'),
     enabled: !!portfolioId && !!selectedId,
+  });
+
+  // 날짜별 거래 내역 API 호출
+  const { data: selectedDateTrades, isLoading: isDateTradesLoading, error: dateTradesError } = useApi({
+    queryKey: ['trade-history-by-date', portfolioId, selectedDate],
+    apiFunction: () => portfolioId && selectedDate ? portfolioApi.getTradeHistoryByDate(portfolioId, selectedDate) : Promise.reject('No portfolio ID or selected date'),
+    enabled: !!portfolioId && !!selectedDate,
   });
 
     // API 데이터 확인용 로깅
@@ -107,11 +115,31 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
   const totalReturnPercent = ((totalReturn / (totalValue - totalReturn)) * 100).toFixed(1);
   const isPositiveReturn = totalReturn >= 0;
 
-  // 현재 선택된 ID의 거래 내역 가져오기 (API 데이터 사용)
+  // 현재 선택된 거래 내역 가져오기 (두 가지 소스 모두 처리)
   const getCurrentTrades = () => {
-    if (!selectedHistoryDetail?.trades) return [];
-    console.log('API 거래 내역:', selectedHistoryDetail.trades);
-    return selectedHistoryDetail.trades;
+    let trades = [];
+
+    // 히스토리 테이블에서 클릭한 경우
+    if (selectedHistoryDetail?.trades) {
+      console.log('히스토리 상세 API 거래 내역:', selectedHistoryDetail.trades);
+      trades = selectedHistoryDetail.trades;
+    }
+
+    // 차트에서 날짜 클릭한 경우
+    if (selectedDateTrades?.trades) {
+      console.log('날짜별 API 거래 내역:', selectedDateTrades.trades);
+      trades = selectedDateTrades.trades;
+    }
+
+    // 주식명으로 정렬
+    return trades.sort((a, b) => a.stockName.localeCompare(b.stockName));
+  };
+
+  // 차트에서 날짜 클릭 핸들러
+  const handleChartDateClick = (date: string) => {
+    console.log('차트에서 날짜 클릭:', date);
+    setSelectedDate(date);
+    setSelectedId(null); // 기존 히스토리 선택 해제
   };
 
 
@@ -169,9 +197,9 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
               className={styles.recentTrades}
             >
               <h3 className={styles.tradesTitle}>
-                {selectedId ? `거래 내역 (ID: ${selectedId})` : '거래 내역을 보려면 차트나 히스토리를 클릭하세요'}
+                {selectedId ? `거래 내역 (ID: ${selectedId})` : selectedDate ? `거래 내역 (날짜: ${selectedDate})` : '거래 내역을 보려면 차트나 히스토리를 클릭하세요'}
               </h3>
-              {isDetailLoading ? (
+              {(isDetailLoading || isDateTradesLoading) ? (
                 <div className={styles.noTrades}>거래 내역을 불러오는 중...</div>
               ) : getCurrentTrades().length > 0 ? (
                 <div className={styles.tradesScrollContainer}>
@@ -194,8 +222,8 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
                     </div>
                   ))}
                 </div>
-              ) : selectedId ? (
-                <div className={styles.noTrades}>해당 리밸런싱에 거래 내역이 없습니다.</div>
+              ) : (selectedId || selectedDate) ? (
+                <div className={styles.noTrades}>해당 {selectedId ? '리밸런싱' : '날짜'}에 거래 내역이 없습니다.</div>
               ) : (
                 <div className={styles.noTrades}>차트의 점이나 히스토리 행을 클릭해서 거래 내역을 확인하세요.</div>
               )}
@@ -211,6 +239,7 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
           >
             <DashboardChart
               portfolioId={portfolioId}
+              onDateClick={handleChartDateClick}
             />
           </motion.div>
 
@@ -242,6 +271,7 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
                     onClick={() => {
                       console.log('History clicked ID:', item.orderId);
                       setSelectedId(item.orderId);
+                      setSelectedDate(null); // 기존 날짜 선택 해제
                     }}
                   >
                     <div className={styles.historyCell}>
