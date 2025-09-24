@@ -102,7 +102,7 @@ services:
       - GMS_GPT_URL=https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions
       - SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER=${SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER}
       - FSS_API_SERVICE_KEY=${FSS_API_SERVICE_KEY}
-      - DDL_AUTO=${DDL_AUTO}
+      - DDL_AUTO=create
     depends_on:
       - postgres
       - redis
