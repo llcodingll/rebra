@@ -6,7 +6,6 @@ import com.rebra.entity.BacktestStock;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,28 +37,28 @@ public class BacktestResultResponse {
     @Getter
     @Builder
     public static class BacktestSummaryResponse {
-        private BigDecimal finalValue;
-        private BigDecimal totalReturn;
-        private BigDecimal buyHoldReturn;
-        private BigDecimal excessReturn;
-        private BigDecimal periodGrowthRate;
+        private Integer finalValue;
+        private Double totalReturn;
+        private Double buyHoldReturn;
+        private Double excessReturn;
+        private Double periodGrowthRate;
         private Integer rebalancingCount;
-        private BigDecimal totalFee;
-        private BigDecimal totalBorrowingCost;
-        private BigDecimal maxBorrowingAmount;
-        private BigDecimal minCashBalance;
-        private BigDecimal maxDrawdown;
-        private BigDecimal volatility;
-        private BigDecimal sharpeRatio;
-        private BigDecimal timeWeightedReturn;
+        private Integer totalFee;
+        private Integer totalBorrowingCost;
+        private Integer maxBorrowingAmount;
+        private Integer minCashBalance;
+        private Double maxDrawdown;
+        private Double volatility;
+        private Double sharpeRatio;
+        private Double timeWeightedReturn;
 
         // 퍼센트로 변환된 수치들
-        private BigDecimal totalReturnPercentage;
-        private BigDecimal buyHoldReturnPercentage;
-        private BigDecimal excessReturnPercentage;
-        private BigDecimal annualizedReturnPercentage;
-        private BigDecimal maxDrawdownPercentage;
-        private BigDecimal volatilityPercentage;
+        private Double totalReturnPercentage;
+        private Double buyHoldReturnPercentage;
+        private Double excessReturnPercentage;
+        private Double annualizedReturnPercentage;
+        private Double maxDrawdownPercentage;
+        private Double volatilityPercentage;
 
         public static BacktestSummaryResponse from(BacktestRecord record) {
             return BacktestSummaryResponse.builder()
@@ -94,8 +93,8 @@ public class BacktestResultResponse {
         private String stockCode;
         private String stockName;
         private String stockType;
-        private BigDecimal targetWeight;
-        private BigDecimal thresholdPercentage;
+        private Double targetWeight;
+        private Double thresholdPercentage;
         private Integer finalShares;
         private Boolean isActive;
 
@@ -112,7 +111,7 @@ public class BacktestResultResponse {
         }
     }
 
-    public static BacktestResultResponse from(BacktestRecord record, String detailsJson, List<BacktestStock> portfolioStocks) {
+    public static BacktestResultResponse from(BacktestRecord record, List<BacktestStock> portfolioStocks) {
         return BacktestResultResponse.builder()
                 .id(record.getId())
                 .testName(record.getTestName())
@@ -124,7 +123,7 @@ public class BacktestResultResponse {
                 .createdAt(record.getCreatedAt())
                 .errorMessage(record.getErrorMessage())
                 .summary(record.hasResults() ? BacktestSummaryResponse.from(record) : null)
-                .details(detailsJson)
+                .details(record.getDetailsJson())
                 .portfolioStocks(portfolioStocks != null ? portfolioStocks.stream()
                         .map(BacktestStockResponse::from)
                         .toList() : null)

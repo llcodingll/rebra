@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 
 /**
  * 특정 종목 보유 정보 응답 DTO (4개 필드만)
@@ -20,10 +19,10 @@ import java.math.BigDecimal;
 public class StockHoldingDetailResponse {
 
     @Schema(description = "평균매입가", example = "65000")
-    private BigDecimal averagePurchasePrice;
+    private Integer averagePurchasePrice;
 
     @Schema(description = "매입금액", example = "6500000")
-    private BigDecimal purchaseAmount;
+    private Integer purchaseAmount;
 
     @Schema(description = "보유수량", example = "100")
     private Integer holdingQuantity;
@@ -39,8 +38,8 @@ public class StockHoldingDetailResponse {
      */
     public static StockHoldingDetailResponse from(InquireBalanceResult.Output1 holding) {
         return StockHoldingDetailResponse.builder()
-                .averagePurchasePrice(new BigDecimal(holding.getPchsAvgPric()))
-                .purchaseAmount(new BigDecimal(holding.getPchsAmt()))
+                .averagePurchasePrice(Integer.parseInt(holding.getPchsAvgPric()))
+                .purchaseAmount(Integer.parseInt(holding.getPchsAmt()))
                 .holdingQuantity(Integer.parseInt(holding.getHldgQty()))
                 .orderableQuantity(Integer.parseInt(holding.getOrdPsblQty()))
                 .build();

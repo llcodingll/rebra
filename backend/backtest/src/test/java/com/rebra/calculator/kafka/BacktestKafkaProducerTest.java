@@ -365,11 +365,11 @@ class BacktestKafkaProducerTest {
 
     private BacktestResponse createSuccessResponse() {
         BacktestSummaryDto summary = new BacktestSummaryDto();
-        summary.setFinalValue(11000000.0);
+        summary.setFinalValue(11000000L);
         summary.setTotalReturn(0.1);
         summary.setBuyHoldReturn(0.08);
         summary.setRebalancingCount(5);
-        summary.setTotalFee(15000.0);
+        summary.setTotalFee(15000L);
         summary.setMaxDrawdown(-0.05);
         summary.setVolatility(0.15);
         summary.setSharpeRatio(0.8);
@@ -385,14 +385,14 @@ class BacktestKafkaProducerTest {
 
     private BacktestResponse createDetailedSuccessResponse() {
         BacktestSummaryDto summary = new BacktestSummaryDto();
-        summary.setFinalValue(12500000.0);
+        summary.setFinalValue(12500000L);
         summary.setTotalReturn(0.25);
         summary.setBuyHoldReturn(0.20);
         summary.setRebalancingCount(8);
-        summary.setTotalFee(25000.0);
-        summary.setTotalBorrowingCost(5000.0);
-        summary.setMaxBorrowingAmount(500000.0);
-        summary.setMinCashBalance(-300000.0);
+        summary.setTotalFee(25000L);
+        summary.setTotalBorrowingCost(5000L);
+        summary.setMaxBorrowingAmount(500000L);
+        summary.setMinCashBalance(-300000L);
         summary.setMaxDrawdown(-0.08);
         summary.setVolatility(0.18);
         summary.setSharpeRatio(1.2);
@@ -410,11 +410,11 @@ class BacktestKafkaProducerTest {
 
     private BacktestResponse createLargeDataResponse() {
         BacktestSummaryDto summary = new BacktestSummaryDto();
-        summary.setFinalValue(15000000.0);
+        summary.setFinalValue(15000000L);
         summary.setTotalReturn(0.5);
         summary.setBuyHoldReturn(0.4);
         summary.setRebalancingCount(50);
-        summary.setTotalFee(75000.0);
+        summary.setTotalFee(75000L);
 
         List<BacktestDetailDto> details = new ArrayList<>();
         LocalDate startDate = LocalDate.of(2023, 1, 2);

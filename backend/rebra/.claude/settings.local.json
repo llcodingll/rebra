@@ -8,6 +8,9 @@
       "Bash(grep:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\Users\\SSAFY\\IdeaProjects\\S13P21A406\\backend\\backtest"
+    ]
   }
 }

@@ -12,7 +12,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -49,11 +48,11 @@ public class BacktestStock extends BaseEntity {
     @JoinColumn(name = "stock_id", nullable = false)
     private Stock stock;
 
-    @Column(nullable = false, precision = 5, scale = 2)
-    private BigDecimal targetWeight;
+    @Column(nullable = false)
+    private Double targetWeight;
 
-    @Column(precision = 5, scale = 2)
-    private BigDecimal thresholdPercentage;
+    @Column
+    private Double thresholdPercentage;
 
     @Column
     private Integer shares;
@@ -71,12 +70,12 @@ public class BacktestStock extends BaseEntity {
         return stock != null ? stock.getStockType() : null;
     }
 
-    public BigDecimal getTargetWeightPercentage() {
-        return targetWeight != null ? targetWeight : BigDecimal.ZERO;
+    public Double getTargetWeightPercentage() {
+        return targetWeight != null ? targetWeight : 0.0;
     }
 
-    public BigDecimal getThresholdPercentageSafe() {
-        return thresholdPercentage != null ? thresholdPercentage : BigDecimal.ZERO;
+    public Double getThresholdPercentageSafe() {
+        return thresholdPercentage != null ? thresholdPercentage : 0.0;
     }
 
     public Integer getSharesSafe() {
@@ -94,6 +93,6 @@ public class BacktestStock extends BaseEntity {
 
     // 임계값 기반 리밸런싱 여부 확인
     public boolean isThresholdBased() {
-        return thresholdPercentage != null && thresholdPercentage.compareTo(BigDecimal.ZERO) > 0;
+        return thresholdPercentage != null && thresholdPercentage > 0.0;
     }
 }
