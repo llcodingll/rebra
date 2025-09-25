@@ -154,7 +154,7 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
               <div className={styles.amount}>{totalValue.toLocaleString()}원</div>
               <div className={`${styles.returnInfo} ${isPositiveReturn ? styles.positive : styles.negative}`}>
                 <span className={styles.returnAmount}>
-                  {totalReturn >= 0 ? '+' : ''}{totalReturn.toLocaleString()}원
+                  {totalReturn >= 0 ? '+' : ''}{Math.floor(totalReturn).toLocaleString()}원
                 </span>
                 <span className={styles.returnPercent}>
                   ({totalReturn >= 0 ? '+' : ''}{totalReturnPercent}%)
@@ -261,6 +261,11 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                 </div>
                 <div className={styles.stockPrice}>
                   <span className={styles.currentPrice}>{selectedStock.currentPrice.toLocaleString()}원</span>
+                  <span className={`${styles.returnRate} ${
+                    selectedStock.profitLossRate >= 0 ? styles.positive : styles.negative
+                  }`}>
+                    {selectedStock.profitLossRate >= 0 ? '+' : ''}{selectedStock.profitLossRate.toFixed(1)}%
+                  </span>
                 </div>
               </div>
 
@@ -276,26 +281,34 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                   </div>
                 </div>
                 
-                <div className={styles.metricRow}>
-                  <div className={styles.metric}>
-                    <span className={styles.metricLabel}>수익률</span>
-                    <span className={`${styles.metricValue} ${
-                      selectedStock.profitLossRate >= 0 ? styles.positive : styles.negative
-                    }`}>
-                      {selectedStock.profitLossRate >= 0 ? '+' : ''}{selectedStock.profitLossRate.toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className={styles.metric}>
-                    <span className={styles.metricLabel}>현재 비중</span>
-                    <span className={styles.metricValue}>{selectedStock.currentPercentage.toFixed(1)}%</span>
-                  </div>
-                </div>
               </div>
 
+            {/* 현재 비중 */}
+            <div className={styles.targetInfo}>
+              <div className={styles.targetHeader}>
+                <span className={styles.targetLabel}>현재 비중</span>
+                <span className={styles.targetValue}>{selectedStock.currentPercentage.toFixed(1)}%</span>
+              </div>
+              <div className={styles.targetBar}>
+                <div
+                  className={styles.targetFill}
+                  style={{
+                    width: `${selectedStock.currentPercentage || 0}%`,
+                    background: '#3b82f6'
+                  }}
+                ></div>
+              </div>
+            </div>
+
+            {/* 목표 비중 */}
             <div className={styles.targetInfo}>
               <div className={styles.targetHeader}>
                 <span className={styles.targetLabel}>목표 비중</span>
-                <span className={styles.targetValue}>{selectedStock.targetPercentage || 0}%</span>
+                {selectedStock.targetPercentage ? (
+                  <span className={styles.targetValue}>{selectedStock.targetPercentage.toFixed(1)}%</span>
+                ) : (
+                  <span className={styles.notSetValue}>아직 설정되지 않았습니다</span>
+                )}
               </div>
               <div className={styles.targetBar}>
                 <div
@@ -311,13 +324,17 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
                 <div className={styles.weightItem}>
                   <div className={styles.weightHeader}>
                     <span className={styles.weightLabel}>임계값</span>
-                    <span className={styles.weightValue}>{selectedStock.thresholdPercentage}%</span>
+                    {selectedStock.thresholdPercentage ? (
+                      <span className={styles.weightValue}>{selectedStock.thresholdPercentage}%</span>
+                    ) : (
+                      <span className={styles.notSetValue}>아직 설정되지 않았습니다</span>
+                    )}
                   </div>
                   <div className={styles.weightBar}>
                     <div
                       className={styles.weightFill}
                       style={{
-                        width: `${selectedStock.thresholdPercentage}%`,
+                        width: `${selectedStock.thresholdPercentage || 0}%`,
                         backgroundColor: '#ef4444'
                       }}
                     />

@@ -114,11 +114,15 @@ export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalanci
                     <div className={styles.rebalancingControls}>
                         <div className={styles.controlGroup}>
                             <h3>즉시 실행</h3>
-                            <button className={styles.executeButton} onClick={handleExecuteRebalancing}>
+                            <button
+                                className={styles.executeButton}
+                                onClick={handleExecuteRebalancing}
+                                disabled={isExecutingRebalancing}
+                            >
                             <svg width="19" height="19" viewBox="0 0 19 19" fill="none">
                                 <path d="M4.75589 2.38672L15.7495 9.33007L4.75589 16.2734V2.38672Z" fill="white" stroke="white" strokeWidth="1.38867" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
-                            지금 리밸런싱 실행
+                            {isExecutingRebalancing ? '리밸런싱 실행 중...' : '지금 리밸런싱 실행'}
                             </button>
                         </div>
 

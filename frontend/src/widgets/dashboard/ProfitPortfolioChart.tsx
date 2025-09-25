@@ -181,7 +181,7 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
               <div className={styles.amount}>{totalValue.toLocaleString()}원</div>
               <div className={`${styles.returnInfo} ${isPositiveReturn ? styles.positive : styles.negative}`}>
                 <span className={styles.returnAmount}>
-                  {totalReturn >= 0 ? '+' : ''}{totalReturn.toLocaleString()}원
+                  {totalReturn >= 0 ? '+' : ''}{Math.floor(totalReturn).toLocaleString()}원
                 </span>
                 <span className={styles.returnPercent}>
                   ({totalReturn >= 0 ? '+' : ''}{totalReturnPercent}%)
