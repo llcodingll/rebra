@@ -19,6 +19,7 @@ import com.rebra.repository.StockRepository;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireAskingPriceExpCcnResult;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
+import com.youhogeon.finance.kis_api.api.rest.trading.InquirePsblOrderResult;
 import com.rebra.exception.kis.KisException;
 import java.util.ArrayList;
 import java.util.List;
@@ -327,8 +328,9 @@ public class StockServiceImpl implements StockService {
             Account account = accountRepository.findById(accountId)
                     .orElseThrow(AccountException::accountNotFound);
 
-            // 2. KIS API로 잔고 조회
+            // 2. KIS API로 잔고 조회 및 매수가능조회
             InquireBalanceResult balanceResult = kisApiComponent.getUserBalance(account);
+            InquirePsblOrderResult psblOrderResult = kisApiComponent.getUserPossibleOrder(account, stockCode);
 
             // 3. 해당 종목의 보유 정보 찾기
             if (balanceResult.getOutput1() != null && balanceResult.getOutput1().length > 0) {
@@ -337,16 +339,16 @@ public class StockServiceImpl implements StockService {
                         // 보유 수량이 0이 아닌 경우만 반환
                         if (!"0".equals(holding.getHldgQty())) {
                             log.info("특정 종목 보유 정보 조회 완료 - StockCode: {}, AccountId: {}", stockCode, accountId);
-                            return StockHoldingDetailResponse.from(holding);
+                            return StockHoldingDetailResponse.from(holding, psblOrderResult);
                         }
                         break;
                     }
                 }
             }
 
-            // 보유하지 않은 경우 null 반환
+            // 보유하지 않은 경우 - 매수가능금액만 반환
             log.info("특정 종목 미보유 - StockCode: {}, AccountId: {}", stockCode, accountId);
-            return null;
+            return StockHoldingDetailResponse.fromPossibleOrderOnly(psblOrderResult);
 
         } catch (Exception e) {
             log.error("특정 종목 보유 정보 조회 실패 - StockCode: {}, AccountId: {}, Error: {}",

@@ -1,17 +1,43 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styles from './SellOrderForm.module.css';
 import { useSellOrder } from '../hooks/useSellOrder';
 import type { StockHoldingData } from '../../stock-detail/api/types';
 
 interface SellOrderFormProps {
   stockCode: string;
+  stockName: string;
   holdingData: StockHoldingData | null;
   currentPrice: number;
+  orderBookClickedPrice?: number;
+  onRefreshHolding?: () => void;
 }
 
-export default function SellOrderForm({ stockCode, holdingData, currentPrice }: SellOrderFormProps) {
-  const [orderPrice, setOrderPrice] = useState(currentPrice || 71400);
+export default function SellOrderForm({
+  stockCode,
+  stockName,
+  holdingData,
+  currentPrice,
+  orderBookClickedPrice,
+  onRefreshHolding,
+}: SellOrderFormProps) {
+  const [orderPrice, setOrderPrice] = useState(0);
   const [quantity, setQuantity] = useState<number | ''>('');
+  const [isPriceInitialized, setIsPriceInitialized] = useState(false);
+
+  // currentPrice가 실제 값으로 변경될 때 1회만 orderPrice 업데이트
+  useEffect(() => {
+    if (currentPrice > 0 && !isPriceInitialized) {
+      setOrderPrice(currentPrice);
+      setIsPriceInitialized(true);
+    }
+  }, [currentPrice, isPriceInitialized]);
+
+  // 호가창에서 클릭된 가격을 주문 가격에 설정
+  useEffect(() => {
+    if (orderBookClickedPrice && orderBookClickedPrice > 0) {
+      setOrderPrice(orderBookClickedPrice);
+    }
+  }, [orderBookClickedPrice]);
   // const [isQuantityExceeded, setIsQuantityExceeded] = useState(false);
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);
@@ -83,13 +109,24 @@ export default function SellOrderForm({ stockCode, holdingData, currentPrice }: 
   // 매도 주문 훅
   const sellOrder = useSellOrder({
     stockCode,
-    onSuccess: (data) => {
-      console.log('✅ 매도 주문 성공:', data);
-      alert(`매도 주문이 완료되었습니다!\n주문번호: ${data.orderNumber}`);
-      setQuantity('');
+    stockName,
+    onSuccess: async (data) => {
+      try {
+        // 1. 먼저 보유 정보 갱신
+        await onRefreshHolding?.();
+
+        // 2. 갱신 완료 후 alert 표시
+        alert(`매도 주문이 완료되었습니다!\n주문번호: ${data.orderNumber}`);
+
+        // 3. 폼 초기화
+        setQuantity('');
+      } catch (error) {
+        // refetch 실패 시에도 alert 표시
+        alert(`매도 주문이 완료되었습니다!\n주문번호: ${data.orderNumber}`);
+        setQuantity('');
+      }
     },
     onError: (error) => {
-      console.error('❌ 매도 주문 실패:', error);
       alert(`매도 주문에 실패했습니다: ${error}`);
     },
   });

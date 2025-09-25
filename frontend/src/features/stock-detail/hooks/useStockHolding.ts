@@ -39,8 +39,6 @@ export const useStockHolding = (stockCode: string, currentPrice: number = 0, ena
     },
   });
 
-  console.log(holdingResponse);
-
   // holdingResponse가 유효할 때 previousHoldingResponse 업데이트
   useEffect(() => {
     if (holdingResponse) {
@@ -56,8 +54,6 @@ export const useStockHolding = (stockCode: string, currentPrice: number = 0, ena
     // 사용할 데이터가 없으면 null 반환
     if (!dataToUse) return null;
 
-    console.log(dataToUse);
-    console.log(currentPrice);
     const evaluationAmount = currentPrice * dataToUse.holdingQuantity;
     const evaluationProfitLoss = evaluationAmount - dataToUse.purchaseAmount;
     const returnRate = dataToUse.purchaseAmount > 0 ? (evaluationProfitLoss / dataToUse.purchaseAmount) * 100 : 0;
@@ -75,6 +71,7 @@ export const useStockHolding = (stockCode: string, currentPrice: number = 0, ena
       returnRate,
       fee,
       tax,
+      availableCash: dataToUse.ordPsblCash, // 구매가능금액
     };
   }, [holdingResponse, currentPrice]); // previousHoldingResponse.current 의존성 제거
 

@@ -7,22 +7,31 @@ import type { StockHoldingData } from '../../../features/stock-detail/api/types'
 
 interface OrderFormContainerProps {
   stockCode: string;
+  stockName: string;
   holdingData: StockHoldingData | null;
   currentPrice: number;
+  orderBookClickedPrice?: number;
+  onRefreshHolding?: () => void;
 }
 
 export default function OrderFormContainer({
   stockCode,
+  stockName,
   holdingData,
-  currentPrice
+  currentPrice,
+  orderBookClickedPrice,
+  onRefreshHolding
 }: OrderFormContainerProps) {
   const [activeTab, setActiveTab] = useState<OrderTab>('구매');
 
   const renderActiveForm = () => {
     const commonProps = {
       stockCode,
+      stockName,
       holdingData,
-      currentPrice
+      currentPrice,
+      orderBookClickedPrice,
+      onRefreshHolding
     };
 
     switch (activeTab) {

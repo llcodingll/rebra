@@ -43,7 +43,7 @@ public class WebSocketHelper {
     /**
      * 주식 실시간 체결가 데이터 브로드캐스트 (H0STCNT0Data 원본 데이터 사용)
      */
-    public void broadcastPriceData(Long userId, String stockCode, H0STCNT0Data priceData) {
+    public void broadcastPriceData(Long userId, String stockCode, H0STCNT0Data priceData, String sessionId) {
         try {
             if (priceData == null) {
                 log.warn("체결가 데이터가 null입니다 - UserId: {}, StockCode: {}", userId, stockCode);
@@ -67,7 +67,7 @@ public class WebSocketHelper {
     /**
      * 주식 실시간 호가 데이터 브로드캐스트 (H0STASP0Data 원본 데이터 사용)
      */
-    public void broadcastOrderbookData(Long userId, String stockCode, H0STASP0Data orderbookData) {
+    public void broadcastOrderbookData(Long userId, String stockCode, H0STASP0Data orderbookData, String sessionId) {
         try {
             if (orderbookData == null) {
                 log.warn("호가 데이터가 null입니다 - UserId: {}, StockCode: {}", userId, stockCode);

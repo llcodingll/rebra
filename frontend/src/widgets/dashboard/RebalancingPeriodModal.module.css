@@ -37,21 +37,21 @@
 
 .dateInput:focus {
   outline: none;
-  border-color: #155dfc;
+  border-color: #000;
   background: white;
-  box-shadow: 0 0 0 3px rgba(21, 93, 252, 0.1);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
 /* DatePicker 커스텀 스타일 */
 :global(.react-datepicker) {
-  border: 2px solid #155dfc !important;
+  border: 2px solid #000 !important;
   border-radius: 12px !important;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
   font-family: 'Inter', sans-serif !important;
 }
 
 :global(.react-datepicker__header) {
-  background: #155dfc !important;
+  background: #000 !important;
   border-bottom: none !important;
   border-radius: 10px 10px 0 0 !important;
   padding: 16px !important;
@@ -83,19 +83,19 @@
 }
 
 :global(.react-datepicker__day:hover) {
-  background: #155dfc !important;
+  background: #000 !important;
   color: white !important;
 }
 
 :global(.react-datepicker__day--selected) {
-  background: #155dfc !important;
+  background: #000 !important;
   color: white !important;
   font-weight: 600 !important;
 }
 
 :global(.react-datepicker__day--today) {
   background: #f3f4f6 !important;
-  color: #155dfc !important;
+  color: #000 !important;
   font-weight: 600 !important;
 }
 
@@ -135,9 +135,9 @@
 }
 
 .toggleButton.active {
-  background: #155dfc;
+  background: #000;
   color: white;
-  box-shadow: 0 2px 4px rgba(21, 93, 252, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .toggleButton:hover:not(.active) {
@@ -157,9 +157,9 @@
 }
 
 .periodInputGroup:focus-within {
-  border-color: #155dfc;
+  border-color: #000;
   background: white;
-  box-shadow: 0 0 0 3px rgba(21, 93, 252, 0.1);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
 .numberInput {
@@ -177,8 +177,8 @@
 
 .numberInput:focus {
   outline: none;
-  border-color: #155dfc;
-  box-shadow: 0 0 0 3px rgba(21, 93, 252, 0.1);
+  border-color: #000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
 .periodUnit {
@@ -223,15 +223,15 @@
 }
 
 .saveButton {
-  background: #155dfc;
+  background: #000;
   color: white;
-  box-shadow: 0 4px 12px rgba(21, 93, 252, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .saveButton:hover {
-  background: #0d47d9;
+  background: #333;
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(21, 93, 252, 0.4);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
 /* 툴팁 관련 스타일 */

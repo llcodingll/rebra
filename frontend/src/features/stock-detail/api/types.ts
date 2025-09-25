@@ -15,6 +15,7 @@ export interface StockHoldingApiResponse {
   purchaseAmount: number;
   holdingQuantity: number;
   orderableQuantity: number;
+  dncaTotAmt: number; // 예수금총금액 (구매가능금액)
 }
 
 // UI에서 사용할 계산된 보유종목 정보
@@ -28,6 +29,7 @@ export interface StockHoldingData {
   returnRate: number;
   fee: number; // 매매수수료
   tax: number; // 증권거래세
+  availableCash: number; // 구매가능금액 (dncaTotAmt)
 }
 
 // 실시간 체결가 데이터 타입

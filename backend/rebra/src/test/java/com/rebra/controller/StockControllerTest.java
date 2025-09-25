@@ -27,7 +27,6 @@ import com.rebra.common.PageInfo;
 import com.rebra.enums.ExecutionType;
 import com.rebra.exception.CustomRuntimeException;
 import com.rebra.exception.ExceptionCode;
-import com.rebra.exception.account.AccountException;
 import com.rebra.exception.stock.StockException;
 import com.rebra.service.StockService;
 import com.rebra.service.StockTradingService;
@@ -43,7 +42,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -447,6 +445,7 @@ class StockControllerTest {
                     .purchaseAmount(new BigDecimal("650000"))
                     .holdingQuantity(10)
                     .orderableQuantity(10)
+                    .ordPsblCash(new BigDecimal("10000000"))
                     .build();
 
             given(stockService.getStockHolding(eq(stockCode), eq(accountId))).willReturn(response);
@@ -460,7 +459,8 @@ class StockControllerTest {
                     .andExpect(jsonPath("$.data.averagePurchasePrice").value(65000))
                     .andExpect(jsonPath("$.data.purchaseAmount").value(650000))
                     .andExpect(jsonPath("$.data.holdingQuantity").value(10))
-                    .andExpect(jsonPath("$.data.orderableQuantity").value(10));
+                    .andExpect(jsonPath("$.data.orderableQuantity").value(10))
+                    .andExpect(jsonPath("$.data.ordPsblCash").value(10000000));
         }
 
         @Test
