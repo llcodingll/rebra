@@ -9,9 +9,17 @@ interface BuyOrderFormProps {
   holdingData: StockHoldingData | null;
   currentPrice: number;
   orderBookClickedPrice?: number;
+  onRefreshHolding?: () => void;
 }
 
-export default function BuyOrderForm({ stockCode, stockName, holdingData, currentPrice, orderBookClickedPrice }: BuyOrderFormProps) {
+export default function BuyOrderForm({
+  stockCode,
+  stockName,
+  holdingData,
+  currentPrice,
+  orderBookClickedPrice,
+  onRefreshHolding,
+}: BuyOrderFormProps) {
   // 내부 상태 관리 (기본값으로 초기화)
   const [orderPrice, setOrderPrice] = useState(0);
   const [quantity, setQuantity] = useState<number | ''>('');
@@ -121,14 +129,23 @@ export default function BuyOrderForm({ stockCode, stockName, holdingData, curren
   const buyOrder = useBuyOrder({
     stockCode,
     stockName,
-    onSuccess: (data) => {
-      console.log('✅ 매수 주문 성공:', data);
-      alert(`매수 주문이 완료되었습니다!\n주문번호: ${data.orderNumber}`);
-      // 성공 후 폼 초기화
-      setQuantity('');
+    onSuccess: async (data) => {
+      try {
+        // 1. 먼저 보유 정보 갱신
+        await onRefreshHolding?.();
+
+        // 2. 갱신 완료 후 alert 표시
+        alert(`매수 주문이 완료되었습니다!\n주문번호: ${data.orderNumber}`);
+
+        // 3. 폼 초기화
+        setQuantity('');
+      } catch (error) {
+        // refetch 실패 시에도 alert 표시
+        alert(`매수 주문이 완료되었습니다!\n주문번호: ${data.orderNumber}`);
+        setQuantity('');
+      }
     },
     onError: (error) => {
-      console.error('❌ 매수 주문 실패:', error);
       alert(`매수 주문에 실패했습니다: ${error}`);
     },
   });

@@ -1,7 +1,7 @@
 .orderBookSection {
   background: white;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #d1d5db;
   overflow: hidden;
   width: 100%;
   max-width: 600px;
@@ -74,13 +74,12 @@
   height: 40px;
   border-bottom: 1px solid #e8e8e869;
   position: relative;
-  background-color: #fcfcfc;
+  background-color: #ffffff;
 }
 
 .orderRow:hover {
   background-color: #f8f9fa;
 }
-
 
 /* 현재가 하이라이트 - 가격 셀에만 적용 */
 .currentPriceHighlight {
@@ -156,7 +155,7 @@
 
 .priceCell.clickable {
   cursor: pointer;
-  transition: all 0.2s ease;
+  /* transition: all 0.2s ease; */
 }
 
 .priceCell.clickable:hover {
@@ -184,6 +183,19 @@
 
 .bidPrice {
   color: #ff4d4f; /* 매수도 빨간색 (토스 스타일) */
+}
+
+/* 전일종가 대비 가격 색상 */
+.priceUp {
+  color: #ff4d4f; /* 상승 - 빨간색 */
+}
+
+.priceDown {
+  color: #1890ff; /* 하락 - 파란색 */
+}
+
+.priceEqual {
+  color: #333333; /* 동일 - 검은색 */
 }
 
 .changeRate {

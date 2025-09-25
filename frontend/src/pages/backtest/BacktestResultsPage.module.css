@@ -402,44 +402,179 @@
   }
 }
 
-@media (max-width: 768px) {
+/* 작은 모바일 화면 (390x844 등) 전용 */
+@media (max-width: 480px) {
   .container {
-    padding: 16px;
+    padding: 8px;
   }
-  
-  .headerMeta {
-    flex-direction: column;
-    gap: 16px;
-    align-items: flex-start;
-  }
-  
-  .summaryCards {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  
-  .chartCard {
-    padding: 20px;
-  }
-  
-  .chartWrapper {
-    height: 400px;
-  }
-  
-  .chartArea {
-    height: 340px;
-  }
-  
-  .yAxis {
-    height: 300px;
-  }
-  
-  .chartSvg {
-    height: 300px;
-  }
-  
-  .legend {
+
+  .content {
+    display: flex;
     flex-direction: column;
     gap: 12px;
+    max-width: 100%;
+  }
+
+  .chartCard {
+    padding: 12px;
+    margin-bottom: 50px; /* 매우 큰 마진 */
+    width: calc(100vw - 16px);
+    min-height: 700px; /* 매우 큰 높이 */
+    box-sizing: border-box;
+  }
+
+  .chartWrapper {
+    height: 650px; /* 매우 큰 높이 */
+    width: 100%;
+  }
+
+  .chartArea {
+    height: 600px; /* 매우 큰 높이 */
+    width: 100%;
+  }
+
+  .yAxis {
+    height: 550px;
+  }
+
+  .chartSvg {
+    height: 550px;
+    width: 100%;
+  }
+
+  /* 포트폴리오 구성을 아래로 밀어내기 */
+  .mainChart > *:last-child {
+    margin-top: 300px !important; /* 포트폴리오 구성 컴포넌트를 더 아래로 */
+  }
+
+  .sidebar {
+    margin-top: 60px !important;
+    clear: both;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 12px;
+  }
+
+  /* 모바일에서 그리드를 단일 컬럼으로 변경 */
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 100%;
+  }
+
+  .headerMeta {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .summaryCards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* 차트 카드 - 모바일 전용 대형 컨테이너 */
+  .chartCard {
+    padding: 16px !important;
+    margin-bottom: 60px !important; /* 더 큰 마진으로 완전 분리 */
+    width: 100% !important;
+    box-sizing: border-box !important;
+    min-height: 800px !important; /* 매우 큰 높이로 설정 */
+    height: auto !important;
+  }
+
+  .chartWrapper {
+    height: 700px !important; /* 매우 큰 높이 */
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .chartArea {
+    height: 650px !important; /* 매우 큰 높이 */
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .yAxis {
+    height: 600px !important; /* 매우 큰 높이 */
+  }
+
+  .chartSvg {
+    height: 600px !important; /* 매우 큰 높이 */
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .legend {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  /* 포트폴리오 구성을 아래로 밀어내기 */
+  .mainChart > *:last-child {
+    margin-top: 200px !important; /* 포트폴리오 구성 컴포넌트를 아래로 */
+  }
+
+  /* 사이드바 - 차트 아래로 이동 */
+  .sidebar {
+    width: 100%;
+    order: 2;
+    margin-top: 20px;
+    clear: both;
+  }
+
+  /* 리밸런싱 카드 */
+  .rebalanceCard {
+    padding: 16px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* 바 차트 모바일 최적화 - 오버플로우 방지 */
+  .barChart {
+    height: 120px;
+    padding: 10px 4px 20px 4px;
+    gap: 2px;
+    width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .barContainer {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .barValue {
+    font-size: 9px;
+    padding: 1px 2px;
+    min-width: 16px;
+    text-align: center;
+  }
+
+  /* 상세 측정값들이 잘리지 않도록 */
+  .summaryCard {
+    min-width: 0;
+    word-wrap: break-word;
+  }
+
+  .summaryValue {
+    font-size: 18px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .summaryLabel {
+    font-size: 12px;
   }
 }

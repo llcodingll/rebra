@@ -39,6 +39,8 @@ export default function StockDetailPage() {
     reconnect,
   } = useRealtimeStock(stockCode);
 
+  console.log('StockDetailPage');
+
   // console.log(holdingData);
   // 차트 데이터에서 현재 가격 정보 가져오기 (일봉 기준)
   const { data: infiniteData } = useInfiniteChartData(stockCode, 'daily', true);
@@ -48,12 +50,10 @@ export default function StockDetailPage() {
 
   // 현재가 계산 (실시간 데이터 우선, 차트 데이터 차순위, 데이터 없으면 0)
   const hasRealData = !!(realtimePrice?.stckPrpr || chartApiData?.summary?.currentPrice);
-  const currentPrice = hasRealData
-    ? (realtimePrice?.stckPrpr || Number(chartApiData?.summary?.currentPrice))
-    : 0;
+  const currentPrice = hasRealData ? realtimePrice?.stckPrpr || Number(chartApiData?.summary?.currentPrice) : 0;
 
   // 보유 정보 조회 (중앙 집중식 관리)
-  const { holdingData } = useStockHolding(stockCode, currentPrice);
+  const { holdingData, refetch: refetchHolding } = useStockHolding(stockCode, currentPrice);
 
   // 실제 주식 정보 (차트 API 데이터 우선, 실시간 데이터는 보조) + SearchPage에서 전달받은 정보 우선 사용
   const displayStockInfo =
@@ -87,6 +87,9 @@ export default function StockDetailPage() {
     high: 0,
     low: 0,
   };
+
+  // 전일 종가 계산 (현재가 - 전일대비)
+  const prevClose = safeStockInfo.currentPrice - safeStockInfo.change;
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);
@@ -148,63 +151,6 @@ export default function StockDetailPage() {
 
   return (
     <div className={styles.container}>
-      {/* STOMP 연결 디버깅 패널 */}
-      {isDevMode() && (
-        <div className={styles.debugPanel}>
-          <div className={styles.debugHeader}>
-            <h3>🔌 STOMP 연결 상태</h3>
-            <div className={styles.debugControls}>
-              <button onClick={disconnect} className={styles.disconnectBtn} disabled={!isConnected}>
-                연결 해제
-              </button>
-            </div>
-          </div>
-
-          <div className={styles.debugContent}>
-            <div className={styles.debugRow}>
-              <span className={styles.debugLabel}>STOMP 연결:</span>
-              <span className={isConnected ? styles.statusOk : styles.statusError}>
-                {isConnected ? '✅ 연결됨' : '❌ 연결 안됨'}
-              </span>
-            </div>
-
-            <div className={styles.debugRow}>
-              <span className={styles.debugLabel}>일괄 구독 요청:</span>
-              <span className={subscriptionStatus.requested ? styles.statusOk : styles.statusError}>
-                {subscriptionStatus.requested ? '✅ 요청됨' : '❌ 요청 안됨'}
-              </span>
-            </div>
-
-            <div className={styles.debugRow}>
-              <span className={styles.debugLabel}>구독 성공:</span>
-              <span className={subscriptionStatus.successful ? styles.statusOk : styles.statusError}>
-                {subscriptionStatus.successful ? '✅ 성공' : '❌ 실패'}
-              </span>
-            </div>
-
-            <div className={styles.debugRow}>
-              <span className={styles.debugLabel}>로딩 상태:</span>
-              <span className={styles.debugValue}>{isLoading ? '⏳ 로딩 중...' : '✅ 완료'}</span>
-            </div>
-
-            {subscriptionStatus.lastUpdate && (
-              <div className={styles.debugRow}>
-                <span className={styles.debugLabel}>마지막 업데이트:</span>
-                <span className={styles.debugValue}>
-                  {new Date(subscriptionStatus.lastUpdate).toLocaleTimeString()}
-                </span>
-              </div>
-            )}
-
-            {error && (
-              <div className={styles.debugRow}>
-                <span className={styles.debugLabel}>오류:</span>
-                <span className={styles.statusError}>{error}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* 주식 정보 및 보유 현황 섹션 */}
       <div className={styles.stockInfoSection}>
@@ -244,6 +190,7 @@ export default function StockDetailPage() {
           orderBook={orderbook}
           stockInfo={{
             currentPrice: safeStockInfo.currentPrice || (hasRealData ? 0 : 71400), // 실제 데이터 있으면 0, 없으면 기본값
+            prevClose: prevClose || 71400, // 전일 종가
             high52: 79800, // 임시 데이터 - 실제로는 API에서 가져와야 함
             low52: 49900,
             upperLimit: safeStockInfo.currentPrice ? Math.floor(safeStockInfo.currentPrice * 1.3) : 71400, // 상한가
@@ -263,6 +210,7 @@ export default function StockDetailPage() {
           holdingData={holdingData}
           currentPrice={currentPrice}
           orderBookClickedPrice={orderBookClickedPrice}
+          onRefreshHolding={refetchHolding}
         />
       </div>
     </div>

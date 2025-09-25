@@ -13,6 +13,7 @@ import com.rebra.service.WebSocketReconnectionService;
 import com.rebra.util.WebSocketHelper;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,20 +47,14 @@ public class RealtimeController {
     // 개별 구독 해제 메서드 제거됨 - bulk 구독 해제 방식 사용
 
     /**
-     * 일괄 구독 요청
-     * 클라이언트: SEND("/app/subscribe/bulk", {stocks: [...]})
-     *
-     * 사용 예시:
-     * {
-     *   "stocks": [
-     *     {"stockCode": "005930", "dataTypes": ["price", "orderbook"]},
-     *     {"stockCode": "000660", "dataTypes": ["price"]}
-     *   ]
-     * }
+     * 일괄 구독 요청 클라이언트: SEND("/app/subscribe/bulk", {stocks: [...]})
+     * <p>
+     * 사용 예시: { "stocks": [ {"stockCode": "005930", "dataTypes": ["price", "orderbook"]}, {"stockCode": "000660",
+     * "dataTypes": ["price"]} ] }
      */
     @MessageMapping("/subscribe/bulk")
     public void subscribeBulkRequest(@Payload BulkSubscriptionRequest request,
-                                    SimpMessageHeaderAccessor headerAccessor) {
+                                     SimpMessageHeaderAccessor headerAccessor) {
         String sessionId = headerAccessor.getSessionId();
 
         // 세션에서 userId 추출
@@ -67,13 +62,13 @@ public class RealtimeController {
         if (userId == null) {
             log.warn("Websocket 세션에 userId 없음 - sessionId: {}", sessionId);
             BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
-                "인증 실패: 로그인이 필요합니다", sessionId);
+                    "인증 실패: 로그인이 필요합니다", sessionId);
             webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
             return;
         }
 
         log.info("📡 일괄 구독 요청 - userId={}, sessionId={}, 요청종목수={}, 총구독수={}",
-            userId, sessionId, request.getStocks().size(), request.getTotalSubscriptionCount());
+                userId, sessionId, request.getStocks().size(), request.getTotalSubscriptionCount());
 
         // 입력 검증
         if (!validateBulkSubscriptionRequest(request, userId)) {
@@ -86,41 +81,40 @@ public class RealtimeController {
 
             // 비동기 병렬 처리로 구독 요청 실행
             CompletableFuture.supplyAsync(() -> processBulkSubscription(request, account, sessionId, userId),
-                                        bulkSubscriptionExecutor)
-                .thenAccept(response -> {
-                    // 구독 성공 알림 전송
-                    webSocketHelper.sendBulkSubscriptionResponse(userId, response);
+                            bulkSubscriptionExecutor)
+                    .thenAccept(response -> {
+                        // 구독 성공 알림 전송
+                        webSocketHelper.sendBulkSubscriptionResponse(userId, response);
 
-                    // 성공한 구독들을 재연결 서비스에 등록
-                    registerSuccessfulSubscriptions(response, sessionId);
+                        // 성공한 구독들을 재연결 서비스에 등록
+                        registerSuccessfulSubscriptions(response, sessionId);
 
-                    log.info("✅ 일괄 구독 처리 완료 - userId={}, 성공={}, 실패={}",
-                        userId, response.getTotalSuccessful(),
-                        response.getTotalFailed());
-                })
-                .exceptionally(throwable -> {
-                    log.error("❌ 일괄 구독 처리 중 예외 발생 - userId={}", userId, throwable);
-                    BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
-                        "서버 오류: " + throwable.getMessage(), sessionId);
-                    webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
-                    return null;
-                });
+                        log.info("✅ 일괄 구독 처리 완료 - userId={}, 성공={}, 실패={}",
+                                userId, response.getTotalSuccessful(),
+                                response.getTotalFailed());
+                    })
+                    .exceptionally(throwable -> {
+                        log.error("❌ 일괄 구독 처리 중 예외 발생 - userId={}", userId, throwable);
+                        BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
+                                "서버 오류: " + throwable.getMessage(), sessionId);
+                        webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
+                        return null;
+                    });
 
         } catch (Exception e) {
             log.error("❌ 일괄 구독 초기 처리 실패 - userId={}", userId, e);
             BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
-                "초기 처리 실패: " + e.getMessage(), sessionId);
+                    "초기 처리 실패: " + e.getMessage(), sessionId);
             webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
         }
     }
 
     /**
-     * 일괄 구독 해제 요청
-     * 클라이언트: SEND("/app/unsubscribe/bulk", {stocks: [...]})
+     * 일괄 구독 해제 요청 클라이언트: SEND("/app/unsubscribe/bulk", {stocks: [...]})
      */
     @MessageMapping("/unsubscribe/bulk")
     public void unsubscribeBulkRequest(@Payload BulkUnsubscriptionRequest request,
-                                      SimpMessageHeaderAccessor headerAccessor) {
+                                       SimpMessageHeaderAccessor headerAccessor) {
         String sessionId = headerAccessor.getSessionId();
 
         // 세션에서 userId 추출
@@ -132,7 +126,7 @@ public class RealtimeController {
         }
 
         log.info("🔌 일괄 구독 해제 요청 - userId={}, sessionId={}, 요청종목수={}",
-            userId, sessionId, request.getStocks().size());
+                userId, sessionId, request.getStocks().size());
 
         try {
             List<SubscriptionResult> results = new ArrayList<>();
@@ -173,14 +167,14 @@ public class RealtimeController {
     private boolean validateBulkSubscriptionRequest(BulkSubscriptionRequest request, Long userId) {
         if (request == null || request.getStocks() == null || request.getStocks().isEmpty()) {
             BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
-                "요청이 비어있습니다", null);
+                    "요청이 비어있습니다", null);
             webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
             return false;
         }
 
         if (!request.isValid()) {
             BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
-                "잘못된 요청입니다", null);
+                    "잘못된 요청입니다", null);
             webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
             return false;
         }
@@ -188,7 +182,7 @@ public class RealtimeController {
         // 중복 구독 검증
         if (request.hasDuplicateSubscriptions()) {
             BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
-                "중복된 구독 요청이 있습니다", null);
+                    "중복된 구독 요청이 있습니다", null);
             webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
             return false;
         }
@@ -196,7 +190,7 @@ public class RealtimeController {
         // 구독 수 제한 검증 (100개)
         if (request.getTotalSubscriptionCount() > 100) {
             BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
-                "구독 요청 수가 너무 많습니다 (최대 100개)", null);
+                    "구독 요청 수가 너무 많습니다 (최대 100개)", null);
             webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
             return false;
         }
@@ -212,21 +206,21 @@ public class RealtimeController {
         log.info("📋 사용자 {}의 전체 계좌 수: {}", userId, allAccounts.size());
 
         var connectedAccounts = allAccounts.stream()
-            .filter(Account::isConnected)
-            .toList();
+                .filter(Account::isConnected)
+                .toList();
         log.info("🔗 사용자 {}의 연결된 계좌 수: {}", userId, connectedAccounts.size());
 
         return accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true)
-            .orElseThrow(() -> new RuntimeException(
-                String.format("활성화된 계좌를 찾을 수 없습니다. userId: %d, 전체계좌: %d개, 연결된계좌: %d개",
-                    userId, allAccounts.size(), connectedAccounts.size())));
+                .orElseThrow(() -> new RuntimeException(
+                        String.format("활성화된 계좌를 찾을 수 없습니다. userId: %d, 전체계좌: %d개, 연결된계좌: %d개",
+                                userId, allAccounts.size(), connectedAccounts.size())));
     }
 
     /**
      * 일괄 구독 처리 (비동기)
      */
     private BulkSubscriptionResponse processBulkSubscription(BulkSubscriptionRequest request,
-                                                           Account account, String sessionId, Long userId) {
+                                                             Account account, String sessionId, Long userId) {
         List<SubscriptionResult> results = new ArrayList<>();
 
         log.info("🔄 일괄 구독 처리 시작 - userId={}, 총 {}개 종목", userId, request.getStocks().size());
@@ -240,15 +234,15 @@ public class RealtimeController {
             log.info("🔍 stocks isEmpty: {}", request.getStocks().isEmpty());
         }
 
-      List<StockSubscription> stocksList = request.getStocks();
-      log.info("🔍 루프 시작 전 - 리스트 크기: {}", stocksList.size());
+        List<StockSubscription> stocksList = request.getStocks();
+        log.info("🔍 루프 시작 전 - 리스트 크기: {}", stocksList.size());
 
         // 각 종목별로 구독 처리                                           │
-         for (int i = 0; i < stocksList.size(); i++) {
-          StockSubscription stock = stocksList.get(i);
-           String stockCode = stock.getStockCode();
+        for (int i = 0; i < stocksList.size(); i++) {
+            StockSubscription stock = stocksList.get(i);
+            String stockCode = stock.getStockCode();
 
-             log.debug("✅stockCodestockCodestockCodestockCodestockCode");
+            log.debug("✅stockCodestockCodestockCodestockCodestockCode");
 
             log.debug("" + stock.getImplementedDataTypes().size());
             // 구현된 데이터 타입만 처리
@@ -257,7 +251,7 @@ public class RealtimeController {
                 try {
                     processIndividualSubscription(account, stockCode, dataType, sessionId);
                     results.add(SubscriptionResult.success(stockCode, dataType,
-                        "구독이 성공했습니다"));
+                            "구독이 성공했습니다"));
 
                     log.debug("✅ 개별 구독 성공 - stockCode={}, dataType={}", stockCode, dataType);
 
@@ -270,7 +264,7 @@ public class RealtimeController {
             // 구현되지 않은 데이터 타입에 대한 알림
             for (String dataType : stock.getUnimplementedDataTypes()) {
                 results.add(SubscriptionResult.failure(stockCode, dataType,
-                    "아직 구현되지 않은 데이터 타입입니다", "NOT_IMPLEMENTED"));
+                        "아직 구현되지 않은 데이터 타입입니다", "NOT_IMPLEMENTED"));
             }
         }
 
@@ -281,7 +275,7 @@ public class RealtimeController {
      * 개별 구독 처리
      */
     private void processIndividualSubscription(Account account, String stockCode,
-                                             String dataType, String sessionId) {
+                                               String dataType, String sessionId) {
         switch (dataType) {
             case "price":
                 kisRealtimeService.startPriceSubscription(account, stockCode, sessionId);
@@ -295,12 +289,21 @@ public class RealtimeController {
     }
 
     /**
-     * 성공한 구독들을 재연결 서비스에 등록
+     * 성공한 구독들을 재연결 서비스에 등록 (중복 방지 포함)
      */
     private void registerSuccessfulSubscriptions(BulkSubscriptionResponse response, String sessionId) {
         for (SubscriptionResult result : response.getSuccessfulResults()) {
-            webSocketReconnectionService.addSubscription(sessionId,
-                result.getStockCode(), result.getDataType());
+            // 새로고침 복구가 아닌 경우에만 등록 (중복 방지)
+            if (!webSocketReconnectionService.isSubscriptionAlreadyRegistered(sessionId,
+                    result.getStockCode(), result.getDataType())) {
+                webSocketReconnectionService.addSubscription(sessionId,
+                        result.getStockCode(), result.getDataType());
+                log.debug("새로운 구독 등록 - SessionId: {}, StockCode: {}, DataType: {}",
+                        sessionId, result.getStockCode(), result.getDataType());
+            } else {
+                log.debug("이미 등록된 구독 건너뛰기 - SessionId: {}, StockCode: {}, DataType: {}",
+                        sessionId, result.getStockCode(), result.getDataType());
+            }
         }
     }
 
@@ -323,7 +326,7 @@ public class RealtimeController {
      * 단일 데이터 타입 구독 해제
      */
     private SubscriptionResult unsubscribeSingleDataType(Long userId, String stockCode,
-                                                        String dataType, String sessionId) {
+                                                         String dataType, String sessionId) {
         try {
             switch (dataType) {
                 case "price":
@@ -342,6 +345,30 @@ public class RealtimeController {
 
         } catch (Exception e) {
             return SubscriptionResult.failure(stockCode, dataType, e);
+        }
+    }
+
+    /**
+     * 클라이언트 하트비트 응답 처리 클라이언트: SEND("/app/heartbeat/response", {sequence: 123})
+     */
+    @MessageMapping("/heartbeat/response")
+    public void handleHeartbeatResponse(@Payload Map<String, Object> response,
+                                        SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+
+        try {
+            Object sequenceObj = response.get("sequence");
+            if (sequenceObj != null) {
+                long sequence = Long.parseLong(sequenceObj.toString());
+                webSocketReconnectionService.handleHeartbeatResponse(sessionId, sequence);
+
+                log.debug("💚 클라이언트 하트비트 응답 처리됨 - SessionId: {}, Sequence: {}",
+                        sessionId, sequence);
+            } else {
+                log.warn("❌ 하트비트 응답에 sequence 없음 - SessionId: {}", sessionId);
+            }
+        } catch (Exception e) {
+            log.error("❌ 하트비트 응답 처리 실패 - SessionId: {}", sessionId, e);
         }
     }
 }

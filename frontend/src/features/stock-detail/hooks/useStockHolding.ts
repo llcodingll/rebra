@@ -71,7 +71,7 @@ export const useStockHolding = (stockCode: string, currentPrice: number = 0, ena
       returnRate,
       fee,
       tax,
-      availableCash: dataToUse.dncaTotAmt, // 구매가능금액
+      availableCash: dataToUse.ordPsblCash, // 구매가능금액
     };
   }, [holdingResponse, currentPrice]); // previousHoldingResponse.current 의존성 제거
 
