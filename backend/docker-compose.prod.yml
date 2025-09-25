@@ -135,6 +135,8 @@ services:
       - SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER=${SECURITY_ENCRYPTION_ACCOUNT_HASH_PEPPER}
       - GMS_API_KEY=temp-gms-api-key
       - GMS_GPT_URL=https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions
+      - OPEN_AI_API_KEY=${OPEN_AI_API_KEY}
+      - DEEP_SEARCH_KEY=${DEEP_SEARCH_KEY}
       - DDL_AUTO=create
     depends_on:
       - postgres

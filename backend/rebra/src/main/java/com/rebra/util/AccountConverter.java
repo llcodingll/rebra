@@ -44,58 +44,58 @@ public class AccountConverter {
 
     public static AccountSummary toAccountSummary(Account account) {
         String maskedAccountNumber = decryptAndMaskAccountNumber(
-            account.getAccountNumber(), account.getUser().getId());
+                account.getAccountNumber(), account.getUser().getId());
 
         return new AccountListResponse.AccountSummary(
-            account.getId(),
-            maskedAccountNumber,
-            account.getAccountType(),
-            account.getBrokerName(),
-            account.isConnected(),
-            account.getCreatedAt()
+                account.getId(),
+                maskedAccountNumber,
+                account.getAccountType(),
+                account.getBrokerName(),
+                account.isConnected(),
+                account.getCreatedAt()
         );
     }
 
     public static AccountDetailResponse toAccountDetail(Account account) {
         String maskedAccountNumber = decryptAndMaskAccountNumber(
-            account.getAccountNumber(), account.getUser().getId());
+                account.getAccountNumber(), account.getUser().getId());
         String maskedAppKey = decryptAndMaskAppKey(
-            account.getAppKey(), account.getUser().getId());
+                account.getAppKey(), account.getUser().getId());
 
         return AccountDetailResponse.of(
-            account.getId(),
-            maskedAccountNumber,
-            maskedAppKey,
-            account.getAccountType(),
-            account.getBrokerName(),
-            account.isConnected(),
-            account.getCreatedAt(),
-            "계좌 연결됨",
-            account.isConnected()
+                account.getId(),
+                maskedAccountNumber,
+                maskedAppKey,
+                account.getAccountType(),
+                account.getBrokerName(),
+                account.isConnected(),
+                account.getCreatedAt(),
+                "계좌 연결됨",
+                account.isConnected()
         );
     }
 
     public static Account fromRegisterRequest(User user, AccountRegisterRequest request, AccountType accountType) {
         try {
             String encryptedAccountNumber = AccountEncryptionUtil.encryptAccountNumber(
-                request.getAccountNumber(), user.getId());
+                    request.getAccountNumber(), user.getId());
             String accountNumberHash = AccountEncryptionUtil.generateAccountNumberHash(
-                request.getAccountNumber());
+                    request.getAccountNumber());
             String encryptedAppKey = AccountEncryptionUtil.encryptAppKey(
-                request.getAppKey(), user.getId());
+                    request.getAppKey(), user.getId());
             String encryptedAppSecret = AccountEncryptionUtil.encryptAppSecret(
-                request.getAppSecret(), user.getId());
+                    request.getAppSecret(), user.getId());
 
             return Account.builder()
-                .user(user)
-                .accountNumber(encryptedAccountNumber)
-                .accountNumberHash(accountNumberHash)
-                .appKey(encryptedAppKey)
-                .appSecret(encryptedAppSecret)
-                .brokerName("한국투자증권") // TODO: 확장 할까요 말까요..?
-                .accountType(accountType)
-                .isConnected(true)
-                .build();
+                    .user(user)
+                    .accountNumber(encryptedAccountNumber)
+                    .accountNumberHash(accountNumberHash)
+                    .appKey(encryptedAppKey)
+                    .appSecret(encryptedAppSecret)
+                    .brokerName("한국투자증권") // TODO: 확장 할까요 말까요..?
+                    .accountType(accountType)
+                    .isConnected(true)
+                    .build();
 
         } catch (Exception e) {
             log.error("계좌 정보 암호화 실패: {}", e.getMessage(), e);

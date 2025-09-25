@@ -1,29 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styles from './BuyOrderForm.module.css';
 import { useBuyOrder } from '../hooks/useBuyOrder';
 import type { StockHoldingData } from '../../stock-detail/api/types';
 
 interface BuyOrderFormProps {
   stockCode: string;
+  stockName: string;
   holdingData: StockHoldingData | null;
   currentPrice: number;
+  orderBookClickedPrice?: number;
 }
 
-export default function BuyOrderForm({ stockCode, holdingData, currentPrice }: BuyOrderFormProps) {
-  // 내부 상태 관리 (현재가로 초기화)
-  const [orderPrice, setOrderPrice] = useState(currentPrice || 71400);
+export default function BuyOrderForm({ stockCode, stockName, holdingData, currentPrice, orderBookClickedPrice }: BuyOrderFormProps) {
+  // 내부 상태 관리 (기본값으로 초기화)
+  const [orderPrice, setOrderPrice] = useState(0);
   const [quantity, setQuantity] = useState<number | ''>('');
+  const [isPriceInitialized, setIsPriceInitialized] = useState(false);
+
+  // currentPrice가 실제 값으로 변경될 때 1회만 orderPrice 업데이트
+  useEffect(() => {
+    if (currentPrice > 0 && !isPriceInitialized) {
+      setOrderPrice(currentPrice);
+      setIsPriceInitialized(true);
+    }
+  }, [currentPrice, isPriceInitialized]);
+
+  // 호가창에서 클릭된 가격을 주문 가격에 설정
+  useEffect(() => {
+    if (orderBookClickedPrice && orderBookClickedPrice > 0) {
+      setOrderPrice(orderBookClickedPrice);
+    }
+  }, [orderBookClickedPrice]);
   // const [isQuantityExceeded, setIsQuantityExceeded] = useState(false);
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);
   };
 
-  // 하드코딩된 계좌 잔액 (100만원)
-  const availableCash = 1000000;
-
   // 현재 보유 정보 (holdingData에서 가져오기)
   const currentHoldings = holdingData?.holdingQuantity || 0;
   const currentAvgPrice = holdingData?.averagePurchasePrice || 0;
+  const availableCash = holdingData?.availableCash || 0; // 실제 잔액 또는 기본값
 
   // 계산 값들
   const numericQuantity = typeof quantity === 'number' ? quantity : 0;
@@ -104,6 +120,7 @@ export default function BuyOrderForm({ stockCode, holdingData, currentPrice }: B
   // 매수 주문 훅
   const buyOrder = useBuyOrder({
     stockCode,
+    stockName,
     onSuccess: (data) => {
       console.log('✅ 매수 주문 성공:', data);
       alert(`매수 주문이 완료되었습니다!\n주문번호: ${data.orderNumber}`);
