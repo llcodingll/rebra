@@ -3,11 +3,14 @@
   height: 100%;
   background: white;
   padding: 0px 40px 0px 0px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* 전체 컨테이너에서 스크롤 방지 */
 }
 
 .newsHeader {
   margin-bottom: 6px;
+  flex-shrink: 0; /* 헤더 크기 고정 */
 }
 
 .newsHeader h3 {
@@ -26,6 +29,8 @@
 .newsList {
   display: flex;
   flex-direction: column;
+  flex: 1; /* 남은 공간 모두 차지 */
+  overflow-y: auto; /* 뉴스 리스트만 스크롤 */
 }
 
 .newsItem {
