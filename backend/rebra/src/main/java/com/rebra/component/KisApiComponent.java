@@ -410,9 +410,30 @@ public class KisApiComponent {
             if (count == 0) {
                 SubscribableApiResult subscription = activeSubscriptions.remove(subscriptionKey);
                 if (subscription != null) {
-                    subscription.unsubscribe();
-                    log.info("실시간 {} 구독 완전 해제 - UserId: {}, StockCode: {}",
-                            dataType, userId, stockCode);
+                    try {
+                        subscription.unsubscribe();
+                        log.info("실시간 {} 구독 완전 해제 - UserId: {}, StockCode: {}",
+                                dataType, userId, stockCode);
+                    } catch (KisClientException e) {
+                        // UNSUBSCRIBE ERROR(not found!) 처리 - 이미 해제된 구독이므로 정상 처리
+                        if (e.getMessage() != null && e.getMessage().contains("not found")) {
+                            log.debug("이미 해제된 구독 - 정상 처리: UserId={}, StockCode={}, Type={}",
+                                    userId, stockCode, dataType);
+                        } else {
+                            log.warn("실시간 구독 해제 중 예외 (무시됨) - UserId: {}, StockCode: {}, Type: {}, Error: {}",
+                                    userId, stockCode, dataType, e.getMessage());
+                        }
+                    } catch (Exception e) {
+                        // 연결이 이미 끊어진 경우 등의 기타 예외 처리
+                        if (e.getMessage() != null &&
+                                (e.getMessage().contains("connection") || e.getMessage().contains("timeout"))) {
+                            log.debug("연결 종료된 상태에서 구독 해제 시도 - 정상 처리: UserId={}, StockCode={}, Type={}",
+                                    userId, stockCode, dataType);
+                        } else {
+                            log.warn("실시간 구독 해제 중 예외 (무시됨) - UserId: {}, StockCode: {}, Type: {}, Error: {}",
+                                    userId, stockCode, dataType, e.getMessage());
+                        }
+                    }
                 }
                 subscriptionCount.remove(subscriptionKey);
             } else {
@@ -421,7 +442,7 @@ public class KisApiComponent {
             }
 
         } catch (Exception e) {
-            log.error("실시간 구독 해제 실패 - UserId: {}, StockCode: {}, Type: {}",
+            log.error("실시간 구독 해제 처리 실패 - UserId: {}, StockCode: {}, Type: {}",
                     userId, stockCode, dataType, e);
         }
     }
@@ -462,12 +483,6 @@ public class KisApiComponent {
 
         connectionLock.lock();
         try {
-            // 기존 연결이 있는지 확인
-//            SubscribableApiResult existingConnection = connectionPool.get(connectionKey);
-////            if (existingConnection != null) {
-////                log.info("🔗 기존 체결가 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
-////                return existingConnection;
-////            }
 
             // 새 체결가 연결 생성
             log.info("🆕 새 체결가 WebSocket 연결 생성 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
@@ -514,12 +529,6 @@ public class KisApiComponent {
 
         connectionLock.lock();
         try {
-            // 기존 연결이 있는지 확인
-//            SubscribableApiResult existingConnection = connectionPool.get(connectionKey);
-//            if (existingConnection != null) {
-//                log.info("🔗 기존 호가 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
-//                return existingConnection;
-//            }
 
             // 새 호가 연결 생성
             log.info("🆕 새 호가 WebSocket 연결 생성 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
@@ -1289,9 +1298,11 @@ public class KisApiComponent {
      * 주식현재가 호가/예상체결 조회
      */
     public InquireAskingPriceExpCcnResult getCurrentAskingPrice(Long userId, Long accountId, AccountType accountType,
-                                                 DecryptedAccountCredentials credentials, String stockCode) {
+                                                                DecryptedAccountCredentials credentials,
+                                                                String stockCode) {
         try {
-            log.info("주식현재가 호가/예상체결 조회 시작 - 사용자ID: {}, 계좌ID: {}, 계좌타입: {}, 종목코드: {}", userId, accountId, accountType, stockCode);
+            log.info("주식현재가 호가/예상체결 조회 시작 - 사용자ID: {}, 계좌ID: {}, 계좌타입: {}, 종목코드: {}", userId, accountId, accountType,
+                    stockCode);
 
             // Credentials가 Config에 없으면 자동으로 등록
             ensureUserCredentials(userId, accountId, accountType, credentials);

@@ -1,10 +1,12 @@
 package com.rebra.service;
 
 import com.rebra.component.KisApiComponent;
+import com.rebra.config.SessionActivityUpdateEvent;
 import com.rebra.entity.Account;
 import com.rebra.util.WebSocketHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,6 +16,7 @@ public class KisRealtimeService {
 
     private final KisApiComponent kisApiComponent;
     private final WebSocketHelper webSocketHelper;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 체결가 구독 시작
@@ -32,8 +35,12 @@ public class KisRealtimeService {
                         if (data != null) {
                             log.info("📊 체결가 원본 데이터 전송 시작 - userId={}, stockCode={}",
                                     userId, stockCode);
-                            webSocketHelper.broadcastPriceData(userId, stockCode, data);
+                            webSocketHelper.broadcastPriceData(userId, stockCode, data, sessionId);
                             log.info("📤 체결가 데이터 전송 완료 - userId={}, stockCode={}", userId, stockCode);
+
+                            // 세션 활동 업데이트 - 이벤트 발행 (순환 의존성 방지)
+                            eventPublisher.publishEvent(new SessionActivityUpdateEvent(this, sessionId, "PRICE_DATA_RECEIVED"));
+                            log.debug("💚 체결가 데이터 수신 시 세션 활동 업데이트 이벤트 발행 - sessionId={}", sessionId);
                         } else {
                             log.warn("❌ 체결가 데이터가 null - userId={}, stockCode={}", userId, stockCode);
                         }
@@ -63,8 +70,12 @@ public class KisRealtimeService {
                         if (data != null) {
                             log.info("📊 호가 원본 데이터 전송 시작 - userId={}, stockCode={}",
                                     userId, stockCode);
-                            webSocketHelper.broadcastOrderbookData(userId, stockCode, data);
+                            webSocketHelper.broadcastOrderbookData(userId, stockCode, data, sessionId);
                             log.info("📤 호가 데이터 전송 완료 - userId={}, stockCode={}", userId, stockCode);
+
+                            // 세션 활동 업데이트 - 이벤트 발행 (순환 의존성 방지)
+                            eventPublisher.publishEvent(new SessionActivityUpdateEvent(this, sessionId, "ORDERBOOK_DATA_RECEIVED"));
+                            log.debug("💚 호가 데이터 수신 시 세션 활동 업데이트 이벤트 발행 - sessionId={}", sessionId);
                         } else {
                             log.warn("❌ 호가 데이터가 null - userId={}, stockCode={}", userId, stockCode);
                         }

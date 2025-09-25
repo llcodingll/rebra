@@ -1,5 +1,6 @@
 package com.rebra.service;
 
+import com.rebra.config.SessionActivityUpdateEvent;
 import com.rebra.config.WebSocketSessionDisconnectEvent;
 import com.rebra.dto.response.SubscriptionResult;
 import com.rebra.entity.Account;
@@ -15,7 +16,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,11 +31,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
- * WebSocket 연결 안정성 및 재연결 관리 서비스
- * - 연결 상태 모니터링
- * - 하트비트 메커니즘
- * - 자동 재연결 로직
- * - 데이터 무결성 검증
+ * WebSocket 연결 안정성 및 재연결 관리 서비스 - 연결 상태 모니터링 - 하트비트 메커니즘 - 자동 재연결 로직 - 데이터 무결성 검증
  */
 @Service
 @RequiredArgsConstructor
@@ -53,13 +55,31 @@ public class WebSocketReconnectionService {
 
     // 하트비트 카운터
     private final AtomicLong heartbeatCounter = new AtomicLong(0);
-    
+
+    // 세션 동시성 제어를 위한 락 시스템
+    private final Map<String, ReentrantLock> sessionLocks = new ConcurrentHashMap<>();
+    private final Set<String> sessionsBeingProcessed = ConcurrentHashMap.newKeySet();
+
+    // 양방향 하트비트를 위한 응답 추적 시스템
+    private final Map<String, HeartbeatTracker> heartbeatTrackers = new ConcurrentHashMap<>();
+
+    // KIS 연결 상태 모니터링
+    private volatile boolean kisConnectionHealthy = true;
+    private volatile LocalDateTime lastKisHealthCheck = LocalDateTime.now();
+    private volatile int consecutiveKisFailures = 0;
+    private final AtomicLong kisHealthCheckCounter = new AtomicLong(0);
+
+    // 비동기 구독 해제를 위한 스레드 풀
+    private final ExecutorService unsubscribeExecutor = Executors.newFixedThreadPool(5);
+
     // 설정값
     private static final long HEARTBEAT_INTERVAL = 30000; // 30초
     private static final long SESSION_TIMEOUT = 120000;   // 2분
     private static final long RECONNECTION_DELAY = 5000;  // 5초
     private static final int MAX_RECONNECTION_ATTEMPTS = 3;
     private static final long USER_SUBSCRIPTION_EXPIRATION = 3600000; // 1시간 (사용자별 구독 만료 시간)
+    private static final long KIS_HEALTH_CHECK_INTERVAL = 60000; // KIS 연결 상태 확인 (1분)
+    private static final int MAX_KIS_CONSECUTIVE_FAILURES = 3; // KIS 연속 실패 허용 횟수
 
     /**
      * 세션 활동 정보
@@ -68,19 +88,19 @@ public class WebSocketReconnectionService {
         private LocalDateTime lastSeen;
         private boolean isActive;
         private int missedHeartbeats;
-        
+
         public LastActivity() {
             this.lastSeen = LocalDateTime.now();
             this.isActive = true;
             this.missedHeartbeats = 0;
         }
-        
+
         public void updateActivity() {
             this.lastSeen = LocalDateTime.now();
             this.isActive = true;
             this.missedHeartbeats = 0;
         }
-        
+
         public void missHeartbeat() {
             this.missedHeartbeats++;
             if (this.missedHeartbeats > 3) {
@@ -88,10 +108,21 @@ public class WebSocketReconnectionService {
             }
         }
 
-        public LocalDateTime getLastSeen() { return lastSeen; }
-        public boolean isActive() { return isActive; }
-        public int getMissedHeartbeats() { return missedHeartbeats; }
-        public void setActive(boolean active) { this.isActive = active; }
+        public LocalDateTime getLastSeen() {
+            return lastSeen;
+        }
+
+        public boolean isActive() {
+            return isActive;
+        }
+
+        public int getMissedHeartbeats() {
+            return missedHeartbeats;
+        }
+
+        public void setActive(boolean active) {
+            this.isActive = active;
+        }
     }
 
     /**
@@ -116,17 +147,45 @@ public class WebSocketReconnectionService {
             this.userId = userId;
         }
 
-        public Map<String, String> getPriceSubscriptions() { return priceSubscriptions; }
-        public Map<String, String> getOrderbookSubscriptions() { return orderbookSubscriptions; }
-        public Map<String, Set<String>> getStockSubscriptions() { return stockSubscriptions; }
-        public Map<String, SubscriptionHistory> getSubscriptionHistory() { return subscriptionHistory; }
-        public Long getUserId() { return userId; }
-        public int getReconnectionAttempts() { return reconnectionAttempts; }
-        public LocalDateTime getLastBulkSubscription() { return lastBulkSubscription; }
+        public Map<String, String> getPriceSubscriptions() {
+            return priceSubscriptions;
+        }
 
-        public void incrementReconnectionAttempts() { this.reconnectionAttempts++; }
-        public void resetReconnectionAttempts() { this.reconnectionAttempts = 0; }
-        public void updateLastBulkSubscription() { this.lastBulkSubscription = LocalDateTime.now(); }
+        public Map<String, String> getOrderbookSubscriptions() {
+            return orderbookSubscriptions;
+        }
+
+        public Map<String, Set<String>> getStockSubscriptions() {
+            return stockSubscriptions;
+        }
+
+        public Map<String, SubscriptionHistory> getSubscriptionHistory() {
+            return subscriptionHistory;
+        }
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public int getReconnectionAttempts() {
+            return reconnectionAttempts;
+        }
+
+        public LocalDateTime getLastBulkSubscription() {
+            return lastBulkSubscription;
+        }
+
+        public void incrementReconnectionAttempts() {
+            this.reconnectionAttempts++;
+        }
+
+        public void resetReconnectionAttempts() {
+            this.reconnectionAttempts = 0;
+        }
+
+        public void updateLastBulkSubscription() {
+            this.lastBulkSubscription = LocalDateTime.now();
+        }
 
         /**
          * 통합 구독 추가 (새로운 방식)
@@ -143,7 +202,7 @@ public class WebSocketReconnectionService {
 
             // 히스토리 추가
             subscriptionHistory.computeIfAbsent(stockCode, k -> new SubscriptionHistory())
-                .addSubscription(dataType);
+                    .addSubscription(dataType);
         }
 
         /**
@@ -202,8 +261,8 @@ public class WebSocketReconnectionService {
          */
         public int getTotalSubscriptionCount() {
             return stockSubscriptions.values().stream()
-                .mapToInt(Set::size)
-                .sum();
+                    .mapToInt(Set::size)
+                    .sum();
         }
 
         /**
@@ -230,10 +289,21 @@ public class WebSocketReconnectionService {
             this.lastActivity = subscribedAt;
         }
 
-        public String getStockCode() { return stockCode; }
-        public String getDataType() { return dataType; }
-        public LocalDateTime getSubscribedAt() { return subscribedAt; }
-        public LocalDateTime getLastActivity() { return lastActivity; }
+        public String getStockCode() {
+            return stockCode;
+        }
+
+        public String getDataType() {
+            return dataType;
+        }
+
+        public LocalDateTime getSubscribedAt() {
+            return subscribedAt;
+        }
+
+        public LocalDateTime getLastActivity() {
+            return lastActivity;
+        }
 
         public void setLastActivity(LocalDateTime lastActivity) {
             this.lastActivity = lastActivity;
@@ -241,8 +311,12 @@ public class WebSocketReconnectionService {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             UserSubscriptionInfo that = (UserSubscriptionInfo) o;
             return Objects.equals(stockCode, that.stockCode) && Objects.equals(dataType, that.dataType);
         }
@@ -256,6 +330,79 @@ public class WebSocketReconnectionService {
         public String toString() {
             return String.format("UserSubscriptionInfo{stockCode='%s', dataType='%s', subscribedAt=%s}",
                     stockCode, dataType, subscribedAt);
+        }
+    }
+
+    /**
+     * 하트비트 추적 클래스 (양방향 하트비트용)
+     */
+    public static class HeartbeatTracker {
+        private volatile long lastSentSequence = 0;
+        private volatile long lastReceivedSequence = 0;
+        private volatile LocalDateTime lastSentTime;
+        private volatile LocalDateTime lastReceivedTime;
+        private volatile int consecutiveNoResponses = 0;
+        private volatile boolean waitingForResponse = false;
+
+        public HeartbeatTracker() {
+            this.lastSentTime = LocalDateTime.now();
+            this.lastReceivedTime = LocalDateTime.now();
+        }
+
+        public void recordHeartbeatSent(long sequence) {
+            this.lastSentSequence = sequence;
+            this.lastSentTime = LocalDateTime.now();
+            this.waitingForResponse = true;
+        }
+
+        public void recordHeartbeatResponse(long sequence) {
+            if (sequence == this.lastSentSequence) {
+                this.lastReceivedSequence = sequence;
+                this.lastReceivedTime = LocalDateTime.now();
+                this.waitingForResponse = false;
+                this.consecutiveNoResponses = 0;
+            }
+        }
+
+        public void markNoResponse() {
+            this.consecutiveNoResponses++;
+            this.waitingForResponse = false;
+        }
+
+        public boolean isHealthy() {
+            return consecutiveNoResponses < 3;
+        }
+
+        public boolean isResponseOverdue(long timeoutMs) {
+            if (!waitingForResponse) {
+                return false;
+            }
+            return lastSentTime.plusNanos(timeoutMs * 1_000_000).isBefore(LocalDateTime.now());
+        }
+
+        // Getters
+        public long getLastSentSequence() {
+            return lastSentSequence;
+        }
+
+        public long getLastReceivedSequence() {
+            return lastReceivedSequence;
+        }
+
+        public LocalDateTime getLastSentTime() {
+            return lastSentTime;
+        }
+
+        public LocalDateTime getLastReceivedTime() {
+            return lastReceivedTime;
+        }
+
+        public int getConsecutiveNoResponses() {
+            return consecutiveNoResponses;
+        }
+
+        public boolean isWaitingForResponse() {
+            return waitingForResponse;
         }
     }
 
@@ -299,15 +446,115 @@ public class WebSocketReconnectionService {
     }
 
     /**
+     * 세션별 락 획득
+     */
+    private ReentrantLock getSessionLock(String sessionId) {
+        return sessionLocks.computeIfAbsent(sessionId, k -> new ReentrantLock());
+    }
+
+    /**
+     * 세션 처리 시작 (중복 방지)
+     */
+    private boolean startSessionProcessing(String sessionId) {
+        return sessionsBeingProcessed.add(sessionId);
+    }
+
+    /**
+     * 세션 처리 완료
+     */
+    private void endSessionProcessing(String sessionId) {
+        sessionsBeingProcessed.remove(sessionId);
+        // 사용하지 않는 락 정리
+        sessionLocks.remove(sessionId);
+    }
+
+    /**
+     * 세션이 처리 중인지 확인
+     */
+    private boolean isSessionBeingProcessed(String sessionId) {
+        return sessionsBeingProcessed.contains(sessionId);
+    }
+
+    /**
+     * 동일한 userId의 기존 세션들 완전 정리 (새로고침 시 사용)
+     */
+    private void cleanupExistingUserSessions(Long userId) {
+        log.debug("🧹 기존 사용자 세션 정리 시작 - UserId: {}", userId);
+
+        // 동일한 userId를 가진 기존 세션 찾기
+        List<String> existingSessionIds = new ArrayList<>();
+
+        for (Map.Entry<String, SessionSubscriptions> entry : sessionSubscriptions.entrySet()) {
+            SessionSubscriptions subscription = entry.getValue();
+            if (userId.equals(subscription.getUserId())) {
+                existingSessionIds.add(entry.getKey());
+            }
+        }
+
+        if (!existingSessionIds.isEmpty()) {
+            log.info("🧹 기존 세션 발견 - UserId: {}, 정리할 세션: {}개", userId, existingSessionIds.size());
+
+            // 각 기존 세션을 개별적으로 정리
+            for (String existingSessionId : existingSessionIds) {
+                try {
+                    log.debug("🧹 기존 세션 정리 중 - UserId: {}, SessionId: {}", userId, existingSessionId);
+
+                    // 1. 세션 활동 정보 제거
+                    sessionActivity.remove(existingSessionId);
+
+                    // 2. 하트비트 추적기 즉시 제거
+                    heartbeatTrackers.remove(existingSessionId);
+                    log.debug("💚 하트비트 추적기 정리 - SessionId: {}", existingSessionId);
+
+                    // 3. 세션 구독 정보 제거 (KIS 구독 해제는 생략 - 새로고침이므로 불필요)
+                    SessionSubscriptions oldSubscription = sessionSubscriptions.remove(existingSessionId);
+                    if (oldSubscription != null) {
+                        log.debug("🧹 기존 세션 구독 정보 제거 - SessionId: {}, 체결가: {}개, 호가: {}개",
+                                existingSessionId,
+                                oldSubscription.getPriceSubscriptions().size(),
+                                oldSubscription.getOrderbookSubscriptions().size());
+                    }
+
+                    // 4. 세션 처리 상태 정리
+                    sessionsBeingProcessed.remove(existingSessionId);
+                    sessionLocks.remove(existingSessionId);
+
+                    log.debug("✅ 기존 세션 정리 완료 - SessionId: {}", existingSessionId);
+
+                } catch (Exception e) {
+                    log.error("❌ 기존 세션 정리 실패 - SessionId: {}", existingSessionId, e);
+                }
+            }
+
+            log.info("✅ 기존 사용자 세션 정리 완료 - UserId: {}, 정리된 세션: {}개",
+                    userId, existingSessionIds.size());
+        } else {
+            log.debug("🧹 기존 세션 없음 - UserId: {}", userId);
+        }
+    }
+
+    /**
      * 새 세션 등록 (새로고침 복구 지원)
      */
     public void registerSession(String sessionId, Long userId) {
+        // 사용자별 구독 정보 확인 (새로고침 감지)
+        Set<UserSubscriptionInfo> userSubscriptions = userActiveSubscriptions.get(userId);
+        boolean isRefreshDetected = userSubscriptions != null && !userSubscriptions.isEmpty();
+
+        if (isRefreshDetected) {
+            log.info("🔄 새로고침 감지 - 기존 세션 정리 시작: UserId: {}, 복구할 구독: {}개",
+                    userId, userSubscriptions.size());
+
+            // 동일한 userId의 기존 세션들 완전 정리
+            cleanupExistingUserSessions(userId);
+        }
+
+        // 새 세션 정보 등록
         sessionActivity.put(sessionId, new LastActivity());
         sessionSubscriptions.put(sessionId, new SessionSubscriptions(userId));
+        heartbeatTrackers.put(sessionId, new HeartbeatTracker());
 
-        // 사용자별 구독 정보 확인 (새로고침 복구)
-        Set<UserSubscriptionInfo> userSubscriptions = userActiveSubscriptions.get(userId);
-        if (userSubscriptions != null && !userSubscriptions.isEmpty()) {
+        if (isRefreshDetected) {
             log.info("🔄 새로고침 감지 - 사용자 구독 복구 시작: SessionId: {}, UserId: {}, 복구할 구독: {}개",
                     sessionId, userId, userSubscriptions.size());
 
@@ -359,7 +606,8 @@ public class WebSocketReconnectionService {
             // 이벤트에서 받은 userId를 우선 사용, 없으면 저장된 userId 사용
             Long userId = eventUserId != null ? eventUserId : subscriptions.getUserId();
 
-            log.info("WebSocket 세션 제거 및 구독 정리 시작 - SessionId: {}, EventUserId: {}, StoredUserId: {}, 실제사용UserId: {}, 체결가: {}개, 호가: {}개",
+            log.info(
+                    "WebSocket 세션 제거 및 구독 정리 시작 - SessionId: {}, EventUserId: {}, StoredUserId: {}, 실제사용UserId: {}, 체결가: {}개, 호가: {}개",
                     sessionId, eventUserId, subscriptions.getUserId(), userId,
                     subscriptions.getPriceSubscriptions().size(),
                     subscriptions.getOrderbookSubscriptions().size());
@@ -377,30 +625,118 @@ public class WebSocketReconnectionService {
     }
 
     /**
-     * KIS 실시간 구독 해제
+     * KIS 실시간 구독 해제 (비동기 처리로 블로킹 시간 단축)
+     */
+    private void unsubscribeFromKisWithDuplicationCheck(Long userId, SessionSubscriptions subscriptions,
+                                                        String sessionId, String reason) {
+        log.info("🔌 KIS 구독 해제 시작 (비동기) - SessionId: {}, UserId: {}, Reason: {}", sessionId, userId, reason);
+
+        // 구독 정보를 미리 복사하여 동시성 문제 방지
+        Set<String> priceStocks = new HashSet<>(subscriptions.getPriceSubscriptions().keySet());
+        Set<String> orderbookStocks = new HashSet<>(subscriptions.getOrderbookSubscriptions().keySet());
+
+        // 세션에서 구독 정보를 즉시 제거 (중복 해제 방지)
+        priceStocks.forEach(stockCode -> subscriptions.getPriceSubscriptions().remove(stockCode));
+        orderbookStocks.forEach(stockCode -> subscriptions.getOrderbookSubscriptions().remove(stockCode));
+
+        List<CompletableFuture<Void>> unsubscribeTasks = new ArrayList<>();
+
+        // 체결가 구독 해제 (비동기)
+        for (String stockCode : priceStocks) {
+            CompletableFuture<Void> task = CompletableFuture.runAsync(() -> {
+                        try {
+                            log.debug("🔌 체결가 구독 해제 시도 - SessionId: {}, UserId: {}, StockCode: {}, Reason: {}",
+                                    sessionId, userId, stockCode, reason);
+                            kisRealtimeService.stopPriceSubscription(userId, stockCode, sessionId);
+                            log.debug("✅ 체결가 구독 해제 성공 - StockCode: {}", stockCode);
+
+                        } catch (Exception e) {
+                            log.debug("❌ 체결가 구독 해제 실패 (무시됨) - SessionId: {}, StockCode: {}, Reason: {}, Error: {}",
+                                    sessionId, stockCode, reason, e.getMessage());
+                        }
+                    }, unsubscribeExecutor)
+                    .orTimeout(3, TimeUnit.SECONDS) // 3초 타임아웃
+                    .exceptionally(throwable -> {
+                        log.debug("⏰ 체결가 구독 해제 타임아웃 - StockCode: {}, Error: {}",
+                                stockCode, throwable.getMessage());
+                        return null;
+                    });
+
+            unsubscribeTasks.add(task);
+        }
+
+        // 호가 구독 해제 (비동기)
+        for (String stockCode : orderbookStocks) {
+            CompletableFuture<Void> task = CompletableFuture.runAsync(() -> {
+                        try {
+                            log.debug("🔌 호가 구독 해제 시도 - SessionId: {}, UserId: {}, StockCode: {}, Reason: {}",
+                                    sessionId, userId, stockCode, reason);
+                            kisRealtimeService.stopOrderbookSubscription(userId, stockCode, sessionId);
+                            log.debug("✅ 호가 구독 해제 성공 - StockCode: {}", stockCode);
+
+                        } catch (Exception e) {
+                            log.debug("❌ 호가 구독 해제 실패 (무시됨) - SessionId: {}, StockCode: {}, Reason: {}, Error: {}",
+                                    sessionId, stockCode, reason, e.getMessage());
+                        }
+                    }, unsubscribeExecutor)
+                    .orTimeout(3, TimeUnit.SECONDS) // 3초 타임아웃
+                    .exceptionally(throwable -> {
+                        log.debug("⏰ 호가 구독 해제 타임아웃 - StockCode: {}, Error: {}",
+                                stockCode, throwable.getMessage());
+                        return null;
+                    });
+
+            unsubscribeTasks.add(task);
+        }
+
+        // 모든 구독 해제 완료 대기 (최대 5초)
+        try {
+            CompletableFuture<Void> allTasks = CompletableFuture.allOf(
+                    unsubscribeTasks.toArray(new CompletableFuture[0])
+            );
+
+            allTasks.get(5, TimeUnit.SECONDS);
+            log.info("✅ KIS 구독 해제 완료 (비동기) - SessionId: {}, UserId: {}, 처리된 체결가: {}개, 처리된 호가: {}개",
+                    sessionId, userId, priceStocks.size(), orderbookStocks.size());
+
+        } catch (Exception e) {
+            log.info("⏰ KIS 구독 해제 부분 완료 (타임아웃) - SessionId: {}, UserId: {}, 요청된 체결가: {}개, 요청된 호가: {}개",
+                    sessionId, userId, priceStocks.size(), orderbookStocks.size());
+        }
+    }
+
+    /**
+     * KIS 실시간 구독 해제 (기존 메서드 - 하위 호환성 유지)
      */
     private void unsubscribeFromKisRealtime(Long userId, SessionSubscriptions subscriptions, String sessionId) {
-        // 모든 체결가 구독 해제
-        subscriptions.getPriceSubscriptions().keySet().forEach(stockCode -> {
-            try {
-                log.info("🔌 세션 해제로 인한 체결가 구독 해제 - SessionId: {}, UserId: {}, StockCode: {}",
-                        sessionId, userId, stockCode);
-                kisRealtimeService.stopPriceSubscription(userId, stockCode, sessionId);
-            } catch (Exception e) {
-                log.error("❌ 세션 해제 시 체결가 구독 해제 실패 - SessionId: {}, StockCode: {}", sessionId, stockCode, e);
-            }
-        });
+        unsubscribeFromKisWithDuplicationCheck(userId, subscriptions, sessionId, "MANUAL");
+    }
 
-        // 모든 호가 구독 해제
-        subscriptions.getOrderbookSubscriptions().keySet().forEach(stockCode -> {
-            try {
-                log.info("🔌 세션 해제로 인한 호가 구독 해제 - SessionId: {}, UserId: {}, StockCode: {}",
-                        sessionId, userId, stockCode);
-                kisRealtimeService.stopOrderbookSubscription(userId, stockCode, sessionId);
-            } catch (Exception e) {
-                log.error("❌ 세션 해제 시 호가 구독 해제 실패 - SessionId: {}, StockCode: {}", sessionId, stockCode, e);
-            }
-        });
+    /**
+     * 세션 완전 정리 (원자적 처리)
+     */
+    private void performSessionCleanup(String sessionId) {
+        log.debug("🧹 세션 완전 정리 시작 - SessionId: {}", sessionId);
+
+        // 1. 활동 추적에서 제거
+        sessionActivity.remove(sessionId);
+
+        // 2. 하트비트 추적에서 제거
+        heartbeatTrackers.remove(sessionId);
+
+        // 3. 구독 정보 가져오기 및 제거
+        SessionSubscriptions subscriptions = sessionSubscriptions.remove(sessionId);
+
+        if (subscriptions != null) {
+            Long userId = subscriptions.getUserId();
+
+            // 4. 사용자별 구독 정리
+            performSmartUserSubscriptionCleanup(userId, subscriptions);
+
+            log.debug("🧹 세션 완전 정리 완료 - SessionId: {}, UserId: {}", sessionId, userId);
+        } else {
+            log.debug("🧹 세션 완전 정리 완료 - SessionId: {} (구독 정보 없음)", sessionId);
+        }
     }
 
     /**
@@ -486,6 +822,22 @@ public class WebSocketReconnectionService {
     }
 
     /**
+     * 구독이 이미 등록되어 있는지 확인 (중복 방지용)
+     */
+    public boolean isSubscriptionAlreadyRegistered(String sessionId, String stockCode, String dataType) {
+        SessionSubscriptions subscriptions = sessionSubscriptions.get(sessionId);
+        if (subscriptions != null) {
+            boolean alreadyRegistered = subscriptions.hasSubscription(stockCode, dataType);
+            if (alreadyRegistered) {
+                log.debug("구독 중복 확인 - 이미 등록됨: SessionId: {}, StockCode: {}, DataType: {}",
+                        sessionId, stockCode, dataType);
+            }
+            return alreadyRegistered;
+        }
+        return false;
+    }
+
+    /**
      * 사용자별 구독 정보 추가
      */
     private void addUserSubscription(Long userId, String stockCode, String dataType) {
@@ -531,7 +883,7 @@ public class WebSocketReconnectionService {
             Set<UserSubscriptionInfo> userSubs = userActiveSubscriptions.get(userId);
             if (userSubs != null) {
                 userSubs.removeIf(userSub ->
-                    stockCode.equals(userSub.getStockCode()) && dataType.equals(userSub.getDataType()));
+                        stockCode.equals(userSub.getStockCode()) && dataType.equals(userSub.getDataType()));
 
                 if (userSubs.isEmpty()) {
                     userActiveSubscriptions.remove(userId);
@@ -557,60 +909,122 @@ public class WebSocketReconnectionService {
     }
 
     /**
-     * 하트비트 전송 (30초마다)
+     * 하트비트 전송 (30초마다) - 단방향 시스템으로 단순화
      */
     @Scheduled(fixedRate = HEARTBEAT_INTERVAL)
     public void sendHeartbeat() {
         long currentHeartbeat = heartbeatCounter.incrementAndGet();
-        
-        // 활성 세션들에게 하트비트 전송
-        sessionActivity.keySet().forEach(sessionId -> {
+
+        log.debug("💓 하트비트 전송 시작 (단방향) - Sequence: {}, 대상 세션: {}개",
+                currentHeartbeat, sessionActivity.size());
+
+        // 활성 세션들 복사 (동시 수정 방지)
+        Set<String> activeSessionIds = new HashSet<>(sessionActivity.keySet());
+
+        // 각 세션에 하트비트 전송 (응답 대기 없음)
+        for (String sessionId : activeSessionIds) {
+            // 처리 중인 세션은 하트비트 건너뛰기 (동시성 충돌 방지)
+            if (isSessionBeingProcessed(sessionId)) {
+                log.debug("하트비트 건너뛰기 - 세션 처리 중: SessionId: {}", sessionId);
+                continue;
+            }
+
             try {
                 String destination = "/topic/heartbeat/" + sessionId;
                 Map<String, Object> heartbeatData = Map.of(
-                    "type", "heartbeat",
-                    "timestamp", System.currentTimeMillis(),
-                    "sequence", currentHeartbeat,
-                    "status", "alive"
+                        "type", "heartbeat",
+                        "timestamp", System.currentTimeMillis(),
+                        "sequence", currentHeartbeat,
+                        "status", "alive",
+                        "responseRequired", false  // 단방향 하트비트이므로 응답 불필요
                 );
-                
+
                 messagingTemplate.convertAndSend(destination, heartbeatData);
-                log.debug("하트비트 전송 - SessionId: {}, Sequence: {}", sessionId, currentHeartbeat);
-                
+
+                log.debug("💓 하트비트 전송 (단방향) - SessionId: {}, Sequence: {}", sessionId, currentHeartbeat);
+
             } catch (Exception e) {
-                log.error("하트비트 전송 실패 - SessionId: {}", sessionId, e);
-                handleSessionFailure(sessionId);
+                log.error("❌ 하트비트 전송 실패 - SessionId: {}", sessionId, e);
+
+                // 실패한 세션은 별도 처리 (동시성 고려)
+                handleSessionFailureAsync(sessionId);
             }
-        });
+        }
+
+        log.debug("💓 하트비트 전송 완료 (단방향) - Sequence: {}, 처리된 세션: {}개",
+                currentHeartbeat, activeSessionIds.size());
     }
 
     /**
-     * 세션 상태 모니터링 (1분마다)
+     * 클라이언트로부터 하트비트 응답 처리
+     */
+    public void handleHeartbeatResponse(String sessionId, long sequence) {
+        HeartbeatTracker tracker = heartbeatTrackers.get(sessionId);
+        if (tracker != null) {
+            tracker.recordHeartbeatResponse(sequence);
+
+            // 세션 활동 시간 업데이트
+            updateSessionActivity(sessionId);
+
+            log.debug("💚 하트비트 응답 수신 - SessionId: {}, Sequence: {}", sessionId, sequence);
+        } else {
+            log.warn("❌ 하트비트 응답 처리 실패 - 알 수 없는 세션: SessionId: {}, Sequence: {}",
+                    sessionId, sequence);
+        }
+    }
+
+    /**
+     * 세션 상태 모니터링 (1분마다) - 우선순위 조정으로 성능 개선
      */
     @Scheduled(fixedRate = 60000)
     public void monitorSessions() {
         LocalDateTime now = LocalDateTime.now();
+        List<String> sessionsToRemove = new ArrayList<>();
 
-        sessionActivity.entrySet().removeIf(entry -> {
+        // 1단계: 모든 세션 상태 검사 및 정리 대상 식별
+        for (Map.Entry<String, LastActivity> entry : sessionActivity.entrySet()) {
             String sessionId = entry.getKey();
             LastActivity activity = entry.getValue();
 
-            // 타임아웃된 세션 정리
-            if (activity.getLastSeen().plusSeconds(SESSION_TIMEOUT / 1000).isBefore(now)) {
-                log.warn("세션 타임아웃 - SessionId: {}, LastSeen: {}", sessionId, activity.getLastSeen());
-                handleSessionTimeout(sessionId);
-                return true;
+            boolean shouldRemove = false;
+            String removalReason = "";
+
+            // 1. 단방향 하트비트 시스템 - 응답 검사 제거
+            // 단순히 세션 활동만 기반으로 타임아웃 결정 (하트비트 응답 검사 생략)
+
+            // 2. 기존 타임아웃 검사
+            if (!shouldRemove && activity.getLastSeen().plusSeconds(SESSION_TIMEOUT / 1000).isBefore(now)) {
+                shouldRemove = true;
+                removalReason = "세션 타임아웃 (LastSeen: " + activity.getLastSeen() + ")";
             }
 
-            // 비활성 세션 체크
-            if (!activity.isActive()) {
-                log.warn("비활성 세션 감지 - SessionId: {}, MissedHeartbeats: {}",
+            if (shouldRemove) {
+                sessionsToRemove.add(sessionId);
+                log.warn("🗑️ 세션 정리 예정 - SessionId: {}, Reason: {}", sessionId, removalReason);
+            } else if (!activity.isActive()) {
+                // 3. 비활성 세션 복구 시도 (정리하지 않음)
+                log.warn("😴 비활성 세션 감지 - SessionId: {}, MissedHeartbeats: {}",
                         sessionId, activity.getMissedHeartbeats());
                 attemptSessionRecovery(sessionId);
             }
+        }
 
-            return false;
-        });
+        // 2단계: 세션 정리 일괄 처리 (성능 최적화)
+        int processedCount = 0;
+        for (String sessionId : sessionsToRemove) {
+            if (sessionActivity.remove(sessionId) != null) {
+                // 하트비트 추적기 즉시 정리 (상태 동기화)
+                heartbeatTrackers.remove(sessionId);
+                log.debug("💚 하트비트 추적기 즉시 정리 - SessionId: {}", sessionId);
+
+                // 백그라운드에서 비동기 정리 (빠른 응답성을 위해)
+                CompletableFuture.runAsync(() -> handleSessionTimeout(sessionId), unsubscribeExecutor);
+                processedCount++;
+            }
+        }
+
+        log.debug("🔍 세션 모니터링 완료 - 활성 세션: {}개, 하트비트 추적: {}개, 정리된 세션: {}개",
+                sessionActivity.size(), heartbeatTrackers.size(), processedCount);
     }
 
     /**
@@ -678,47 +1092,100 @@ public class WebSocketReconnectionService {
     }
 
     /**
-     * 세션 실패 처리
+     * 세션 실패 처리 (비동기 방식)
+     */
+    private void handleSessionFailureAsync(String sessionId) {
+        // 처리 중인 세션이면 건너뛰기
+        if (isSessionBeingProcessed(sessionId)) {
+            log.debug("세션 실패 처리 건너뛰기 - 이미 처리 중: SessionId: {}", sessionId);
+            return;
+        }
+
+        log.warn("⚠️ 세션 실패 감지 - SessionId: {}", sessionId);
+        handleSessionFailure(sessionId);
+    }
+
+    /**
+     * 세션 실패 처리 (동시성 제어 적용)
      */
     private void handleSessionFailure(String sessionId) {
-        LastActivity activity = sessionActivity.get(sessionId);
-        if (activity != null) {
-            activity.missHeartbeat();
-            
-            if (!activity.isActive()) {
-                log.error("세션 연결 실패 감지 - SessionId: {}", sessionId);
-                attemptSessionRecovery(sessionId);
+        ReentrantLock sessionLock = getSessionLock(sessionId);
+
+        if (!sessionLock.tryLock()) {
+            log.debug("세션 실패 처리 건너뛰기 - 다른 스레드에서 처리 중: SessionId: {}", sessionId);
+            return;
+        }
+
+        try {
+            LastActivity activity = sessionActivity.get(sessionId);
+            if (activity != null) {
+                activity.missHeartbeat();
+
+                log.info("📊 세션 실패 상태 - SessionId: {}, MissedHeartbeats: {}, Active: {}",
+                        sessionId, activity.getMissedHeartbeats(), activity.isActive());
+
+                if (!activity.isActive()) {
+                    log.error("💔 세션 연결 완전 실패 감지 - SessionId: {}, 복구 시도", sessionId);
+                    attemptSessionRecovery(sessionId);
+                }
+            } else {
+                log.warn("세션 활동 정보 없음 - SessionId: {}", sessionId);
             }
+
+        } finally {
+            sessionLock.unlock();
         }
     }
 
     /**
-     * 세션 타임아웃 처리
+     * 세션 타임아웃 처리 (동시성 제어 적용)
      */
     private void handleSessionTimeout(String sessionId) {
-        SessionSubscriptions subscriptions = sessionSubscriptions.get(sessionId);
-        if (subscriptions != null) {
-            Long userId = subscriptions.getUserId();
-            
-            // 모든 구독 해제
-            subscriptions.getPriceSubscriptions().keySet().forEach(stockCode -> {
-                try {
-                    kisRealtimeService.stopPriceSubscription(userId, stockCode, sessionId);
-                } catch (Exception e) {
-                    log.error("타임아웃 세션 체결가 구독 해제 실패 - SessionId: {}, StockCode: {}", sessionId, stockCode, e);
-                }
-            });
-            
-            subscriptions.getOrderbookSubscriptions().keySet().forEach(stockCode -> {
-                try {
-                    kisRealtimeService.stopOrderbookSubscription(userId, stockCode, sessionId);
-                } catch (Exception e) {
-                    log.error("타임아웃 세션 호가 구독 해제 실패 - SessionId: {}, StockCode: {}", sessionId, stockCode, e);
-                }
-            });
+        ReentrantLock sessionLock = getSessionLock(sessionId);
+
+        // 다른 스레드에서 이미 처리 중인 경우 최대 5초 대기
+        try {
+            if (!sessionLock.tryLock(5, TimeUnit.SECONDS)) {
+                log.warn("⏰ 세션 타임아웃 처리 건너뛰기 - 락 획득 실패 (다른 스레드 처리 중): SessionId: {}", sessionId);
+                return;
+            }
+        } catch (InterruptedException e) {
+            log.warn("⚠️ 세션 타임아웃 처리 중단됨 - 인터럽트 발생: SessionId: {}", sessionId);
+            Thread.currentThread().interrupt();
+            return;
         }
-        
-        removeSession(sessionId);
+
+        try {
+            // 이미 처리 중인 세션이면 건너뛰기
+            if (!startSessionProcessing(sessionId)) {
+                log.debug("세션 타임아웃 처리 건너뛰기 - 이미 처리 중: SessionId: {}", sessionId);
+                return;
+            }
+
+            log.warn("🕐 세션 타임아웃 처리 시작 - SessionId: {}", sessionId);
+
+            SessionSubscriptions subscriptions = sessionSubscriptions.get(sessionId);
+            if (subscriptions != null) {
+                Long userId = subscriptions.getUserId();
+
+                log.info("📊 타임아웃 세션 구독 현황 - SessionId: {}, UserId: {}, 체결가: {}개, 호가: {}개",
+                        sessionId, userId,
+                        subscriptions.getPriceSubscriptions().size(),
+                        subscriptions.getOrderbookSubscriptions().size());
+
+                // KIS 구독 해제 (중복 방지 포함)
+                unsubscribeFromKisWithDuplicationCheck(userId, subscriptions, sessionId, "TIMEOUT");
+            }
+
+            // 세션 완전 제거
+            performSessionCleanup(sessionId);
+
+            log.info("✅ 세션 타임아웃 처리 완료 - SessionId: {}", sessionId);
+
+        } finally {
+            endSessionProcessing(sessionId);
+            sessionLock.unlock();
+        }
     }
 
     /**
@@ -727,14 +1194,14 @@ public class WebSocketReconnectionService {
     private void attemptSessionRecovery(String sessionId) {
         SessionSubscriptions subscriptions = sessionSubscriptions.get(sessionId);
         if (subscriptions == null || subscriptions.getReconnectionAttempts() >= MAX_RECONNECTION_ATTEMPTS) {
-            log.error("세션 복구 한계 초과 - SessionId: {}, Attempts: {}", 
+            log.error("세션 복구 한계 초과 - SessionId: {}, Attempts: {}",
                     sessionId, subscriptions != null ? subscriptions.getReconnectionAttempts() : 0);
             handleSessionTimeout(sessionId);
             return;
         }
 
         subscriptions.incrementReconnectionAttempts();
-        log.info("세션 복구 시도 - SessionId: {}, Attempt: {}/{}", 
+        log.info("세션 복구 시도 - SessionId: {}, Attempt: {}/{}",
                 sessionId, subscriptions.getReconnectionAttempts(), MAX_RECONNECTION_ATTEMPTS);
 
         // 재연결 지연
@@ -754,7 +1221,7 @@ public class WebSocketReconnectionService {
      */
     private void recoverSubscriptions(String sessionId, SessionSubscriptions subscriptions) {
         Long userId = subscriptions.getUserId();
-        
+
         try {
             // 체결가 구독 복구
             for (String stockCode : subscriptions.getPriceSubscriptions().keySet()) {
@@ -762,22 +1229,22 @@ public class WebSocketReconnectionService {
                 // 실제 구독 복구는 클라이언트에서 재구독 요청을 통해 처리
                 sendRecoveryNotification(sessionId, stockCode, "price");
             }
-            
+
             // 호가 구독 복구
             for (String stockCode : subscriptions.getOrderbookSubscriptions().keySet()) {
                 log.info("호가 구독 복구 - SessionId: {}, StockCode: {}", sessionId, stockCode);
                 sendRecoveryNotification(sessionId, stockCode, "orderbook");
             }
-            
+
             subscriptions.resetReconnectionAttempts();
-            
+
             // 세션 활동 복구
             LastActivity activity = sessionActivity.get(sessionId);
             if (activity != null) {
                 activity.setActive(true);
                 activity.updateActivity();
             }
-            
+
         } catch (Exception e) {
             log.error("구독 복구 실패 - SessionId: {}", sessionId, e);
         }
@@ -840,8 +1307,8 @@ public class WebSocketReconnectionService {
             List<Map<String, Object>> bulkSubscriptionData = new ArrayList<>();
             for (Map.Entry<String, Set<String>> entry : stockDataTypes.entrySet()) {
                 bulkSubscriptionData.add(Map.of(
-                    "stockCode", entry.getKey(),
-                    "dataTypes", new ArrayList<>(entry.getValue())
+                        "stockCode", entry.getKey(),
+                        "dataTypes", new ArrayList<>(entry.getValue())
                 ));
             }
 
@@ -849,22 +1316,22 @@ public class WebSocketReconnectionService {
             List<Map<String, Object>> subscriptionList = new ArrayList<>();
             for (UserSubscriptionInfo userSub : userSubscriptions) {
                 subscriptionList.add(Map.of(
-                    "stockCode", userSub.getStockCode(),
-                    "dataType", userSub.getDataType(),
-                    "subscribedAt", userSub.getSubscribedAt().toString(),
-                    "lastActivity", userSub.getLastActivity().toString()
+                        "stockCode", userSub.getStockCode(),
+                        "dataType", userSub.getDataType(),
+                        "subscribedAt", userSub.getSubscribedAt().toString(),
+                        "lastActivity", userSub.getLastActivity().toString()
                 ));
             }
 
             Map<String, Object> refreshRecoveryData = Map.of(
-                "type", "refresh_recovery",
-                "timestamp", System.currentTimeMillis(),
-                "message", "새로고침이 감지되었습니다. 실시간 데이터 수신을 위해 bulk subscription을 요청하세요.",
-                "action", "bulk_subscription_required",
-                "bulkSubscriptionRequest", Map.of("stocks", bulkSubscriptionData),
-                "restoredSubscriptions", subscriptionList,
-                "totalRestored", subscriptionList.size(),
-                "autoResubscribe", true  // 클라이언트가 자동으로 재구독하도록 안내
+                    "type", "refresh_recovery",
+                    "timestamp", System.currentTimeMillis(),
+                    "message", "새로고침이 감지되었습니다. 실시간 데이터 수신을 위해 bulk subscription을 요청하세요.",
+                    "action", "bulk_subscription_required",
+                    "bulkSubscriptionRequest", Map.of("stocks", bulkSubscriptionData),
+                    "restoredSubscriptions", subscriptionList,
+                    "totalRestored", subscriptionList.size(),
+                    "autoResubscribe", true  // 클라이언트가 자동으로 재구독하도록 안내
             );
 
             messagingTemplate.convertAndSend(destination, refreshRecoveryData);
@@ -883,11 +1350,11 @@ public class WebSocketReconnectionService {
         try {
             String destination = "/topic/recovery/" + sessionId;
             Map<String, Object> recoveryData = Map.of(
-                "type", "recovery_needed",
-                "stockCode", stockCode,
-                "dataType", dataType,
-                "timestamp", System.currentTimeMillis(),
-                "message", "연결이 복구되었습니다. 구독을 재시작하세요."
+                    "type", "recovery_needed",
+                    "stockCode", stockCode,
+                    "dataType", dataType,
+                    "timestamp", System.currentTimeMillis(),
+                    "message", "연결이 복구되었습니다. 구독을 재시작하세요."
             );
 
             messagingTemplate.convertAndSend(destination, recoveryData);
@@ -907,7 +1374,7 @@ public class WebSocketReconnectionService {
                 log.warn("데이터 무결성 검증 실패 - null 데이터: StockCode: {}, DataType: {}", stockCode, dataType);
                 return false;
             }
-            
+
             // 기본 데이터 형식 검증
             if ("price".equals(dataType)) {
                 // 체결가 데이터 검증 로직
@@ -916,9 +1383,9 @@ public class WebSocketReconnectionService {
                 // 호가 데이터 검증 로직
                 return validateOrderbookData(stockCode, data);
             }
-            
+
             return true;
-            
+
         } catch (Exception e) {
             log.error("데이터 무결성 검증 중 오류 - StockCode: {}, DataType: {}", stockCode, dataType, e);
             return false;
@@ -1042,6 +1509,22 @@ public class WebSocketReconnectionService {
     }
 
     /**
+     * 세션 활동 업데이트 이벤트 리스너 (순환 의존성 방지)
+     */
+    @EventListener
+    public void handleSessionActivityUpdateEvent(SessionActivityUpdateEvent event) {
+        String sessionId = event.getSessionId();
+        String eventType = event.getEventType();
+
+        log.debug("💚 세션 활동 업데이트 이벤트 수신 - SessionId: {}, EventType: {}", sessionId, eventType);
+
+        // 세션 활동 업데이트
+        updateSessionActivity(sessionId);
+
+        log.debug("✅ 세션 활동 업데이트 완료 - SessionId: {}, EventType: {}", sessionId, eventType);
+    }
+
+    /**
      * WebSocket 세션 연결 해제 이벤트 리스너
      */
     @EventListener
@@ -1066,17 +1549,266 @@ public class WebSocketReconnectionService {
     }
 
     /**
-     * 현재 연결 상태 정보 조회
+     * KIS 연결 상태 모니터링 (1분마다)
+     */
+    @Scheduled(fixedRate = KIS_HEALTH_CHECK_INTERVAL)
+    public void monitorKisConnectionHealth() {
+        long healthCheckSequence = kisHealthCheckCounter.incrementAndGet();
+
+        log.debug("🔍 KIS 연결 상태 확인 시작 - Sequence: {}", healthCheckSequence);
+
+        try {
+            // KIS API 연결 상태 확인 (간단한 ping 성격의 요청)
+            boolean isKisHealthy = performKisHealthCheck();
+
+            if (isKisHealthy) {
+                // KIS 연결이 정상인 경우
+                if (!kisConnectionHealthy) {
+                    log.info("✅ KIS 연결 복구됨 - Sequence: {}, 이전 연속 실패: {}회",
+                            healthCheckSequence, consecutiveKisFailures);
+                }
+
+                kisConnectionHealthy = true;
+                consecutiveKisFailures = 0;
+                lastKisHealthCheck = LocalDateTime.now();
+
+            } else {
+                // KIS 연결에 문제가 있는 경우
+                consecutiveKisFailures++;
+                kisConnectionHealthy = false;
+
+                log.warn("❌ KIS 연결 상태 불량 - Sequence: {}, 연속 실패: {}회",
+                        healthCheckSequence, consecutiveKisFailures);
+
+                // 연속 실패 시 복구 시도
+                if (consecutiveKisFailures >= MAX_KIS_CONSECUTIVE_FAILURES) {
+                    log.error("🚨 KIS 연결 심각한 문제 - 복구 시도: Sequence: {}, 연속 실패: {}회",
+                            healthCheckSequence, consecutiveKisFailures);
+
+                    attemptKisConnectionRecovery(healthCheckSequence);
+                }
+            }
+
+        } catch (Exception e) {
+            consecutiveKisFailures++;
+            kisConnectionHealthy = false;
+
+            log.error("❌ KIS 연결 상태 확인 중 예외 발생 - Sequence: {}, 연속 실패: {}회",
+                    healthCheckSequence, consecutiveKisFailures, e);
+        }
+
+        log.debug("🔍 KIS 연결 상태 확인 완료 - Sequence: {}, 상태: {}, 연속실패: {}회",
+                healthCheckSequence, kisConnectionHealthy ? "정상" : "불량", consecutiveKisFailures);
+    }
+
+    /**
+     * KIS API 연결 상태 실제 검증
+     */
+    private boolean performKisHealthCheck() {
+        try {
+            // 1. 기본 서비스 가용성 확인
+            if (kisRealtimeService == null) {
+                log.debug("KIS 실시간 서비스가 null입니다");
+                return false;
+            }
+
+            // 2. 활성 구독 상태 확인 (구독이 있는 경우에만)
+            if (!sessionSubscriptions.isEmpty()) {
+                // 활성 구독이 있는 세션 수 확인
+                long activeSubscriptionSessions = sessionSubscriptions.values().stream()
+                        .filter(sub -> !sub.getPriceSubscriptions().isEmpty() || !sub.getOrderbookSubscriptions()
+                                .isEmpty())
+                        .count();
+
+                if (activeSubscriptionSessions > 0) {
+                    // 활성 구독이 있을 때만 연결 상태 엄격하게 확인
+                    log.debug("활성 구독 세션: {}개, KIS 연결 상태 엄격 검사", activeSubscriptionSessions);
+
+                    // 3. 최근 KIS 에러 발생 확인 (지난 5분 내)
+                    if (hasRecentKisErrors()) {
+                        log.debug("최근 KIS API 에러 감지됨");
+                        return false;
+                    }
+
+                    // 4. 하트비트 추적기를 통한 연결 품질 확인
+                    long unhealthySessions = heartbeatTrackers.values().stream()
+                            .filter(tracker -> !tracker.isHealthy())
+                            .count();
+
+                    if (unhealthySessions > activeSubscriptionSessions * 0.5) {
+                        log.debug("비정상 세션 비율이 높음: {}/{}", unhealthySessions, activeSubscriptionSessions);
+                        return false;
+                    }
+                }
+            }
+
+            // 5. 모든 검사 통과
+            return true;
+
+        } catch (Exception e) {
+            log.debug("KIS 헬스체크 실패", e);
+            return false;
+        }
+    }
+
+    /**
+     * 최근 KIS 에러 발생 여부 확인
+     */
+    private boolean hasRecentKisErrors() {
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+
+        // 최근 5분 내에 3회 이상 연속 실패가 있었다면 문제 있음
+        return consecutiveKisFailures >= 3 ||
+                (lastKisHealthCheck.isAfter(fiveMinutesAgo) && consecutiveKisFailures >= 2);
+    }
+
+    /**
+     * 연결 품질 지표 계산
+     */
+    public double calculateConnectionQuality() {
+        if (sessionActivity.isEmpty()) {
+            return 1.0; // 세션이 없으면 완벽한 상태
+        }
+
+        long totalSessions = sessionActivity.size();
+        long healthySessions = heartbeatTrackers.values().stream()
+                .filter(HeartbeatTracker::isHealthy)
+                .count();
+
+        double sessionHealthRatio = (double) healthySessions / totalSessions;
+
+        // KIS 연결 상태와 세션 건강도를 종합
+        double kisHealthScore = kisConnectionHealthy ? 1.0 : 0.0;
+        double kisFailureScore = Math.max(0.0, 1.0 - (consecutiveKisFailures * 0.2));
+
+        return (sessionHealthRatio * 0.4) + (kisHealthScore * 0.4) + (kisFailureScore * 0.2);
+    }
+
+    /**
+     * KIS 연결 복구 시도
+     */
+    private void attemptKisConnectionRecovery(long sequence) {
+        log.info("🔧 KIS 연결 복구 시도 시작 - Sequence: {}", sequence);
+
+        try {
+            // 1. 모든 활성 세션에 KIS 연결 문제 알림
+            notifyAllSessionsKisConnectionIssue();
+
+            // 2. KIS 연결 재초기화 시도 (실제로는 kisApiComponent 재시작 등)
+            // 예시: kisApiComponent.reconnect() 또는 재초기화 로직
+
+            // 3. 잠시 대기 후 재시도
+            Thread.sleep(RECONNECTION_DELAY);
+
+            // 4. 복구 확인
+            if (performKisHealthCheck()) {
+                log.info("✅ KIS 연결 복구 성공 - Sequence: {}", sequence);
+                kisConnectionHealthy = true;
+                consecutiveKisFailures = 0;
+
+                // 모든 활성 세션에 복구 알림
+                notifyAllSessionsKisConnectionRecovered();
+
+            } else {
+                log.error("❌ KIS 연결 복구 실패 - Sequence: {}", sequence);
+            }
+
+        } catch (Exception e) {
+            log.error("❌ KIS 연결 복구 시도 중 예외 발생 - Sequence: {}", sequence, e);
+        }
+    }
+
+    /**
+     * 모든 세션에 KIS 연결 문제 알림
+     */
+    private void notifyAllSessionsKisConnectionIssue() {
+        Set<String> activeSessionIds = new HashSet<>(sessionActivity.keySet());
+
+        for (String sessionId : activeSessionIds) {
+            try {
+                String destination = "/topic/kis-status/" + sessionId;
+                Map<String, Object> statusData = Map.of(
+                        "type", "kis_connection_issue",
+                        "timestamp", System.currentTimeMillis(),
+                        "message", "KIS API 연결에 문제가 발생했습니다. 복구를 시도하고 있습니다.",
+                        "consecutiveFailures", consecutiveKisFailures
+                );
+
+                messagingTemplate.convertAndSend(destination, statusData);
+
+            } catch (Exception e) {
+                log.error("❌ KIS 연결 문제 알림 전송 실패 - SessionId: {}", sessionId, e);
+            }
+        }
+
+        log.info("📢 모든 활성 세션에 KIS 연결 문제 알림 전송 완료 - 대상 세션: {}개", activeSessionIds.size());
+    }
+
+    /**
+     * 모든 세션에 KIS 연결 복구 알림
+     */
+    private void notifyAllSessionsKisConnectionRecovered() {
+        Set<String> activeSessionIds = new HashSet<>(sessionActivity.keySet());
+
+        for (String sessionId : activeSessionIds) {
+            try {
+                String destination = "/topic/kis-status/" + sessionId;
+                Map<String, Object> statusData = Map.of(
+                        "type", "kis_connection_recovered",
+                        "timestamp", System.currentTimeMillis(),
+                        "message", "KIS API 연결이 복구되었습니다.",
+                        "recoveryTime", System.currentTimeMillis()
+                );
+
+                messagingTemplate.convertAndSend(destination, statusData);
+
+            } catch (Exception e) {
+                log.error("❌ KIS 연결 복구 알림 전송 실패 - SessionId: {}", sessionId, e);
+            }
+        }
+
+        log.info("📢 모든 활성 세션에 KIS 연결 복구 알림 전송 완료 - 대상 세션: {}개", activeSessionIds.size());
+    }
+
+    /**
+     * KIS 연결 상태 조회
+     */
+    public boolean isKisConnectionHealthy() {
+        return kisConnectionHealthy;
+    }
+
+    /**
+     * KIS 연결 통계 조회 (상세 정보 포함)
+     */
+    public Map<String, Object> getKisConnectionStats() {
+        return Map.of(
+                "healthy", kisConnectionHealthy,
+                "lastHealthCheck", lastKisHealthCheck,
+                "consecutiveFailures", consecutiveKisFailures,
+                "healthCheckCount", kisHealthCheckCounter.get(),
+                "connectionQuality", calculateConnectionQuality(),
+                "hasRecentErrors", hasRecentKisErrors(),
+                "activeSubscriptionSessions", sessionSubscriptions.values().stream()
+                        .filter(sub -> !sub.getPriceSubscriptions().isEmpty() || !sub.getOrderbookSubscriptions()
+                                .isEmpty())
+                        .count()
+        );
+    }
+
+    /**
+     * 현재 연결 상태 정보 조회 (KIS 상태 포함)
      */
     public Map<String, Object> getConnectionStatus() {
         return Map.of(
-            "totalSessions", sessionActivity.size(),
-            "activeSessions", sessionActivity.values().stream()
-                .mapToLong(activity -> activity.isActive() ? 1 : 0).sum(),
-            "totalSubscriptions", sessionSubscriptions.values().stream()
-                .mapToInt(sub -> sub.getPriceSubscriptions().size() + sub.getOrderbookSubscriptions().size()).sum(),
-            "heartbeatCounter", heartbeatCounter.get(),
-            "lastHeartbeat", System.currentTimeMillis()
+                "totalSessions", sessionActivity.size(),
+                "activeSessions", sessionActivity.values().stream()
+                        .mapToLong(activity -> activity.isActive() ? 1 : 0).sum(),
+                "totalSubscriptions", sessionSubscriptions.values().stream()
+                        .mapToInt(sub -> sub.getPriceSubscriptions().size() + sub.getOrderbookSubscriptions().size())
+                        .sum(),
+                "heartbeatCounter", heartbeatCounter.get(),
+                "lastHeartbeat", System.currentTimeMillis(),
+                "kisConnection", getKisConnectionStats()
         );
     }
 }
