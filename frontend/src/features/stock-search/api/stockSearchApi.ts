@@ -1,7 +1,7 @@
 import { ApiClient } from '../../../shared/api/apiClient';
 import type { Result, AppError } from '../../../shared/util/result';
 import { calculateKISFeesAndTaxes, floorPrice } from '../../../shared/util/calculation';
-import type { StockSearchRequest, StockSearchResponse, SearchableStock, StockSearchTransformOptions, VolumeRankingApiResponse, HoldingsRequest, HoldingsResponse, DisplayHoldingStock } from './types';
+import type { StockSearchRequest, StockSearchResponse, SearchableStock, StockSearchTransformOptions, VolumeRankingApiResponse, HoldingsRequest, HoldingsResponse, DisplayHoldingStock, WatchlistResponse, WatchlistToggleRequest, WatchlistToggleResponse } from './types';
 
 class StockSearchApiService extends ApiClient {
   /**
@@ -47,6 +47,27 @@ class StockSearchApiService extends ApiClient {
    */
   getHoldings = async (params: HoldingsRequest): Promise<Result<HoldingsResponse, AppError>> => {
     return await this.get<HoldingsResponse>(`/api/stocks/holdings?accountId=${params.accountId}&page=${params.page}&size=${params.size}`);
+  };
+
+  /**
+   * 관심종목 조회
+   * @param accountId 계정 ID
+   * @returns 관심종목 목록
+   */
+  getWatchlist = async (accountId: number): Promise<Result<WatchlistResponse, AppError>> => {
+    return await this.get<WatchlistResponse>(`/api/stocks/watchlist?accountId=${accountId}`);
+  };
+
+  /**
+   * 관심종목 토글 (추가/제거)
+   * @param params 토글 요청 파라미터
+   * @returns 토글 결과
+   */
+  toggleWatchlist = async (params: WatchlistToggleRequest): Promise<Result<WatchlistToggleResponse, AppError>> => {
+    // Query Parameter 방식으로 변경 (백엔드가 파라미터를 인식하지 못하는 문제 해결)
+    return await this.post<WatchlistToggleResponse>(
+      `/api/stocks/watchlist/toggle?stockCode=${encodeURIComponent(params.stockCode)}&accountId=${params.accountId}`
+    );
   };
 }
 
