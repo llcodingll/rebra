@@ -6,6 +6,7 @@ import type { SellOrderRequest, OrderResponseData, OrderStatus } from '../api/ty
 
 interface UseSellOrderProps {
   stockCode: string;
+  stockName: string;
   onSuccess?: (data: OrderResponseData) => void;
   onError?: (error: string) => void;
 }
@@ -13,11 +14,12 @@ interface UseSellOrderProps {
 /**
  * 매도 주문 훅
  * @param stockCode 종목코드
+ * @param stockName 종목명
  * @param onSuccess 성공 콜백
  * @param onError 에러 콜백
  * @returns 매도 주문 관련 상태와 함수들
  */
-export const useSellOrder = ({ stockCode, onSuccess, onError }: UseSellOrderProps) => {
+export const useSellOrder = ({ stockCode, stockName, onSuccess, onError }: UseSellOrderProps) => {
   const [orderStatus, setOrderStatus] = useState<OrderStatus>('idle');
   const { accountId } = useAccountStore();
 
@@ -25,7 +27,7 @@ export const useSellOrder = ({ stockCode, onSuccess, onError }: UseSellOrderProp
     mutationFn: async (orderData: SellOrderRequest) => {
       setOrderStatus('loading');
 
-      const result = await stockOrderApi.sellStock(stockCode, orderData);
+      const result = await stockOrderApi.sellStock(stockCode, stockName, orderData);
 
       if (!result.success) {
         throw new Error(result.error.message || '매도 주문에 실패했습니다');
@@ -50,7 +52,7 @@ export const useSellOrder = ({ stockCode, onSuccess, onError }: UseSellOrderProp
   });
 
   const sellStock = useCallback(
-    (orderData: Omit<SellOrderRequest, 'orderType' | 'accountId'>) => {
+    (orderData: Omit<SellOrderRequest, 'orderType' | 'accountId' | 'stockName'>) => {
       if (!accountId) {
         onError?.('계정 정보를 찾을 수 없습니다. 대시보드에서 포트폴리오를 선택해주세요.');
         return;
@@ -58,13 +60,14 @@ export const useSellOrder = ({ stockCode, onSuccess, onError }: UseSellOrderProp
 
       const sellOrderData: SellOrderRequest = {
         ...orderData,
+        stockName,
         accountId,
         orderType: '00', // 지정가 주문 타입
       };
 
       mutation.mutate(sellOrderData);
     },
-    [mutation, accountId, onError]
+    [mutation, accountId, stockName, onError]
   );
 
   return {

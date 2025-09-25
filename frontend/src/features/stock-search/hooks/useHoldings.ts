@@ -32,7 +32,7 @@ export const useHoldings = (page: number = 0, size: number = 5) => {
     variables: searchParams,
     enabled: shouldFetch,
     refetchInterval: 1000,
-    staleTime: 30 * 1000, // 30초간 fresh 상태 유지
+    staleTime: 0, // 30초간 fresh 상태 유지
     gcTime: 5 * 60 * 1000, // 5분간 가비지 컬렉션 대기
   });
 

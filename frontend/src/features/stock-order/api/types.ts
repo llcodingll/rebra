@@ -5,6 +5,7 @@
 // 공통 주문 요청 타입 (매수/매도 모두 동일한 구조)
 export interface OrderRequest {
   stockCode: string;
+  stockName: string;
   orderType: string; // "00" - 주문 세부 타입 (지정가 등)
   quantity: number;
   price: number;
