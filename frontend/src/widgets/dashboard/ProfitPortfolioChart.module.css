@@ -43,13 +43,12 @@
 }
 
 .headerBadge {
-  background: #fef3f2;
-  color: #b91c1c;
+  background: #f1f5f9;
+  color: #475569;
   padding: 8px 16px;
   border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
-  border: 1px solid #fecaca;
 }
 
 /* 메인 컨텐츠 */

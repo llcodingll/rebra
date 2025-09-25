@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import styles from './DashboardPage.module.css';
 import { useApi } from '../../shared/hook/useApi';
+import { isMarketOpen } from '../../shared/util/marketTime';
 import { portfolioApi } from '../../features/portfolio/api/portfolioApi';
 import { transformPortfolioData, transformPortfolioDetailToStocks } from '../../features/portfolio/utils/portfolioTransform';
 import type { Portfolio, Stock } from '../../entities/portfolio';
@@ -18,35 +19,26 @@ import PortfolioHeader from '../../widgets/dashboard/PortfolioHeader';
 import TutorialOverlay from '../../widgets/tutorial/TutorialOverlay';
 import { dashboardTutorialSteps } from '../../widgets/tutorial/dashboardTutorialSteps';
 
-// 서울 시간 기준 주식 시장 시간 체크
-const isMarketOpen = (): boolean => {
-  const now = new Date();
-  const seoulTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
-
-  const day = seoulTime.getDay(); // 0=일요일, 6=토요일
-  const hour = seoulTime.getHours();
-  const minute = seoulTime.getMinutes();
-
-  // 주말 제외
-  if (day === 0 || day === 6) return false;
-
-  // 09:00 ~ 15:30 (서울시간 기준)
-  if (hour < 9) return false;
-  if (hour > 15) return false;
-  if (hour === 15 && minute > 30) return false;
-
-  return true;
-};
-
+/**
+ * 대시보드 메인 페이지 컴포넌트
+ * - 포트폴리오 목록 조회 및 선택
+ * - 포트폴리오 상세 정보 표시 (자산 현황, 히스토리)
+ * - 자동 리밸런싱 설정 및 수동 리밸런싱 실행
+ * - 주식 등록/삭제 관리
+ * - 실시간 데이터 폴링 (시장 시간 중)
+ */
 export default function DashboardPage() {
+  // 튜토리얼 관련
   const { registerTutorialTarget } = useOutletContext<{ registerTutorialTarget: (page: string, startFunction: () => void) => void }>();
-  const [activeSubTab, setActiveSubTab] = useState<'assets' | 'profit'>('assets');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
-  const [isEditingWeights, setIsEditingWeights] = useState(false);
 
-  // 포트폴리오 있음 상태일 때 기본값 설정 (portfolios 배열의 첫 번째 항목)
+  // UI 상태 관리
+  const [activeSubTab, setActiveSubTab] = useState<'assets' | 'profit'>('assets'); // 현재 활성 탭 (자산/수익률)
+  const [isModalOpen, setIsModalOpen] = useState(false); // 포트폴리오 선택 모달
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // 포트폴리오 생성 모달
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false); // 튜토리얼 오버레이
+  const [isEditingWeights, setIsEditingWeights] = useState(false); // 비중 편집 중 여부 (폴링 제어용)
+
+  // 현재 선택된 포트폴리오 상태 (portfolios 배열의 첫 번째 항목이 기본값)
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(null);
 
   // 계정 정보 store
@@ -92,7 +84,7 @@ export default function DashboardPage() {
     return transformPortfolioData(portfolioData.portfolios);
   }, [portfolioData]);
 
-  // 포트폴리오 존재 여부는 API 데이터로 판단
+  // 포트폴리오 존재 여부 판단 (로딩 완료 후 데이터 유무로 결정)
   const hasPortfolio = portfolios.length > 0 && !isPortfolioLoading;
 
   // API 데이터 로드 후 첫 번째 포트폴리오 선택
@@ -102,7 +94,7 @@ export default function DashboardPage() {
     }
   }, [portfolios, selectedPortfolio]);
   
-  // 개발용 토글 함수 제거 (API 기반으로 동작)
+  // 개발용 토글 함수 제거됨 - 현재는 API 기반으로만 동작
 
   // API에서 받은 주식 데이터를 기존 형식으로 변환
   const stockData: Stock[] = useMemo(() => {
@@ -117,19 +109,22 @@ export default function DashboardPage() {
     return transformPortfolioDetailToStocks(portfolioDetailData);
   }, [portfolioDetailData]);
 
+  // 포트폴리오 선택 모달 열기
   const handlePortfolioLinkClick = () => {
     setIsModalOpen(true);
   };
 
+  // 포트폴리오 생성 모달 열기
   const handleCreatePortfolio = () => {
     setIsCreateModalOpen(true);
   };
 
+  // 포트폴리오 생성 모달 닫기
   const handleCreateModalClose = () => {
     setIsCreateModalOpen(false);
   };
 
-
+  // 포트폴리오 선택 모달 닫기
   const handleModalClose = () => {
     setIsModalOpen(false);
   };
@@ -146,6 +141,7 @@ export default function DashboardPage() {
     setIsTutorialOpen(true);
   }, []);
 
+  // 튜토리얼 오버레이 닫기
   const handleTutorialClose = useCallback(() => {
     setIsTutorialOpen(false);
   }, []);
@@ -162,7 +158,26 @@ export default function DashboardPage() {
     [stockData]
   );
 
+  // 활성 탭에 따른 메인 컨텐츠 렌더링
   const renderContent = () => {
+    // 포트폴리오 상세 데이터 로딩 중일 때는 로딩 표시
+    if (isDetailLoading) {
+      return (
+        <div style={{
+          height: '550px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#666',
+          backgroundColor: '#f9f9f9',
+          borderRadius: '8px',
+          margin: '20px 0'
+        }}>
+          데이터를 불러오는 중...
+        </div>
+      );
+    }
+
     switch (activeSubTab) {
       case 'assets':
         return <AssetPortfolioChart data={registeredStocks} />;
@@ -172,15 +187,6 @@ export default function DashboardPage() {
         return null;
     }
   };
-
-  // 로딩 중이면 로딩 표시
-  if (isPortfolioLoading) {
-    return (
-      <div className={styles.dashboard}>
-        <div>포트폴리오 목록을 불러오는 중...</div>
-      </div>
-    );
-  }
 
   // 에러 상태 처리
   if (portfolioError) {
@@ -196,7 +202,10 @@ export default function DashboardPage() {
   if (!hasPortfolio) {
     return (
       <div className={styles.dashboard}>
+        {/* 포트폴리오가 없을 때 표시되는 빈 상태 컴포넌트 */}
         <NoPortfolioState onCreatePortfolio={handleCreatePortfolio} />
+
+        {/* 포트폴리오 선택 모달 */}
         <PortfolioSelectionModal
           isOpen={isModalOpen}
           onClose={handleModalClose}
@@ -204,6 +213,8 @@ export default function DashboardPage() {
           portfolios={portfolios}
           onCreatePortfolio={handleCreatePortfolio}
         />
+
+        {/* 포트폴리오 생성 모달 */}
         <PortfolioCreateModal
           isOpen={isCreateModalOpen}
           onClose={handleCreateModalClose}
@@ -213,7 +224,7 @@ export default function DashboardPage() {
           }}
         />
 
-        {/* Tutorial Overlay - 포트폴리오 없어도 작동 */}
+        {/* 튜토리얼 오버레이 - 포트폴리오 없어도 작동 */}
         <TutorialOverlay
           isOpen={isTutorialOpen}
           onClose={handleTutorialClose}
@@ -223,6 +234,7 @@ export default function DashboardPage() {
     );
   }
 
+  // 메인 대시보드 UI 렌더링
   return (
     <div>
       <div className={styles.dashboard}>
@@ -233,6 +245,7 @@ export default function DashboardPage() {
             onPortfolioLinkClick={handlePortfolioLinkClick}
           />
 
+          {/* 포트폴리오 설정 탭 (자동 리밸런싱, 수동 리밸런싱) */}
           <DashBoardSettingsTab
             portfolioId={selectedPortfolio ? Number(selectedPortfolio.id) : undefined}
             initialAutoRebalancing={portfolioDetailData?.portfolio?.autoRebalance || false}
@@ -273,36 +286,39 @@ export default function DashboardPage() {
 
           {renderContent()}
 
-          {/* 자산 테이블들 */}
+          {/* 하단 자산 테이블들 (등록 주식 / 미등록 주식) */}
           <div className={styles.tablesContainer}>
-          <AssetTable
-            title="등록 주식"
-            type="registered"
-            data={stockData.filter(stock => stock.type === 'registered')}
-            portfolioId={selectedPortfolio ? Number(selectedPortfolio.id) : undefined}
-            onStockRemoved={() => {
-              // 주식 삭제 성공 시 포트폴리오 상세 정보 새로고침
-              refetchPortfolioDetail();
-            }}
-            onStockSettingsUpdated={() => {
-              // 주식 설정 업데이트 성공 시 포트폴리오 상세 정보 새로고침
-              refetchPortfolioDetail();
-            }}
-            onEditModeChange={setIsEditingWeights}
-          />
-          <AssetTable
-            title="미등록 주식"
-            type="unregistered"
-            data={stockData.filter(stock => stock.type === 'unregistered')}
-            portfolioId={selectedPortfolio ? Number(selectedPortfolio.id) : undefined}
-            onStockRegistered={() => {
-              // 주식 등록 성공 시 포트폴리오 상세 정보 새로고침
-              refetchPortfolioDetail();
-            }}
-          />
+            {/* 등록된 주식 테이블 (비중 설정 가능) */}
+            <AssetTable
+              title="등록 주식"
+              type="registered"
+              data={stockData.filter(stock => stock.type === 'registered')}
+              portfolioId={selectedPortfolio ? Number(selectedPortfolio.id) : undefined}
+              onStockRemoved={() => {
+                // 주식 삭제 성공 시 포트폴리오 상세 정보 새로고침
+                refetchPortfolioDetail();
+              }}
+              onStockSettingsUpdated={() => {
+                // 주식 설정 업데이트 성공 시 포트폴리오 상세 정보 새로고침
+                refetchPortfolioDetail();
+              }}
+              onEditModeChange={setIsEditingWeights}
+            />
+            {/* 미등록 주식 테이블 (등록 가능) */}
+            <AssetTable
+              title="미등록 주식"
+              type="unregistered"
+              data={stockData.filter(stock => stock.type === 'unregistered')}
+              portfolioId={selectedPortfolio ? Number(selectedPortfolio.id) : undefined}
+              onStockRegistered={() => {
+                // 주식 등록 성공 시 포트폴리오 상세 정보 새로고침
+                refetchPortfolioDetail();
+              }}
+            />
           </div>
         </div>
 
+        {/* 포트폴리오 선택 모달 */}
         <PortfolioSelectionModal
           isOpen={isModalOpen}
           onClose={handleModalClose}
@@ -310,6 +326,7 @@ export default function DashboardPage() {
           portfolios={portfolios}
           onCreatePortfolio={handleCreatePortfolio}
         />
+        {/* 포트폴리오 생성 모달 */}
         <PortfolioCreateModal
           isOpen={isCreateModalOpen}
           onClose={handleCreateModalClose}
@@ -320,7 +337,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Tutorial Overlay */}
+      {/* 튜토리얼 오버레이 */}
       <TutorialOverlay
         isOpen={isTutorialOpen}
         onClose={handleTutorialClose}
