@@ -80,6 +80,13 @@ public class NewsCollectionScheduler {
                             continue; // 이 기사는 저장하지 않고 다음 기사로
                         }
 
+                        // 중복 체크
+                        if (newsRepository.existsByTitleAndUrl(article.getTitle(), article.getContent_url())) {
+                            log.info("중복된 뉴스로 건너뜀: {}", article.getTitle());
+                            skipCount++;
+                            continue;
+                        }
+
                         // DB 저장
                         News news = News.builder()
                                 .title(article.getTitle())
