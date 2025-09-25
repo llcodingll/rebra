@@ -11,6 +11,7 @@ interface OrderFormContainerProps {
   holdingData: StockHoldingData | null;
   currentPrice: number;
   orderBookClickedPrice?: number;
+  onRefreshHolding?: () => void;
 }
 
 export default function OrderFormContainer({
@@ -18,7 +19,8 @@ export default function OrderFormContainer({
   stockName,
   holdingData,
   currentPrice,
-  orderBookClickedPrice
+  orderBookClickedPrice,
+  onRefreshHolding
 }: OrderFormContainerProps) {
   const [activeTab, setActiveTab] = useState<OrderTab>('구매');
 
@@ -28,7 +30,8 @@ export default function OrderFormContainer({
       stockName,
       holdingData,
       currentPrice,
-      orderBookClickedPrice
+      orderBookClickedPrice,
+      onRefreshHolding
     };
 
     switch (activeTab) {

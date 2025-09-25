@@ -9,9 +9,17 @@ interface SellOrderFormProps {
   holdingData: StockHoldingData | null;
   currentPrice: number;
   orderBookClickedPrice?: number;
+  onRefreshHolding?: () => void;
 }
 
-export default function SellOrderForm({ stockCode, stockName, holdingData, currentPrice, orderBookClickedPrice }: SellOrderFormProps) {
+export default function SellOrderForm({
+  stockCode,
+  stockName,
+  holdingData,
+  currentPrice,
+  orderBookClickedPrice,
+  onRefreshHolding,
+}: SellOrderFormProps) {
   const [orderPrice, setOrderPrice] = useState(0);
   const [quantity, setQuantity] = useState<number | ''>('');
   const [isPriceInitialized, setIsPriceInitialized] = useState(false);
@@ -102,13 +110,23 @@ export default function SellOrderForm({ stockCode, stockName, holdingData, curre
   const sellOrder = useSellOrder({
     stockCode,
     stockName,
-    onSuccess: (data) => {
-      console.log('✅ 매도 주문 성공:', data);
-      alert(`매도 주문이 완료되었습니다!\n주문번호: ${data.orderNumber}`);
-      setQuantity('');
+    onSuccess: async (data) => {
+      try {
+        // 1. 먼저 보유 정보 갱신
+        await onRefreshHolding?.();
+
+        // 2. 갱신 완료 후 alert 표시
+        alert(`매도 주문이 완료되었습니다!\n주문번호: ${data.orderNumber}`);
+
+        // 3. 폼 초기화
+        setQuantity('');
+      } catch (error) {
+        // refetch 실패 시에도 alert 표시
+        alert(`매도 주문이 완료되었습니다!\n주문번호: ${data.orderNumber}`);
+        setQuantity('');
+      }
     },
     onError: (error) => {
-      console.error('❌ 매도 주문 실패:', error);
       alert(`매도 주문에 실패했습니다: ${error}`);
     },
   });
