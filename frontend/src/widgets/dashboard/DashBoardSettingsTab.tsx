@@ -3,6 +3,7 @@ import styles from './DashBoardSettingsTab.module.css';
 import { useConfirmModal, useModalState } from '../../hooks/useModalState';
 import ConfirmModal from '../../shared/ui/modal/ConfirmModal';
 import RebalancingPeriodModal from './RebalancingPeriodModal';
+import RebalancingResultModal from './RebalancingResultModal';
 import { portfolioApi } from '../../features/portfolio/api/portfolioApi';
 import { useApiMutation } from '../../shared/hook/useApi';
 
@@ -17,7 +18,9 @@ interface DashBoardSettingsTabProps {
 export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalancing = false, isLoadingSettings = false, onAutoRebalancingChanged, onRebalancingExecuted }: DashBoardSettingsTabProps) {
     const { confirmState, showConfirm, hideConfirm } = useConfirmModal();
     const { isOpen: isPeriodModalOpen, open: openPeriodModal, close: closePeriodModal } = useModalState();
+    const { isOpen: isResultModalOpen, open: openResultModal, close: closeResultModal } = useModalState();
     const [isAutoRebalancingEnabled, setIsAutoRebalancingEnabled] = useState(initialAutoRebalancing);
+    const [rebalancingResult, setRebalancingResult] = useState<any>(null);
 
     // initialAutoRebalancing props 변경 시 로컬 상태 동기화
     useEffect(() => {
@@ -59,12 +62,9 @@ export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalanci
         onSuccess: (data) => {
             console.log('리밸런싱 실행 성공:', data);
 
-            // API 응답의 success가 false이고 failureReason이 "리밸런싱할 주문이 없습니다"인 경우
-            if (!data.success && data.failureReason === "리밸런싱할 주문이 없습니다") {
-                alert('목표 비중에 대해 최적의 포트폴리오 상태이기에 리밸런싱이 수행되지 않았습니다.');
-            } else {
-                alert('리밸런싱이 성공적으로 실행되었습니다!');
-            }
+            // 결과 데이터를 저장하고 모달 열기
+            setRebalancingResult(data);
+            openResultModal();
 
             if (onRebalancingExecuted) {
                 onRebalancingExecuted();
@@ -174,6 +174,14 @@ export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalanci
                 isOpen={isPeriodModalOpen}
                 onClose={closePeriodModal}
             />
+
+            {rebalancingResult && (
+                <RebalancingResultModal
+                    isOpen={isResultModalOpen}
+                    onClose={closeResultModal}
+                    result={rebalancingResult}
+                />
+            )}
                     </>
     )
 }
