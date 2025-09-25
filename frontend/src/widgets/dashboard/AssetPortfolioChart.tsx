@@ -17,7 +17,7 @@ const CustomTooltip = ({ active, payload }: any) => {
     return (
       <div className={styles.tooltip}>
         <p className={styles.tooltipTitle}>{data.name}</p>
-        <p className={styles.tooltipValue}>비중: {data.value}%</p>
+        <p className={styles.tooltipValue}>비중: {data.value.toFixed(2)}%</p>
       </div>
     );
   }
