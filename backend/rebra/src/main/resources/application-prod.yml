@@ -69,7 +69,6 @@ gms:
 deepsearch:
   api:
     key: ${DEEP_SEARCH_KEY}
-  ai:
 
 # 계좌 암호화 설정
 security:
