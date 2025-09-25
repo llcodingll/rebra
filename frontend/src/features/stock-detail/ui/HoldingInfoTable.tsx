@@ -1,13 +1,12 @@
 import styles from './HoldingInfoTable.module.css';
-import { useStockHolding } from '../hooks/useStockHolding';
+import type { StockHoldingData } from '../api/types';
 
 interface HoldingInfoTableProps {
-  stockCode: string;
+  holdingData: StockHoldingData | null;
   currentPrice?: number;
 }
 
-export default function HoldingInfoTable({ stockCode, currentPrice = 0 }: HoldingInfoTableProps) {
-  const { holdingData, isLoading, hasAccount, hasHolding } = useStockHolding(stockCode, currentPrice);
+export default function HoldingInfoTable({ holdingData, currentPrice = 0 }: HoldingInfoTableProps) {
   const formatNumber = (value: number | undefined) => {
     if (value === undefined || value === null) return '-';
     return new Intl.NumberFormat('ko-KR').format(value);
@@ -26,32 +25,8 @@ export default function HoldingInfoTable({ stockCode, currentPrice = 0 }: Holdin
     return styles.dataValue;
   };
 
-  // 로딩 상태
-  if (isLoading) {
-    return (
-      <div className={styles.holdingContainer}>
-        <div className={styles.externalHeader}>현재 보유 정보</div>
-        <div className={styles.holdingTable}>
-          <div className={styles.emptyState}>보유 정보를 불러오는 중...</div>
-        </div>
-      </div>
-    );
-  }
-
-  // 계정 연결 안됨
-  if (!hasAccount) {
-    return (
-      <div className={styles.holdingContainer}>
-        <div className={styles.externalHeader}>현재 보유 정보</div>
-        <div className={styles.holdingTable}>
-          <div className={styles.emptyState}>계정을 먼저 연결해주세요.</div>
-        </div>
-      </div>
-    );
-  }
-
   // 보유하지 않는 경우
-  if (!hasHolding) {
+  if (!holdingData) {
     return (
       <div className={styles.holdingContainer}>
         <div className={styles.externalHeader}>현재 보유 정보</div>
@@ -68,7 +43,7 @@ export default function HoldingInfoTable({ stockCode, currentPrice = 0 }: Holdin
       <div className={styles.holdingTable}>
         <div className={styles.tableContent}>
           <div className={`${styles.tableColumn} ${styles.singleColumn}`}>
-            <div className={styles.columnHeader}>평균가</div>
+            <div className={styles.columnHeader}>평균단가</div>
             <div className={styles.singleColumnData}>
               <div className={styles.singleDataValue}>
                 {holdingData ? formatNumber(holdingData.averagePurchasePrice) : '-'}원
@@ -107,8 +82,8 @@ export default function HoldingInfoTable({ stockCode, currentPrice = 0 }: Holdin
             <div className={styles.columnHeader}>수수료</div>
             <div className={styles.columnHeaderSecond}>세금</div>
             <div className={styles.columnData}>
-              <div className={styles.dataValue}></div>
-              <div className={styles.dataValue}></div>
+              <div className={styles.dataValue}>{holdingData ? formatNumber(holdingData.fee) : '-'}</div>
+              <div className={styles.dataValue}>{holdingData ? formatNumber(holdingData.tax) : '-'}</div>
             </div>
           </div>
         </div>

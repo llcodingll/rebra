@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import RealTimeChart from '../../widgets/stock-detail/RealTimeChart';
 import StockBasicInfo from '../../widgets/stock-detail/StockBasicInfo';
@@ -7,6 +7,7 @@ import OrderBook from '../../widgets/stock-detail/OrderBook';
 import OrderFormContainer from '../../widgets/stock-detail/order/OrderFormContainer';
 import { useRealtimeStock } from '../../features/stock-detail/model/useRealtimeStock';
 import { useInfiniteChartData, mergeInfiniteChartData } from '../../features/stock-detail/hooks/useInfiniteChartData';
+import { useStockHolding } from '../../features/stock-detail/hooks/useStockHolding';
 import { isDevMode } from '../../features/stock-detail/lib/mockData';
 import styles from './StockDetailPage.module.css';
 
@@ -19,12 +20,10 @@ interface OrderBookItem {
 export default function StockDetailPage() {
   const { symbol } = useParams<{ symbol: string }>();
   const location = useLocation();
+  const [orderBookClickedPrice, setOrderBookClickedPrice] = useState<number | undefined>(undefined);
 
   // SearchPage에서 전달받은 종목 정보
   const stockInfoFromState = location.state as { stockCode: string; stockName: string } | null;
-  const [quantity, setQuantity] = useState(0);
-  const [selectedRatio, setSelectedRatio] = useState<number | null>(null);
-  const [orderPrice, setOrderPrice] = useState(71400);
 
   // 실시간 주식 데이터 연동
   const stockCode = symbol || '005930';
@@ -40,25 +39,21 @@ export default function StockDetailPage() {
     reconnect,
   } = useRealtimeStock(stockCode);
 
+  // console.log(holdingData);
   // 차트 데이터에서 현재 가격 정보 가져오기 (일봉 기준)
   const { data: infiniteData } = useInfiniteChartData(stockCode, 'daily', true);
   const chartApiData = useMemo(() => {
     return mergeInfiniteChartData(infiniteData?.pages);
   }, [infiniteData?.pages]);
 
-  // 실시간 가격 업데이트 시 주문가격도 업데이트
-  useEffect(() => {
-    if (realtimePrice?.stckPrpr) {
-      setOrderPrice(realtimePrice.stckPrpr);
-    }
-  }, [realtimePrice]);
+  // 현재가 계산 (실시간 데이터 우선, 차트 데이터 차순위, 데이터 없으면 0)
+  const hasRealData = !!(realtimePrice?.stckPrpr || chartApiData?.summary?.currentPrice);
+  const currentPrice = hasRealData
+    ? (realtimePrice?.stckPrpr || Number(chartApiData?.summary?.currentPrice))
+    : 0;
 
-  // 차트 데이터 로드 시 초기 주문가격 설정
-  useEffect(() => {
-    if (chartApiData?.summary?.currentPrice && !realtimePrice?.stckPrpr) {
-      setOrderPrice(Number(chartApiData.summary.currentPrice));
-    }
-  }, [chartApiData, realtimePrice]);
+  // 보유 정보 조회 (중앙 집중식 관리)
+  const { holdingData } = useStockHolding(stockCode, currentPrice);
 
   // 실제 주식 정보 (차트 API 데이터 우선, 실시간 데이터는 보조) + SearchPage에서 전달받은 정보 우선 사용
   const displayStockInfo =
@@ -101,16 +96,13 @@ export default function StockDetailPage() {
     return `${formatNumber(price)}원`;
   };
 
-  const handlePriceAdjust = (direction: 'up' | 'down') => {
-    const step = 100;
-    setOrderPrice((prev) => (direction === 'up' ? prev + step : Math.max(prev - step, 0)));
-  };
-
-  const handleRatioSelect = (ratio: number) => {
-    setSelectedRatio(ratio);
-    // 임시로 계산된 수량 (실제로는 보유 자금 기준으로 계산)
-    const maxAffordable = Math.floor(1000000 / orderPrice);
-    setQuantity(Math.floor(maxAffordable * (ratio / 100)));
+  const handleOrderBookPriceClick = (price: number) => {
+    // 호가창 클릭 시 가격을 주문 폼에 전달
+    setOrderBookClickedPrice(price);
+    // 잘은 시간 후 초기화 (다음 클릭이 작동하도록)
+    setTimeout(() => {
+      setOrderBookClickedPrice(undefined);
+    }, 100);
   };
 
   // 로딩 상태 처리
@@ -237,7 +229,7 @@ export default function StockDetailPage() {
         </div>
 
         <div className={styles.holdingInfoWrapper}>
-          <HoldingInfoTable stockCode={stockCode} currentPrice={safeStockInfo.currentPrice} />
+          <HoldingInfoTable holdingData={holdingData} currentPrice={safeStockInfo.currentPrice} />
         </div>
       </div>
 
@@ -245,42 +237,32 @@ export default function StockDetailPage() {
       <div className={styles.mainContent}>
         {/* 좌측: 차트 */}
         <div className={styles.chartSection}>
-          <RealTimeChart
-            stockCode={safeStockInfo.code}
-            stockName={safeStockInfo.name}
-            realtimeData={realtimePrice}
-            onPriceUpdate={(price, change) => {
-              // 실시간 차트에서 오는 업데이트는 이제 사용하지 않음 (STOMP로 대체)
-              setOrderPrice(price);
-            }}
-          />
+          <RealTimeChart stockCode={safeStockInfo.code} stockName={safeStockInfo.name} realtimeData={realtimePrice} />
         </div>
 
         <OrderBook
           orderBook={orderbook}
           stockInfo={{
-            currentPrice: safeStockInfo.currentPrice || 71400, // 기본값 확보
+            currentPrice: safeStockInfo.currentPrice || (hasRealData ? 0 : 71400), // 실제 데이터 있으면 0, 없으면 기본값
             high52: 79800, // 임시 데이터 - 실제로는 API에서 가져와야 함
             low52: 49900,
-            upperLimit: Math.floor(safeStockInfo.currentPrice * 1.3), // 상한가 (30% 상승)
-            lowerLimit: Math.floor(safeStockInfo.currentPrice * 0.7), // 하한가 (30% 하락)
-            openPrice: safeStockInfo.currentPrice,
-            highPrice: safeStockInfo.high || safeStockInfo.currentPrice,
-            lowPrice: safeStockInfo.low || safeStockInfo.currentPrice,
+            upperLimit: safeStockInfo.currentPrice ? Math.floor(safeStockInfo.currentPrice * 1.3) : 71400, // 상한가
+            lowerLimit: safeStockInfo.currentPrice ? Math.floor(safeStockInfo.currentPrice * 0.7) : 71400, // 하한가
+            openPrice: safeStockInfo.currentPrice || (hasRealData ? 0 : 71400),
+            highPrice: safeStockInfo.high || safeStockInfo.currentPrice || (hasRealData ? 0 : 71400),
+            lowPrice: safeStockInfo.low || safeStockInfo.currentPrice || (hasRealData ? 0 : 71400),
             volume: safeStockInfo.volume,
             volumeRate: 41.09, // 임시 데이터
           }}
+          onPriceClick={handleOrderBookPriceClick}
         />
 
         <OrderFormContainer
           stockCode={stockCode}
-          orderPrice={orderPrice}
-          onPriceChange={setOrderPrice}
-          onPriceAdjust={handlePriceAdjust}
-          onQuantityChange={setQuantity}
-          onRatioSelect={handleRatioSelect}
-          quantity={quantity}
-          selectedRatio={selectedRatio}
+          stockName={safeStockInfo.name}
+          holdingData={holdingData}
+          currentPrice={currentPrice}
+          orderBookClickedPrice={orderBookClickedPrice}
         />
       </div>
     </div>

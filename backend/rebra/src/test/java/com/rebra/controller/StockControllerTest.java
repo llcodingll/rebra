@@ -447,6 +447,7 @@ class StockControllerTest {
                     .purchaseAmount(new BigDecimal("650000"))
                     .holdingQuantity(10)
                     .orderableQuantity(10)
+                    .dncaTotAmt(new BigDecimal("10000000"))
                     .build();
 
             given(stockService.getStockHolding(eq(stockCode), eq(accountId))).willReturn(response);
@@ -460,7 +461,8 @@ class StockControllerTest {
                     .andExpect(jsonPath("$.data.averagePurchasePrice").value(65000))
                     .andExpect(jsonPath("$.data.purchaseAmount").value(650000))
                     .andExpect(jsonPath("$.data.holdingQuantity").value(10))
-                    .andExpect(jsonPath("$.data.orderableQuantity").value(10));
+                    .andExpect(jsonPath("$.data.orderableQuantity").value(10))
+                    .andExpect(jsonPath("$.data.dncaTotAmt").value(10000000));
         }
 
         @Test

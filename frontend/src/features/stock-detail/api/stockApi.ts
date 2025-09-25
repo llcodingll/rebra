@@ -1,5 +1,5 @@
 import { ApiClient } from '../../../shared/api/apiClient';
-import type { StockDetailResponse, StockChartData, ChartDataRequest, StockHoldingApiResponse, StockHoldingRequest } from './types';
+import type { StockDetailResponse, StockChartData, ChartDataRequest, StockHoldingApiResponse } from './types';
 import type { Result, AppError } from '../../../shared/util/result';
 
 class StockApiService extends ApiClient {
@@ -10,16 +10,21 @@ class StockApiService extends ApiClient {
    */
   getStockDetail = async (stockCode: string): Promise<Result<StockDetailResponse, AppError>> => {
     return this.get<StockDetailResponse>(`/api/stocks/${stockCode}`);
-  }
+  };
 
   /**
    * 특정 종목의 보유 정보 조회
    * @param params 요청 파라미터 (stockCode, accountId)
    * @returns 보유 정보 (보유하지 않는 경우 null)
    */
-  getStockHolding = async (params: { stockCode: string; accountId: number }): Promise<Result<StockHoldingApiResponse | null, AppError>> => {
-    return this.get<StockHoldingApiResponse | null>(`/api/stocks/${params.stockCode}/holding?accountId=${params.accountId}`);
-  }
+  getStockHolding = async (params: {
+    stockCode: string;
+    accountId: number;
+  }): Promise<Result<StockHoldingApiResponse | null, AppError>> => {
+    return this.get<StockHoldingApiResponse | null>(
+      `/api/stocks/${params.stockCode}/holding?accountId=${params.accountId}`
+    );
+  };
 
   /**
    * 일봉 차트 데이터 조회
@@ -30,7 +35,7 @@ class StockApiService extends ApiClient {
     return this.get<StockChartData>(
       `/api/stocks/${params.stockCode}/chart/daily?startDate=${params.startDate}&endDate=${params.endDate}`
     );
-  }
+  };
 
   /**
    * 주봉 차트 데이터 조회
@@ -41,7 +46,7 @@ class StockApiService extends ApiClient {
     return this.get<StockChartData>(
       `/api/stocks/${params.stockCode}/chart/weekly?startDate=${params.startDate}&endDate=${params.endDate}`
     );
-  }
+  };
 
   /**
    * 월봉 차트 데이터 조회
@@ -52,7 +57,7 @@ class StockApiService extends ApiClient {
     return this.get<StockChartData>(
       `/api/stocks/${params.stockCode}/chart/monthly?startDate=${params.startDate}&endDate=${params.endDate}`
     );
-  }
+  };
 
   /**
    * 연봉 차트 데이터 조회
@@ -63,7 +68,7 @@ class StockApiService extends ApiClient {
     return this.get<StockChartData>(
       `/api/stocks/${params.stockCode}/chart/yearly?startDate=${params.startDate}&endDate=${params.endDate}`
     );
-  }
+  };
 }
 
 export const stockApi = new StockApiService();

@@ -81,9 +81,10 @@
   background-color: #f8f9fa;
 }
 
+
 /* 현재가 하이라이트 - 가격 셀에만 적용 */
 .currentPriceHighlight {
-  border: 2px solid #929292;
+  border: 1px solid #929292;
   background: rgba(255, 77, 79, 0.1);
   font-weight: bold;
   border-radius: 6px;
@@ -151,6 +152,23 @@
   background: white;
   border-radius: 4px;
   margin: 0 4px;
+}
+
+.priceCell.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.priceCell.clickable:hover {
+  background-color: #f0f8ff;
+  transform: scale(1.02);
+}
+
+.priceCell.clickable:active {
+  border: 1px solid #929292;
+  background: rgba(255, 77, 79, 0.1);
+  font-weight: bold;
+  transform: scale(0.98);
 }
 
 .price {

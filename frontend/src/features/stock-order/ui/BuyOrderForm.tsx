@@ -1,53 +1,131 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styles from './BuyOrderForm.module.css';
 import { useBuyOrder } from '../hooks/useBuyOrder';
+import type { StockHoldingData } from '../../stock-detail/api/types';
 
 interface BuyOrderFormProps {
   stockCode: string;
-  orderPrice: number;
-  onPriceChange: (price: number) => void;
-  onPriceAdjust: (direction: 'up' | 'down') => void;
-  onQuantityChange: (quantity: number) => void;
-  onRatioSelect: (ratio: number) => void;
-  quantity: number;
-  selectedRatio: number | null;
+  stockName: string;
+  holdingData: StockHoldingData | null;
+  currentPrice: number;
+  orderBookClickedPrice?: number;
 }
 
-export default function BuyOrderForm({
-  stockCode,
-  orderPrice,
-  onPriceChange,
-  onPriceAdjust,
-  onQuantityChange,
-  onRatioSelect,
-  quantity,
-  selectedRatio,
-}: BuyOrderFormProps) {
+export default function BuyOrderForm({ stockCode, stockName, holdingData, currentPrice, orderBookClickedPrice }: BuyOrderFormProps) {
+  // 내부 상태 관리 (기본값으로 초기화)
+  const [orderPrice, setOrderPrice] = useState(0);
+  const [quantity, setQuantity] = useState<number | ''>('');
+  const [isPriceInitialized, setIsPriceInitialized] = useState(false);
+
+  // currentPrice가 실제 값으로 변경될 때 1회만 orderPrice 업데이트
+  useEffect(() => {
+    if (currentPrice > 0 && !isPriceInitialized) {
+      setOrderPrice(currentPrice);
+      setIsPriceInitialized(true);
+    }
+  }, [currentPrice, isPriceInitialized]);
+
+  // 호가창에서 클릭된 가격을 주문 가격에 설정
+  useEffect(() => {
+    if (orderBookClickedPrice && orderBookClickedPrice > 0) {
+      setOrderPrice(orderBookClickedPrice);
+    }
+  }, [orderBookClickedPrice]);
+  // const [isQuantityExceeded, setIsQuantityExceeded] = useState(false);
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);
   };
 
-  // 임시 데이터 (실제로는 props나 API에서 받아야 함)
-  const currentHoldings = 100; // 현재 보유 수량
-  const currentAvgPrice = 450; // 현재 평균 단가
-  const availableCash = 2052; // 구매가능 금액
+  // 현재 보유 정보 (holdingData에서 가져오기)
+  const currentHoldings = holdingData?.holdingQuantity || 0;
+  const currentAvgPrice = holdingData?.averagePurchasePrice || 0;
+  const availableCash = holdingData?.availableCash || 0; // 실제 잔액 또는 기본값
 
   // 계산 값들
-  const totalOrderAmount = orderPrice * quantity;
+  const numericQuantity = typeof quantity === 'number' ? quantity : 0;
+  const totalOrderAmount = orderPrice * numericQuantity;
+  const maxAffordableQuantity = orderPrice > 0 ? Math.floor(availableCash / orderPrice) : 0;
+
+  // 구매 후 예상 평균단가 계산
   const expectedAvgPrice =
-    currentHoldings > 0 && quantity > 0
-      ? (currentHoldings * currentAvgPrice + totalOrderAmount) / (currentHoldings + quantity)
+    currentHoldings > 0 && numericQuantity > 0
+      ? (currentHoldings * currentAvgPrice + totalOrderAmount) / (currentHoldings + numericQuantity)
+      : numericQuantity > 0
+      ? orderPrice
       : 0;
+
+  // 가격 변경 검증 함수
+  const handlePriceChange = (newPrice: number) => {
+    const validPrice = Math.max(0, newPrice);
+
+    // 구매 가격 자체가 구매가능금액을 초과하지 못하도록 제한
+    if (validPrice > availableCash) {
+      setOrderPrice(availableCash);
+      alert('구매 가격이 구매 가능 금액을 초과하여 최대 금액으로 조정했습니다');
+      return;
+    }
+
+    // 수량이 있을 때는 추가로 총액 체크
+    if (numericQuantity > 0 && validPrice * numericQuantity > availableCash) {
+      const maxAffordablePrice = Math.floor(availableCash / numericQuantity);
+      setOrderPrice(maxAffordablePrice);
+      alert('구매 가능 금액을 초과하여 최대 구매 가능 가격으로 조정했습니다');
+      return;
+    }
+
+    setOrderPrice(validPrice);
+  };
+
+  // 수량 변경 검증 함수
+  const handleQuantityChange = (input: string) => {
+    // 빈 값 허용
+    if (input === '') {
+      setQuantity('');
+      return;
+    }
+
+    const newQuantity = Number(input);
+
+    // 음수나 NaN 체크
+    if (isNaN(newQuantity) || newQuantity < 0) {
+      return; // 입력 차단
+    }
+
+    // 총액 체크, 초과시 최대값으로 조정
+    if (orderPrice > 0 && newQuantity > 0) {
+      const maxAffordable = Math.floor(availableCash / orderPrice);
+      if (newQuantity > maxAffordable) {
+        setQuantity(maxAffordable);
+        alert('구매 가능 금액을 초과하여 최대 구매 가능 수량으로 조정했습니다');
+        return;
+      }
+    }
+
+    setQuantity(newQuantity);
+  };
+
+  // 가격 조정 함수
+  const handlePriceAdjust = (direction: 'up' | 'down') => {
+    const step = 100;
+    const newPrice = direction === 'up' ? orderPrice + step : Math.max(orderPrice - step, 0);
+    handlePriceChange(newPrice);
+  };
+
+  // 비율 버튼 처리 (계좌 잔액 기준)
+  const handleRatioClick = (ratio: number) => {
+    const targetQuantity = Math.floor((maxAffordableQuantity * ratio) / 100);
+    setQuantity(targetQuantity);
+  };
 
   // 매수 주문 훅
   const buyOrder = useBuyOrder({
     stockCode,
+    stockName,
     onSuccess: (data) => {
       console.log('✅ 매수 주문 성공:', data);
       alert(`매수 주문이 완료되었습니다!\n주문번호: ${data.orderNumber}`);
       // 성공 후 폼 초기화
-      onQuantityChange(0);
-      onRatioSelect(0);
+      setQuantity('');
     },
     onError: (error) => {
       console.error('❌ 매수 주문 실패:', error);
@@ -56,7 +134,7 @@ export default function BuyOrderForm({
   });
 
   const handleOrderSubmit = () => {
-    if (quantity <= 0) {
+    if (numericQuantity <= 0) {
       alert('수량을 입력해주세요.');
       return;
     }
@@ -67,7 +145,8 @@ export default function BuyOrderForm({
     }
 
     buyOrder.buyStock({
-      quantity,
+      stockCode: stockCode,
+      quantity: numericQuantity,
       price: orderPrice,
     });
   };
@@ -81,17 +160,16 @@ export default function BuyOrderForm({
             <input
               type='number'
               value={orderPrice || ''}
-              onChange={(e) => onPriceChange(Number(e.target.value))}
+              onChange={(e) => handlePriceChange(Number(e.target.value))}
               className={styles.priceField}
-              placeholder='최대한 빠른 가격'
             />
             <span className={styles.priceUnit}>원</span>
           </div>
           <div className={styles.priceButtons}>
-            <button className={styles.priceBtn} onClick={() => onPriceAdjust('down')}>
+            <button className={styles.priceBtn} onClick={() => handlePriceAdjust('down')}>
               -
             </button>
-            <button className={styles.priceBtn} onClick={() => onPriceAdjust('up')}>
+            <button className={styles.priceBtn} onClick={() => handlePriceAdjust('up')}>
               +
             </button>
           </div>
@@ -106,32 +184,38 @@ export default function BuyOrderForm({
               <input
                 type='number'
                 value={quantity}
-                onChange={(e) => onQuantityChange(Number(e.target.value))}
+                onChange={(e) => handleQuantityChange(e.target.value)}
                 className={styles.quantityField}
-                placeholder='0'
+                placeholder={`최대 ${formatNumber(maxAffordableQuantity)}주 가능`}
               />
               <span className={styles.quantityUnit}>주</span>
             </div>
             <div className={styles.quantityButtons}>
-              <button className={styles.quantityAdjustBtn} onClick={() => onQuantityChange(Math.max(0, quantity - 1))}>
+              <button
+                className={styles.quantityAdjustBtn}
+                onClick={() => handleQuantityChange(String(Math.max(1, numericQuantity - 1)))}
+              >
                 -
               </button>
-              <button className={styles.quantityAdjustBtn} onClick={() => onQuantityChange(quantity + 1)}>
+              <button
+                className={styles.quantityAdjustBtn}
+                onClick={() => handleQuantityChange(String(numericQuantity + 1))}
+              >
                 +
               </button>
             </div>
           </div>
           <div className={styles.ratioButtons}>
-            <button className={styles.ratioBtn} onClick={() => onRatioSelect(10)}>
+            <button className={styles.ratioBtn} onClick={() => handleRatioClick(10)}>
               10%
             </button>
-            <button className={styles.ratioBtn} onClick={() => onRatioSelect(25)}>
+            <button className={styles.ratioBtn} onClick={() => handleRatioClick(25)}>
               25%
             </button>
-            <button className={styles.ratioBtn} onClick={() => onRatioSelect(50)}>
+            <button className={styles.ratioBtn} onClick={() => handleRatioClick(50)}>
               50%
             </button>
-            <button className={styles.ratioBtn} onClick={() => onRatioSelect(100)}>
+            <button className={styles.ratioBtn} onClick={() => handleRatioClick(100)}>
               최대
             </button>
           </div>
@@ -141,20 +225,20 @@ export default function BuyOrderForm({
       {/* 정보 영역 */}
       <div className={styles.infoSection}>
         <div className={styles.infoRow}>
-          <span className={styles.infoLabel}>내 주식 평균</span>
-          <span className={styles.infoValue}>{formatNumber(currentAvgPrice)}원</span>
+          <span className={styles.infoLabel}>구매가능 금액</span>
+          <span className={styles.infoValue}>{formatNumber(availableCash)}원</span>
         </div>
 
         <div className={styles.infoRow}>
-          <span className={styles.infoLabel}>구매 후 예상</span>
+          <span className={styles.infoLabel}>구매 후 예상 평균</span>
           <span className={styles.infoValue}>
             {expectedAvgPrice > 0 ? `${formatNumber(Math.round(expectedAvgPrice))}원` : '-'}
           </span>
         </div>
 
         <div className={styles.infoRow}>
-          <span className={styles.infoLabel}>현재 수익</span>
-          <span className={`${styles.infoValue} ${styles.negative}`}>-26원 (5.4%)</span>
+          <span className={styles.infoLabel}>총 구매 금액</span>
+          <span className={styles.infoValue}>{totalOrderAmount > 0 ? `${formatNumber(totalOrderAmount)}원` : '-'}</span>
         </div>
       </div>
 
