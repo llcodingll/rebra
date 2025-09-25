@@ -204,7 +204,7 @@ export default function PortfolioCreateModal({
               type="text"
               value={portfolioName}
               onChange={(e) => setPortfolioName(e.target.value)}
-              placeholder="예: 성장주 중심 포트폴리오"
+              placeholder=""
               className={styles.input}
               maxLength={50}
             />
@@ -221,7 +221,7 @@ export default function PortfolioCreateModal({
             <textarea
               value={portfolioPurpose}
               onChange={(e) => setPortfolioPurpose(e.target.value)}
-              placeholder="예: 장기 성장을 목표로 한 기술주 중심의 투자 전략"
+              placeholder=""
               className={styles.textarea}
               rows={3}
               maxLength={200}
