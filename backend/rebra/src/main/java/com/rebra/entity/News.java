@@ -15,8 +15,7 @@ public class News {
     @Column(nullable = false, length = 300)
     private String title;
 
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, length = 2000)
     private String summary;
 
     @Column(length = 500)

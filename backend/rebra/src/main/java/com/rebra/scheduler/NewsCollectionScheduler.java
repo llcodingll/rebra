@@ -35,8 +35,8 @@ public class NewsCollectionScheduler {
 
             log.info("수집 대상 날짜: {}", dateString);
 
-            // 전날 뉴스 조회 (페이지 크기를 20으로 설정)
-            DeepSearchEconomyResponse response = deepSearchService.getEconomyNews(dateString, dateString, 20);
+            // 전날 뉴스 조회 (페이지 크기를 5로 설정)
+            DeepSearchEconomyResponse response = deepSearchService.getEconomyNews(dateString, dateString, 5);
 
             if (response != null && response.getData() != null && !response.getData().isEmpty()) {
                 log.info("조회된 뉴스: {} 건", response.getData().size());

@@ -80,7 +80,7 @@ public class NewsController {
             log.info("수집 대상 날짜: {}", dateString);
 
             // DeepSearch API 호출
-            DeepSearchEconomyResponse response = deepSearchService.getEconomyNews(dateString, dateString, 10);
+            DeepSearchEconomyResponse response = deepSearchService.getEconomyNews(dateString, dateString, 5);
 
             if (response != null && response.getData() != null && !response.getData().isEmpty()) {
                 log.info("조회된 뉴스: {} 건", response.getData().size());
