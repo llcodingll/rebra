@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import styles from './StockSearch.module.css';
 
 interface Stock {
@@ -45,6 +46,29 @@ export default function StockSearch({
   searchError
 }: StockSearchProps) {
   const isSearchEnabled = startDate; // 시작일만 있으면 검색 가능
+
+  // 페이지네이션 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // 현재 페이지의 주식 목록 계산
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentStocks = filteredStocks.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(filteredStocks.length / itemsPerPage);
+
+  // 검색어가 변경되면 첫 페이지로 이동
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const handlePrevPage = () => {
+    setCurrentPage(prev => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(totalPages, prev + 1));
+  };
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -97,40 +121,70 @@ export default function StockSearch({
             <p>검색 결과가 없습니다.</p>
           </div>
         ) : (
-          filteredStocks.map((stock, index) => {
-            const isAdded = portfolioItems.some(item => item.code === stock.code);
-            return (
-              <div
-                key={stock.code}
-                className={styles.stockItem}
-              >
-                <div className={styles.stockInfo}>
-                  <div className={styles.stockHeader}>
-                    <span className={styles.stockName}>{stock.name}</span>
-                    <span className={styles.stockCode}>{stock.code}</span>
+          <>
+            <div className={styles.stockGrid}>
+              {currentStocks.map((stock, index) => {
+                const isAdded = portfolioItems.some(item => item.code === stock.code);
+                return (
+                  <div
+                    key={stock.code}
+                    className={styles.stockItem}
+                  >
+                    <div className={styles.stockInfo}>
+                      <div className={styles.stockHeader}>
+                        <span className={styles.stockName}>{stock.name}</span>
+                        <span className={styles.stockCode}>{stock.code}</span>
+                      </div>
+                      <div className={styles.stockPrice}>
+                        <span className={styles.price}>{stock.price}</span>
+                        <span className={`${styles.change} ${styles[stock.changeType]}`}>
+                          {stock.change}
+                        </span>
+                      </div>
+                      <div className={styles.stockDetails}>
+                        <span>거래량: {stock.volume}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      className={`${styles.addButton} ${isAdded ? styles.added : ''}`}
+                      onClick={() => onAddToPortfolio(stock)}
+                      disabled={isAdded}
+                    >
+                      <Plus className={styles.addIcon} />
+                      {isAdded ? '추가됨' : '추가'}
+                    </button>
                   </div>
-                  <div className={styles.stockPrice}>
-                    <span className={styles.price}>{stock.price}</span>
-                    <span className={`${styles.change} ${styles[stock.changeType]}`}>
-                      {stock.change}
-                    </span>
-                  </div>
-                  <div className={styles.stockDetails}>
-                    <span>거래량: {stock.volume}</span>
-                  </div>
-                </div>
+                );
+              })}
+            </div>
+
+            {totalPages > 1 && (
+              <div className={styles.pagination}>
+                <button
+                  className={styles.pageButton}
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className={styles.pageIcon} />
+                  이전
+                </button>
+
+                <span className={styles.pageInfo}>
+                  {currentPage} / {totalPages}
+                </span>
 
                 <button
-                  className={`${styles.addButton} ${isAdded ? styles.added : ''}`}
-                  onClick={() => onAddToPortfolio(stock)}
-                  disabled={isAdded}
+                  className={styles.pageButton}
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
                 >
-                  <Plus className={styles.addIcon} />
-                  {isAdded ? '추가됨' : '추가'}
+                  다음
+                  <ChevronRight className={styles.pageIcon} />
                 </button>
               </div>
-            );
-          })
+            )}
+          </>
         )}
       </div>
     </motion.div>
