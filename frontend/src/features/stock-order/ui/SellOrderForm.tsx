@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styles from './SellOrderForm.module.css';
 import { useSellOrder } from '../hooks/useSellOrder';
 import type { StockHoldingData } from '../../stock-detail/api/types';
@@ -8,20 +8,28 @@ interface SellOrderFormProps {
   stockName: string;
   holdingData: StockHoldingData | null;
   currentPrice: number;
+  orderBookClickedPrice?: number;
 }
 
-export default function SellOrderForm({ stockCode, stockName, holdingData, currentPrice }: SellOrderFormProps) {
+export default function SellOrderForm({ stockCode, stockName, holdingData, currentPrice, orderBookClickedPrice }: SellOrderFormProps) {
   const [orderPrice, setOrderPrice] = useState(0);
   const [quantity, setQuantity] = useState<number | ''>('');
   const [isPriceInitialized, setIsPriceInitialized] = useState(false);
 
-  // currentPrice가 실제 값(기본값이 아님)으로 변경될 때 1회만 orderPrice 업데이트
+  // currentPrice가 실제 값으로 변경될 때 1회만 orderPrice 업데이트
   useEffect(() => {
-    if (currentPrice && currentPrice !== 0 && !isPriceInitialized) {
+    if (currentPrice > 0 && !isPriceInitialized) {
       setOrderPrice(currentPrice);
       setIsPriceInitialized(true);
     }
   }, [currentPrice, isPriceInitialized]);
+
+  // 호가창에서 클릭된 가격을 주문 가격에 설정
+  useEffect(() => {
+    if (orderBookClickedPrice && orderBookClickedPrice > 0) {
+      setOrderPrice(orderBookClickedPrice);
+    }
+  }, [orderBookClickedPrice]);
   // const [isQuantityExceeded, setIsQuantityExceeded] = useState(false);
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);

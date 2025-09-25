@@ -14,7 +14,7 @@ export const useStockDetail = (stockCode: string, enabled: boolean = true) => {
     apiFunction: stockApi.getStockDetail,
     variables: stockCode,
     enabled: enabled && !!stockCode,
-    staleTime: 5 * 60 * 1000, // 5분간 캐시
+    staleTime: 0, // 5분간 캐시
     gcTime: 10 * 60 * 1000, // 10분간 가비지 컬렉션 대기
     errorMessages: {
       404: '해당 종목의 보유 정보를 찾을 수 없습니다',
