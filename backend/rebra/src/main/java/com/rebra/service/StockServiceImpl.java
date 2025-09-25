@@ -337,7 +337,12 @@ public class StockServiceImpl implements StockService {
                         // 보유 수량이 0이 아닌 경우만 반환
                         if (!"0".equals(holding.getHldgQty())) {
                             log.info("특정 종목 보유 정보 조회 완료 - StockCode: {}, AccountId: {}", stockCode, accountId);
-                            return StockHoldingDetailResponse.from(holding);
+                            // Output2에서 예수금 정보 가져오기
+                            InquireBalanceResult.Output2 output2 = null;
+                            if (balanceResult.getOutput2() != null && balanceResult.getOutput2().length > 0) {
+                                output2 = balanceResult.getOutput2()[0]; // 첫 번째 Output2 사용
+                            }
+                            return StockHoldingDetailResponse.from(holding, output2);
                         }
                         break;
                     }
