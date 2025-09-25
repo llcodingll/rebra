@@ -1,0 +1,181 @@
+.content {
+  padding: 0;
+}
+
+.introduction {
+  padding: 20px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 32px;
+}
+
+.introText {
+  margin: 0;
+  color: #475569;
+  font-size: 16px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.stepsContainer {
+  margin-bottom: 32px;
+}
+
+.stepItem {
+  position: relative;
+  padding-left: 60px;
+  padding-bottom: 32px;
+}
+
+.stepItem:last-child {
+  padding-bottom: 0;
+}
+
+.stepHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.stepNumber {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 40px;
+  height: 40px;
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.stepContent {
+  flex: 1;
+}
+
+.stepTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.stepDescription {
+  font-size: 16px;
+  color: #475569;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.stepDetail {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.stepConnector {
+  position: absolute;
+  left: 19px;
+  top: 40px;
+  width: 2px;
+  height: 32px;
+  background-color: #e2e8f0;
+}
+
+.finalNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background-color: #dcfce7;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+  margin-bottom: 32px;
+}
+
+.noteIcon {
+  flex-shrink: 0;
+}
+
+.checkIcon {
+  width: 24px;
+  height: 24px;
+  color: #16a34a;
+}
+
+.noteContent h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #166534;
+  margin: 0 0 4px 0;
+}
+
+.noteContent p {
+  font-size: 14px;
+  color: #166534;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.buttonGroup {
+  display: flex;
+  justify-content: center;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.confirmButton {
+  padding: 12px 32px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.confirmButton:hover {
+  background-color: #2563eb;
+}
+
+@media (max-width: 768px) {
+  .stepItem {
+    padding-left: 50px;
+  }
+
+  .stepNumber {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .stepConnector {
+    left: 15px;
+    top: 32px;
+    height: 28px;
+  }
+
+  .stepTitle {
+    font-size: 16px;
+  }
+
+  .stepDescription {
+    font-size: 14px;
+  }
+
+  .stepDetail {
+    font-size: 13px;
+  }
+
+  .finalNote {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
