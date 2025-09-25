@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 /**
- * 특정 종목 보유 정보 응답 DTO (4개 필드만)
+ * 특정 종목 보유 정보 응답 DTO (5개 필드만)
  */
 @Getter
 @Builder
@@ -31,18 +31,24 @@ public class StockHoldingDetailResponse {
     @Schema(description = "주문가능수량", example = "100")
     private Integer orderableQuantity;
 
+    @Schema(description = "예수금총금액", example = "10000000")
+    private BigDecimal dncaTotAmt;
+
     /**
      * KIS API 응답을 StockHoldingDetailResponse로 변환
      *
-     * @param holding KIS API 잔고 조회 결과
+     * @param holding KIS API 잔고 조회 결과 (Output1)
+     * @param output2 KIS API 잔고 조회 결과 (Output2) - 예수금 정보
      * @return StockHoldingDetailResponse 객체
      */
-    public static StockHoldingDetailResponse from(InquireBalanceResult.Output1 holding) {
+    public static StockHoldingDetailResponse from(InquireBalanceResult.Output1 holding, InquireBalanceResult.Output2 output2) {
         return StockHoldingDetailResponse.builder()
                 .averagePurchasePrice(new BigDecimal(holding.getPchsAvgPric()))
                 .purchaseAmount(new BigDecimal(holding.getPchsAmt()))
                 .holdingQuantity(Integer.parseInt(holding.getHldgQty()))
                 .orderableQuantity(Integer.parseInt(holding.getOrdPsblQty()))
+                .dncaTotAmt(output2 != null && output2.getDncaTotAmt() != null ?
+                           new BigDecimal(output2.getDncaTotAmt()) : BigDecimal.ZERO)
                 .build();
     }
 }
