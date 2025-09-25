@@ -5,11 +5,12 @@ import type { StockHoldingData } from '../../stock-detail/api/types';
 
 interface BuyOrderFormProps {
   stockCode: string;
+  stockName: string;
   holdingData: StockHoldingData | null;
   currentPrice: number;
 }
 
-export default function BuyOrderForm({ stockCode, holdingData, currentPrice }: BuyOrderFormProps) {
+export default function BuyOrderForm({ stockCode, stockName, holdingData, currentPrice }: BuyOrderFormProps) {
   // 내부 상태 관리 (현재가로 초기화)
   const [orderPrice, setOrderPrice] = useState(currentPrice || 71400);
   const [quantity, setQuantity] = useState<number | ''>('');
@@ -104,6 +105,7 @@ export default function BuyOrderForm({ stockCode, holdingData, currentPrice }: B
   // 매수 주문 훅
   const buyOrder = useBuyOrder({
     stockCode,
+    stockName,
     onSuccess: (data) => {
       console.log('✅ 매수 주문 성공:', data);
       alert(`매수 주문이 완료되었습니다!\n주문번호: ${data.orderNumber}`);

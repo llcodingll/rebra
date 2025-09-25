@@ -7,12 +7,14 @@ import type { StockHoldingData } from '../../../features/stock-detail/api/types'
 
 interface OrderFormContainerProps {
   stockCode: string;
+  stockName: string;
   holdingData: StockHoldingData | null;
   currentPrice: number;
 }
 
 export default function OrderFormContainer({
   stockCode,
+  stockName,
   holdingData,
   currentPrice
 }: OrderFormContainerProps) {
@@ -21,6 +23,7 @@ export default function OrderFormContainer({
   const renderActiveForm = () => {
     const commonProps = {
       stockCode,
+      stockName,
       holdingData,
       currentPrice
     };

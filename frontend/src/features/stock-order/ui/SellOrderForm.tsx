@@ -5,11 +5,12 @@ import type { StockHoldingData } from '../../stock-detail/api/types';
 
 interface SellOrderFormProps {
   stockCode: string;
+  stockName: string;
   holdingData: StockHoldingData | null;
   currentPrice: number;
 }
 
-export default function SellOrderForm({ stockCode, holdingData, currentPrice }: SellOrderFormProps) {
+export default function SellOrderForm({ stockCode, stockName, holdingData, currentPrice }: SellOrderFormProps) {
   const [orderPrice, setOrderPrice] = useState(currentPrice || 71400);
   const [quantity, setQuantity] = useState<number | ''>('');
   // const [isQuantityExceeded, setIsQuantityExceeded] = useState(false);
@@ -83,6 +84,7 @@ export default function SellOrderForm({ stockCode, holdingData, currentPrice }: 
   // 매도 주문 훅
   const sellOrder = useSellOrder({
     stockCode,
+    stockName,
     onSuccess: (data) => {
       console.log('✅ 매도 주문 성공:', data);
       alert(`매도 주문이 완료되었습니다!\n주문번호: ${data.orderNumber}`);

@@ -252,6 +252,7 @@ export default function StockDetailPage() {
 
         <OrderFormContainer
           stockCode={stockCode}
+          stockName={safeStockInfo.name}
           holdingData={holdingData}
           currentPrice={currentPrice}
         />
