@@ -20,6 +20,8 @@ import com.youhogeon.finance.kis_api.api.rest.quotations.InquireAskingPriceExpCc
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireAskingPriceExpCcnResult;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceApi;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
+import com.youhogeon.finance.kis_api.api.rest.trading.InquirePsblOrderApi;
+import com.youhogeon.finance.kis_api.api.rest.trading.InquirePsblOrderResult;
 import com.youhogeon.finance.kis_api.client.socket.SubscribableApiResult;
 import com.youhogeon.finance.kis_api.config.Configuration;
 import com.youhogeon.finance.kis_api.config.Credentials;
@@ -284,6 +286,57 @@ public class KisApiComponent {
             log.error("사용자 잔고 조회 실패 - 사용자ID: {}, 계좌ID: {}, 오류: {}",
                     userId, accountId, e.getMessage(), e);
             throw new RuntimeException("사용자 잔고 조회 실패: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 사용자 매수가능조회 (Account 객체 사용)
+     */
+    public InquirePsblOrderResult getUserPossibleOrder(Account account, String stockCode) {
+        Long userId = account.getUser().getId();
+        DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+        return getUserPossibleOrder(userId, account.getId(), account.getAccountType(), stockCode, credentials);
+    }
+
+    /**
+     * 등록된 사용자 Credentials로 매수가능조회 ensureUserCredentials()를 통해 Credentials가 없으면 자동으로 등록
+     */
+    public InquirePsblOrderResult getUserPossibleOrder(Long userId, Long accountId, AccountType accountType,
+                                                      String stockCode, DecryptedAccountCredentials credentials) {
+        try {
+            log.info("사용자 매수가능조회 시작 - 사용자ID: {}, 계좌ID: {}, 계좌타입: {}, 종목코드: {}",
+                    userId, accountId, accountType, stockCode);
+
+            // Credentials가 Config에 없으면 자동으로 등록
+            ensureUserCredentials(userId, accountId, accountType, credentials);
+
+            String credentialsName = getUserCredentialsName(userId, accountId);
+            if (credentialsName == null) {
+                log.error("ensureUserCredentials 후에도 Credentials를 찾을 수 없음 - 사용자ID: {}, 계좌ID: {}", userId, accountId);
+                throw new RuntimeException("Credentials 등록 실패");
+            }
+
+            KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
+
+            InquirePsblOrderApi req = new InquirePsblOrderApi();
+            req.setPdno(stockCode);  // 종목코드 설정
+
+            if (accountType == AccountType.MOCK) {
+                req.setTrId("VTTC8908R");
+            }
+
+            InquirePsblOrderResult result = client.execute(req, credentialsName);
+
+            // rtCd가 "0"이 아니면 실패 (KIS API 표준)
+            if (!result.getRtCd().equals("0")) {
+                throw new RuntimeException("KIS API 매수가능조회 실패");
+            }
+
+            return result;
+        } catch (Exception e) {
+            log.error("사용자 매수가능조회 실패 - 사용자ID: {}, 계좌ID: {}, 종목코드: {}, 오류: {}",
+                    userId, accountId, stockCode, e.getMessage(), e);
+            throw new RuntimeException("사용자 매수가능조회 실패: " + e.getMessage(), e);
         }
     }
 
