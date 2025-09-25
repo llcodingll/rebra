@@ -6,6 +6,7 @@ interface OrderBookProps {
   orderBook: OptimizedOrderbookData | null;
   stockInfo: {
     currentPrice: number;
+    prevClose: number;
     high52?: number;
     low52?: number;
     upperLimit?: number;
@@ -34,6 +35,12 @@ interface TradeHistoryItem {
 }
 
 export default function OrderBook({ orderBook, stockInfo, onPriceClick }: OrderBookProps) {
+  // 가격 비교 함수 - 전일종가 대비 색상 결정
+  const getPriceColorClass = (price: number, prevClose: number) => {
+    if (price > prevClose) return styles.priceUp;
+    if (price < prevClose) return styles.priceDown;
+    return styles.priceEqual;
+  };
   const orderBookTableRef = useRef<HTMLDivElement>(null);
   const hasScrolledToCenter = useRef(false);
 
@@ -216,17 +223,15 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick }: OrderB
                   className={`${styles.priceCell} ${isCurrentPrice ? styles.currentPriceHighlight : ''} ${onPriceClick ? styles.clickable : ''}`}
                   onClick={() => onPriceClick?.(row.price)}
                 >
-                  <div className={`${styles.price} ${row.type === 'ask' ? styles.askPrice : styles.bidPrice}`}>
+                  <div className={`${styles.price} ${getPriceColorClass(row.price, stockInfo.prevClose)}`}>
                     {formatNumber(row.price)}
                   </div>
-                  {stockInfo.currentPrice > 0 && (
+                  {stockInfo.prevClose > 0 && (
                     <div
-                      className={`${styles.changeRate} ${
-                        row.type === 'ask' ? styles.askChangeRate : styles.bidChangeRate
-                      }`}
+                      className={`${styles.changeRate} ${getPriceColorClass(row.price, stockInfo.prevClose)}`}
                     >
-                      {row.type === 'ask' ? '+' : ''}
-                      {(((row.price - stockInfo.currentPrice) / stockInfo.currentPrice) * 100).toFixed(2)}%
+                      {row.price > stockInfo.prevClose ? '+' : ''}
+                      {(((row.price - stockInfo.prevClose) / stockInfo.prevClose) * 100).toFixed(2)}%
                     </div>
                   )}
                 </div>
