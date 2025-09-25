@@ -10,6 +10,8 @@ import java.util.List;
 @Repository
 public interface NewsRepository extends JpaRepository<News, Long> {
 
-    @Query("SELECT n FROM News n ORDER BY n.publishedAt DESC LIMIT 5")
-    List<News> findTop5ByOrderByPublishedAtDesc();
+    @Query("SELECT n FROM News n ORDER BY n.id DESC LIMIT 5")
+    List<News> findTop5ByOrderByIdDesc();
+
+    boolean existsByTitleAndUrl(String title, String url);
 }

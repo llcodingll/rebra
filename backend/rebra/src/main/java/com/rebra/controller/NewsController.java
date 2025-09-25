@@ -46,7 +46,7 @@ public class NewsController {
         try {
             log.info("최신 뉴스 5개 조회 시작");
 
-            List<News> latestNews = newsRepository.findTop5ByOrderByPublishedAtDesc();
+            List<News> latestNews = newsRepository.findTop5ByOrderByIdDesc();
 
             List<NewsResponse> newsResponses = latestNews.stream()
                     .map(this::convertToResponse)
@@ -122,6 +122,13 @@ public class NewsController {
                             log.warn("발행일이 없어서 기사 건너뜀: {}", article.getTitle());
                             skipCount++;
                             continue; // 이 기사는 저장하지 않고 다음 기사로
+                        }
+
+                        // 중복 체크
+                        if (newsRepository.existsByTitleAndUrl(article.getTitle(), article.getContent_url())) {
+                            log.info("중복된 뉴스로 건너뜀: {}", article.getTitle());
+                            skipCount++;
+                            continue;
                         }
 
                         // DB 저장
