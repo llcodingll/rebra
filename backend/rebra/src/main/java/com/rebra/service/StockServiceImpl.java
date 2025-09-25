@@ -53,7 +53,6 @@ public class StockServiceImpl implements StockService {
     private final AccountRepository accountRepository;
     private final KisApiComponent kisApiComponent;
     private final FssApiClient fssApiClient;
-    private final StockDataRangeService stockDataRangeService;
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -83,16 +82,17 @@ public class StockServiceImpl implements StockService {
     
     
     /**
-     * 종목 데이터 확보 - 트랜잭션 내에서 실행
+     * 종목 데이터 확보 - 트랜잭션 내에서 실행 (비관적 잠금 적용)
      */
     @Transactional
     public void ensureStockDataWithTransaction(String stockCode, LocalDate requestStart, LocalDate requestEnd) {
         log.info("데이터 확보 요청 (트랜잭션 내) - 종목: {}, 범위: {} ~ {}", 
             stockCode, requestStart, requestEnd);
         
-        // 1. Stock 조회
-        Stock stock = findStockByCode(stockCode);
-        log.info("Stock 조회 완료 - 종목: {}, 현재 dataRange: {} ~ {}", 
+        // 1. Stock 조회 (비관적 잠금 적용)
+        Stock stock = stockRepository.findByStockCodeWithLock(stockCode)
+            .orElseThrow(() -> StockException.stockCodeNotFound());
+        log.info("Stock 조회 완료 (비관적 잠금) - 종목: {}, 현재 dataRange: {} ~ {}", 
             stockCode, stock.getDataStartDate(), stock.getDataEndDate());
         
         // 2. 캐싱 체크
@@ -138,9 +138,12 @@ public class StockServiceImpl implements StockService {
             log.info("전체 구간 데이터 조회 - {} ~ {}", requestStart, requestEnd);
         }
         
-        // 4. 데이터 범위 업데이트 (별도 트랜잭션)
+        // 4. 데이터 범위 업데이트 (같은 트랜잭션 내)
         if (dataFetched) {
-            stockDataRangeService.updateStockDataRange(stockCode, requestStart, requestEnd);
+            stock.updateDataRange(requestStart, requestEnd);
+            stockRepository.save(stock);
+            log.info("Stock 데이터 범위 업데이트 완료 - 종목: {}, 새 범위: {} ~ {}", 
+                stockCode, stock.getDataStartDate(), stock.getDataEndDate());
         }
         
         log.info("데이터 확보 완료 (트랜잭션 내) - 종목: {}", stockCode);
