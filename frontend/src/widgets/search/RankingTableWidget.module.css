@@ -135,8 +135,6 @@
 }
 
 .favoriteIcon {
-  width: clamp(12px, 2vh, 18px);
-  height: clamp(12px, 2vh, 18px);
   display: flex;
   align-items: center;
   justify-content: center;
