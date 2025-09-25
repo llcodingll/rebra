@@ -18,6 +18,7 @@ import com.rebra.exception.stock.StockException;
 import com.rebra.repository.AccountRepository;
 import com.rebra.component.KisApiComponent;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
+import com.youhogeon.finance.kis_api.api.rest.trading.InquirePsblOrderResult;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -133,8 +134,15 @@ class StockServiceImplTest {
             Account mockAccount = mock(Account.class);
             InquireBalanceResult mockResult = new InquireBalanceResult();
 
+            // Mock InquirePsblOrderResult with mocks
+            InquirePsblOrderResult mockPsblOrderResult = mock(InquirePsblOrderResult.class);
+            InquirePsblOrderResult.Output mockOutput = mock(InquirePsblOrderResult.Output.class);
+            given(mockPsblOrderResult.getOutput()).willReturn(mockOutput);
+            given(mockOutput.getOrdPsblCash()).willReturn("10000000");
+
             given(accountRepository.findById(accountId)).willReturn(Optional.of(mockAccount));
             given(kisApiComponent.getUserBalance(eq(mockAccount))).willReturn(mockResult);
+            given(kisApiComponent.getUserPossibleOrder(eq(mockAccount), eq(stockCode))).willReturn(mockPsblOrderResult);
 
             // When
             StockHoldingDetailResponse result = stockService.getStockHolding(stockCode, accountId);
@@ -152,8 +160,15 @@ class StockServiceImplTest {
             Account mockAccount = mock(Account.class);
             InquireBalanceResult mockResult = new InquireBalanceResult();
 
+            // Mock InquirePsblOrderResult for non-holding case with mocks
+            InquirePsblOrderResult mockPsblOrderResult = mock(InquirePsblOrderResult.class);
+            InquirePsblOrderResult.Output mockOutput = mock(InquirePsblOrderResult.Output.class);
+            given(mockPsblOrderResult.getOutput()).willReturn(mockOutput);
+            given(mockOutput.getOrdPsblCash()).willReturn("5000000");
+
             given(accountRepository.findById(accountId)).willReturn(Optional.of(mockAccount));
             given(kisApiComponent.getUserBalance(eq(mockAccount))).willReturn(mockResult);
+            given(kisApiComponent.getUserPossibleOrder(eq(mockAccount), eq(stockCode))).willReturn(mockPsblOrderResult);
 
             // When
             StockHoldingDetailResponse result = stockService.getStockHolding(stockCode, accountId);
