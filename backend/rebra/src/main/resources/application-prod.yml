@@ -42,6 +42,8 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  openai:
+    api-key: ${OPEN_AI_API_KEY}
 
 # JWT 설정
 jwt:
@@ -61,6 +63,11 @@ gms:
   api-key: ${GMS_API_KEY}
   whisper-url: ${GMS_WHISPER_URL:https://gms.ssafy.io/gmsapi/api.openai.com/v1/audio/transcriptions}
   gpt-url: ${GMS_GPT_URL:https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions}
+
+deepsearch:
+  api:
+    key: ${DEEP_SEARCH_KEY}
+  ai:
 
 # 계좌 암호화 설정
 security:

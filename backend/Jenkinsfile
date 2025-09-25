@@ -22,6 +22,8 @@ environment {
         // GMS_API_KEY = credentials('gms-api-key')  // 임시 주석 처리 - credential 미등록
         GMS_API_KEY = "temp-gms-api-key"  // 임시값
         GMS_GPT_URL = "https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions"
+        OPEN_AI_API_KEY = credentials('open-ai-api-key')
+        DEEP_SEARCH_KEY = credentials('deep-search-key')
 
         // JWT 설정 - Jenkins Credentials에서 보안 관리
         JWT_SECRET_KEY = credentials('jwt-secret-key')  // Jenkins Secret 사용
