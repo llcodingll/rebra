@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './BuyOrderForm.module.css';
 import { useBuyOrder } from '../hooks/useBuyOrder';
 import type { StockHoldingData } from '../../stock-detail/api/types';
@@ -11,9 +11,18 @@ interface BuyOrderFormProps {
 }
 
 export default function BuyOrderForm({ stockCode, stockName, holdingData, currentPrice }: BuyOrderFormProps) {
-  // 내부 상태 관리 (현재가로 초기화)
-  const [orderPrice, setOrderPrice] = useState(currentPrice || 71400);
+  // 내부 상태 관리 (기본값으로 초기화)
+  const [orderPrice, setOrderPrice] = useState(0);
   const [quantity, setQuantity] = useState<number | ''>('');
+  const [isPriceInitialized, setIsPriceInitialized] = useState(false);
+
+  // currentPrice가 실제 값(기본값이 아님)으로 변경될 때 1회만 orderPrice 업데이트
+  useEffect(() => {
+    if (currentPrice && currentPrice !== 0 && !isPriceInitialized) {
+      setOrderPrice(currentPrice);
+      setIsPriceInitialized(true);
+    }
+  }, [currentPrice, isPriceInitialized]);
   // const [isQuantityExceeded, setIsQuantityExceeded] = useState(false);
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);

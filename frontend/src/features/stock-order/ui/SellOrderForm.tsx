@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './SellOrderForm.module.css';
 import { useSellOrder } from '../hooks/useSellOrder';
 import type { StockHoldingData } from '../../stock-detail/api/types';
@@ -11,8 +11,17 @@ interface SellOrderFormProps {
 }
 
 export default function SellOrderForm({ stockCode, stockName, holdingData, currentPrice }: SellOrderFormProps) {
-  const [orderPrice, setOrderPrice] = useState(currentPrice || 71400);
+  const [orderPrice, setOrderPrice] = useState(0);
   const [quantity, setQuantity] = useState<number | ''>('');
+  const [isPriceInitialized, setIsPriceInitialized] = useState(false);
+
+  // currentPrice가 실제 값(기본값이 아님)으로 변경될 때 1회만 orderPrice 업데이트
+  useEffect(() => {
+    if (currentPrice && currentPrice !== 0 && !isPriceInitialized) {
+      setOrderPrice(currentPrice);
+      setIsPriceInitialized(true);
+    }
+  }, [currentPrice, isPriceInitialized]);
   // const [isQuantityExceeded, setIsQuantityExceeded] = useState(false);
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);

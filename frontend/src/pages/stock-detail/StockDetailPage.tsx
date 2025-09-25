@@ -51,7 +51,6 @@ export default function StockDetailPage() {
   // 보유 정보 조회 (중앙 집중식 관리)
   const { holdingData } = useStockHolding(stockCode, currentPrice);
 
-
   // 실제 주식 정보 (차트 API 데이터 우선, 실시간 데이터는 보조) + SearchPage에서 전달받은 정보 우선 사용
   const displayStockInfo =
     chartApiData || stockInfo
