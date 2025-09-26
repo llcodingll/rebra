@@ -93,4 +93,14 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
     @Modifying
     @Query("UPDATE Portfolio p SET p.createdAt = :createdAt WHERE p.id = :portfolioId")
     int updateCreatedAtById(@Param("portfolioId") Long portfolioId, @Param("createdAt") LocalDateTime createdAt);
+
+    /**
+     * 모든 포트폴리오 조회 (Account, User, PortfolioStocks 함께 FETCH JOIN)
+     * 성과 메트릭 스케줄러용
+     */
+    @Query("SELECT DISTINCT p FROM Portfolio p " +
+           "JOIN FETCH p.account a " +
+           "JOIN FETCH a.user u " +
+           "LEFT JOIN FETCH p.portfolioStocks")
+    List<Portfolio> findAllWithAccountAndUser();
 }
