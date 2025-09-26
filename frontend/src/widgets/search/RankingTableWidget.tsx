@@ -2,8 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import styles from './RankingTableWidget.module.css';
 import TableLayoutContainer from './components/TableLayoutContainer';
 import { useStockRanking, type RankingType } from '../../features/stock-search/hooks/useStockRanking';
-import { useWatchlist, useToggleWatchlist, isWatchlistStock } from '../../features/stock-search/hooks/useWatchlist';
-import WatchlistIcon from '../../entities/stock/ui/WatchlistIcon';
+import SkeletonRow from '../../shared/ui/SkeletonRow';
 import type { VolumeRankingApiItem } from '../../features/stock-search/api/types';
 
 interface RankingTableWidgetProps {
@@ -75,15 +74,6 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
 
   // 선택된 탭에 따른 실제 API 데이터 조회
   const { rankingData, isLoading, error } = useStockRanking(sortType);
-
-  // 관심종목 관련 훅
-  const { data: watchlistData } = useWatchlist();
-  const toggleWatchlist = useToggleWatchlist();
-
-  const handleToggleFavorite = (stockCode: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    toggleWatchlist.mutate(stockCode);
-  };
 
   // API 데이터를 최대 10개로 제한
   const sortedData = rankingData.slice(0, 10);
@@ -186,7 +176,21 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
       {/* 테이블 바디 */}
       <div className={styles.tableBody}>
         {isLoading ? (
-          <div className={styles.loadingMessage}>로딩 중...</div>
+          Array.from({ length: 10 }, (_, index) => (
+            <SkeletonRow
+              key={`skeleton-${index}`}
+              layout='ranking'
+              index={index}
+              className={styles.stockRow}
+              evenRowClassName={styles.evenRow}
+              stockInfoClassName={styles.stockInfo}
+              rankClassName={styles.skeletonRank}
+              stockNameClassName={styles.skeletonStockName}
+              priceClassName={styles.skeletonPrice}
+              changeClassName={styles.skeletonChange}
+              volumeClassName={styles.skeletonVolume}
+            />
+          ))
         ) : error ? (
           <div className={styles.errorMessage}>데이터를 불러올 수 없습니다.</div>
         ) : sortedData.length > 0 ? (
@@ -197,12 +201,6 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
               onClick={() => onStockSelect({ code: stock.stockCode, name: stock.stockName })}
             >
               <div className={styles.stockInfo}>
-                {/* <WatchlistIcon
-                  isFavorite={isWatchlistStock(stock.stockCode, watchlistData)}
-                  size={16}
-                  onClick={(e) => handleToggleFavorite(stock.stockCode, e)}
-                  className={styles.favoriteIcon}
-                /> */}
                 <div className={styles.rank}>{stock.rank}</div>
                 <span className={styles.stockName}>{stock.stockName}</span>
               </div>

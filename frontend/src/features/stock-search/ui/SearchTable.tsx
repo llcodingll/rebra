@@ -2,23 +2,12 @@ import React from 'react';
 import { useStockSearch } from '../hooks/useStockSearch';
 import { useWatchlist, useToggleWatchlist, isWatchlistStock } from '../hooks/useWatchlist';
 import WatchlistIcon from '../../../entities/stock/ui/WatchlistIcon';
+import SkeletonRow from '../../../shared/ui/SkeletonRow';
 import styles from './SearchTable.module.css';
 
 interface SearchTableProps {
   searchQuery: string;
   onStockSelect: (stock: { code: string; name: string }) => void;
-}
-
-// 스켈레톤 플레이스홀더 행 컴포넌트
-function SkeletonRow({ index }: { index: number }) {
-  return (
-    <div className={`${styles.stockRow} ${index % 2 === 0 ? styles.evenRow : ''} ${styles.skeletonRow}`}>
-      <div className={styles.stockInfo}>
-        <div className={`${styles.favoriteIcon} ${styles.skeletonIcon}`}></div>
-        <div className={`${styles.stockName} ${styles.skeletonText}`}></div>
-      </div>
-    </div>
-  );
 }
 
 export default function SearchTable({ searchQuery, onStockSelect }: SearchTableProps) {
@@ -40,7 +29,16 @@ export default function SearchTable({ searchQuery, onStockSelect }: SearchTableP
       <div className={styles.stockTable}>
         <div className={styles.tableBody}>
           {Array.from({ length: 3 }, (_, index) => (
-            <SkeletonRow key={`skeleton-${index}`} index={index} />
+            <SkeletonRow
+              key={`skeleton-${index}`}
+              layout='search'
+              index={index}
+              className={styles.stockRow}
+              evenRowClassName={styles.evenRow}
+              layoutClassName={styles.stockInfo}
+              iconClassName={styles.skeletonIcon}
+              textClassName={styles.skeletonText}
+            />
           ))}
         </div>
       </div>

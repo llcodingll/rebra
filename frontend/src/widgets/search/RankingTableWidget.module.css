@@ -192,3 +192,54 @@
   text-align: right;
   width: 100%;
 }
+
+/* Skeleton Placeholder Styles for Ranking */
+.skeletonRank {
+  background-color: #ebebeb;
+  border-radius: 4px;
+  height: clamp(11px, 1.8vh, 15px);
+  width: 24px;
+  animation: rankingPulse 1.5s ease-in-out infinite;
+}
+
+.skeletonStockName {
+  background-color: #ebebeb;
+  border-radius: 4px;
+  height: clamp(12px, 2vh, 16px);
+  width: 120px;
+  animation: rankingPulse 1.5s ease-in-out infinite;
+}
+
+.skeletonPrice {
+  background-color: #ebebeb;
+  border-radius: 4px;
+  height: clamp(12px, 2vh, 16px);
+  width: 70px;
+  animation: rankingPulse 1.5s ease-in-out infinite;
+}
+
+.skeletonChange {
+  background-color: #ebebeb;
+  border-radius: 4px;
+  height: clamp(12px, 2vh, 16px);
+  width: 50px;
+  animation: rankingPulse 1.5s ease-in-out infinite;
+}
+
+.skeletonVolume {
+  background-color: #ebebeb;
+  border-radius: 4px;
+  height: clamp(12px, 2vh, 16px);
+  width: 80px;
+  animation: rankingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes rankingPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
