@@ -33,12 +33,7 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
   if (data.length === 0) {
     return (
       <div className={styles.chartContainer}>
-        <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-          className={styles.chartCard}
-        >
+        <div className={styles.chartCard}>
           <div className={styles.header}>
             <div className={styles.headerLeft}>
               <BarChart3 className={styles.headerIcon} />
@@ -47,20 +42,15 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
           </div>
           
           <div className={styles.emptyState}>
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className={styles.emptyStateContent}
-            >
+            <div className={styles.emptyStateContent}>
               <BarChart3 className={styles.emptyStateIcon} />
               <h3 className={styles.emptyStateTitle}>포트폴리오에 주식을 등록해보세요!</h3>
               <p className={styles.emptyStateDescription}>
                 주식을 등록하면 포트폴리오 구성과 수익률을 확인할 수 있습니다.
               </p>
-            </motion.div>
+            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     );
   }
