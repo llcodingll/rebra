@@ -32,13 +32,13 @@ public class PortfolioStockController {
 
     @Operation(summary = "포트폴리오 주식 등록", description = "포트폴리오에 새로운 주식을 등록합니다.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "등록 성공"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "401", description = "인증 실패"),
-        @ApiResponse(responseCode = "403", description = "등록 권한 없음"),
-        @ApiResponse(responseCode = "404", description = "포트폴리오를 찾을 수 없음"),
-        @ApiResponse(responseCode = "409", description = "이미 등록된 주식"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
+            @ApiResponse(responseCode = "201", description = "등록 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "403", description = "등록 권한 없음"),
+            @ApiResponse(responseCode = "404", description = "포트폴리오를 찾을 수 없음"),
+            @ApiResponse(responseCode = "409", description = "이미 등록된 주식"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @PostMapping
     public ResponseEntity<CommonApiResponse<PortfolioStockResponse>> registerStock(
@@ -60,12 +60,12 @@ public class PortfolioStockController {
 
     @Operation(summary = "포트폴리오 주식 삭제", description = "포트폴리오에서 주식을 삭제합니다.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "삭제 성공"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "401", description = "인증 실패"),
-        @ApiResponse(responseCode = "403", description = "삭제 권한 없음"),
-        @ApiResponse(responseCode = "404", description = "포트폴리오 또는 주식을 찾을 수 없음"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
+            @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "403", description = "삭제 권한 없음"),
+            @ApiResponse(responseCode = "404", description = "포트폴리오 또는 주식을 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @DeleteMapping
     public ResponseEntity<CommonApiResponse<Void>> deleteStock(
@@ -85,14 +85,14 @@ public class PortfolioStockController {
     }
 
     @Operation(summary = "포트폴리오 주식 설정 일괄 업데이트",
-               description = "여러 주식의 목표 비중과 임계값을 한 번에 업데이트합니다.")
+            description = "여러 주식의 목표 비중과 임계값을 한 번에 업데이트합니다.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "업데이트 성공"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "401", description = "인증 실패"),
-        @ApiResponse(responseCode = "403", description = "업데이트 권한 없음"),
-        @ApiResponse(responseCode = "404", description = "포트폴리오 또는 주식을 찾을 수 없음"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
+            @ApiResponse(responseCode = "200", description = "업데이트 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "403", description = "업데이트 권한 없음"),
+            @ApiResponse(responseCode = "404", description = "포트폴리오 또는 주식을 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @PutMapping("/batch")
     public ResponseEntity<CommonApiResponse<List<PortfolioStockResponse>>> updateStocksBatch(
