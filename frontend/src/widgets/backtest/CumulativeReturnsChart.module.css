@@ -19,7 +19,7 @@
 }
 
 .chartTitle {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   color: #111827;
   margin: 0;
@@ -34,7 +34,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: 16px;
   color: #374151;
 }
 
@@ -59,6 +59,14 @@
 .legendValue {
   font-weight: 600;
   color: #111827;
+}
+
+.legendValue.positive {
+  color: #e7000b;
+}
+
+.legendValue.negative {
+  color: #0066cc;
 }
 
 /* 차트 래퍼 */

@@ -40,7 +40,7 @@
 
 .cardHeader h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 600;
   color: #030213;
 }
@@ -66,7 +66,7 @@
 
 .legendTitle {
   margin: 0 0 16px 0;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #374151;
 }
@@ -114,13 +114,13 @@
 }
 
 .legendName {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: #111827;
 }
 
 .legendCode {
-  font-size: 11px;
+  font-size: 13px;
   color: #6b7280;
 }
 
@@ -132,7 +132,7 @@
 }
 
 .legendWeight {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: #111827;
 }
@@ -173,13 +173,13 @@
 
 .stockName {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: #111827;
 }
 
 .stockCode {
-  font-size: 12px;
+  font-size: 14px;
   color: #6b7280;
   font-weight: 500;
 }
@@ -198,12 +198,12 @@
 }
 
 .metricLabel {
-  font-size: 13px;
+  font-size: 15px;
   color: #6b7280;
 }
 
 .metricValue {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: #111827;
 }

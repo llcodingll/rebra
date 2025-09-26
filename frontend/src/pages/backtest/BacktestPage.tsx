@@ -11,9 +11,11 @@ import { getBacktestList, deleteBacktest, type BacktestListResponse, type PageRe
 
 export default function BacktestPage() {
   const navigate = useNavigate();
-  const { registerTutorialTarget } = useOutletContext<{ registerTutorialTarget: (page: string, startFunction: () => void) => void }>();
+  const { tutorialStates, closeTutorial } = useOutletContext<{
+    tutorialStates: { dashboard: boolean; search: boolean; backtest: boolean };
+    closeTutorial: (page: 'dashboard' | 'search' | 'backtest') => void;
+  }>();
   const [currentPage, setCurrentPage] = useState(1);
-  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [backtestData, setBacktestData] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,20 +87,9 @@ export default function BacktestPage() {
     setBacktestToDelete(null);
   };
 
-  const handleTutorialStart = useCallback(() => {
-    console.log('튜토리얼 시작!');
-    setIsTutorialOpen(true);
-  }, []);
-
   const handleTutorialClose = useCallback(() => {
-    setIsTutorialOpen(false);
-  }, []);
-
-  // Layout에 튜토리얼 시작 함수 등록
-  useEffect(() => {
-    console.log('백테스트 페이지에서 튜토리얼 등록');
-    registerTutorialTarget('backtest', handleTutorialStart);
-  }, []);
+    closeTutorial('backtest');
+  }, [closeTutorial]);
 
 
   return (
@@ -128,7 +119,7 @@ export default function BacktestPage() {
 
       {/* Tutorial Overlay */}
       <TutorialOverlay
-        isOpen={isTutorialOpen}
+        isOpen={tutorialStates.backtest}
         onClose={handleTutorialClose}
         steps={backtestTutorialSteps}
       />

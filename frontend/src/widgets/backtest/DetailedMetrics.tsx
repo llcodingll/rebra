@@ -8,6 +8,7 @@ interface MetricData {
   label: string;
   value: string;
   isNegative?: boolean;
+  isPositive?: boolean;
   description: string;
 }
 
@@ -24,6 +25,7 @@ export default function DetailedMetrics({ backtestResult }: DetailedMetricsProps
       label: 'CAGR',
       value: `${backtestResult.summary.annualizedReturnPercentage?.toFixed(2) || 0}%`,
       isNegative: (backtestResult.summary.annualizedReturnPercentage || 0) < 0,
+      isPositive: (backtestResult.summary.annualizedReturnPercentage || 0) > 0,
       description: '투자기간 동안의 연평균 수익률입니다. 복리효과를 고려한 실제 성장률을 나타냅니다.'
     },
     {
@@ -41,12 +43,14 @@ export default function DetailedMetrics({ backtestResult }: DetailedMetricsProps
       label: '샤프 비율',
       value: `${backtestResult.summary.sharpeRatio?.toFixed(3) || 0}`,
       isNegative: (backtestResult.summary.sharpeRatio || 0) < 0,
+      isPositive: (backtestResult.summary.sharpeRatio || 0) > 0,
       description: '위험 대비 수익률을 나타냅니다. 1.0 이상이면 우수하며, 높을수록 효율적인 투자입니다.'
     },
     {
       label: '총 수익률',
       value: `${backtestResult.summary.totalReturnPercentage?.toFixed(2) || 0}%`,
       isNegative: (backtestResult.summary.totalReturnPercentage || 0) < 0,
+      isPositive: (backtestResult.summary.totalReturnPercentage || 0) > 0,
       description: '투자기간 전체의 누적 수익률입니다. 초기 투자금 대비 얼마나 수익이 났는지 보여줍니다.'
     },
     {
@@ -57,19 +61,18 @@ export default function DetailedMetrics({ backtestResult }: DetailedMetricsProps
     {
       label: '거래 비용',
       value: `-${(backtestResult.summary.totalFee || 0).toLocaleString()}원`,
-      isNegative: true,
       description: '주식 매매 시 발생한 수수료와 세금의 총합입니다. 수익률에서 차감되는 실제 비용입니다.'
     },
     {
       label: '대출 비용',
       value: `-${(backtestResult.summary.totalBorrowingCost || 0).toLocaleString()}원`,
-      isNegative: true,
       description: '주식 매수를 위해 일시적으로 발생한 대출의 이자비용입니다.'
     },
     {
       label: '초과 수익률',
       value: `${backtestResult.summary.excessReturnPercentage?.toFixed(2) || 0}%`,
       isNegative: (backtestResult.summary.excessReturnPercentage || 0) < 0,
+      isPositive: (backtestResult.summary.excessReturnPercentage || 0) > 0,
       description: '단순 매수 후 보유(Buy & Hold) 대비 리밸런싱 전략의 추가 수익률입니다.'
     },
     {
@@ -80,7 +83,6 @@ export default function DetailedMetrics({ backtestResult }: DetailedMetricsProps
     {
       label: '최소 현금잔고',
       value: `${(backtestResult.summary.minCashBalance || 0).toLocaleString()}원`,
-      isNegative: (backtestResult.summary.minCashBalance || 0) < 0,
       description: '가장 적었던 현금 보유액입니다. 음수면 대출이 발생했음을 의미합니다.'
     }
   ] : [
@@ -123,7 +125,7 @@ export default function DetailedMetrics({ backtestResult }: DetailedMetricsProps
                 )}
               </div>
             </div>
-            <span className={`${styles.detailValue} ${metric.isNegative ? styles.negative : ''}`}>
+            <span className={`${styles.detailValue} ${metric.isNegative ? styles.negative : metric.isPositive ? styles.positive : ''}`}>
               {metric.value}
             </span>
           </div>
