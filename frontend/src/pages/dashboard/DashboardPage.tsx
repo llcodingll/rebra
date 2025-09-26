@@ -29,13 +29,15 @@ import { dashboardTutorialSteps } from '../../widgets/tutorial/dashboardTutorial
  */
 export default function DashboardPage() {
   // 튜토리얼 관련
-  const { registerTutorialTarget } = useOutletContext<{ registerTutorialTarget: (page: string, startFunction: () => void) => void }>();
+  const { tutorialStates, closeTutorial } = useOutletContext<{
+    tutorialStates: { dashboard: boolean; search: boolean; backtest: boolean };
+    closeTutorial: (page: 'dashboard' | 'search' | 'backtest') => void;
+  }>();
 
   // UI 상태 관리
   const [activeSubTab, setActiveSubTab] = useState<'assets' | 'profit'>('assets'); // 현재 활성 탭 (자산/수익률)
   const [isModalOpen, setIsModalOpen] = useState(false); // 포트폴리오 선택 모달
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // 포트폴리오 생성 모달
-  const [isTutorialOpen, setIsTutorialOpen] = useState(false); // 튜토리얼 오버레이
   const [isEditingWeights, setIsEditingWeights] = useState(false); // 비중 편집 중 여부 (폴링 제어용)
 
   // 현재 선택된 포트폴리오 상태 (portfolios 배열의 첫 번째 항목이 기본값)
@@ -137,21 +139,10 @@ export default function DashboardPage() {
     }
   };
 
-  const handleTutorialStart = useCallback(() => {
-    // console.log('대시보드 튜토리얼 시작!');
-    setIsTutorialOpen(true);
-  }, []);
-
   // 튜토리얼 오버레이 닫기
   const handleTutorialClose = useCallback(() => {
-    setIsTutorialOpen(false);
-  }, []);
-
-  // Layout에 튜토리얼 시작 함수 등록
-  useEffect(() => {
-    // console.log('대시보드 페이지에서 튜토리얼 등록');
-    registerTutorialTarget('dashboard', handleTutorialStart);
-  }, []);
+    closeTutorial('dashboard');
+  }, [closeTutorial]);
 
   // 등록된 주식 데이터 메모이제이션
   const registeredStocks = useMemo(() => 
@@ -227,7 +218,7 @@ export default function DashboardPage() {
 
         {/* 튜토리얼 오버레이 - 포트폴리오 없어도 작동 */}
         <TutorialOverlay
-          isOpen={isTutorialOpen}
+          isOpen={tutorialStates.dashboard}
           onClose={handleTutorialClose}
           steps={dashboardTutorialSteps}
         />
@@ -344,7 +335,7 @@ export default function DashboardPage() {
 
       {/* 튜토리얼 오버레이 */}
       <TutorialOverlay
-        isOpen={isTutorialOpen}
+        isOpen={tutorialStates.dashboard}
         onClose={handleTutorialClose}
         steps={dashboardTutorialSteps}
       />

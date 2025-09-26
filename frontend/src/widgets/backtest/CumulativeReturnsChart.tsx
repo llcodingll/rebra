@@ -363,7 +363,7 @@ export default function CumulativeReturnsChart({
           <div className={styles.legendItem}>
             <div className={`${styles.legendDot} ${styles.portfolio}`}></div>
             <span>리밸런싱 전략</span>
-            <span className={styles.legendValue}>
+            <span className={`${styles.legendValue} ${portfolioFinalReturn && portfolioFinalReturn > 0 ? styles.positive : portfolioFinalReturn && portfolioFinalReturn < 0 ? styles.negative : ''}`}>
               {portfolioFinalReturn !== undefined
                 ? `${portfolioFinalReturn >= 0 ? '+' : ''}${portfolioFinalReturn.toFixed(1)}%`
                 : '+0.0%'
@@ -373,7 +373,7 @@ export default function CumulativeReturnsChart({
           <div className={styles.legendItem}>
             <div className={`${styles.legendDot} ${styles.buyhold}`}></div>
             <span>Buy & Hold</span>
-            <span className={styles.legendValue}>
+            <span className={`${styles.legendValue} ${buyHoldFinalReturn && buyHoldFinalReturn > 0 ? styles.positive : buyHoldFinalReturn && buyHoldFinalReturn < 0 ? styles.negative : ''}`}>
               {buyHoldFinalReturn !== undefined
                 ? `${buyHoldFinalReturn >= 0 ? '+' : ''}${buyHoldFinalReturn.toFixed(1)}%`
                 : '+0.0%'
@@ -384,7 +384,7 @@ export default function CumulativeReturnsChart({
             <div className={styles.legendItem}>
               <div className={`${styles.legendDot} ${styles.kospi}`}></div>
               <span>KOSPI</span>
-              <span className={styles.legendValue}>
+              <span className={`${styles.legendValue} ${kospiFinalReturn && kospiFinalReturn > 0 ? styles.positive : kospiFinalReturn && kospiFinalReturn < 0 ? styles.negative : ''}`}>
                 {kospiFinalReturn !== undefined
                   ? `${kospiFinalReturn >= 0 ? '+' : ''}${kospiFinalReturn.toFixed(1)}%`
                   : '+0.0%'
