@@ -15,14 +15,11 @@ export const useStockSearch = (searchQuery: string, debounceMs: number = 300) =>
 
   // 디바운싱 처리
   useEffect(() => {
-    console.log(`🔍 검색어 변경: "${searchQuery}" → 디바운싱 ${debounceMs}ms 대기`);
-
     if (searchQuery.trim().length > 0) {
       setIsDebouncing(true);
     }
 
     const timer = setTimeout(() => {
-      console.log(`✅ 디바운싱 완료: "${searchQuery}" → debouncedQuery 업데이트`);
       setDebouncedQuery(searchQuery);
       setIsDebouncing(false);
     }, debounceMs);
@@ -64,12 +61,9 @@ export const useStockSearch = (searchQuery: string, debounceMs: number = 300) =>
   // 현재 검색어와 디바운싱된 검색어가 일치하는지 확인
   const isQueryMatching = searchQuery.trim() === debouncedQuery.trim();
 
-  console.log(`📊 검색 결과 처리: shouldSearch=${shouldSearch}, hasCurrentQuery=${hasCurrentQuery}, isQueryMatching=${isQueryMatching}, hasResponse=${!!searchResponse}, resultCount=${searchResponse?.length || 0}`);
-
   // 현재 입력과 디바운싱된 쿼리가 일치하고 검색 결과가 있을 때만 표시
   if (hasCurrentQuery && shouldSearch && searchResponse && isQueryMatching) {
     searchResults = transformSearchResults(searchResponse);
-    console.log(`✨ 변환된 검색 결과: ${searchResults.length}개`);
   }
 
   // 통합 로딩 상태: 디바운싱 중이거나 API 호출 중일 때
