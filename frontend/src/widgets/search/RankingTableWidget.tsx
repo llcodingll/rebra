@@ -197,12 +197,12 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
               onClick={() => onStockSelect({ code: stock.stockCode, name: stock.stockName })}
             >
               <div className={styles.stockInfo}>
-                <WatchlistIcon
+                {/* <WatchlistIcon
                   isFavorite={isWatchlistStock(stock.stockCode, watchlistData)}
                   size={16}
                   onClick={(e) => handleToggleFavorite(stock.stockCode, e)}
                   className={styles.favoriteIcon}
-                />
+                /> */}
                 <div className={styles.rank}>{stock.rank}</div>
                 <span className={styles.stockName}>{stock.stockName}</span>
               </div>

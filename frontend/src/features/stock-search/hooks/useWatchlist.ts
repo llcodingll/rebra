@@ -46,12 +46,45 @@ export const useToggleWatchlist = () => {
         throw new Error(result.error.message);
       }
     },
+    // 낙관적 업데이트
+    onMutate: async (stockCode) => {
+      // 진행 중인 쿼리 취소
+      await queryClient.cancelQueries({ queryKey: ['watchlist', accountId] });
+
+      // 이전 데이터 백업
+      const previousData = queryClient.getQueryData<WatchlistResponse>(['watchlist', accountId]);
+
+      // 낙관적 업데이트 적용
+      if (previousData) {
+        const isCurrentlyFavorite = previousData.some(item => item.stockCode === stockCode);
+
+        if (isCurrentlyFavorite) {
+          // 제거
+          const newData = previousData.filter(item => item.stockCode !== stockCode);
+          queryClient.setQueryData(['watchlist', accountId], newData);
+        } else {
+          // 추가 (임시 이름 사용)
+          const newData = [...previousData, { stockCode, stockName: `종목-${stockCode}` }];
+          queryClient.setQueryData(['watchlist', accountId], newData);
+        }
+      }
+
+      return { previousData };
+    },
+    // 에러 발생 시 롤백
+    onError: (err, stockCode, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['watchlist', accountId], context.previousData);
+      }
+      console.error('관심종목 토글 실패:', err.message);
+    },
     onSuccess: (data) => {
       // 관심종목 목록 다시 조회
-      queryClient.invalidateQueries({ queryKey: ['watchlist'] });
+      queryClient.invalidateQueries({ queryKey: ['watchlist', accountId] });
 
       // 성공 메시지 (선택사항)
-      console.log(data.message);
+      console.log('🎉 토글 성공:', data.message);
+      console.log('🔄 캐시 무효화 완료, queryKey:', ['watchlist', accountId]);
     },
     onError: (error) => {
       console.error('관심종목 토글 실패:', error.message);
@@ -66,6 +99,18 @@ export const useToggleWatchlist = () => {
  * @returns 관심종목 여부
  */
 export const isWatchlistStock = (stockCode: string, watchlistData?: WatchlistResponse): boolean => {
-  if (!watchlistData) return false;
-  return watchlistData.some(item => item.stockCode === stockCode);
+  console.log('🔍 isWatchlistStock 호출:', {
+    stockCode,
+    watchlistData,
+    watchlistCodes: watchlistData?.map(item => item.stockCode)
+  });
+
+  if (!watchlistData) {
+    console.log('❌ watchlistData가 없음');
+    return false;
+  }
+
+  const result = watchlistData.some(item => item.stockCode === stockCode);
+  console.log('✅ isWatchlistStock 결과:', result);
+  return result;
 };
