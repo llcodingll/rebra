@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -43,6 +44,7 @@ public class PerformanceMetricsScheduler {
     /**
      * 성과 메트릭 수집 실행 로직
      */
+    @Transactional
     private void executeDailyMetricsCollection() {
         try {
             LocalDateTime startTime = LocalDateTime.now();
@@ -50,8 +52,8 @@ public class PerformanceMetricsScheduler {
 
             log.info("성과 메트릭 수집 처리 시작 - 대상 날짜: {}, 시작시간: {}", targetDate, startTime);
 
-            // 모든 포트폴리오 조회
-            List<Portfolio> allPortfolios = portfolioRepository.findAll();
+            // 모든 포트폴리오 조회 (Account와 User 함께 FETCH JOIN)
+            List<Portfolio> allPortfolios = portfolioRepository.findAllWithAccountAndUser();
 
             if (allPortfolios.isEmpty()) {
                 log.info("수집할 포트폴리오가 없습니다.");
@@ -64,16 +66,7 @@ public class PerformanceMetricsScheduler {
             // 각 포트폴리오별 성과 메트릭 수집
             for (Portfolio portfolio : allPortfolios) {
                 try {
-                    // 중복 방지: 이미 일일 성과 메트릭 데이터(구성 변경이 아닌)가 존재하는지 확인
-                    if (performanceMetricsRepository.existsByPortfolioIdAndMetricDateAndIsCompositionChangedFalse(
-                            portfolio.getId(), targetDate)) {
-                        log.debug("이미 수집된 일일 성과 메트릭 - Portfolio ID: {}, Date: {}",
-                                portfolio.getId(), targetDate);
-                        successCount++;
-                        continue;
-                    }
-
-                    // 성과 메트릭 수집 및 저장
+                    // 성과 메트릭 수집 및 저장 (UPSERT 방식)
                     performanceMetricsService.collectDailyMetrics(portfolio, targetDate);
                     successCount++;
 

@@ -51,29 +51,42 @@ public class PerformanceMetricsServiceImpl implements PerformanceMetricsService 
             log.info("포트폴리오 성과 메트릭 수집 시작 - Portfolio ID: {}, Date: {}",
                     portfolio.getId(), targetDate);
 
-            // 중복 방지: 이미 해당 날짜 데이터가 존재하면 스킵
-            if (performanceMetricsRepository.existsByPortfolioIdAndMetricDate(portfolio.getId(), targetDate)) {
-                log.info("이미 존재하는 성과 메트릭 데이터 - Portfolio ID: {}, Date: {}",
-                        portfolio.getId(), targetDate);
-                return;
-            }
-
             // 1. 포트폴리오 총 가치 계산
             double totalValue = calculatePortfolioTotalValue(portfolio);
 
             // 2. 거래 여부 판단
             TradingActivityInfo tradingInfo = analyzeTradingActivity(portfolio, targetDate);
 
-            // 3. PerformanceMetrics 생성 및 저장
-            PerformanceMetrics metrics = PerformanceMetrics.builder()
-                    .portfolio(portfolio)
-                    .metricDate(targetDate)
-                    .totalValue(totalValue)
-                    .isRebalanced(tradingInfo.isRebalanced())
-                    .isSold(tradingInfo.isSold())
-                    .isBought(tradingInfo.isBought())
-                    .isCompositionChanged(false) // 일일 수집은 구성 변경이 아님
-                    .build();
+            // 3. 기존 성과 메트릭 조회 (isCompositionChanged 관계없이)
+            Optional<PerformanceMetrics> existingMetrics = performanceMetricsRepository
+                    .findByPortfolioIdAndMetricDate(portfolio.getId(), targetDate);
+
+            PerformanceMetrics metrics;
+            if (existingMetrics.isPresent()) {
+                // 기존 데이터 업데이트
+                metrics = existingMetrics.get();
+                metrics.updateDailyMetrics(totalValue,
+                                         tradingInfo.isRebalanced(),
+                                         tradingInfo.isSold(),
+                                         tradingInfo.isBought());
+
+                log.info("기존 성과 메트릭 업데이트 - Portfolio ID: {}, Date: {}",
+                        portfolio.getId(), targetDate);
+            } else {
+                // 새로운 데이터 생성
+                metrics = PerformanceMetrics.builder()
+                        .portfolio(portfolio)
+                        .metricDate(targetDate)
+                        .totalValue(totalValue)
+                        .isRebalanced(tradingInfo.isRebalanced())
+                        .isSold(tradingInfo.isSold())
+                        .isBought(tradingInfo.isBought())
+                        .isCompositionChanged(false) // 일일 수집은 구성 변경이 아님
+                        .build();
+
+                log.info("새로운 성과 메트릭 생성 - Portfolio ID: {}, Date: {}",
+                        portfolio.getId(), targetDate);
+            }
 
             performanceMetricsRepository.save(metrics);
 

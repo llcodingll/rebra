@@ -23,8 +23,10 @@ import com.rebra.repository.PortfolioStockRepository;
 import com.rebra.repository.StockRepository;
 import com.rebra.repository.RebalancingOrderRepository;
 import com.rebra.repository.TradeRecordRepository;
+import com.rebra.scheduler.PerformanceMetricsScheduler;
 import com.rebra.service.TokenService;
 import com.rebra.util.CookieUtil;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import java.time.Duration;
 import io.swagger.v3.oas.annotations.Operation;
@@ -63,6 +65,7 @@ public class DummyController {
     private final PortfolioStockRepository portfolioStockRepository;
     private final RebalancingOrderRepository rebalancingOrderRepository;
     private final TradeRecordRepository tradeRecordRepository;
+    private final PerformanceMetricsScheduler performanceMetricsScheduler;
     private final TokenService tokenService;
 
     @Operation(
@@ -113,5 +116,30 @@ public class DummyController {
         UpdateCreatedAtResponse response = dummyDataService.updatePortfolioCreatedAt(userId, portfolioId, request.getCreatedAt());
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
+    }
+
+    @Operation(
+            summary = "성과 메트릭 수집 수동 실행",
+            description = "스케줄러의 일일 성과 메트릭 수집을 수동으로 실행합니다. 개발/테스트용으로 사용됩니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "성과 메트릭 수집 실행 성공"),
+            @ApiResponse(responseCode = "500", description = "수집 중 오류 발생")
+    })
+    @PostMapping("/collect-performance-metrics")
+    public ResponseEntity<CommonApiResponse<String>> collectDailyPerformanceMetrics() {
+
+        log.info("수동 성과 메트릭 수집 실행 요청");
+
+        try {
+            performanceMetricsScheduler.executeManualMetricsCollection();
+            return ResponseEntity.ok(CommonApiResponse.success("성과 메트릭 수집이 완료되었습니다."));
+        } catch (Exception e) {
+            log.error("성과 메트릭 수집 실행 중 오류 발생", e);
+            return ResponseEntity.internalServerError()
+                    .body(CommonApiResponse.error("PERFORMANCE_METRICS_ERROR",
+                            "성과 메트릭 수집 실행 실패: " + e.getMessage(),
+                            HttpStatus.INTERNAL_SERVER_ERROR));
+        }
     }
 }
