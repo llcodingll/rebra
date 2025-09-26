@@ -224,17 +224,17 @@ public class BacktestResponse {
         sb.append(String.format("상태: %s\n", status));
         
         if (isSuccess() && summary != null) {
-            sb.append(String.format("최종 가치: %,.0f원\n", summary.getFinalValue()));
+            sb.append(String.format("최종 가치: %,d원\n", summary.getFinalValue()));
             sb.append(String.format("총 수익률: %.2f%%\n", summary.getTotalReturn() * 100));
             sb.append(String.format("바이앤홀드 수익률: %.2f%%\n", summary.getBuyHoldReturn() * 100));
             sb.append(String.format("초과 수익률: %.2f%%\n", summary.getExcessReturn() * 100));
-            sb.append(String.format("총 거래비용: %,.0f원\n", summary.getTotalFee()));
-            sb.append(String.format("총 차입비용: %,.0f원\n", summary.getTotalBorrowingCost()));
+            sb.append(String.format("총 거래비용: %,d원\n", summary.getTotalFee()));
+            sb.append(String.format("총 차입비용: %,d원\n", summary.getTotalBorrowingCost()));
             sb.append(String.format("리밸런싱 횟수: %d회\n", summary.getRebalancingCount()));
             sb.append(String.format("백테스트 기간: %d일\n", getBacktestPeriodDays()));
             
             if (summary.getTotalBorrowingCost() != null && summary.getTotalBorrowingCost() > 0) {
-                sb.append(String.format("최대 차입금: %,.0f원\n", summary.getMaxBorrowingAmount()));
+                sb.append(String.format("최대 차입금: %,d원\n", summary.getMaxBorrowingAmount()));
             }
         } else if (isFailure()) {
             sb.append(String.format("오류 메시지: %s\n", errorMessage));

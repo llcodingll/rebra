@@ -9,7 +9,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.util.StringUtils;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -43,8 +42,8 @@ public class StockBasicInfoResponse {
     @Schema(description = "유가증권종목종류코드명", example = "보통주")
     private String securitiesTypeName;
 
-    @Schema(description = "주식액면가", example = "5000.00")
-    private BigDecimal parValue;
+    @Schema(description = "주식액면가", example = "5000")
+    private Integer parValue;
 
     @Schema(description = "발행주식수", example = "5969782550")
     private Long issuedShares;
@@ -87,15 +86,15 @@ public class StockBasicInfoResponse {
                 .build();
     }
 
-    private static BigDecimal parsePrice(String priceStr) {
+    private static Integer parsePrice(String priceStr) {
         if (!StringUtils.hasText(priceStr)) {
-            return BigDecimal.ZERO;
+            return 0;
         }
         try {
             String cleanPrice = priceStr.replaceAll(",", "");
-            return new BigDecimal(cleanPrice);
+            return Integer.parseInt(cleanPrice);
         } catch (NumberFormatException e) {
-            return BigDecimal.ZERO;
+            return 0;
         }
     }
 

@@ -256,8 +256,8 @@ class PortfolioStockServiceImplTest {
 
             // 업데이트 요청 생성
             List<PortfolioStockUpdateRequest> updateRequests = Arrays.asList(
-                new PortfolioStockUpdateRequest("005930", BigDecimal.valueOf(35.0), BigDecimal.valueOf(5.0)),
-                new PortfolioStockUpdateRequest("000660", BigDecimal.valueOf(25.0), BigDecimal.valueOf(3.0))
+                new PortfolioStockUpdateRequest("005930", 35.0, 5.0),
+                new PortfolioStockUpdateRequest("000660", 25.0, 3.0)
             );
             PortfolioStockBatchUpdateRequest request = new PortfolioStockBatchUpdateRequest(updateRequests);
 
@@ -306,7 +306,7 @@ class PortfolioStockServiceImplTest {
             Long userId = 1L;
             Long portfolioId = 999L;
             List<PortfolioStockUpdateRequest> updateRequests = Arrays.asList(
-                new PortfolioStockUpdateRequest("005930", BigDecimal.valueOf(35.0), BigDecimal.valueOf(5.0))
+                new PortfolioStockUpdateRequest("005930", 35.0, 5.0)
             );
             PortfolioStockBatchUpdateRequest request = new PortfolioStockBatchUpdateRequest(updateRequests);
 
@@ -326,7 +326,7 @@ class PortfolioStockServiceImplTest {
             Long userId = 1L;
             Long portfolioId = 1L;
             List<PortfolioStockUpdateRequest> updateRequests = Arrays.asList(
-                new PortfolioStockUpdateRequest("999999", BigDecimal.valueOf(35.0), BigDecimal.valueOf(5.0))
+                new PortfolioStockUpdateRequest("999999", 35.0, 5.0)
             );
             PortfolioStockBatchUpdateRequest request = new PortfolioStockBatchUpdateRequest(updateRequests);
 

@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -217,17 +216,17 @@ public class StockHistoricalServiceImpl implements StockHistoricalService {
         }
     }
 
-    private BigDecimal parsePrice(String priceStr) {
+    private Integer parsePrice(String priceStr) {
         if (!StringUtils.hasText(priceStr)) {
-            return BigDecimal.ZERO;
+            return 0;
         }
         try {
             // 콤마 제거 후 변환
             String cleanPrice = priceStr.replaceAll(",", "");
-            return new BigDecimal(cleanPrice);
+            return Integer.parseInt(cleanPrice);
         } catch (NumberFormatException e) {
             log.warn("가격 파싱 실패: {}", priceStr);
-            return BigDecimal.ZERO;
+            return 0;
         }
     }
 
@@ -245,15 +244,15 @@ public class StockHistoricalServiceImpl implements StockHistoricalService {
         }
     }
 
-    private BigDecimal parseChangeRate(String rateStr) {
+    private Double parseChangeRate(String rateStr) {
         if (!StringUtils.hasText(rateStr)) {
-            return BigDecimal.ZERO;
+            return 0.0;
         }
         try {
-            return new BigDecimal(rateStr);
+            return Double.parseDouble(rateStr);
         } catch (NumberFormatException e) {
             log.warn("등락률 파싱 실패: {}", rateStr);
-            return BigDecimal.ZERO;
+            return 0.0;
         }
     }
 }

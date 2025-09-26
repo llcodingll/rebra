@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 
 /**
  * 보유 종목 상세 정보 응답 DTO
@@ -27,28 +26,28 @@ public class StockHoldingResponse {
     private String stockName;
 
     @Schema(description = "평균매입가", example = "65000")
-    private BigDecimal averagePurchasePrice;
+    private Integer averagePurchasePrice;
 
     @Schema(description = "현재가", example = "70000")
-    private BigDecimal currentPrice;
+    private Integer currentPrice;
 
     @Schema(description = "평가손익금액", example = "500000")
-    private BigDecimal evaluationProfitLoss;
+    private Integer evaluationProfitLoss;
 
     @Schema(description = "수익률 (%)", example = "7.69")
-    private BigDecimal returnRate;
+    private Double returnRate;
 
     @Schema(description = "전일대비증감", example = "1000")
-    private BigDecimal priceChange;
+    private Integer priceChange;
 
     @Schema(description = "등락률 (%)", example = "1.45")
-    private BigDecimal changeRate;
+    private Double changeRate;
 
     @Schema(description = "매입금액", example = "6500000")
-    private BigDecimal purchaseAmount;
+    private Integer purchaseAmount;
 
     @Schema(description = "평가금액", example = "7000000")
-    private BigDecimal evaluationAmount;
+    private Integer evaluationAmount;
 
     @Schema(description = "보유수량", example = "100")
     private Integer holdingQuantity;
@@ -64,19 +63,20 @@ public class StockHoldingResponse {
      */
     public static StockHoldingResponse from(InquireBalanceResult.Output1 holding) {
         // 수익률 계산: (현재가 / 평균매입가 - 1) * 100
-        BigDecimal returnRate = PortfolioCalculationUtil.calculateReturnRate(holding.getPrpr(), holding.getPchsAvgPric());
+        Double returnRate = PortfolioCalculationUtil.calculateReturnRate(
+            holding.getPrpr(), holding.getPchsAvgPric()).doubleValue();
 
         return StockHoldingResponse.builder()
                 .stockCode(holding.getPdno())
                 .stockName(holding.getPrdtName())
-                .averagePurchasePrice(new BigDecimal(holding.getPchsAvgPric()))
-                .currentPrice(new BigDecimal(holding.getPrpr()))
-                .evaluationProfitLoss(new BigDecimal(holding.getEvluPflsAmt()))
+                .averagePurchasePrice(Integer.parseInt(holding.getPchsAvgPric()))
+                .currentPrice(Integer.parseInt(holding.getPrpr()))
+                .evaluationProfitLoss(Integer.parseInt(holding.getEvluPflsAmt()))
                 .returnRate(returnRate)
-                .priceChange(new BigDecimal(holding.getBfdyCprsIcdc()))
-                .changeRate(new BigDecimal(holding.getFlttRt()))
-                .purchaseAmount(new BigDecimal(holding.getPchsAmt()))
-                .evaluationAmount(new BigDecimal(holding.getEvluAmt()))
+                .priceChange(Integer.parseInt(holding.getBfdyCprsIcdc()))
+                .changeRate(Double.parseDouble(holding.getFlttRt()))
+                .purchaseAmount(Integer.parseInt(holding.getPchsAmt()))
+                .evaluationAmount(Integer.parseInt(holding.getEvluAmt()))
                 .holdingQuantity(Integer.parseInt(holding.getHldgQty()))
                 .orderableQuantity(Integer.parseInt(holding.getOrdPsblQty()))
                 .build();
