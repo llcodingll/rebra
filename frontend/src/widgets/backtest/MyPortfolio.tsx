@@ -83,7 +83,7 @@ export default function MyPortfolio({
     const value = e.target.value;
     const itemKey = `${portfolioItems[index].code}-${index}`;
 
-ㅇ    // 빈 문자열인 경우 임시로 0 설정
+    // 빈 문자열인 경우 임시로 0 설정
     if (value === '') {
       const newItems = [...portfolioItems];
       newItems[index].threshold = 0;
