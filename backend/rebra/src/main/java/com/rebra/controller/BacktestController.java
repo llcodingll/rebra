@@ -75,10 +75,9 @@ public class BacktestController {
     @GetMapping("/{backtestId}")
     @Operation(summary = "백테스트 결과 조회", description = "특정 백테스트의 상세 결과를 조회합니다.")
     public ResponseEntity<CommonApiResponse<BacktestResultResponse>> getBacktestResult(
-            @Parameter(hidden = true) @LoginUser Long userId,
             @PathVariable Long backtestId) {
 
-        BacktestResultResponse result = backtestService.getBacktestResult(userId, backtestId);
+        BacktestResultResponse result = backtestService.getBacktestResult(backtestId);
         return ResponseEntity.ok(CommonApiResponse.success(result));
     }
 

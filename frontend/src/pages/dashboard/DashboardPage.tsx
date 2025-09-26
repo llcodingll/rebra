@@ -85,7 +85,8 @@ export default function DashboardPage() {
   }, [portfolioData]);
 
   // 포트폴리오 존재 여부 판단 (로딩 완료 후 데이터 유무로 결정)
-  const hasPortfolio = portfolios.length > 0 && !isPortfolioLoading;
+  const hasPortfolio = portfolios.length > 0;
+  const shouldShowNoPortfolio = !isPortfolioLoading && portfolios.length === 0;
 
   // API 데이터 로드 후 첫 번째 포트폴리오 선택
   useEffect(() => {
@@ -160,8 +161,8 @@ export default function DashboardPage() {
 
   // 활성 탭에 따른 메인 컨텐츠 렌더링
   const renderContent = () => {
-    // 포트폴리오 상세 데이터 로딩 중일 때는 로딩 표시
-    if (isDetailLoading) {
+    // 로딩 중이거나 포트폴리오가 있는데 데이터가 아직 없을 때 로딩 표시
+    if (isDetailLoading || !portfolioDetailData || (hasPortfolio && stockData.length === 0 && !detailError)) {
       return (
         <div style={{
           height: '550px',
@@ -199,7 +200,7 @@ export default function DashboardPage() {
   }
 
   // 포트폴리오가 없으면 NoPortfolioState 컴포넌트 렌더링
-  if (!hasPortfolio) {
+  if (shouldShowNoPortfolio) {
     return (
       <div className={styles.dashboard}>
         {/* 포트폴리오가 없을 때 표시되는 빈 상태 컴포넌트 */}

@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import styles from './SearchTableWidget.module.css';
-import { stockListData } from './stockListData';
 import TableLayoutContainer from './components/TableLayoutContainer';
 import SearchTable from '../../features/stock-search/ui/SearchTable';
+import { useWatchlist, useToggleWatchlist, isWatchlistStock } from '../../features/stock-search/hooks/useWatchlist';
+import WatchlistIcon from '../../entities/stock/ui/WatchlistIcon';
 
 interface SearchTableWidgetProps {
   onStockSelect: (stock: { code: string; name: string }) => void;
@@ -11,14 +12,13 @@ interface SearchTableWidgetProps {
 export default function SearchTableWidget({ onStockSelect }: SearchTableWidgetProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const watchlistData = useMemo(() => {
-    return stockListData.filter((stock) => stock.isFavorite);
-  }, []);
+  // 관심종목 API 연동
+  const { data: watchlistData = [], isLoading: isWatchlistLoading, error: watchlistError } = useWatchlist();
+  const toggleWatchlist = useToggleWatchlist();
 
   const toggleFavorite = (stockCode: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    // TODO: 실제 관심 종목 추가/제거 로직 구현
-    console.log('Toggle favorite for:', stockCode);
+    toggleWatchlist.mutate(stockCode);
   };
 
   const controls = (
@@ -55,47 +55,63 @@ export default function SearchTableWidget({ onStockSelect }: SearchTableWidgetPr
     <div className={styles.splitTableContainer}>
       {/* 왼쪽 검색 테이블 */}
       <div className={styles.leftTable}>
-        <SearchTable
-          searchQuery={searchQuery}
-          onStockSelect={onStockSelect}
-          onToggleFavorite={toggleFavorite}
-        />
+        <SearchTable searchQuery={searchQuery} onStockSelect={onStockSelect} />
       </div>
 
       {/* 오른쪽 관심 종목 테이블 */}
       <div className={styles.rightTable}>
         <div className={styles.stockTable}>
-          {watchlistData.length === 0 ? (
+          {/* 로딩 상태 */}
+          {isWatchlistLoading && (
             <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>
-                <svg width='48' height='48' viewBox='0 0 20 20' fill='none'>
-                  <path
-                    d='M10 15.27L16.18 19l-1.64-7.03L20 7.24l-7.19-.61L10 0 7.19 6.63 0 7.24l5.46 4.73L3.82 19z'
-                    fill='#d1d5db'
-                  />
-                </svg>
-              </div>
-              <p className={styles.emptyText}>등록된 관심 종목이 없습니다</p>
+              <p className={styles.emptyText}>관심 종목을 불러오는 중...</p>
             </div>
-          ) : (
-            <div className={styles.tableBody}>
-              {watchlistData.map((stock, index) => (
-                <div
-                  key={stock.rank}
-                  className={`${styles.stockRow} ${index % 2 === 0 ? styles.evenRow : ''}`}
-                  onClick={() => onStockSelect({ code: stock.code, name: stock.name })}
-                >
-                  <div className={styles.stockInfo}>
-                    <div className={styles.favoriteIcon} onClick={(e) => toggleFavorite(stock.code, e)}>
-                      <svg width='14' height='14' viewBox='0 0 24 24' fill='#ef1515'>
-                        <path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' />
-                      </svg>
-                    </div>
-                    <span className={styles.stockName}>{stock.name}</span>
+          )}
+
+          {/* 에러 상태 */}
+          {watchlistError && (
+            <div className={styles.emptyState}>
+              <p className={styles.emptyText}>관심 종목을 불러올 수 없습니다</p>
+            </div>
+          )}
+
+          {/* 데이터 표시 */}
+          {!isWatchlistLoading && !watchlistError && (
+            <>
+              {watchlistData.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <div className={styles.emptyIcon}>
+                    <svg width='48' height='48' viewBox='0 0 20 20' fill='none'>
+                      <path
+                        d='M10 15.27L16.18 19l-1.64-7.03L20 7.24l-7.19-.61L10 0 7.19 6.63 0 7.24l5.46 4.73L3.82 19z'
+                        fill='#d1d5db'
+                      />
+                    </svg>
                   </div>
+                  <p className={styles.emptyText}>등록된 관심 종목이 없습니다</p>
                 </div>
-              ))}
-            </div>
+              ) : (
+                <div className={styles.tableBody}>
+                  {watchlistData.map((stock, index) => (
+                    <div
+                      key={stock.stockCode}
+                      className={`${styles.stockRow} ${index % 2 === 0 ? styles.evenRow : ''}`}
+                      onClick={() => onStockSelect({ code: stock.stockCode, name: stock.stockName })}
+                    >
+                      <div className={styles.stockInfo}>
+                        <WatchlistIcon
+                          isFavorite={isWatchlistStock(stock.stockCode, watchlistData)}
+                          size={16}
+                          onClick={(e) => toggleFavorite(stock.stockCode, e)}
+                          className={styles.favoriteIcon}
+                        />
+                        <span className={styles.stockName}>{stock.stockName}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

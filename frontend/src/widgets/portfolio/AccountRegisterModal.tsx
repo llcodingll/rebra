@@ -4,6 +4,7 @@ import { X, CreditCard, Key, Eye, EyeOff, HelpCircle } from 'lucide-react';
 import styles from './AccountRegisterModal.module.css';
 import { useApiMutation } from '../../shared/hook/useApi';
 import { accountApi } from '../../features/account/api/accountApi';
+import ApiKeyGuideModal from './ApiKeyGuideModal';
 
 interface AccountRegisterModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export default function AccountRegisterModal({
   const [showAppKey, setShowAppKey] = useState(false);
   const [showSecretKey, setShowSecretKey] = useState(false);
   const [accountType, setAccountType] = useState<'real' | 'mock'>('real');
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
 
   // 폼 초기화 함수
   const resetForm = () => {
@@ -94,8 +96,7 @@ export default function AccountRegisterModal({
   };
 
   const handleKeyRegistrationGuide = () => {
-    console.log('키 등록 방법 안내 모달/페이지 열기');
-    // 추후 키 등록 방법 안내 모달 또는 페이지 연결
+    setIsGuideModalOpen(true);
   };
 
   const formatAccountNumber = (value: string) => {
@@ -274,6 +275,12 @@ export default function AccountRegisterModal({
           </div>
         </form>
       </motion.div>
+
+      {/* API 키 등록 안내 모달 */}
+      <ApiKeyGuideModal
+        isOpen={isGuideModalOpen}
+        onClose={() => setIsGuideModalOpen(false)}
+      />
     </div>
   );
 }

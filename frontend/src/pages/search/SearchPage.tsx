@@ -67,7 +67,9 @@ export default function SearchPage() {
         <div className={styles.tableArea}>{renderContent()}</div>
 
         {/* 우측 뉴스 영역 (30%) */}
-        <div className={styles.newsArea}>{/* <NewsWidget /> */}</div>
+        <div className={styles.newsArea}>
+          <NewsWidget />
+        </div>
       </div>
     </div>
   );

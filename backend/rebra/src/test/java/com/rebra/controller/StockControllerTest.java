@@ -306,31 +306,31 @@ class StockControllerTest {
             StockHoldingResponse holding1 = StockHoldingResponse.builder()
                     .stockCode("005930")
                     .stockName("삼성전자")
-                    .currentPrice(new BigDecimal("70000"))
-                    .averagePurchasePrice(new BigDecimal("65000"))
-                    .purchaseAmount(new BigDecimal("650000"))
-                    .evaluationAmount(new BigDecimal("700000"))
-                    .evaluationProfitLoss(new BigDecimal("50000"))
-                    .returnRate(new BigDecimal("7.69"))
+                    .currentPrice(70000)
+                    .averagePurchasePrice(65000)
+                    .purchaseAmount(650000)
+                    .evaluationAmount(700000)
+                    .evaluationProfitLoss(50000)
+                    .returnRate(7.69)
                     .holdingQuantity(10)
                     .orderableQuantity(10)
-                    .priceChange(new BigDecimal("1000"))
-                    .changeRate(new BigDecimal("1.45"))
+                    .priceChange(1000)
+                    .changeRate(1.45)
                     .build();
 
             StockHoldingResponse holding2 = StockHoldingResponse.builder()
                     .stockCode("000660")
                     .stockName("SK하이닉스")
-                    .currentPrice(new BigDecimal("120000"))
-                    .averagePurchasePrice(new BigDecimal("110000"))
-                    .purchaseAmount(new BigDecimal("550000"))
-                    .evaluationAmount(new BigDecimal("600000"))
-                    .evaluationProfitLoss(new BigDecimal("50000"))
-                    .returnRate(new BigDecimal("9.09"))
+                    .currentPrice(120000)
+                    .averagePurchasePrice(110000)
+                    .purchaseAmount(550000)
+                    .evaluationAmount(600000)
+                    .evaluationProfitLoss(50000)
+                    .returnRate(9.09)
                     .holdingQuantity(5)
                     .orderableQuantity(5)
-                    .priceChange(new BigDecimal("-2000"))
-                    .changeRate(new BigDecimal("-1.64"))
+                    .priceChange(-2000)
+                    .changeRate(-1.64)
                     .build();
 
             StockHoldingListResponse listResponse = StockHoldingListResponse.of(Arrays.asList(holding1, holding2));
@@ -441,11 +441,11 @@ class StockControllerTest {
             Long accountId = 1L;
 
             StockHoldingDetailResponse response = StockHoldingDetailResponse.builder()
-                    .averagePurchasePrice(new BigDecimal("65000"))
-                    .purchaseAmount(new BigDecimal("650000"))
+                    .averagePurchasePrice(65000)
+                    .purchaseAmount(650000)
                     .holdingQuantity(10)
                     .orderableQuantity(10)
-                    .ordPsblCash(new BigDecimal("10000000"))
+                    .ordPsblCash(10000000L)
                     .build();
 
             given(stockService.getStockHolding(eq(stockCode), eq(accountId))).willReturn(response);

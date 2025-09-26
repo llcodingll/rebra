@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -17,15 +16,15 @@ public class PortfolioStockResponse {
     private Long portfolioId;
     private String stockCode;
     private String stockName;
-    private BigDecimal targetWeight;
-    private BigDecimal thresholdPercentage;
+    private Double targetWeight;
+    private Double thresholdPercentage;
     private String status;
     private LocalDateTime createdAt;
 
     @Builder
     public PortfolioStockResponse(Long portfolioStockId, Long portfolioId,
-                                  String stockCode, String stockName, BigDecimal targetWeight,
-                                  BigDecimal thresholdPercentage, String status, LocalDateTime createdAt) {
+                                  String stockCode, String stockName, Double targetWeight,
+                                  Double thresholdPercentage, String status, LocalDateTime createdAt) {
         this.portfolioStockId = portfolioStockId;
         this.portfolioId = portfolioId;
         this.stockCode = stockCode;

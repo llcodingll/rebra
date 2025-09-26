@@ -29,7 +29,7 @@ public interface BacktestService {
     /**
      * 백테스트 상세 결과 조회
      */
-    BacktestResultResponse getBacktestResult(Long userId, Long backtestId);
+    BacktestResultResponse getBacktestResult(Long backtestId);
 
     /**
      * 백테스트 삭제

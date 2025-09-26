@@ -75,3 +75,23 @@ export interface DisplayHoldingStock extends HoldingStock {
   fee: number; // 매매수수료 (0.0145%)
   tax: number; // 증권거래세 (0.23%)
 }
+
+// 관심종목 관련 타입
+export interface WatchlistItem {
+  stockCode: string;
+  stockName: string;
+}
+
+export type WatchlistResponse = WatchlistItem[];
+
+export interface WatchlistToggleRequest {
+  stockCode: string;
+  accountId: number;
+}
+
+export interface WatchlistToggleResponse {
+  message: string;
+  stockCode: string;
+  stockName: string;
+  added: boolean;
+}

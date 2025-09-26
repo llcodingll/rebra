@@ -5,7 +5,6 @@ import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import lombok.Builder;
 import lombok.Data;
 
-import java.math.BigDecimal;
 
 @Data
 @Builder
@@ -13,23 +12,23 @@ public class RegisteredStockInfo {
 
     private String stockCode;
     private String stockName;
-    private BigDecimal purchasePrice;        // 매입평균가격 (KIS API)
+    private Integer purchasePrice;        // 매입평균가격 (KIS API)
     private Long quantity;                   // 보유수량 (KIS API)
-    private BigDecimal currentPrice;         // 현재가 (KIS API)
-    private BigDecimal targetWeight;         // 목표 비중 (PortfolioStock)
-    private BigDecimal thresholdPercentage;  // 임계치 (PortfolioStock)
+    private Integer currentPrice;         // 현재가 (KIS API)
+    private Double targetWeight;         // 목표 비중 (PortfolioStock)
+    private Double thresholdPercentage;  // 임계치 (PortfolioStock)
     private String status;                   // 상태 (PortfolioStock)
 
     public static RegisteredStockInfo from(InquireBalanceResult.Output1 balance,
-                                          BigDecimal targetWeight,
-                                          BigDecimal thresholdPercentage,
+                                          Double targetWeight,
+                                          Double thresholdPercentage,
                                           String status) {
         return RegisteredStockInfo.builder()
             .stockCode(balance.getPdno())
             .stockName(balance.getPrdtName())
-            .purchasePrice(new BigDecimal(balance.getPchsAvgPric()))
+            .purchasePrice((int) Double.parseDouble(balance.getPchsAvgPric()))
             .quantity(Long.parseLong(balance.getHldgQty()))
-            .currentPrice(new BigDecimal(balance.getPrpr()))
+            .currentPrice((int) Double.parseDouble(balance.getPrpr()))
             .targetWeight(targetWeight)
             .thresholdPercentage(thresholdPercentage)
             .status(status)

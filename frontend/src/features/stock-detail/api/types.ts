@@ -15,7 +15,7 @@ export interface StockHoldingApiResponse {
   purchaseAmount: number;
   holdingQuantity: number;
   orderableQuantity: number;
-  dncaTotAmt: number; // 예수금총금액 (구매가능금액)
+  ordPsblCash: number; // 예수금총금액 (구매가능금액)
 }
 
 // UI에서 사용할 계산된 보유종목 정보

@@ -8,8 +8,11 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Repository
 public interface StockPriceRepository extends JpaRepository<StockPrice, Long> {
@@ -157,5 +160,51 @@ public interface StockPriceRepository extends JpaRepository<StockPrice, Long> {
     Optional<StockPrice> findTopByStockOrderByDateDesc(Stock stock);
 
     Optional<StockPrice> findTopByStockOrderByDateAsc(Stock stock);
+
+    /**
+     * 배치 조회를 위한 메소드 (N+1 문제 해결)
+     */
+    List<StockPrice> findByTickerAndDateIn(String ticker, List<LocalDate> dates);
+
+    /**
+     * 중복 체크 후 StockPrice 저장 (개선된 버전 - 배치 조회 사용)
+     * 이미 존재하는 데이터는 제외하고 새로운 데이터만 저장
+     */
+    default List<StockPrice> saveAllWithBatchCheck(List<StockPrice> stockPrices) {
+        if (stockPrices.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        String ticker = stockPrices.get(0).getTicker();
+        List<LocalDate> dates = stockPrices.stream()
+            .map(StockPrice::getDate)
+            .distinct()
+            .collect(Collectors.toList());
+        
+        // 1번의 쿼리로 기존 데이터 조회
+        Set<LocalDate> existingDates = findByTickerAndDateIn(ticker, dates).stream()
+            .map(StockPrice::getDate)
+            .collect(Collectors.toSet());
+        
+        // 메모리에서 필터링
+        List<StockPrice> newPrices = stockPrices.stream()
+            .filter(sp -> !existingDates.contains(sp.getDate()))
+            .collect(Collectors.toList());
+        
+        // 신규 데이터만 저장
+        if (!newPrices.isEmpty()) {
+            return saveAll(newPrices);
+        }
+        return Collections.emptyList();
+    }
+    
+    /**
+     * 기존 메소드 (하위 호환성 유지)
+     * @deprecated saveAllWithBatchCheck 사용 권장
+     */
+    @Deprecated
+    default List<StockPrice> saveAllWithDuplicateCheck(List<StockPrice> stockPrices) {
+        return saveAllWithBatchCheck(stockPrices);
+    }
 
 }

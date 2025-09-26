@@ -3,12 +3,12 @@ package com.rebra.dto.response;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquirePsblOrderResult;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 
 /**
  * 특정 종목 보유 정보 응답 DTO (5개 필드만)
@@ -21,10 +21,10 @@ import java.math.BigDecimal;
 public class StockHoldingDetailResponse {
 
     @Schema(description = "평균매입가", example = "65000")
-    private BigDecimal averagePurchasePrice;
+    private Integer averagePurchasePrice;
 
     @Schema(description = "매입금액", example = "6500000")
-    private BigDecimal purchaseAmount;
+    private Integer purchaseAmount;
 
     @Schema(description = "보유수량", example = "100")
     private Integer holdingQuantity;
@@ -33,7 +33,7 @@ public class StockHoldingDetailResponse {
     private Integer orderableQuantity;
 
     @Schema(description = "주문가능금액", example = "10000000")
-    private BigDecimal ordPsblCash;
+    private Long ordPsblCash;
 
     /**
      * KIS API 응답을 StockHoldingDetailResponse로 변환 (매수가능조회 포함)
@@ -48,11 +48,11 @@ public class StockHoldingDetailResponse {
                 : "0";
 
         return StockHoldingDetailResponse.builder()
-                .averagePurchasePrice(new BigDecimal(holding.getPchsAvgPric()))
-                .purchaseAmount(new BigDecimal(holding.getPchsAmt()))
+                .averagePurchasePrice(Integer.parseInt(holding.getPchsAvgPric()))
+                .purchaseAmount(Integer.parseInt(holding.getPchsAmt()))
                 .holdingQuantity(Integer.parseInt(holding.getHldgQty()))
                 .orderableQuantity(Integer.parseInt(holding.getOrdPsblQty()))
-                .ordPsblCash(new BigDecimal(possibleOrderAmount))
+                .ordPsblCash((long) Double.parseDouble(possibleOrderAmount))
                 .build();
     }
 
@@ -68,11 +68,11 @@ public class StockHoldingDetailResponse {
                 : "0";
 
         return StockHoldingDetailResponse.builder()
-                .averagePurchasePrice(BigDecimal.ZERO)
-                .purchaseAmount(BigDecimal.ZERO)
+                .averagePurchasePrice(0)
+                .purchaseAmount(0)
                 .holdingQuantity(0)
                 .orderableQuantity(0)
-                .ordPsblCash(new BigDecimal(possibleOrderAmount))
+                .ordPsblCash((long) Double.parseDouble(possibleOrderAmount))
                 .build();
     }
 }
