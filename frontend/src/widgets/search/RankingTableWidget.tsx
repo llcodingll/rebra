@@ -38,7 +38,7 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
     element.style.setProperty('--highlight-alpha', '0.15');
 
     let alpha = 0.1;
-    const decrement = 0.1 / (1500 / 16); // 2초간 60fps로 감소
+    const decrement = 0.1 / (1000 / 16); // 2초간 60fps로 감소
 
     const intervalId = setInterval(() => {
       alpha -= decrement;
@@ -182,8 +182,8 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
         ) : sortedData.length > 0 ? (
           sortedData.map((stock, index) => (
             <div
-              key={stock.stockCode}
-              className={`${styles.stockRow} ${stock.rank % 2 === 0 ? styles.evenRow : ''}`}
+              key={index}
+              className={`${styles.stockRow} ${index % 2 === 0 ? styles.evenRow : ''}`}
               onClick={() => onStockSelect({ code: stock.stockCode, name: stock.stockName })}
             >
               <div className={styles.stockInfo}>
