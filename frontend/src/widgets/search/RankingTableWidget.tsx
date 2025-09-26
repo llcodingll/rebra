@@ -56,14 +56,21 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
 
   // 모든 애니메이션 정리 함수
   const clearAllAnimations = useCallback(() => {
-    alphaStatesRef.current.forEach(({ intervalId }, stockCode) => {
+    // 기존 애니메이션 인터벌 정리
+    alphaStatesRef.current.forEach(({ intervalId }) => {
       clearInterval(intervalId);
-      const element = document.querySelector(`[data-stock="${stockCode}"]`) as HTMLElement;
-      if (element) {
-        element.style.setProperty('--highlight-alpha', '0');
-      }
     });
     alphaStatesRef.current.clear();
+
+    // 모든 highlight 요소의 CSS 변수 초기화
+    const highlightElements = document.querySelectorAll('[data-stock]') as NodeListOf<HTMLElement>;
+    highlightElements.forEach((element) => {
+      element.style.setProperty('--highlight-alpha', '0');
+      // CSS 변수 완전 제거를 위한 강제 업데이트
+      element.style.removeProperty('--highlight-alpha');
+      element.offsetHeight; // 강제 리플로우
+      element.style.setProperty('--highlight-alpha', '0');
+    });
   }, []);
 
   // 선택된 탭에 따른 실제 API 데이터 조회
@@ -104,7 +111,10 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
   // 탭 변경 시 애니메이션 상태 초기화
   useEffect(() => {
     if (previousSortTypeRef.current !== sortType) {
-      clearAllAnimations();
+      // DOM 렌더링이 완료된 후 애니메이션 초기화 실행
+      setTimeout(() => {
+        clearAllAnimations();
+      }, 0);
       previousSortTypeRef.current = sortType;
     }
   }, [sortType, clearAllAnimations]);
@@ -164,7 +174,7 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
   );
 
   const table = (
-    <div className={styles.stockTable}>
+    <div className={styles.stockTable} key={sortType}>
       {/* 테이블 헤더 */}
       <div className={styles.tableHeader}>
         <span className={styles.headerStock}>종목</span>
@@ -187,12 +197,12 @@ export default function RankingTableWidget({ onStockSelect }: RankingTableWidget
               onClick={() => onStockSelect({ code: stock.stockCode, name: stock.stockName })}
             >
               <div className={styles.stockInfo}>
-                <WatchlistIcon
+                {/* <WatchlistIcon
                   isFavorite={isWatchlistStock(stock.stockCode, watchlistData)}
                   size={16}
                   onClick={(e) => handleToggleFavorite(stock.stockCode, e)}
                   className={styles.favoriteIcon}
-                />
+                /> */}
                 <div className={styles.rank}>{stock.rank}</div>
                 <span className={styles.stockName}>{stock.stockName}</span>
               </div>

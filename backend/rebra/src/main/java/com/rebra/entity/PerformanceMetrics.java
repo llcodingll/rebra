@@ -61,4 +61,15 @@ public class PerformanceMetrics extends BaseEntity {
         this.isBought = isBought;
         this.isCompositionChanged = isCompositionChanged;
     }
+
+    /**
+     * 성과 메트릭 정보 업데이트 (일일 수집용)
+     */
+    public void updateDailyMetrics(double totalValue, boolean isRebalanced,
+                                  boolean isSold, boolean isBought) {
+        this.totalValue = totalValue;
+        this.isRebalanced = isRebalanced;
+        this.isSold = isSold;
+        this.isBought = isBought;
+    }
 }

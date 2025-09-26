@@ -161,8 +161,8 @@ export default function DashboardPage() {
 
   // 활성 탭에 따른 메인 컨텐츠 렌더링
   const renderContent = () => {
-    // 로딩 중이거나 포트폴리오가 있는데 데이터가 아직 없을 때 로딩 표시
-    if (isDetailLoading || !portfolioDetailData || (hasPortfolio && stockData.length === 0 && !detailError)) {
+    // 로딩 중이거나 포트폴리오 데이터가 아직 없을 때만 로딩 표시
+    if (isDetailLoading || !portfolioDetailData) {
       return (
         <div style={{
           height: '550px',

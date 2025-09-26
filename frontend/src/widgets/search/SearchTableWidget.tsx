@@ -21,6 +21,8 @@ export default function SearchTableWidget({ onStockSelect }: SearchTableWidgetPr
     toggleWatchlist.mutate(stockCode);
   };
 
+
+
   const controls = (
     <div className={styles.controlContainer}>
       <div className={styles.leftSection}>
@@ -60,7 +62,7 @@ export default function SearchTableWidget({ onStockSelect }: SearchTableWidgetPr
 
       {/* 오른쪽 관심 종목 테이블 */}
       <div className={styles.rightTable}>
-        <div className={styles.stockTable}>
+        <div className={styles.stockTable} key={watchlistData.map(s => s.stockCode).join(',')}>
           {/* 로딩 상태 */}
           {isWatchlistLoading && (
             <div className={styles.emptyState}>

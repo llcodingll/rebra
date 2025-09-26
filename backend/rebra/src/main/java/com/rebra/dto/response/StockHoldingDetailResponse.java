@@ -48,10 +48,10 @@ public class StockHoldingDetailResponse {
                 : "0";
 
         return StockHoldingDetailResponse.builder()
-                .averagePurchasePrice(Integer.parseInt(holding.getPchsAvgPric()))
-                .purchaseAmount(Integer.parseInt(holding.getPchsAmt()))
-                .holdingQuantity(Integer.parseInt(holding.getHldgQty()))
-                .orderableQuantity(Integer.parseInt(holding.getOrdPsblQty()))
+                .averagePurchasePrice((int) Double.parseDouble(holding.getPchsAvgPric()))
+                .purchaseAmount((int) Double.parseDouble(holding.getPchsAmt()))
+                .holdingQuantity((int) Double.parseDouble(holding.getHldgQty()))
+                .orderableQuantity((int) Double.parseDouble(holding.getOrdPsblQty()))
                 .ordPsblCash((long) Double.parseDouble(possibleOrderAmount))
                 .build();
     }

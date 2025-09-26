@@ -2,6 +2,7 @@ import { useState } from 'react';
 import DatePicker from 'react-datepicker';
 import { HelpCircle } from 'lucide-react';
 import BaseModal from '../../shared/ui/modal/BaseModal';
+import RebalancingConfirmModal from '../../shared/ui/modal/RebalancingConfirmModal';
 import styles from './RebalancingPeriodModal.module.css';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -16,8 +17,13 @@ export default function RebalancingPeriodModal({ isOpen, onClose }: RebalancingP
   const [periodValue, setPeriodValue] = useState(1);
   const [showTooltip, setShowTooltip] = useState(false);
   const [showPeriodTooltip, setShowPeriodTooltip] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const handleSave = () => {
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirm = () => {
     const periodData = {
       startDate,
       periodType,
@@ -25,6 +31,7 @@ export default function RebalancingPeriodModal({ isOpen, onClose }: RebalancingP
     };
     console.log('리밸런싱 주기 설정 저장:', periodData);
     // TODO: API 호출
+    setShowConfirmModal(false);
     onClose();
   };
 
@@ -131,6 +138,15 @@ export default function RebalancingPeriodModal({ isOpen, onClose }: RebalancingP
           </button>
         </div>
       </div>
+
+      <RebalancingConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirm}
+        startDate={startDate}
+        periodType={periodType}
+        periodValue={periodValue}
+      />
     </BaseModal>
   );
 }
