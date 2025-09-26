@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
@@ -27,23 +26,23 @@ public class StockHistoricalDataResponse {
     @Schema(description = "조회 날짜", example = "2023-01-01")
     private LocalDate date;
 
-    @Schema(description = "종가", example = "65000.00")
-    private BigDecimal closePrice;
+    @Schema(description = "종가", example = "65000")
+    private Integer closePrice;
 
-    @Schema(description = "시가", example = "64500.00")
-    private BigDecimal openPrice;
+    @Schema(description = "시가", example = "64500")
+    private Integer openPrice;
 
-    @Schema(description = "고가", example = "65500.00")
-    private BigDecimal highPrice;
+    @Schema(description = "고가", example = "65500")
+    private Integer highPrice;
 
-    @Schema(description = "저가", example = "64000.00")
-    private BigDecimal lowPrice;
+    @Schema(description = "저가", example = "64000")
+    private Integer lowPrice;
 
     @Schema(description = "거래량", example = "1000000")
     private Long volume;
 
     @Schema(description = "등락률 (%)", example = "1.25")
-    private BigDecimal changeRate;
+    private Double changeRate;
 
     public static StockHistoricalDataResponse from(StockPrice stockPrice) {
         return StockHistoricalDataResponse.builder()

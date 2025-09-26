@@ -421,15 +421,15 @@ public class BacktestCalculatorService {
                                            double maxDrawdown, int rebalancingCount, Portfolio portfolio,
                                            double periodGrowthRate, double volatility, double sharpeRatio, double timeWeightedReturn) {
         BacktestSummaryDto summary = new BacktestSummaryDto();
-        summary.setFinalValue(finalValue);
+        summary.setFinalValue(Math.round(finalValue));
         summary.setTotalReturn(totalReturn);
         summary.setBuyHoldReturn(buyHoldReturn);
         summary.setMaxDrawdown(maxDrawdown);
         summary.setRebalancingCount(rebalancingCount);
-        summary.setTotalFee(portfolio.getTotalTradingCost());
-        summary.setTotalBorrowingCost(portfolio.getTotalBorrowingCost());
-        summary.setMaxBorrowingAmount(portfolio.getMaxBorrowingAmount());
-        summary.setMinCashBalance(portfolio.getMinCashBalance());
+        summary.setTotalFee(Math.round(portfolio.getTotalTradingCost()));
+        summary.setTotalBorrowingCost(Math.round(portfolio.getTotalBorrowingCost()));
+        summary.setMaxBorrowingAmount(Math.round(portfolio.getMaxBorrowingAmount()));
+        summary.setMinCashBalance(Math.round(portfolio.getMinCashBalance()));
         summary.setPeriodGrowthRate(periodGrowthRate);
         summary.setVolatility(volatility);
         summary.setSharpeRatio(sharpeRatio);

@@ -13,7 +13,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -56,22 +55,22 @@ public class StockPrice extends BaseEntity {
     @Column(nullable = false)
     private LocalDate date;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal openPrice;
+    @Column(nullable = false)
+    private Integer openPrice;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal highPrice;
+    @Column(nullable = false)
+    private Integer highPrice;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal lowPrice;
+    @Column(nullable = false)
+    private Integer lowPrice;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal closePrice;
+    @Column(nullable = false)
+    private Integer closePrice;
 
     @Column(nullable = false)
     private Long volume;
 
-    @Column(nullable = false, precision = 10, scale = 6)
-    private BigDecimal changeRate;
+    @Column(nullable = false)
+    private Double changeRate;
 
 }

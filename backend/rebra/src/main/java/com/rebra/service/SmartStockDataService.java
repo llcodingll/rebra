@@ -1,90 +1,56 @@
 package com.rebra.service;
 
+import com.google.common.util.concurrent.Striped;
 import com.rebra.client.FssApiClient;
 import com.rebra.dto.external.FssStockPriceResponse;
+import com.rebra.dto.internal.StockPriceDto;
 import com.rebra.entity.Stock;
 import com.rebra.entity.StockPrice;
 import com.rebra.exception.external.ExternalApiException;
 import com.rebra.exception.stock.StockException;
-import com.rebra.repository.StockPriceRepository;
-import com.rebra.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.locks.Lock;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class SmartStockDataService {
 
-    private final StockRepository stockRepository;
-    private final StockPriceRepository stockPriceRepository;
+    private final StockServiceImpl stockService;
     private final FssApiClient fssApiClient;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+    
+    // Striped Lock for stock-level synchronization
+    private final Striped<Lock> stockLocks = Striped.lazyWeakLock(64);
 
     /**
      * 종목의 데이터를 효율적으로 확보 (스마트 캐싱)
-     * 동시성 보장을 위해 synchronized 처리
+     * Striped Lock을 사용한 종목별 동시성 제어
      */
-    public synchronized void ensureDataAvailable(String stockCode, LocalDate requestStart, LocalDate requestEnd) {
-        log.info("데이터 확보 요청 - 종목: {}, 범위: {} ~ {}, 스레드: {}", 
-            stockCode, requestStart, requestEnd, Thread.currentThread().getName());
-
-        // 1. Stock 엔티티 조회
-        Stock stock = stockRepository.findByStockCode(stockCode)
-            .orElseThrow(() -> StockException.stockCodeNotFound());
-
-        // 2. 이미 데이터가 충분한지 확인
-        if (stock.hasDataInRange(requestStart, requestEnd)) {
-            log.info("캐싱된 데이터로 충분 - 종목: {}", stockCode);
-            return;
+    public void ensureDataAvailable(String stockCode, LocalDate requestStart, LocalDate requestEnd) {
+        Lock lock = stockLocks.get(stockCode);
+        log.info("Lock 획득 시도 - 종목: {}, 스레드: {}", stockCode, Thread.currentThread().getName());
+        lock.lock();
+        log.info("Lock 획득 성공 - 종목: {}, 스레드: {}", stockCode, Thread.currentThread().getName());
+        
+        try {
+            // 트랜잭션과 비즈니스 로직은 StockServiceImpl에 위임
+            stockService.ensureStockDataWithTransaction(stockCode, requestStart, requestEnd);
+        } finally {
+            log.info("Lock 해제 - 종목: {}, 스레드: {}", stockCode, Thread.currentThread().getName());
+            lock.unlock();
         }
-
-        // 3. 필요한 구간 직접 계산 및 조회
-        boolean dataFetched = false;
-
-        if (stock.getDataStartDate() != null && stock.getDataEndDate() != null) {
-            // 앞쪽 구간만 필요한 경우
-            if (requestStart.isBefore(stock.getDataStartDate())) {
-                LocalDate fetchEnd = stock.getDataStartDate().minusDays(1);
-                fetchDataForPeriod(stock, requestStart, fetchEnd);
-                dataFetched = true;
-                log.info("앞쪽 구간 데이터 조회 - {} ~ {}", requestStart, fetchEnd);
-            }
-            
-            // 뒤쪽 구간만 필요한 경우
-            if (requestEnd.isAfter(stock.getDataEndDate())) {
-                LocalDate fetchStart = stock.getDataEndDate().plusDays(1);
-                fetchDataForPeriod(stock, fetchStart, requestEnd);
-                dataFetched = true;
-                log.info("뒤쪽 구간 데이터 조회 - {} ~ {}", fetchStart, requestEnd);
-            }
-        } else {
-            // 데이터가 없으면 전체 구간 조회
-            fetchDataForPeriod(stock, requestStart, requestEnd);
-            dataFetched = true;
-            log.info("전체 구간 데이터 조회 - {} ~ {}", requestStart, requestEnd);
-        }
-
-        // 4. Stock 엔티티의 데이터 범위 업데이트
-        if (dataFetched) {
-            stock.updateDataRange(requestStart, requestEnd);
-            stockRepository.save(stock);
-        }
-
-        log.info("데이터 확보 완료 - 종목: {}, 스레드: {}", 
-            stockCode, Thread.currentThread().getName());
     }
 
     /**
@@ -136,9 +102,13 @@ public class SmartStockDataService {
                 }
             }
             
-            // 일괄 저장
-            List<StockPrice> savedStockPrices = stockPriceRepository.saveAll(stockPrices);
-            int savedCount = savedStockPrices.size();
+            // 중복 체크 후 저장 (트랜잭션 있음)
+            List<StockPriceDto> stockPriceDtos = stockPrices.stream()
+                .map(StockPriceDto::from)
+                .collect(Collectors.toList());
+            List<StockPriceDto> savedPriceDtos = stockService.saveStockPricesWithDuplicateCheck(
+                stock.getStockCode(), stockPriceDtos);
+            int savedCount = savedPriceDtos.size();
 
             log.info("API 데이터 저장 완료 - 종목: {}, 조회된 건수: {}, 저장된 건수: {}", 
                 stock.getStockCode(), items.size(), savedCount);
@@ -190,16 +160,16 @@ public class SmartStockDataService {
         }
     }
 
-    private BigDecimal parsePrice(String priceStr) {
+    private Integer parsePrice(String priceStr) {
         if (!StringUtils.hasText(priceStr)) {
-            return BigDecimal.ZERO;
+            return 0;
         }
         try {
             String cleanPrice = priceStr.replaceAll(",", "");
-            return new BigDecimal(cleanPrice);
+            return Integer.parseInt(cleanPrice);
         } catch (NumberFormatException e) {
             log.warn("가격 파싱 실패: {}", priceStr);
-            return BigDecimal.ZERO;
+            return 0;
         }
     }
 
@@ -216,46 +186,31 @@ public class SmartStockDataService {
         }
     }
 
-    private BigDecimal parseChangeRate(String rateStr) {
+    private Double parseChangeRate(String rateStr) {
         if (!StringUtils.hasText(rateStr)) {
-            return BigDecimal.ZERO;
+            return 0.0;
         }
         try {
-            return new BigDecimal(rateStr);
+            return Double.parseDouble(rateStr);
         } catch (NumberFormatException e) {
             log.warn("등락률 파싱 실패: {}", rateStr);
-            return BigDecimal.ZERO;
+            return 0.0;
         }
     }
 
     /**
      * 종목의 현재 데이터 범위를 가진 Stock 조회
      */
-    @Transactional(readOnly = true)
     public Optional<Stock> getStockWithDataRange(String stockCode) {
-        return stockRepository.findByStockCode(stockCode)
+        return stockService.findStockByCodeOptional(stockCode)
             .filter(stock -> stock.getDataStartDate() != null && stock.getDataEndDate() != null);
     }
 
     /**
      * 종목의 데이터 통계 조회
      */
-    @Transactional(readOnly = true)
     public DataStats getDataStats(String stockCode) {
-        Optional<Stock> stockOpt = stockRepository.findByStockCode(stockCode);
-        if (stockOpt.isEmpty()) {
-            return new DataStats(stockCode, 0L, null, null);
-        }
-
-        Stock stock = stockOpt.get();
-        Long dataCount = stockPriceRepository.countByStock(stock);
-        
-        return new DataStats(
-            stockCode, 
-            dataCount, 
-            stock.getDataStartDate(), 
-            stock.getDataEndDate()
-        );
+        return stockService.getStockDataStats(stockCode);
     }
 
     public record DataStats(String stockCode, Long dataCount, LocalDate startDate, LocalDate endDate) {}

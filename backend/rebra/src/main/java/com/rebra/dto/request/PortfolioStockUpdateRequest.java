@@ -8,8 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,8 +19,8 @@ public class PortfolioStockUpdateRequest {
 
     @DecimalMin(value = "0.0", message = "목표 비중은 0 이상이어야 합니다")
     @DecimalMax(value = "100.0", message = "목표 비중은 100 이하여야 합니다")
-    private BigDecimal targetWeight;
+    private Double targetWeight;
 
     @DecimalMin(value = "0.0", message = "임계값은 0 이상이어야 합니다")
-    private BigDecimal thresholdPercentage;
+    private Double thresholdPercentage;
 }
