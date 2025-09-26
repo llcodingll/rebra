@@ -47,9 +47,9 @@ public class AccountController {
     }
 
     @Operation(
-        summary = "계좌 등록",
-        description = "KIS API 인증 후 계좌를 등록합니다. " +
-                     "사전에 /api/accounts/verify로 인증을 완료한 계좌 정보를 사용해야 합니다."
+            summary = "계좌 등록",
+            description = "KIS API 인증 후 계좌를 등록합니다. " +
+                    "사전에 /api/accounts/verify로 인증을 완료한 계좌 정보를 사용해야 합니다."
     )
     @PostMapping("/register")
     public ResponseEntity<CommonApiResponse<AccountRegisterResponse>> registerAccount(
@@ -66,8 +66,8 @@ public class AccountController {
     }
 
     @Operation(
-        summary = "계좌 목록 조회",
-        description = "사용자가 등록한 모든 활성 계좌 목록을 조회합니다."
+            summary = "계좌 목록 조회",
+            description = "사용자가 등록한 모든 활성 계좌 목록을 조회합니다."
     )
     @GetMapping
     public ResponseEntity<CommonApiResponse<AccountListResponse>> getAccountList(
@@ -83,9 +83,9 @@ public class AccountController {
     }
 
     @Operation(
-        summary = "계좌 상세 조회",
-        description = "특정 계좌의 상세 정보를 조회합니다. " +
-                     "계좌번호, 앱키 등의 민감한 정보는 마스킹되어 반환됩니다."
+            summary = "계좌 상세 조회",
+            description = "특정 계좌의 상세 정보를 조회합니다. " +
+                    "계좌번호, 앱키 등의 민감한 정보는 마스킹되어 반환됩니다."
     )
     @GetMapping("/{accountId}")
     public ResponseEntity<CommonApiResponse<AccountDetailResponse>> getAccountDetail(
@@ -103,8 +103,8 @@ public class AccountController {
     }
 
     @Operation(
-        summary = "계좌 삭제",
-        description = "계좌를 비활성화합니다. 실제로는 soft delete가 수행되어 데이터는 보존됩니다."
+            summary = "계좌 삭제",
+            description = "계좌를 비활성화합니다. 실제로는 soft delete가 수행되어 데이터는 보존됩니다."
     )
     @DeleteMapping("/{accountId}")
     public ResponseEntity<CommonApiResponse<Void>> deleteAccount(
