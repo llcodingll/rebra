@@ -74,20 +74,16 @@ class StockSearchApiService extends ApiClient {
 /**
  * API 응답을 UI에서 사용할 형태로 변환
  * @param apiData API 응답 데이터
- * @param options 변환 옵션 (관심종목 목록 등)
  * @returns UI용 검색 결과
  */
 export const transformSearchResults = (
-  apiData: StockSearchResponse,
-  options?: StockSearchTransformOptions
+  apiData: StockSearchResponse
 ): SearchableStock[] => {
-  const favoriteStockCodes = options?.favoriteStockCodes || [];
-
   return apiData
     .map((item) => ({
       code: item.stockCode,
       name: item.stockName,
-      isFavorite: favoriteStockCodes.includes(item.stockCode),
+      isFavorite: false, // 관심종목 여부는 컴포넌트에서 isWatchlistStock으로 결정
     }))
     .slice(0, 10); // 최대 10개로 제한
 };

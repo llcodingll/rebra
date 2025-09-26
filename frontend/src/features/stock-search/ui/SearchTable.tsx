@@ -1,12 +1,12 @@
 import React from 'react';
 import { useStockSearch } from '../hooks/useStockSearch';
+import { useWatchlist, useToggleWatchlist, isWatchlistStock } from '../hooks/useWatchlist';
+import WatchlistIcon from '../../../entities/stock/ui/WatchlistIcon';
 import styles from './SearchTable.module.css';
 
 interface SearchTableProps {
   searchQuery: string;
   onStockSelect: (stock: { code: string; name: string }) => void;
-  onToggleFavorite?: (stockCode: string, event: React.MouseEvent) => void;
-  favoriteStockCodes?: string[]; // 관심종목 코드 목록 (선택적)
 }
 
 // 스켈레톤 플레이스홀더 행 컴포넌트
@@ -21,17 +21,17 @@ function SkeletonRow({ index }: { index: number }) {
   );
 }
 
-export default function SearchTable({
-  searchQuery,
-  onStockSelect,
-  onToggleFavorite,
-  favoriteStockCodes,
-}: SearchTableProps) {
+export default function SearchTable({ searchQuery, onStockSelect }: SearchTableProps) {
   // 검색 훅 사용
-  const { searchResults, isLoading, isEmpty, hasQuery } = useStockSearch(searchQuery, 1000, favoriteStockCodes);
+  const { searchResults, isLoading, isEmpty, hasQuery } = useStockSearch(searchQuery, 1000);
+
+  // 관심종목 관련 훅
+  const { data: watchlistData } = useWatchlist();
+  const toggleWatchlist = useToggleWatchlist();
+
   const handleToggleFavorite = (stockCode: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    onToggleFavorite?.(stockCode, event);
+    toggleWatchlist.mutate(stockCode);
   };
 
   // 로딩 상태 (스켈레톤 UI)
@@ -98,17 +98,12 @@ export default function SearchTable({
             onClick={() => onStockSelect({ code: stock.code, name: stock.name })}
           >
             <div className={styles.stockInfo}>
-              <div className={styles.favoriteIcon} onClick={(e) => handleToggleFavorite(stock.code, e)}>
-                {stock.isFavorite ? (
-                  <svg width='14' height='14' viewBox='0 0 24 24' fill='#ef1515'>
-                    <path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' />
-                  </svg>
-                ) : (
-                  <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='#999' strokeWidth='2'>
-                    <path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' />
-                  </svg>
-                )}
-              </div>
+              <WatchlistIcon
+                isFavorite={isWatchlistStock(stock.code, watchlistData)}
+                size={14}
+                onClick={(e) => handleToggleFavorite(stock.code, e)}
+                className={styles.favoriteIcon}
+              />
               <span className={styles.stockName}>{stock.name}</span>
             </div>
           </div>
