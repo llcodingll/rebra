@@ -143,10 +143,10 @@ export default function CumulativeReturnsChart({
     enabled: !!portfolioId,
   });
 
-  console.log('performanceData:', performanceData);
-  console.log('portfolioId:', portfolioId);
-  console.log('isLoading:', isLoading);
-  console.log('error:', error);
+  // console.log('performanceData:', performanceData);
+  // console.log('portfolioId:', portfolioId);
+  // console.log('isLoading:', isLoading);
+  // console.log('error:', error);
 
   // 목데이터 사용 (임시) - useState로 한번만 생성
   // const [performanceData] = useState(() => generatePerformanceMockData());
@@ -234,7 +234,7 @@ export default function CumulativeReturnsChart({
       .slice(0, -1) // 마지막 데이터 포인트 제거 (오늘 날짜 제외)
       .map(({ originalIndex, ...item }) => item); // originalIndex 제거
 
-    console.log('lineData:', lineData);
+    // console.log('lineData:', lineData);
     portfolioSeries.setData(lineData);
 
     // 이벤트가 있는 날짜에 세로선 추가
@@ -278,14 +278,14 @@ export default function CumulativeReturnsChart({
         if (matchingDataPoint.sold) eventTypes.push('매도');
         if (matchingDataPoint.bought) eventTypes.push('매수');
 
-        console.log('Hover 데이터:', {
-          date: matchingDataPoint.metricDate,
-          compositionChanged: matchingDataPoint.compositionChanged,
-          rebalanced: matchingDataPoint.rebalanced,
-          sold: matchingDataPoint.sold,
-          bought: matchingDataPoint.bought,
-          eventTypes: eventTypes
-        });
+        // console.log('Hover 데이터:', {
+        //   date: matchingDataPoint.metricDate,
+        //   compositionChanged: matchingDataPoint.compositionChanged,
+        //   rebalanced: matchingDataPoint.rebalanced,
+        //   sold: matchingDataPoint.sold,
+        //   bought: matchingDataPoint.bought,
+        //   eventTypes: eventTypes
+        // });
 
         setHoveredPoint({
           x: param.point.x,

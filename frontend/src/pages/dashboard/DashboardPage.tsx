@@ -64,17 +64,17 @@ export default function DashboardPage() {
   });
 
   // 포트폴리오 상세 조회 상태 로깅
-  console.log("=== 포트폴리오 상세 조회 상태 ===");
-  console.log("selectedPortfolio:", selectedPortfolio);
-  console.log("isDetailLoading:", isDetailLoading);
-  console.log("portfolioDetailData:", portfolioDetailData);
-  console.log("detailError:", detailError);
+  // console.log("=== 포트폴리오 상세 조회 상태 ===");
+  // console.log("selectedPortfolio:", selectedPortfolio);
+  // console.log("isDetailLoading:", isDetailLoading);
+  // console.log("portfolioDetailData:", portfolioDetailData);
+  // console.log("detailError:", detailError);
 
   // 포트폴리오 상세 데이터가 로드되면 accountId를 store에 저장
   useEffect(() => {
     if (portfolioDetailData?.portfolio?.account?.id) {
       setAccountId(portfolioDetailData.portfolio.account.id);
-      console.log("AccountId 저장됨:", portfolioDetailData.portfolio.account.id);
+      // console.log("AccountId 저장됨:", portfolioDetailData.portfolio.account.id);
     }
   }, [portfolioDetailData?.portfolio?.account?.id, setAccountId]);
 
@@ -99,11 +99,11 @@ export default function DashboardPage() {
 
   // API에서 받은 주식 데이터를 기존 형식으로 변환
   const stockData: Stock[] = useMemo(() => {
-    console.log("=== stockData 변환 시작 ===");
-    console.log("portfolioDetailData:", portfolioDetailData);
+    // console.log("=== stockData 변환 시작 ===");
+    // console.log("portfolioDetailData:", portfolioDetailData);
 
     if (!portfolioDetailData) {
-      console.log("portfolioDetailData가 없어서 빈 배열 반환");
+      // console.log("portfolioDetailData가 없어서 빈 배열 반환");
       return [];
     }
 
@@ -138,7 +138,7 @@ export default function DashboardPage() {
   };
 
   const handleTutorialStart = useCallback(() => {
-    console.log('대시보드 튜토리얼 시작!');
+    // console.log('대시보드 튜토리얼 시작!');
     setIsTutorialOpen(true);
   }, []);
 
@@ -149,7 +149,7 @@ export default function DashboardPage() {
 
   // Layout에 튜토리얼 시작 함수 등록
   useEffect(() => {
-    console.log('대시보드 페이지에서 튜토리얼 등록');
+    // console.log('대시보드 페이지에서 튜토리얼 등록');
     registerTutorialTarget('dashboard', handleTutorialStart);
   }, []);
 

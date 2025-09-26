@@ -27,7 +27,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) {
   const [selectedStock, setSelectedStock] = useState(data[0] || null);
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
-  console.log("AssetPortfolioChart 렌더링", data.length);
+  // console.log("AssetPortfolioChart 렌더링", data.length);
 
   // 등록된 주식이 없는 경우 빈 상태 표시
   if (data.length === 0) {
