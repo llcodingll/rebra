@@ -118,7 +118,6 @@ export default function RebalancingResultModal({
                       {order.orderType === 'BUY' ? '매수' : '매도'}
                     </span>
                     <span className={styles.stockCode}>{getStockNameByCode(order.stockCode)} ({order.stockCode})</span>
-                    <span className={styles.orderId}>#{order.orderId}</span>
                   </div>
                   <div className={styles.orderDetails}>
                     <span>수량: {formatPrice(order.quantity)}주</span>

@@ -100,13 +100,13 @@
 .iconPositive {
   width: 16px;
   height: 16px;
-  color: #10b981;
+  color: #ef4444;
 }
 
 .iconNegative {
   width: 16px;
   height: 16px;
-  color: #ef4444;
+  color: #007bff;
 }
 
 .amount {
@@ -134,11 +134,11 @@
 }
 
 .returnInfo.positive {
-  color: #10b981;
+  color: #ef4444;
 }
 
 .returnInfo.negative {
-  color: #ef4444;
+  color: #007bff;
 }
 
 /* 범례 */
@@ -233,11 +233,11 @@
 }
 
 .legendReturn.positive {
-  color: #10b981;
+  color: #ef4444;
 }
 
 .legendReturn.negative {
-  color: #ef4444;
+  color: #007bff;
 }
 
 /* 차트 영역 */
@@ -371,11 +371,11 @@
 }
 
 .metricValue.positive {
-  color: #10b981;
+  color: #ef4444;
 }
 
 .metricValue.negative {
-  color: #ef4444;
+  color: #007bff;
 }
 
 /* 비중 분석 */
@@ -634,11 +634,11 @@
 
 /* 애니메이션 클래스 */
 .positive {
-  color: #10b981;
+  color: #ef4444;
 }
 
 .negative {
-  color: #ef4444;
+  color: #007bff;
 }
 
 .selected {
