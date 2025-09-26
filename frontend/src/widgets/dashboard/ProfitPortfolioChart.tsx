@@ -44,23 +44,23 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
   });
 
     // API 데이터 확인용 로깅
-  console.log('===  선택된 리밸런싱 상세 조회 API 데이터 ===' , selectedHistoryDetail);
+  // console.log('===  선택된 리밸런싱 상세 조회 API 데이터 ===' , selectedHistoryDetail);
 
 
-  // API 데이터 확인용 로깅
-  console.log('=== ProfitPortfolioChart API 데이터 ===');
-  console.log('portfolioId:', portfolioId);
+  // // API 데이터 확인용 로깅
+  // console.log('=== ProfitPortfolioChart API 데이터 ===');
+  // console.log('portfolioId:', portfolioId);
 
   // 테이블 데이터 및 페이지네이션 정보 (API 또는 mock 데이터)
   const historyTableItems = tableHistoryData?.content?.histories || [];
   const pageInfo = tableHistoryData?.pageInfo;
   const totalPages = pageInfo?.totalPages || 0;
 
-  console.log('=== 테이블 API 데이터 ===');
-  console.log('tableHistoryData:', tableHistoryData);
-  console.log('historyTableItems:', historyTableItems);
-  console.log('pageInfo:', pageInfo);
-  console.log('totalPages:', totalPages);
+  // console.log('=== 테이블 API 데이터 ===');
+  // console.log('tableHistoryData:', tableHistoryData);
+  // console.log('historyTableItems:', historyTableItems);
+  // console.log('pageInfo:', pageInfo);
+  // console.log('totalPages:', totalPages);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -111,13 +111,13 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
 
     // 히스토리 테이블에서 클릭한 경우
     if (selectedHistoryDetail?.trades) {
-      console.log('히스토리 상세 API 거래 내역:', selectedHistoryDetail.trades);
+      // console.log('히스토리 상세 API 거래 내역:', selectedHistoryDetail.trades);
       trades = selectedHistoryDetail.trades;
     }
 
     // 차트에서 날짜 클릭한 경우
     if (selectedDateTrades?.trades) {
-      console.log('날짜별 API 거래 내역:', selectedDateTrades.trades);
+      // console.log('날짜별 API 거래 내역:', selectedDateTrades.trades);
       trades = selectedDateTrades.trades;
     }
 
@@ -127,7 +127,7 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
 
   // 차트에서 날짜 클릭 핸들러
   const handleChartDateClick = (date: string) => {
-    console.log('차트에서 날짜 클릭:', date);
+    // console.log('차트에서 날짜 클릭:', date);
     setSelectedDate(date);
     setSelectedId(null); // 기존 히스토리 선택 해제
   };
@@ -187,7 +187,7 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
               className={styles.recentTrades}
             >
               <h3 className={styles.tradesTitle}>
-                {selectedId ? `거래 내역 (ID: ${selectedId})` : selectedDate ? `거래 내역 (날짜: ${selectedDate})` : '거래 내역을 보려면 차트나 히스토리를 클릭하세요'}
+                {selectedId ? '거래 내역' : selectedDate ? `거래 내역 (날짜: ${selectedDate})` : '거래 내역을 보려면 차트나 히스토리를 클릭하세요'}
               </h3>
               {(isDetailLoading || isDateTradesLoading) ? (
                 <div className={styles.noTrades}>거래 내역을 불러오는 중...</div>
@@ -259,7 +259,7 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
                     key={item.orderId}
                     className={styles.historyRow}
                     onClick={() => {
-                      console.log('History clicked ID:', item.orderId);
+                      // console.log('History clicked ID:', item.orderId);
                       setSelectedId(item.orderId);
                       setSelectedDate(null); // 기존 날짜 선택 해제
                     }}
