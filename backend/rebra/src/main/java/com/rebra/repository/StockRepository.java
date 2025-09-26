@@ -4,7 +4,12 @@ import com.rebra.entity.Stock;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import jakarta.persistence.LockModeType;
 
 import java.util.List;
 import java.util.Optional;
@@ -52,4 +57,11 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
      * 여러 종목 코드로 주식 목록 조회 (배치 처리용)
      */
     List<Stock> findByStockCodeIn(Set<String> stockCodes);
+
+    /**
+     * 비관적 잠금으로 종목 코드로 주식 조회 (트랜잭션 일관성 보장)
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Stock s WHERE s.stockCode = :stockCode")
+    Optional<Stock> findByStockCodeWithLock(@Param("stockCode") String stockCode);
 }

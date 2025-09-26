@@ -10,7 +10,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -34,17 +33,17 @@ public class PortfolioStock extends BaseEntity {
     private String stockCode;
 
     @Column(name = "target_weight")
-    private BigDecimal targetWeight;
+    private Double targetWeight;
 
     @Column(name = "threshold_percentage")
-    private BigDecimal thresholdPercentage;
+    private Double thresholdPercentage;
 
     @Column
     private String status;
 
     @Builder
-    public PortfolioStock(Portfolio portfolio, String stockCode, BigDecimal targetWeight,
-                          BigDecimal thresholdPercentage, String status) {
+    public PortfolioStock(Portfolio portfolio, String stockCode, Double targetWeight,
+                          Double thresholdPercentage, String status) {
         this.portfolio = portfolio;
         this.stockCode = stockCode;
         this.targetWeight = targetWeight;
@@ -52,7 +51,7 @@ public class PortfolioStock extends BaseEntity {
         this.status = status;
     }
 
-    public void updateSettings(BigDecimal targetWeight, BigDecimal thresholdPercentage) {
+    public void updateSettings(Double targetWeight, Double thresholdPercentage) {
         this.targetWeight = targetWeight;
         this.thresholdPercentage = thresholdPercentage;
     }

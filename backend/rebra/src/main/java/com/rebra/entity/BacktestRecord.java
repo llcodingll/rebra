@@ -23,7 +23,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -90,50 +89,50 @@ public class BacktestRecord extends BaseEntity {
     private List<BacktestStock> backtestStocks = new ArrayList<>();
 
     // 백테스트 결과 필드들 (완료 후 업데이트)
-    @Column(precision = 15, scale = 2)
-    private BigDecimal initialCapital;
+    @Column
+    private Integer initialCapital;
 
-    @Column(precision = 15, scale = 2)
-    private BigDecimal finalValue;
+    @Column
+    private Integer finalValue;
 
-    @Column(precision = 10, scale = 6)
-    private BigDecimal totalReturn;
+    @Column
+    private Double totalReturn;
 
-    @Column(precision = 10, scale = 6)
-    private BigDecimal buyHoldReturn;
+    @Column
+    private Double buyHoldReturn;
 
-    @Column(precision = 10, scale = 6)
-    private BigDecimal excessReturn;
+    @Column
+    private Double excessReturn;
 
-    @Column(precision = 10, scale = 6)
-    private BigDecimal periodGrowthRate;
+    @Column
+    private Double periodGrowthRate;
 
     @Column
     private Integer rebalancingCount;
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal totalFee;
+    @Column
+    private Integer totalFee;
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal totalBorrowingCost;
+    @Column
+    private Integer totalBorrowingCost;
 
-    @Column(precision = 15, scale = 2)
-    private BigDecimal maxBorrowingAmount;
+    @Column
+    private Integer maxBorrowingAmount;
 
-    @Column(precision = 15, scale = 2)
-    private BigDecimal minCashBalance;
+    @Column
+    private Integer minCashBalance;
 
-    @Column(precision = 10, scale = 6)
-    private BigDecimal maxDrawdown;
+    @Column
+    private Double maxDrawdown;
 
-    @Column(precision = 10, scale = 6)
-    private BigDecimal volatility;
+    @Column
+    private Double volatility;
 
-    @Column(precision = 10, scale = 6)
-    private BigDecimal sharpeRatio;
+    @Column
+    private Double sharpeRatio;
 
-    @Column(precision = 10, scale = 6)
-    private BigDecimal timeWeightedReturn;
+    @Column
+    private Double timeWeightedReturn;
 
     // 일별 상세 정보를 JSON으로 저장
     @Column(columnDefinition = "TEXT")
@@ -227,11 +226,11 @@ public class BacktestRecord extends BaseEntity {
     }
 
     // 백테스트 결과 업데이트
-    public void updateResults(BigDecimal finalValue, BigDecimal totalReturn, BigDecimal buyHoldReturn,
-                            BigDecimal excessReturn, BigDecimal periodGrowthRate, Integer rebalancingCount,
-                            BigDecimal totalFee, BigDecimal totalBorrowingCost, BigDecimal maxBorrowingAmount,
-                            BigDecimal minCashBalance, BigDecimal maxDrawdown, BigDecimal volatility,
-                            BigDecimal sharpeRatio, BigDecimal timeWeightedReturn) {
+    public void updateResults(Integer finalValue, Double totalReturn, Double buyHoldReturn,
+                            Double excessReturn, Double periodGrowthRate, Integer rebalancingCount,
+                            Integer totalFee, Integer totalBorrowingCost, Integer maxBorrowingAmount,
+                            Integer minCashBalance, Double maxDrawdown, Double volatility,
+                            Double sharpeRatio, Double timeWeightedReturn) {
         this.finalValue = finalValue;
         this.totalReturn = totalReturn;
         this.buyHoldReturn = buyHoldReturn;
@@ -254,32 +253,32 @@ public class BacktestRecord extends BaseEntity {
     }
 
     // 수익률 계산 헬퍼 메서드들 (BacktestResult에서 이동)
-    public BigDecimal getTotalReturnPercentage() {
-        return totalReturn != null ? totalReturn.multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+    public Double getTotalReturnPercentage() {
+        return totalReturn != null ? totalReturn * 100 : 0.0;
     }
 
-    public BigDecimal getBuyHoldReturnPercentage() {
-        return buyHoldReturn != null ? buyHoldReturn.multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+    public Double getBuyHoldReturnPercentage() {
+        return buyHoldReturn != null ? buyHoldReturn * 100 : 0.0;
     }
 
-    public BigDecimal getExcessReturnPercentage() {
-        return excessReturn != null ? excessReturn.multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+    public Double getExcessReturnPercentage() {
+        return excessReturn != null ? excessReturn * 100 : 0.0;
     }
 
-    public BigDecimal getAnnualizedReturnPercentage() {
-        return periodGrowthRate != null ? periodGrowthRate.multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+    public Double getAnnualizedReturnPercentage() {
+        return periodGrowthRate != null ? periodGrowthRate * 100 : 0.0;
     }
 
-    public BigDecimal getTotalBorrowingCostSafe() {
-        return totalBorrowingCost != null ? totalBorrowingCost : BigDecimal.ZERO;
+    public Integer getTotalBorrowingCostSafe() {
+        return totalBorrowingCost != null ? totalBorrowingCost : 0;
     }
 
-    public BigDecimal getMaxDrawdownPercentage() {
-        return maxDrawdown != null ? maxDrawdown.multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+    public Double getMaxDrawdownPercentage() {
+        return maxDrawdown != null ? maxDrawdown * 100 : 0.0;
     }
 
-    public BigDecimal getVolatilityPercentage() {
-        return volatility != null ? volatility.multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+    public Double getVolatilityPercentage() {
+        return volatility != null ? volatility * 100 : 0.0;
     }
 
     // 성과 요약 정보
@@ -295,10 +294,10 @@ public class BacktestRecord extends BaseEntity {
     }
 
     // 총 비용 계산
-    public BigDecimal getTotalCost() {
-        BigDecimal tradingCost = totalFee != null ? totalFee : BigDecimal.ZERO;
-        BigDecimal borrowingCost = totalBorrowingCost != null ? totalBorrowingCost : BigDecimal.ZERO;
-        return tradingCost.add(borrowingCost);
+    public Integer getTotalCost() {
+        Integer tradingCost = totalFee != null ? totalFee : 0;
+        Integer borrowingCost = totalBorrowingCost != null ? totalBorrowingCost : 0;
+        return tradingCost + borrowingCost;
     }
 
     // JSON 상세 정보 관련 메서드

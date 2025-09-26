@@ -30,7 +30,7 @@ public class BacktestSummaryDto {
      * 백테스트 종료 시점의 총 포트폴리오 가치
      */
     @JsonProperty("final_value")
-    private Double finalValue;
+    private Long finalValue;
     
     /**
      * 총 수익률 (리밸런싱 적용)
@@ -59,14 +59,14 @@ public class BacktestSummaryDto {
      * 수수료 + 증권거래세의 합계
      */
     @JsonProperty("total_fee")
-    private Double totalFee;
+    private Long totalFee;
     
     /**
      * 총 차입비용 (원)
      * 음수 현금 상태에서 발생한 이자 비용의 합계
      */
     @JsonProperty("total_borrowing_cost")
-    private Double totalBorrowingCost;
+    private Long totalBorrowingCost;
     
     
     /**
@@ -74,14 +74,14 @@ public class BacktestSummaryDto {
      * 백테스트 기간 중 발생한 최대 차입 금액
      */
     @JsonProperty("max_borrowing_amount")
-    private Double maxBorrowingAmount;
+    private Long maxBorrowingAmount;
     
     /**
      * 최소 현금 잔액 (원)
      * 백테스트 기간 중 최소 현금 잔액 (음수 포함)
      */
     @JsonProperty("min_cash_balance")
-    private Double minCashBalance;
+    private Long minCashBalance;
     
     /**
      * 최대 낙폭 (Maximum Drawdown)
@@ -132,9 +132,9 @@ public class BacktestSummaryDto {
      * 
      * @return 총 비용 (원)
      */
-    public double getTotalCost() {
-        double tradingCost = totalFee != null ? totalFee : 0.0;
-        double borrowingCost = totalBorrowingCost != null ? totalBorrowingCost : 0.0;
+    public long getTotalCost() {
+        long tradingCost = totalFee != null ? totalFee : 0L;
+        long borrowingCost = totalBorrowingCost != null ? totalBorrowingCost : 0L;
         return tradingCost + borrowingCost;
     }
     /**
@@ -161,11 +161,11 @@ public class BacktestSummaryDto {
                 return false;
             }
             
-            if (totalFee == null || totalFee < 0) {
+            if (totalFee == null || totalFee < 0L) {
                 return false;
             }
             
-            if (totalBorrowingCost == null || totalBorrowingCost < 0) {
+            if (totalBorrowingCost == null || totalBorrowingCost < 0L) {
                 return false;
             }
             

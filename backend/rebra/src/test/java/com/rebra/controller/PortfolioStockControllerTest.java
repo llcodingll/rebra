@@ -225,8 +225,8 @@ class PortfolioStockControllerTest {
             // Given
             Long portfolioId = 1L;
             List<PortfolioStockUpdateRequest> updateRequests = Arrays.asList(
-                new PortfolioStockUpdateRequest("005930", BigDecimal.valueOf(35.0), BigDecimal.valueOf(5.0)),
-                new PortfolioStockUpdateRequest("000660", BigDecimal.valueOf(25.0), BigDecimal.valueOf(3.0))
+                new PortfolioStockUpdateRequest("005930", 35.0, 5.0),
+                new PortfolioStockUpdateRequest("000660", 25.0, 3.0)
             );
             PortfolioStockBatchUpdateRequest request = new PortfolioStockBatchUpdateRequest(updateRequests);
 
@@ -234,15 +234,15 @@ class PortfolioStockControllerTest {
                 PortfolioStockResponse.builder()
                         .stockCode("005930")
                         .stockName(null)
-                        .targetWeight(BigDecimal.valueOf(35.0))
-                        .thresholdPercentage(BigDecimal.valueOf(5.0))
+                        .targetWeight(35.0)
+                        .thresholdPercentage(5.0)
                         .status(null)
                         .build(),
                 PortfolioStockResponse.builder()
                         .stockCode("000660")
                         .stockName(null)
-                        .targetWeight(BigDecimal.valueOf(25.0))
-                        .thresholdPercentage(BigDecimal.valueOf(3.0))
+                        .targetWeight(25.0)
+                        .thresholdPercentage(3.0)
                         .status(null)
                         .build()
             );
@@ -291,7 +291,7 @@ class PortfolioStockControllerTest {
             // Given
             Long portfolioId = 999L;
             List<PortfolioStockUpdateRequest> updateRequests = Arrays.asList(
-                new PortfolioStockUpdateRequest("005930", BigDecimal.valueOf(35.0), BigDecimal.valueOf(5.0))
+                new PortfolioStockUpdateRequest("005930", 35.0, 5.0)
             );
             PortfolioStockBatchUpdateRequest request = new PortfolioStockBatchUpdateRequest(updateRequests);
 
@@ -313,7 +313,7 @@ class PortfolioStockControllerTest {
             // Given
             Long portfolioId = 1L;
             List<PortfolioStockUpdateRequest> updateRequests = Arrays.asList(
-                new PortfolioStockUpdateRequest("999999", BigDecimal.valueOf(35.0), BigDecimal.valueOf(5.0))
+                new PortfolioStockUpdateRequest("999999", 35.0, 5.0)
             );
             PortfolioStockBatchUpdateRequest request = new PortfolioStockBatchUpdateRequest(updateRequests);
 

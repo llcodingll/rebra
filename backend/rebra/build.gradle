@@ -58,6 +58,9 @@ dependencies {
 
     // Caffeine Cache
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+    
+    // Guava (for Striped Lock)
+    implementation 'com.google.guava:guava:33.0.0-jre'
 
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
