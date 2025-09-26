@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
@@ -27,45 +26,45 @@ public class BacktestDetailResponse {
     private LocalDate periodDate;
 
     @JsonProperty("portfolio_value")
-    private BigDecimal portfolioValue;
+    private Long portfolioValue;
 
     @JsonProperty("period_return")
-    private BigDecimal periodReturn;
+    private Double periodReturn;
 
     @JsonProperty("is_rebalanced")
     private Boolean isRebalanced;
 
     @JsonProperty("cash_balance")
-    private BigDecimal cashBalance;
+    private Long cashBalance;
 
     @JsonProperty("daily_borrowing_interest")
-    private BigDecimal dailyBorrowingInterest;
+    private Long dailyBorrowingInterest;
 
     @JsonProperty("cumulative_return")
-    private BigDecimal cumulativeReturn;
+    private Double cumulativeReturn;
 
     @JsonProperty("buy_hold_return")
-    private BigDecimal buyHoldReturn;
+    private Double buyHoldReturn;
 
     @JsonProperty("total_buy_amount")
-    private BigDecimal totalBuyAmount;
+    private Long totalBuyAmount;
 
     @JsonProperty("total_sell_amount")
-    private BigDecimal totalSellAmount;
+    private Long totalSellAmount;
 
     // 추가된 percentage 필드들 (백테스트 계산 서버에서 계산된 퍼센트 값)
     @JsonProperty("buy_hold_return_percentage")
-    private BigDecimal buyHoldReturnPercentage;
+    private Double buyHoldReturnPercentage;
 
     @JsonProperty("cumulative_return_percentage")
-    private BigDecimal cumulativeReturnPercentage;
+    private Double cumulativeReturnPercentage;
 
     @JsonProperty("period_return_percentage")
-    private BigDecimal periodReturnPercentage;
+    private Double periodReturnPercentage;
 
     // 헬퍼 메서드들 (기존 BacktestDetail과 동일)
-    public BigDecimal getPeriodReturnPercentage() {
-        return periodReturn != null ? periodReturn.multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+    public Double getPeriodReturnPercentage() {
+        return periodReturn != null ? periodReturn * 100.0 : 0.0;
     }
 
     public boolean wasRebalanced() {
@@ -73,23 +72,23 @@ public class BacktestDetailResponse {
     }
 
     public boolean isBorrowing() {
-        return cashBalance != null && cashBalance.compareTo(BigDecimal.ZERO) < 0;
+        return cashBalance != null && cashBalance < 0;
     }
 
-    public BigDecimal getSafeCashBalance() {
-        return cashBalance != null ? cashBalance : BigDecimal.ZERO;
+    public Long getSafeCashBalance() {
+        return cashBalance != null ? cashBalance : 0L;
     }
 
-    public BigDecimal getBorrowingAmount() {
-        return isBorrowing() ? cashBalance.abs() : BigDecimal.ZERO;
+    public Long getBorrowingAmount() {
+        return isBorrowing() ? Math.abs(cashBalance) : 0L;
     }
 
-    public BigDecimal getCumulativeReturnPercentage() {
-        return cumulativeReturn != null ? cumulativeReturn.multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+    public Double getCumulativeReturnPercentage() {
+        return cumulativeReturn != null ? cumulativeReturn * 100.0 : 0.0;
     }
 
-    public BigDecimal getBuyHoldReturnPercentage() {
-        return buyHoldReturn != null ? buyHoldReturn.multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+    public Double getBuyHoldReturnPercentage() {
+        return buyHoldReturn != null ? buyHoldReturn * 100.0 : 0.0;
     }
 
     public String getPeriodSummary() {

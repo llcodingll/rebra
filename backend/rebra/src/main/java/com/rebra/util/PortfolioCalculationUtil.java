@@ -5,8 +5,6 @@ import com.rebra.entity.PortfolioStock;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import lombok.extern.slf4j.Slf4j;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,7 +32,7 @@ public class PortfolioCalculationUtil {
 
         if (portfolioStocks.isEmpty()) {
             log.info("등록된 주식이 없음");
-            return new PortfolioReturnData(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+            return new PortfolioReturnData(0L, 0L, 0L, 0.0);
         }
 
         // 등록 주식의 종목코드 Set 생성 (O(1) 검색을 위해)
@@ -45,20 +43,20 @@ public class PortfolioCalculationUtil {
         log.debug("등록 주식 종목코드: {}", registeredStockCodes);
 
         // KIS API output1에서 등록 주식만 필터링하여 수익률 계산
-        BigDecimal totalPurchaseAmount = BigDecimal.ZERO;
-        BigDecimal totalEvaluationAmount = BigDecimal.ZERO;
+        long totalPurchaseAmount = 0L;
+        long totalEvaluationAmount = 0L;
 
         if (kisBalance.getOutput1() != null) {
             for (var stock : kisBalance.getOutput1()) {
                 String stockCode = stock.getPdno(); // 종목코드
 
                 if (registeredStockCodes.contains(stockCode)) {
-                    // 매입금액과 평가금액을 BigDecimal로 변환하여 합산
-                    BigDecimal purchaseAmount = new BigDecimal(stock.getPchsAmt() != null ? stock.getPchsAmt() : "0");
-                    BigDecimal evaluationAmount = new BigDecimal(stock.getEvluAmt() != null ? stock.getEvluAmt() : "0");
+                    // 매입금액과 평가금액을 long으로 변환하여 합산
+                    long purchaseAmount = Long.parseLong(stock.getPchsAmt() != null ? stock.getPchsAmt() : "0");
+                    long evaluationAmount = Long.parseLong(stock.getEvluAmt() != null ? stock.getEvluAmt() : "0");
 
-                    totalPurchaseAmount = totalPurchaseAmount.add(purchaseAmount);
-                    totalEvaluationAmount = totalEvaluationAmount.add(evaluationAmount);
+                    totalPurchaseAmount += purchaseAmount;
+                    totalEvaluationAmount += evaluationAmount;
 
                     log.debug("종목 매칭 - 종목코드: {}, 매입금액: {}, 평가금액: {}",
                         stockCode, purchaseAmount, evaluationAmount);
@@ -67,13 +65,11 @@ public class PortfolioCalculationUtil {
         }
 
         // 수익률 및 수익금액 계산
-        BigDecimal returnAmount = totalEvaluationAmount.subtract(totalPurchaseAmount);
-        BigDecimal returnRate = BigDecimal.ZERO;
+        long returnAmount = totalEvaluationAmount - totalPurchaseAmount;
+        double returnRate = 0.0;
 
-        if (totalPurchaseAmount.compareTo(BigDecimal.ZERO) > 0) {
-            returnRate = returnAmount
-                .divide(totalPurchaseAmount, 4, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.valueOf(100));
+        if (totalPurchaseAmount > 0) {
+            returnRate = ((double) returnAmount / totalPurchaseAmount) * 100.0;
         }
 
         log.debug("수익률 계산 완료 - 매입금액: {}, 평가금액: {}, 수익금액: {}, 수익률: {}%",
@@ -89,24 +85,22 @@ public class PortfolioCalculationUtil {
      * @param averagePrice 평균매입가 (문자열)
      * @return 수익률 (백분율, 소수점 2자리)
      */
-    public static BigDecimal calculateReturnRate(String currentPrice, String averagePrice) {
+    public static Double calculateReturnRate(String currentPrice, String averagePrice) {
         try {
-            BigDecimal current = new BigDecimal(currentPrice);
-            BigDecimal average = new BigDecimal(averagePrice);
+            double current = Double.parseDouble(currentPrice);
+            double average = Double.parseDouble(averagePrice);
 
-            if (average.compareTo(BigDecimal.ZERO) == 0) {
-                return BigDecimal.ZERO;
+            if (average == 0) {
+                return 0.0;
             }
 
-            return current.divide(average, 4, RoundingMode.HALF_UP)
-                    .subtract(BigDecimal.ONE)
-                    .multiply(new BigDecimal("100"))
-                    .setScale(2, RoundingMode.HALF_UP);
+            double returnRate = ((current / average) - 1.0) * 100.0;
+            return Math.round(returnRate * 100.0) / 100.0; // 소수점 2자리 반올림
 
         } catch (Exception e) {
             log.warn("수익률 계산 실패 - CurrentPrice: {}, AveragePrice: {}, Error: {}",
                     currentPrice, averagePrice, e.getMessage());
-            return BigDecimal.ZERO;
+            return 0.0;
         }
     }
 }

@@ -3,7 +3,6 @@ package com.rebra.dto.response;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquirePsblOrderResult;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

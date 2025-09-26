@@ -22,7 +22,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -288,11 +287,11 @@ class PortfolioStockServiceImplTest {
             // Then
             assertThat(responses).hasSize(2);
             assertThat(responses.get(0).getStockCode()).isEqualTo("005930");
-            assertThat(responses.get(0).getTargetWeight()).isEqualTo(BigDecimal.valueOf(35.0));
-            assertThat(responses.get(0).getThresholdPercentage()).isEqualTo(BigDecimal.valueOf(5.0));
+            assertThat(responses.get(0).getTargetWeight()).isEqualTo(35.0);
+            assertThat(responses.get(0).getThresholdPercentage()).isEqualTo(5.0);
             assertThat(responses.get(1).getStockCode()).isEqualTo("000660");
-            assertThat(responses.get(1).getTargetWeight()).isEqualTo(BigDecimal.valueOf(25.0));
-            assertThat(responses.get(1).getThresholdPercentage()).isEqualTo(BigDecimal.valueOf(3.0));
+            assertThat(responses.get(1).getTargetWeight()).isEqualTo(25.0);
+            assertThat(responses.get(1).getThresholdPercentage()).isEqualTo(3.0);
 
             verify(portfolioRepository).findByIdAndUserId(portfolioId, userId);
             verify(portfolioStockRepository).findByPortfolioIdAndStockCode(portfolioId, "005930");

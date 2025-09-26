@@ -61,8 +61,8 @@ class PerformanceMetricsServiceImplTest {
             Portfolio portfolio = createPortfolio(1L, user, account);
             LocalDate targetDate = LocalDate.of(2024, 1, 1);
 
-            given(performanceMetricsRepository.existsByPortfolioIdAndMetricDate(portfolio.getId(), targetDate))
-                    .willReturn(false);
+            given(performanceMetricsRepository.findByPortfolioIdAndMetricDate(portfolio.getId(), targetDate))
+                    .willReturn(Optional.empty());
 
             InquireBalanceResult balanceResult = createMockBalanceResult();
             given(kisApiComponent.getUserBalance(account)).willReturn(balanceResult);
@@ -82,23 +82,27 @@ class PerformanceMetricsServiceImplTest {
         }
 
         @Test
-        @DisplayName("성공 - 이미 존재하는 데이터는 스킵")
-        void collectDailyMetrics_성공_중복스킵() {
+        @DisplayName("성공 - 기존 데이터 업데이트")
+        void collectDailyMetrics_성공_기존데이터업데이트() {
             // Given
             User user = createUser(1L);
             Account account = createAccount(1L, user);
             Portfolio portfolio = createPortfolio(1L, user, account);
             LocalDate targetDate = LocalDate.of(2024, 1, 1);
 
-            given(performanceMetricsRepository.existsByPortfolioIdAndMetricDate(portfolio.getId(), targetDate))
-                    .willReturn(true);
+            // 기존 데이터가 있는 경우 테스트
+            PerformanceMetrics existingMetrics = createPerformanceMetrics(1L, portfolio, targetDate, 900000.0, false, false, false);
+            given(performanceMetricsRepository.findByPortfolioIdAndMetricDate(portfolio.getId(), targetDate))
+                    .willReturn(Optional.of(existingMetrics));
+            given(kisApiComponent.getUserBalance(account)).willReturn(null);
+            given(rebalancingOrderRepository.findAllByPortfolioIdWithDateRange(
+                    any(), any(), any())).willReturn(Collections.emptyList());
 
             // When
             performanceMetricsService.collectDailyMetrics(portfolio, targetDate);
 
             // Then
-            verify(performanceMetricsRepository, never()).save(any(PerformanceMetrics.class));
-            verify(kisApiComponent, never()).getUserBalance(any());
+            verify(performanceMetricsRepository).save(any(PerformanceMetrics.class));
         }
 
         @Test
@@ -110,8 +114,8 @@ class PerformanceMetricsServiceImplTest {
             Portfolio portfolio = createPortfolio(1L, user, account);
             LocalDate targetDate = LocalDate.of(2024, 1, 1);
 
-            given(performanceMetricsRepository.existsByPortfolioIdAndMetricDate(portfolio.getId(), targetDate))
-                    .willReturn(false);
+            given(performanceMetricsRepository.findByPortfolioIdAndMetricDate(portfolio.getId(), targetDate))
+                    .willReturn(Optional.empty());
             given(kisApiComponent.getUserBalance(account)).willReturn(null);
             given(rebalancingOrderRepository.findAllByPortfolioIdWithDateRange(
                     any(), any(), any())).willReturn(Collections.emptyList());
@@ -137,8 +141,8 @@ class PerformanceMetricsServiceImplTest {
             Portfolio portfolio = createPortfolio(1L, user, account);
             LocalDate targetDate = LocalDate.of(2024, 1, 1);
 
-            given(performanceMetricsRepository.existsByPortfolioIdAndMetricDate(portfolio.getId(), targetDate))
-                    .willReturn(false);
+            given(performanceMetricsRepository.findByPortfolioIdAndMetricDate(portfolio.getId(), targetDate))
+                    .willReturn(Optional.empty());
             given(kisApiComponent.getUserBalance(account)).willReturn(null);
 
             List<RebalancingOrder> rebalancingOrders = Arrays.asList(

@@ -30,7 +30,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -94,8 +93,7 @@ class PortfolioServiceImplTest {
                         .willReturn(balanceResult);
 
                 PortfolioReturnData returnData = new PortfolioReturnData(
-                        BigDecimal.valueOf(100000), BigDecimal.valueOf(110500),
-                        BigDecimal.valueOf(10500), BigDecimal.valueOf(10.5));
+                        100000L, 110500L, 10500L, 10.5);
                 mockedCalculationUtil.when(() -> PortfolioCalculationUtil.calculateReturn(any(), any()))
                         .thenReturn(returnData);
 
