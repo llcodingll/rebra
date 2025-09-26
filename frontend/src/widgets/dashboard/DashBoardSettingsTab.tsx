@@ -13,9 +13,13 @@ interface DashBoardSettingsTabProps {
   isLoadingSettings?: boolean;
   onAutoRebalancingChanged?: () => void;
   onRebalancingExecuted?: () => void;
+  portfolioStocks?: Array<{
+    stockCode: string;
+    stockName: string;
+  }>;
 }
 
-export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalancing = false, isLoadingSettings = false, onAutoRebalancingChanged, onRebalancingExecuted }: DashBoardSettingsTabProps) {
+export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalancing = false, isLoadingSettings = false, onAutoRebalancingChanged, onRebalancingExecuted, portfolioStocks = [] }: DashBoardSettingsTabProps) {
     const { confirmState, showConfirm, hideConfirm } = useConfirmModal();
     const { isOpen: isPeriodModalOpen, open: openPeriodModal, close: closePeriodModal } = useModalState();
     const { isOpen: isResultModalOpen, open: openResultModal, close: closeResultModal } = useModalState();
@@ -180,6 +184,7 @@ export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalanci
                     isOpen={isResultModalOpen}
                     onClose={closeResultModal}
                     result={rebalancingResult}
+                    portfolioStocks={portfolioStocks}
                 />
             )}
                     </>
