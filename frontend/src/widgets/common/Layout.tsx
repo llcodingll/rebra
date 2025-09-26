@@ -17,6 +17,9 @@ export default function Layout() {
     return 'dashboard';
   }, [location.pathname]);
 
+  const isStockDetailPage = location.pathname.startsWith('/search/stocks/');
+  // console.log(location.pathname);
+
   // 페이지 간 이동 시에만 스크롤 맨 위로 이동 (같은 페이지 내 상태 변경 제외)
   useLayoutEffect(() => {
     const scrollToTop = () => {
@@ -79,7 +82,7 @@ export default function Layout() {
   return (
     <div className={styles.app}>
       <Header activeTab={activeTab} onTabChange={handleTabChange} onTutorialClick={handleTutorialClick} />
-      <MarketTicker />
+      {!isStockDetailPage && <MarketTicker />}
       <main className={styles.main}>
         <Outlet context={{ registerTutorialTarget }} />
       </main>

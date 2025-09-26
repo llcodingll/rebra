@@ -39,8 +39,6 @@ export default function StockDetailPage() {
     reconnect,
   } = useRealtimeStock(stockCode);
 
-  console.log('StockDetailPage');
-
   // console.log(holdingData);
   // 차트 데이터에서 현재 가격 정보 가져오기 (일봉 기준)
   const { data: infiniteData } = useInfiniteChartData(stockCode, 'daily', true);
@@ -151,7 +149,6 @@ export default function StockDetailPage() {
 
   return (
     <div className={styles.container}>
-
       {/* 주식 정보 및 보유 현황 섹션 */}
       <div className={styles.stockInfoSection}>
         <div className={styles.stockBasicInfoWrapper}>
