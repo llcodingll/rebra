@@ -17,6 +17,7 @@ import com.rebra.dto.response.WatchlistToggleResponse;
 import com.rebra.service.StockService;
 import com.rebra.service.StockTradingService;
 import com.rebra.service.WatchlistService;
+import com.youhogeon.finance.kis_api.api.rest.quotations.InquireAskingPriceExpCcnResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -274,5 +275,27 @@ public class StockController {
         StockHoldingDetailResponse response = stockService.getStockHolding(stockCode, accountId);
 
         return ResponseEntity.ok(CommonApiResponse.success(response));
+    }
+
+    @Operation(summary = "주식현재가 호가/예상체결 조회", description = "지정된 종목의 현재가 호가 및 예상체결 정보를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "404", description = "종목을 찾을 수 없음"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+            @ApiResponse(responseCode = "500", description = "KIS API 연동 실패")
+    })
+    @GetMapping("/{stockCode}/current-quotes")
+    public ResponseEntity<CommonApiResponse<InquireAskingPriceExpCcnResult>> getCurrentAskingPrice(
+            @Parameter(description = "종목코드", example = "005930")
+            @PathVariable String stockCode,
+            @Parameter(description = "계좌 ID", required = true, example = "1")
+            @RequestParam Long accountId,
+            @Parameter(hidden = true) @LoginUser Long userId) {
+
+        log.info("주식현재가 호가/예상체결 조회 요청 - UserId: {}, 종목코드: {}, 계좌ID: {}", userId, stockCode, accountId);
+
+        InquireAskingPriceExpCcnResult result = stockService.getCurrentAskingPrice(stockCode, accountId);
+
+        return ResponseEntity.ok(CommonApiResponse.success(result));
     }
 }

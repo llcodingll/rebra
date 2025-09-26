@@ -1,6 +1,7 @@
 import { ApiClient } from '../../../shared/api/apiClient';
 import type { Result, AppError } from '../../../shared/util/result';
-import type { StockSearchRequest, StockSearchResponse, SearchableStock, StockSearchTransformOptions, VolumeRankingApiResponse, HoldingsRequest, HoldingsResponse, DisplayHoldingStock } from './types';
+import { calculateKISFeesAndTaxes, floorPrice } from '../../../shared/util/calculation';
+import type { StockSearchRequest, StockSearchResponse, SearchableStock, StockSearchTransformOptions, VolumeRankingApiResponse, HoldingsRequest, HoldingsResponse, DisplayHoldingStock, WatchlistResponse, WatchlistToggleRequest, WatchlistToggleResponse } from './types';
 
 class StockSearchApiService extends ApiClient {
   /**
@@ -47,6 +48,27 @@ class StockSearchApiService extends ApiClient {
   getHoldings = async (params: HoldingsRequest): Promise<Result<HoldingsResponse, AppError>> => {
     return await this.get<HoldingsResponse>(`/api/stocks/holdings?accountId=${params.accountId}&page=${params.page}&size=${params.size}`);
   };
+
+  /**
+   * 관심종목 조회
+   * @param accountId 계정 ID
+   * @returns 관심종목 목록
+   */
+  getWatchlist = async (accountId: number): Promise<Result<WatchlistResponse, AppError>> => {
+    return await this.get<WatchlistResponse>(`/api/stocks/watchlist?accountId=${accountId}`);
+  };
+
+  /**
+   * 관심종목 토글 (추가/제거)
+   * @param params 토글 요청 파라미터
+   * @returns 토글 결과
+   */
+  toggleWatchlist = async (params: WatchlistToggleRequest): Promise<Result<WatchlistToggleResponse, AppError>> => {
+    // Query Parameter 방식으로 변경 (백엔드가 파라미터를 인식하지 못하는 문제 해결)
+    return await this.post<WatchlistToggleResponse>(
+      `/api/stocks/watchlist/toggle?stockCode=${encodeURIComponent(params.stockCode)}&accountId=${params.accountId}`
+    );
+  };
 }
 
 /**
@@ -71,20 +93,6 @@ export const transformSearchResults = (
 };
 
 
-/**
- * KIS 수수료/세금 계산 함수
- * @param evaluationAmount 평가금액
- * @returns 수수료와 세금
- */
-const calculateKISFeesAndTaxes = (evaluationAmount: number) => {
-  // 매매수수료: 0.0145% (소숫점 이하 절사)
-  const fee = Math.floor(evaluationAmount * 0.000145);
-
-  // 증권거래세: 0.23% (소숫점 이하 절사)
-  const tax = Math.floor(evaluationAmount * 0.0023);
-
-  return { fee, tax };
-};
 
 /**
  * Holdings API 응답을 UI에서 사용할 형태로 변환
@@ -99,6 +107,7 @@ export const transformHoldingsResults = (
 
     return {
       ...holding,
+      averagePurchasePrice: floorPrice(holding.averagePurchasePrice), // 매입가 소수점 버림
       fee,
       tax,
     };

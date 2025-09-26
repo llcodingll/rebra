@@ -83,7 +83,7 @@ export default function MyPortfolio({
     const value = e.target.value;
     const itemKey = `${portfolioItems[index].code}-${index}`;
 
-    // 빈 문자열인 경우
+ㅇ    // 빈 문자열인 경우 임시로 0 설정
     if (value === '') {
       const newItems = [...portfolioItems];
       newItems[index].threshold = 0;
@@ -94,18 +94,26 @@ export default function MyPortfolio({
 
     // 숫자가 아닌 문자가 포함된 경우 입력을 막음
     if (!/^\d+$/.test(value)) {
-      e.preventDefault();
-      return false;
+      return;
     }
 
     const numValue = parseInt(value, 10);
     if (numValue < 0 || numValue > 100) {
-      return false;
+      return;
     }
 
     const newItems = [...portfolioItems];
     newItems[index].threshold = numValue;
     setPortfolioItems(newItems);
+  };
+
+  const handleThresholdBlur = (index: number) => {
+    // 포커스를 잃을 때 0이면 1로 설정
+    if (portfolioItems[index].threshold === 0) {
+      const newItems = [...portfolioItems];
+      newItems[index].threshold = 1;
+      setPortfolioItems(newItems);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -193,34 +201,90 @@ export default function MyPortfolio({
                 </div>
                 <div className={styles.tableCell}>
                   <input
-                    type="number"
-                    value={item.quantity}
+                    type="text"
+                    value={item.quantity === 0 ? '' : item.quantity.toString()}
                     onChange={(e) => {
-                      const value = parseInt(e.target.value) || 0;
-                      const limitedValue = Math.min(Math.max(value, 1), 9999); // 1~9999 사이로 제한
+                      const value = e.target.value;
+
+                      // 빈 문자열인 경우 임시로 0 설정
+                      if (value === '') {
+                        const newItems = [...portfolioItems];
+                        newItems[index].quantity = 0;
+                        setPortfolioItems(newItems);
+                        return;
+                      }
+
+                      // 숫자가 아닌 문자가 포함된 경우 입력을 막음
+                      if (!/^\d+$/.test(value)) {
+                        return;
+                      }
+
+                      const numValue = parseInt(value, 10);
+                      if (numValue < 0 || numValue > 9999) {
+                        return;
+                      }
+
                       const newItems = [...portfolioItems];
-                      newItems[index].quantity = limitedValue;
+                      newItems[index].quantity = numValue;
                       setPortfolioItems(newItems);
                     }}
+                    onBlur={(e) => {
+                      // 포커스를 잃을 때 0이면 1로 설정
+                      if (item.quantity === 0) {
+                        const newItems = [...portfolioItems];
+                        newItems[index].quantity = 1;
+                        setPortfolioItems(newItems);
+                      }
+                    }}
+                    onKeyPress={handleKeyPress}
                     className={styles.numberInput}
-                    min="1"
-                    max="9999"
+                    placeholder="1"
+                    maxLength={4}
                   />
                   <span className={styles.unit}>주</span>
                 </div>
                 <div className={styles.tableCell}>
                   <div className={styles.weightContainer}>
                     <input
-                      type="number"
-                      value={item.targetWeight}
+                      type="text"
+                      value={item.targetWeight === 0 ? '' : item.targetWeight.toString()}
                       onChange={(e) => {
+                        const value = e.target.value;
+
+                        // 빈 문자열인 경우 임시로 0 설정
+                        if (value === '') {
+                          const newItems = [...portfolioItems];
+                          newItems[index].targetWeight = 0;
+                          setPortfolioItems(newItems);
+                          return;
+                        }
+
+                        // 숫자가 아닌 문자가 포함된 경우 입력을 막음
+                        if (!/^\d+$/.test(value)) {
+                          return;
+                        }
+
+                        const numValue = parseInt(value, 10);
+                        if (numValue < 0 || numValue > 100) {
+                          return;
+                        }
+
                         const newItems = [...portfolioItems];
-                        newItems[index].targetWeight = parseInt(e.target.value) || 0;
+                        newItems[index].targetWeight = numValue;
                         setPortfolioItems(newItems);
                       }}
+                      onBlur={(e) => {
+                        // 포커스를 잃을 때 0이면 1로 설정
+                        if (item.targetWeight === 0) {
+                          const newItems = [...portfolioItems];
+                          newItems[index].targetWeight = 1;
+                          setPortfolioItems(newItems);
+                        }
+                      }}
+                      onKeyPress={handleKeyPress}
                       className={styles.numberInput}
-                      min="0"
-                      max="100"
+                      placeholder="1"
+                      maxLength={3}
                     />
                     <span className={styles.normalizedWeight}>
                       → {calculateNormalizedWeight(item).toFixed(1)}%
@@ -269,9 +333,10 @@ export default function MyPortfolio({
                         type="text"
                         value={item.threshold === 0 ? '' : item.threshold}
                         onChange={(e) => handleThresholdChange(index, e)}
+                        onBlur={() => handleThresholdBlur(index)}
                         onKeyPress={handleKeyPress}
                         className={styles.numberInput}
-                        placeholder="0"
+                        placeholder="1"
                         maxLength={3}
                       />
                       <span className={styles.unit}>%</span>

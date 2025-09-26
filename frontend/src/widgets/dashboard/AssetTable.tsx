@@ -66,7 +66,6 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
     onSuccess: (data) => {
       console.log('=== 주식 등록 성공 ===');
       console.log('등록된 주식:', data);
-      alert(`${data.stockName} 주식이 포트폴리오에 등록되었습니다.`);
       onStockRegistered?.(); // 성공 시 콜백 호출
     },
     onError: (error) => {
@@ -88,7 +87,6 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
       console.log('=== 주식 삭제 성공 ===');
       console.log('삭제 응답:', response);
       const stockName = data.find(stock => stock.code === stockCode)?.name || '해당 주식';
-      alert(`${stockName}이 포트폴리오에서 제거되었습니다.`);
       onStockRemoved?.(); // 성공 시 콜백 호출
     },
     onError: (error) => {
@@ -118,7 +116,6 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
     onSuccess: (data) => {
       console.log('=== 주식 설정 업데이트 성공 ===');
       console.log('업데이트 결과:', data);
-      alert('주식 설정이 성공적으로 업데이트되었습니다.');
       closeStockSettingModal();
       onEditModeChange?.(false);
       onStockSettingsUpdated?.(); // 주식 설정 업데이트 전용 콜백 호출

@@ -16,8 +16,12 @@ import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Api;
 import com.youhogeon.finance.kis_api.api.realtime.H0STCNT0Data;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceApi;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult;
+import com.youhogeon.finance.kis_api.api.rest.quotations.InquireAskingPriceExpCcnApi;
+import com.youhogeon.finance.kis_api.api.rest.quotations.InquireAskingPriceExpCcnResult;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceApi;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
+import com.youhogeon.finance.kis_api.api.rest.trading.InquirePsblOrderApi;
+import com.youhogeon.finance.kis_api.api.rest.trading.InquirePsblOrderResult;
 import com.youhogeon.finance.kis_api.client.socket.SubscribableApiResult;
 import com.youhogeon.finance.kis_api.config.Configuration;
 import com.youhogeon.finance.kis_api.config.Credentials;
@@ -286,6 +290,57 @@ public class KisApiComponent {
     }
 
     /**
+     * 사용자 매수가능조회 (Account 객체 사용)
+     */
+    public InquirePsblOrderResult getUserPossibleOrder(Account account, String stockCode) {
+        Long userId = account.getUser().getId();
+        DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+        return getUserPossibleOrder(userId, account.getId(), account.getAccountType(), stockCode, credentials);
+    }
+
+    /**
+     * 등록된 사용자 Credentials로 매수가능조회 ensureUserCredentials()를 통해 Credentials가 없으면 자동으로 등록
+     */
+    public InquirePsblOrderResult getUserPossibleOrder(Long userId, Long accountId, AccountType accountType,
+                                                      String stockCode, DecryptedAccountCredentials credentials) {
+        try {
+            log.info("사용자 매수가능조회 시작 - 사용자ID: {}, 계좌ID: {}, 계좌타입: {}, 종목코드: {}",
+                    userId, accountId, accountType, stockCode);
+
+            // Credentials가 Config에 없으면 자동으로 등록
+            ensureUserCredentials(userId, accountId, accountType, credentials);
+
+            String credentialsName = getUserCredentialsName(userId, accountId);
+            if (credentialsName == null) {
+                log.error("ensureUserCredentials 후에도 Credentials를 찾을 수 없음 - 사용자ID: {}, 계좌ID: {}", userId, accountId);
+                throw new RuntimeException("Credentials 등록 실패");
+            }
+
+            KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
+
+            InquirePsblOrderApi req = new InquirePsblOrderApi();
+            req.setPdno(stockCode);  // 종목코드 설정
+
+            if (accountType == AccountType.MOCK) {
+                req.setTrId("VTTC8908R");
+            }
+
+            InquirePsblOrderResult result = client.execute(req, credentialsName);
+
+            // rtCd가 "0"이 아니면 실패 (KIS API 표준)
+            if (!result.getRtCd().equals("0")) {
+                throw new RuntimeException("KIS API 매수가능조회 실패");
+            }
+
+            return result;
+        } catch (Exception e) {
+            log.error("사용자 매수가능조회 실패 - 사용자ID: {}, 계좌ID: {}, 종목코드: {}, 오류: {}",
+                    userId, accountId, stockCode, e.getMessage(), e);
+            throw new RuntimeException("사용자 매수가능조회 실패: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * 실시간 체결가 구독 시작 (Account 객체 사용)
      */
     public void startPriceSubscription(Account account, String stockCode, Consumer<H0STCNT0Data> dataHandler) {
@@ -408,9 +463,30 @@ public class KisApiComponent {
             if (count == 0) {
                 SubscribableApiResult subscription = activeSubscriptions.remove(subscriptionKey);
                 if (subscription != null) {
-                    subscription.unsubscribe();
-                    log.info("실시간 {} 구독 완전 해제 - UserId: {}, StockCode: {}",
-                            dataType, userId, stockCode);
+                    try {
+                        subscription.unsubscribe();
+                        log.info("실시간 {} 구독 완전 해제 - UserId: {}, StockCode: {}",
+                                dataType, userId, stockCode);
+                    } catch (KisClientException e) {
+                        // UNSUBSCRIBE ERROR(not found!) 처리 - 이미 해제된 구독이므로 정상 처리
+                        if (e.getMessage() != null && e.getMessage().contains("not found")) {
+                            log.debug("이미 해제된 구독 - 정상 처리: UserId={}, StockCode={}, Type={}",
+                                    userId, stockCode, dataType);
+                        } else {
+                            log.warn("실시간 구독 해제 중 예외 (무시됨) - UserId: {}, StockCode: {}, Type: {}, Error: {}",
+                                    userId, stockCode, dataType, e.getMessage());
+                        }
+                    } catch (Exception e) {
+                        // 연결이 이미 끊어진 경우 등의 기타 예외 처리
+                        if (e.getMessage() != null &&
+                                (e.getMessage().contains("connection") || e.getMessage().contains("timeout"))) {
+                            log.debug("연결 종료된 상태에서 구독 해제 시도 - 정상 처리: UserId={}, StockCode={}, Type={}",
+                                    userId, stockCode, dataType);
+                        } else {
+                            log.warn("실시간 구독 해제 중 예외 (무시됨) - UserId: {}, StockCode: {}, Type: {}, Error: {}",
+                                    userId, stockCode, dataType, e.getMessage());
+                        }
+                    }
                 }
                 subscriptionCount.remove(subscriptionKey);
             } else {
@@ -419,7 +495,7 @@ public class KisApiComponent {
             }
 
         } catch (Exception e) {
-            log.error("실시간 구독 해제 실패 - UserId: {}, StockCode: {}, Type: {}",
+            log.error("실시간 구독 해제 처리 실패 - UserId: {}, StockCode: {}, Type: {}",
                     userId, stockCode, dataType, e);
         }
     }
@@ -460,12 +536,6 @@ public class KisApiComponent {
 
         connectionLock.lock();
         try {
-            // 기존 연결이 있는지 확인
-//            SubscribableApiResult existingConnection = connectionPool.get(connectionKey);
-////            if (existingConnection != null) {
-////                log.info("🔗 기존 체결가 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
-////                return existingConnection;
-////            }
 
             // 새 체결가 연결 생성
             log.info("🆕 새 체결가 WebSocket 연결 생성 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
@@ -512,12 +582,6 @@ public class KisApiComponent {
 
         connectionLock.lock();
         try {
-            // 기존 연결이 있는지 확인
-//            SubscribableApiResult existingConnection = connectionPool.get(connectionKey);
-//            if (existingConnection != null) {
-//                log.info("🔗 기존 호가 WebSocket 연결 재사용 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
-//                return existingConnection;
-//            }
 
             // 새 호가 연결 생성
             log.info("🆕 새 호가 WebSocket 연결 생성 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
@@ -1271,6 +1335,60 @@ public class KisApiComponent {
             log.error("{} 등락률순위 조회 실패 - 사용자ID: {}, 계좌ID: {}, 오류: {}",
                     rankingType, userId, accountId, e.getMessage(), e);
             throw new RuntimeException(rankingType + " 등락률순위 조회 실패: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 주식현재가 호가/예상체결 조회 (Account 객체 사용)
+     */
+    public InquireAskingPriceExpCcnResult getCurrentAskingPrice(Account account, String stockCode) {
+        Long userId = account.getUser().getId();
+        DecryptedAccountCredentials credentials = AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+        return getCurrentAskingPrice(userId, account.getId(), account.getAccountType(), credentials, stockCode);
+    }
+
+    /**
+     * 주식현재가 호가/예상체결 조회
+     */
+    public InquireAskingPriceExpCcnResult getCurrentAskingPrice(Long userId, Long accountId, AccountType accountType,
+                                                                DecryptedAccountCredentials credentials,
+                                                                String stockCode) {
+        try {
+            log.info("주식현재가 호가/예상체결 조회 시작 - 사용자ID: {}, 계좌ID: {}, 계좌타입: {}, 종목코드: {}", userId, accountId, accountType,
+                    stockCode);
+
+            // Credentials가 Config에 없으면 자동으로 등록
+            ensureUserCredentials(userId, accountId, accountType, credentials);
+
+            String credentialsName = getUserCredentialsName(userId, accountId);
+            if (credentialsName == null) {
+                log.error("ensureUserCredentials 후에도 Credentials를 찾을 수 없음 - 사용자ID: {}, 계좌ID: {}", userId, accountId);
+                throw new RuntimeException("Credentials 등록 실패");
+            }
+
+            KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
+
+            InquireAskingPriceExpCcnApi req = new InquireAskingPriceExpCcnApi();
+            req.setFidInputIscd(stockCode);
+            // fidCondMrktDivCode는 기본값 "UN" 사용
+
+            InquireAskingPriceExpCcnResult result = client.execute(req, credentialsName);
+
+            // rtCd가 "0"이 아니면 실패 (KIS API 표준)
+            if (!result.getRtCd().equals("0")) {
+                throw new RuntimeException("KIS API 주식현재가 호가/예상체결 조회 실패");
+            }
+
+            log.info("주식현재가 호가/예상체결 조회 완료 - 사용자ID: {}, 계좌ID: {}, 종목코드: {}", userId, accountId, stockCode);
+            return result;
+
+        } catch (KisException e) {
+            // KisException은 그대로 전파
+            throw e;
+        } catch (Exception e) {
+            log.error("주식현재가 호가/예상체결 조회 실패 - 사용자ID: {}, 계좌ID: {}, 종목코드: {}, 오류: {}",
+                    userId, accountId, stockCode, e.getMessage(), e);
+            throw new RuntimeException("주식현재가 호가/예상체결 조회 실패: " + e.getMessage(), e);
         }
     }
 

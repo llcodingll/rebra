@@ -23,9 +23,12 @@ import com.rebra.repository.AccountRepository;
 import com.rebra.repository.StockPriceRepository;
 import com.rebra.repository.StockRepository;
 import com.youhogeon.finance.kis_api.api.rest.quotations.InquireDailyItemchartpriceResult;
+import com.youhogeon.finance.kis_api.api.rest.quotations.InquireAskingPriceExpCcnResult;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import com.youhogeon.finance.kis_api.api.rest.trading.InquirePsblOrderResult;
+import com.rebra.exception.kis.KisException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -592,8 +595,9 @@ public class StockServiceImpl implements StockService {
             Account account = accountRepository.findById(accountId)
                     .orElseThrow(AccountException::accountNotFound);
 
-            // 2. KIS API로 잔고 조회
+            // 2. KIS API로 잔고 조회 및 매수가능조회
             InquireBalanceResult balanceResult = kisApiComponent.getUserBalance(account);
+            InquirePsblOrderResult psblOrderResult = kisApiComponent.getUserPossibleOrder(account, stockCode);
 
             // 3. 해당 종목의 보유 정보 찾기
             if (balanceResult.getOutput1() != null && balanceResult.getOutput1().length > 0) {
@@ -602,21 +606,45 @@ public class StockServiceImpl implements StockService {
                         // 보유 수량이 0이 아닌 경우만 반환
                         if (!"0".equals(holding.getHldgQty())) {
                             log.info("특정 종목 보유 정보 조회 완료 - StockCode: {}, AccountId: {}", stockCode, accountId);
-                            return StockHoldingDetailResponse.from(holding);
+                            return StockHoldingDetailResponse.from(holding, psblOrderResult);
                         }
                         break;
                     }
                 }
             }
 
-            // 보유하지 않은 경우 null 반환
+            // 보유하지 않은 경우 - 매수가능금액만 반환
             log.info("특정 종목 미보유 - StockCode: {}, AccountId: {}", stockCode, accountId);
-            return null;
+            return StockHoldingDetailResponse.fromPossibleOrderOnly(psblOrderResult);
 
         } catch (Exception e) {
             log.error("특정 종목 보유 정보 조회 실패 - StockCode: {}, AccountId: {}, Error: {}",
                     stockCode, accountId, e.getMessage(), e);
             throw StockException.stockHoldingDetailFetchFailed();
+        }
+    }
+
+    @Override
+    public InquireAskingPriceExpCcnResult getCurrentAskingPrice(String stockCode, Long accountId) {
+        try {
+            log.info("주식현재가 호가/예상체결 조회 시작 - 종목코드: {}, 계좌ID: {}", stockCode, accountId);
+
+            // 1. 계좌 조회
+            Account account = accountRepository.findById(accountId)
+                    .orElseThrow(AccountException::accountNotFound);
+
+            // 2. KIS API로 현재가 호가/예상체결 조회 및 직접 반환
+            InquireAskingPriceExpCcnResult result = kisApiComponent.getCurrentAskingPrice(account, stockCode);
+
+            log.info("주식현재가 호가/예상체결 조회 완료 - 종목코드: {}, 계좌ID: {}", stockCode, accountId);
+            return result;
+
+        } catch (KisException e) {
+            // KisException은 그대로 전파
+            throw e;
+        } catch (Exception e) {
+            log.error("주식현재가 호가/예상체결 조회 중 오류 발생 - 종목코드: {}, 계좌ID: {}, 오류: {}", stockCode, accountId, e.getMessage(), e);
+            throw new RuntimeException("주식현재가 호가/예상체결 조회 실패", e);
         }
     }
 }

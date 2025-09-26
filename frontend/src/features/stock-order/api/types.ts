@@ -4,7 +4,9 @@
 
 // 공통 주문 요청 타입 (매수/매도 모두 동일한 구조)
 export interface OrderRequest {
-  orderType: string; // "01" - 주문 세부 타입 (지정가 등)
+  stockCode: string;
+  stockName: string;
+  orderType: string; // "00" - 주문 세부 타입 (지정가 등)
   quantity: number;
   price: number;
   accountId: number;
@@ -35,7 +37,7 @@ export type OrderStatus = 'idle' | 'loading' | 'success' | 'error';
 
 // 주문 타입 열거형
 export const OrderType = {
-  LIMIT: '01', // 지정가 주문
+  LIMIT: '00', // 지정가 주문
 } as const;
 
 export type OrderTypeValue = (typeof OrderType)[keyof typeof OrderType];

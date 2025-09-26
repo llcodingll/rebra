@@ -5,6 +5,7 @@ import com.rebra.dto.response.StockChartResponse;
 import com.rebra.dto.response.StockDetailResponse;
 import com.rebra.dto.response.StockHoldingDetailResponse;
 import com.rebra.dto.response.StockHoldingListResponse;
+import com.youhogeon.finance.kis_api.api.rest.quotations.InquireAskingPriceExpCcnResult;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
 
@@ -31,4 +32,9 @@ public interface StockService {
      * 특정 종목 보유 정보 조회
      */
     StockHoldingDetailResponse getStockHolding(String stockCode, Long accountId);
+
+    /**
+     * 주식현재가 호가/예상체결 조회
+     */
+    InquireAskingPriceExpCcnResult getCurrentAskingPrice(String stockCode, Long accountId);
 }

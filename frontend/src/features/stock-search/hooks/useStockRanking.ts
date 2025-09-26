@@ -11,7 +11,7 @@ export type RankingType = 'volume' | 'rising' | 'falling';
  * @param refetchInterval 자동 refetch 간격 (기본값: 1초)
  * @returns 랭킹 데이터와 상태
  */
-export const useStockRanking = (rankingType: RankingType, refetchInterval: number = 1000) => {
+export const useStockRanking = (rankingType: RankingType, refetchInterval: number = 100000) => {
   const { accountId } = useAccountStore();
 
   // 랭킹 타입에 따른 API 함수 선택
@@ -40,9 +40,9 @@ export const useStockRanking = (rankingType: RankingType, refetchInterval: numbe
     refetchInterval,
     staleTime: 0, // 항상 stale 상태로 간주
     gcTime: 5 * 60 * 1000, // 5분간 가비지 컬렉션 대기
-    onSuccess: (data) => {
-      console.log('📊 랭킹 데이터 refetch:', rankingType, data?.rankings?.length, '개');
-    },
+    // onSuccess: (data) => {
+    //   console.log('📊 랭킹 데이터 refetch:', rankingType, data?.rankings?.length, '개');
+    // },
   });
 
   console.log('🔄 useStockRanking 훅 실행:', rankingType);

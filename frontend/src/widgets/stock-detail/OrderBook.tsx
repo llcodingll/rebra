@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import styles from './OrderBook.module.css';
 import { OptimizedOrderbookData } from '../../features/stock-detail/api/types';
 
@@ -5,6 +6,7 @@ interface OrderBookProps {
   orderBook: OptimizedOrderbookData | null;
   stockInfo: {
     currentPrice: number;
+    prevClose: number;
     high52?: number;
     low52?: number;
     upperLimit?: number;
@@ -15,6 +17,7 @@ interface OrderBookProps {
     volume?: number;
     volumeRate?: number;
   };
+  onPriceClick?: (price: number) => void;
 }
 
 interface OrderBookRow {
@@ -31,7 +34,16 @@ interface TradeHistoryItem {
   time: string;
 }
 
-export default function OrderBook({ orderBook, stockInfo }: OrderBookProps) {
+export default function OrderBook({ orderBook, stockInfo, onPriceClick }: OrderBookProps) {
+  // 가격 비교 함수 - 전일종가 대비 색상 결정
+  const getPriceColorClass = (price: number, prevClose: number) => {
+    if (price > prevClose) return styles.priceUp;
+    if (price < prevClose) return styles.priceDown;
+    return styles.priceEqual;
+  };
+  const orderBookTableRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToCenter = useRef(false);
+
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);
   };
@@ -145,6 +157,23 @@ export default function OrderBook({ orderBook, stockInfo }: OrderBookProps) {
   const currentPriceRowIndex = findCurrentPriceRowIndex(orderBookRows, stockInfo.currentPrice);
   const maxQuantity = getMaxQuantity(orderBookRows);
 
+  // 초기 로드 시에만 현재가를 중심으로 스크롤 위치 조정
+  useEffect(() => {
+    if (orderBookTableRef.current && currentPriceRowIndex >= 0 && !hasScrolledToCenter.current) {
+      const container = orderBookTableRef.current;
+      const rowHeight = 40; // CSS에서 설정한 .orderRow 높이
+      const containerHeight = container.clientHeight;
+
+      // 현재가 행이 컨테이너 중앙에 오도록 스크롤 위치 계산
+      const targetScrollTop = (currentPriceRowIndex * rowHeight) - (containerHeight / 2) + (rowHeight / 2);
+
+      container.scrollTop = Math.max(0, targetScrollTop);
+
+      // 한 번 스크롤했음을 표시
+      hasScrolledToCenter.current = true;
+    }
+  }, [currentPriceRowIndex]);
+
   // if (!orderBook) {
   //   return (
   //     <div className={styles.orderBookSection}>
@@ -166,7 +195,7 @@ export default function OrderBook({ orderBook, stockInfo }: OrderBookProps) {
 
       <div className={styles.orderBookContent}>
         {/* 메인 호가 테이블 */}
-        <div className={styles.orderBookTable}>
+        <div ref={orderBookTableRef} className={styles.orderBookTable}>
           {orderBookRows.map((row, index) => {
             const isCurrentPrice = index === currentPriceRowIndex;
 
@@ -190,18 +219,19 @@ export default function OrderBook({ orderBook, stockInfo }: OrderBookProps) {
                 </div>
 
                 {/* 가운데: 가격 */}
-                <div className={`${styles.priceCell} ${isCurrentPrice ? styles.currentPriceHighlight : ''}`}>
-                  <div className={`${styles.price} ${row.type === 'ask' ? styles.askPrice : styles.bidPrice}`}>
+                <div
+                  className={`${styles.priceCell} ${isCurrentPrice ? styles.currentPriceHighlight : ''} ${onPriceClick ? styles.clickable : ''}`}
+                  onClick={() => onPriceClick?.(row.price)}
+                >
+                  <div className={`${styles.price} ${getPriceColorClass(row.price, stockInfo.prevClose)}`}>
                     {formatNumber(row.price)}
                   </div>
-                  {stockInfo.currentPrice > 0 && (
+                  {stockInfo.prevClose > 0 && (
                     <div
-                      className={`${styles.changeRate} ${
-                        row.type === 'ask' ? styles.askChangeRate : styles.bidChangeRate
-                      }`}
+                      className={`${styles.changeRate} ${getPriceColorClass(row.price, stockInfo.prevClose)}`}
                     >
-                      {row.type === 'ask' ? '+' : ''}
-                      {(((row.price - stockInfo.currentPrice) / stockInfo.currentPrice) * 100).toFixed(2)}%
+                      {row.price > stockInfo.prevClose ? '+' : ''}
+                      {(((row.price - stockInfo.prevClose) / stockInfo.prevClose) * 100).toFixed(2)}%
                     </div>
                   )}
                 </div>
