@@ -15,7 +15,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +47,7 @@ public class Portfolio extends BaseEntity {
     private String description;
 
     @Column(name = "safe_asset_ratio")
-    private BigDecimal safeAssetRatio;
+    private Double safeAssetRatio;
 
     @Column(name = "rebalancing_strategy")
     @Enumerated(EnumType.STRING)
@@ -86,7 +85,7 @@ public class Portfolio extends BaseEntity {
         this.autoRebalancing = false; // 기본값 false
     }
 
-    public void updatePortfolio(String name, String description, BigDecimal safeAssetRatio,
+    public void updatePortfolio(String name, String description, Double safeAssetRatio,
                                RebalancingStrategy rebalancingStrategy, Boolean autoRebalancing,
                                RebalancingPeriod rebalancingPeriod, Integer rebalancingInterval,
                                LocalDate rebalancingStartDate) {

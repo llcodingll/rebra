@@ -5,7 +5,6 @@ import com.rebra.entity.Portfolio;
 import lombok.Builder;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -18,7 +17,7 @@ public class PortfolioSummary {
     private String name;                   // 포트폴리오 제목
     private String description;            // 설명
     private Integer registeredStockCount;  // 등록 주식 개수
-    private BigDecimal totalReturnRate;    // 등록 주식 총 수익률 (%)
+    private Double totalReturnRate;        // 등록 주식 총 수익률 (%)
     private Boolean isAccountConnected;    // 계좌 연결 상태 (재연동 필요 여부)
     private LocalDateTime createdAt;       // 생성일
     private AccountType accountType;       // 계좌타입 (MOCK/REAL)
@@ -56,7 +55,7 @@ public class PortfolioSummary {
             .name(portfolio.getName())
             .description(portfolio.getDescription())
             .registeredStockCount(0)
-            .totalReturnRate(BigDecimal.ZERO)
+            .totalReturnRate(0.0)
             .isAccountConnected(portfolio.getAccount().isConnected())
             .createdAt(portfolio.getCreatedAt())
             .accountType(portfolio.getAccount().getAccountType())
