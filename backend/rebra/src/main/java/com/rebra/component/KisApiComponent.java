@@ -91,8 +91,6 @@ public class KisApiComponent {
         realClient = new KisClient(realConfig);
 
         log.info("KIS API Configuration 초기화 완료");
-        log.info("📡 WebSocket 설정 - 최대 메시지 크기: {}MB, 세션 타임아웃: {}분",
-                1, 30);
     }
 
     /**
@@ -366,15 +364,12 @@ public class KisApiComponent {
             // 구독 참조 카운트 증가
             int count = subscriptionCount.computeIfAbsent(subscriptionKey, k -> new AtomicInteger(0)).incrementAndGet();
 
-            log.info("📈 실시간 체결가 구독 시작 - UserId: {}, StockCode: {}, 구독자: {}명 (체결가 전용 연결)",
-                    userId, stockCode, count);
 
             // 체결가 연결에 체결가 데이터 핸들러 추가
             addPriceHandlerToConnection(priceConnection, stockCode, dataHandler);
 
             activeSubscriptions.put(subscriptionKey, priceConnection);
 
-            log.info("✅ 실시간 체결가 구독 완료 - StockCode: {}", stockCode);
 
         } catch (Exception e) {
             // 실패 시 구독 카운트 원복
@@ -386,7 +381,6 @@ public class KisApiComponent {
                 return newCount > 0 ? v : null;
             });
 
-            log.error("❌ 실시간 체결가 구독 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
             throw new RuntimeException("실시간 체결가 구독 실패", e);
         }
     }
@@ -418,15 +412,12 @@ public class KisApiComponent {
             // 구독 참조 카운트 증가
             int count = subscriptionCount.computeIfAbsent(subscriptionKey, k -> new AtomicInteger(0)).incrementAndGet();
 
-            log.info("📊 실시간 호가 구독 시작 - UserId: {}, StockCode: {}, 구독자: {}명 (호가 전용 연결)",
-                    userId, stockCode, count);
 
             // 호가 연결에 호가 데이터 핸들러 추가
             addOrderbookHandlerToConnection(orderbookConnection, stockCode, dataHandler);
 
             activeSubscriptions.put(subscriptionKey, orderbookConnection);
 
-            log.info("✅ 실시간 호가 구독 완료 - StockCode: {}", stockCode);
 
         } catch (Exception e) {
             // 실패 시 구독 카운트 원복
@@ -438,7 +429,6 @@ public class KisApiComponent {
                 return newCount > 0 ? v : null;
             });
 
-            log.error("❌ 실시간 호가 구독 실패 - UserId: {}, StockCode: {}", userId, stockCode, e);
             throw new RuntimeException("실시간 호가 구독 실패", e);
         }
     }
@@ -465,17 +455,13 @@ public class KisApiComponent {
                 if (subscription != null) {
                     try {
                         subscription.unsubscribe();
-                        log.info("실시간 {} 구독 완전 해제 - UserId: {}, StockCode: {}",
-                                dataType, userId, stockCode);
                     } catch (KisClientException e) {
                         // UNSUBSCRIBE ERROR(not found!) 처리 - 이미 해제된 구독이므로 정상 처리
                         if (e.getMessage() != null && e.getMessage().contains("not found")) {
                             log.debug("이미 해제된 구독 - 정상 처리: UserId={}, StockCode={}, Type={}",
                                     userId, stockCode, dataType);
                         } else {
-                            log.warn("실시간 구독 해제 중 예외 (무시됨) - UserId: {}, StockCode: {}, Type: {}, Error: {}",
-                                    userId, stockCode, dataType, e.getMessage());
-                        }
+                            }
                     } catch (Exception e) {
                         // 연결이 이미 끊어진 경우 등의 기타 예외 처리
                         if (e.getMessage() != null &&
@@ -483,20 +469,14 @@ public class KisApiComponent {
                             log.debug("연결 종료된 상태에서 구독 해제 시도 - 정상 처리: UserId={}, StockCode={}, Type={}",
                                     userId, stockCode, dataType);
                         } else {
-                            log.warn("실시간 구독 해제 중 예외 (무시됨) - UserId: {}, StockCode: {}, Type: {}, Error: {}",
-                                    userId, stockCode, dataType, e.getMessage());
-                        }
+                            }
                     }
                 }
                 subscriptionCount.remove(subscriptionKey);
             } else {
-                log.info("실시간 {} 구독자 감소 - UserId: {}, StockCode: {}, 남은 구독자: {}명",
-                        dataType, userId, stockCode, count);
             }
 
         } catch (Exception e) {
-            log.error("실시간 구독 해제 처리 실패 - UserId: {}, StockCode: {}, Type: {}",
-                    userId, stockCode, dataType, e);
         }
     }
 
@@ -538,20 +518,17 @@ public class KisApiComponent {
         try {
 
             // 새 체결가 연결 생성
-            log.info("🆕 새 체결가 WebSocket 연결 생성 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
             KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
 
             // 체결가 API로 연결 생성
             H0STCNT0Api priceApi = new H0STCNT0Api(stockCode);
 
             SubscribableApiResult newConnection = executeWithRetry(() -> {
-                log.info("🔄 체결가 WebSocket 연결 생성 시도 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
                 return client.execute(priceApi, credentialsName);
             }, 3, "체결가 WebSocket 연결 생성");
 
             // 연결 풀에 저장
             connectionPool.put(connectionKey, newConnection);
-            log.info("✅ 체결가 WebSocket 연결 생성 완료 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
 
             return newConnection;
 
@@ -584,20 +561,17 @@ public class KisApiComponent {
         try {
 
             // 새 호가 연결 생성
-            log.info("🆕 새 호가 WebSocket 연결 생성 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
             KisClient client = accountType == AccountType.MOCK ? mockClient : realClient;
 
             // 호가 API로 연결 생성
             H0STASP0Api orderbookApi = new H0STASP0Api(stockCode);
 
             SubscribableApiResult newConnection = executeWithRetry(() -> {
-                log.info("🔄 호가 WebSocket 연결 생성 시도 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
                 return client.execute(orderbookApi, credentialsName);
             }, 3, "호가 WebSocket 연결 생성");
 
             // 연결 풀에 저장
             connectionPool.put(connectionKey, newConnection);
-            log.info("✅ 호가 WebSocket 연결 생성 완료 - ConnectionKey: {}, StockCode: {}", connectionKey, stockCode);
 
             return newConnection;
 
@@ -619,7 +593,6 @@ public class KisApiComponent {
                 SubscribableApiResult connection = connectionPool.remove(connectionKey);
                 if (connection != null) {
                     connection.unsubscribe();
-                    log.info("🔌 체결가 WebSocket 연결 해제 - ConnectionKey: {}", connectionKey);
                 }
             } finally {
                 connectionLock.unlock();
@@ -638,7 +611,6 @@ public class KisApiComponent {
                 SubscribableApiResult connection = connectionPool.remove(connectionKey);
                 if (connection != null) {
                     connection.unsubscribe();
-                    log.info("🔌 호가 WebSocket 연결 해제 - ConnectionKey: {}", connectionKey);
                 }
             } finally {
                 connectionLock.unlock();
@@ -653,32 +625,22 @@ public class KisApiComponent {
     private void addPriceHandlerToConnection(SubscribableApiResult connection, String stockCode,
                                              Consumer<H0STCNT0Data> dataHandler) {
         try {
-            log.info("🔗 공유 연결에 체결가 핸들러 추가 - StockCode: {}", stockCode);
 
             // 기존 핸들러에 새로운 데이터 핸들러 추가
             connection.addHandler(data -> {
                 try {
                     // 모든 수신 데이터 로깅 (디버깅용)
-                    log.info("📡 WebSocket 데이터 수신 - Type: {}, Data: {}",
-                            data != null ? data.getClass().getSimpleName() : "null", data);
 
                     if (data instanceof H0STCNT0Data[]) {
                         H0STCNT0Data[] priceDataArray = (H0STCNT0Data[]) data;
-                        log.info("📊 체결가 배열 데이터 수신 - StockCode요청: {}, 배열크기: {}", stockCode, priceDataArray.length);
 
                         for (H0STCNT0Data priceData : priceDataArray) {
                             // 종목코드 필드들 모두 로깅
-                            log.info("💰 체결가 데이터 상세 - StockCode요청: {}, MkscShrnIscd: {}, StckShrnIscd: {}, Price: {}",
-                                    stockCode, priceData.getMkscShrnIscd(),
-                                    getFieldSafely(() -> priceData.getMkscShrnIscd(), "N/A"),
-                                    priceData.getStckPrpr());
 
                             // 종목코드 필터링 (해당 종목만 처리)
                             if (stockCode.equals(priceData.getMkscShrnIscd()) ||
                                     stockCode.equals(getFieldSafely(() -> priceData.getMkscShrnIscd(), ""))) {
 
-                                log.info("✅ 체결가 데이터 매칭 - StockCode: {}, Price: {}",
-                                        stockCode, priceData.getStckPrpr());
 
                                 // 데이터 핸들러를 통해 KisRealtimeService로 데이터 전달
                                 dataHandler.accept(priceData);
@@ -692,17 +654,11 @@ public class KisApiComponent {
                         H0STCNT0Data priceData = (H0STCNT0Data) data;
 
                         // 종목코드 필드들 모두 로깅
-                        log.info("💰 체결가 단일 데이터 상세 - StockCode요청: {}, MkscShrnIscd: {}, StckShrnIscd: {}, Price: {}",
-                                stockCode, priceData.getMkscShrnIscd(),
-                                getFieldSafely(() -> priceData.getMkscShrnIscd(), "N/A"),
-                                priceData.getStckPrpr());
 
                         // 종목코드 필터링 (해당 종목만 처리)
                         if (stockCode.equals(priceData.getMkscShrnIscd()) ||
                                 stockCode.equals(getFieldSafely(() -> priceData.getMkscShrnIscd(), ""))) {
 
-                            log.info("✅ 체결가 데이터 매칭 - StockCode: {}, Price: {}",
-                                    stockCode, priceData.getStckPrpr());
 
                             // 데이터 핸들러를 통해 KisRealtimeService로 데이터 전달
                             dataHandler.accept(priceData);
@@ -715,14 +671,11 @@ public class KisApiComponent {
                                 data != null ? data.getClass().getSimpleName() : "null");
                     }
                 } catch (Exception e) {
-                    log.error("❌ 실시간 체결가 데이터 처리 중 오류 - StockCode: {}", stockCode, e);
                 }
             });
 
-            log.info("✅ 체결가 핸들러 추가 완료 - StockCode: {}", stockCode);
 
         } catch (Exception e) {
-            log.error("❌ 체결가 핸들러 추가 실패 - StockCode: {}", stockCode, e);
             throw new RuntimeException("체결가 핸들러 추가 실패", e);
         }
     }
@@ -733,33 +686,22 @@ public class KisApiComponent {
     private void addOrderbookHandlerToConnection(SubscribableApiResult connection, String stockCode,
                                                  Consumer<H0STASP0Data> dataHandler) {
         try {
-            log.info("🔗 공유 연결에 호가 핸들러 추가 - StockCode: {}", stockCode);
 
             // 기존 핸들러에 새로운 데이터 핸들러 추가
             connection.addHandler(data -> {
                 try {
                     // 모든 수신 데이터 로깅 (디버깅용)
-                    log.info("📡 WebSocket 데이터 수신 - Type: {}, Data: {}",
-                            data != null ? data.getClass().getSimpleName() : "null", data);
 
                     if (data instanceof H0STASP0Data[]) {
                         H0STASP0Data[] orderbookDataArray = (H0STASP0Data[]) data;
-                        log.info("📊 호가 배열 데이터 수신 - StockCode요청: {}, 배열크기: {}", stockCode, orderbookDataArray.length);
 
                         for (H0STASP0Data orderbookData : orderbookDataArray) {
                             // 종목코드 필드들 모두 로깅
-                            log.info(
-                                    "📊 호가 데이터 상세 - StockCode요청: {}, MkscShrnIscd: {}, StckShrnIscd: {}, AskPrice1: {}, BidPrice1: {}",
-                                    stockCode, orderbookData.getMkscShrnIscd(),
-                                    getFieldSafely(() -> orderbookData.getMkscShrnIscd(), "N/A"),
-                                    orderbookData.getAskp1(), orderbookData.getBidp1());
 
                             // 종목코드 필터링 (해당 종목만 처리)
                             if (stockCode.equals(orderbookData.getMkscShrnIscd()) ||
                                     stockCode.equals(getFieldSafely(() -> orderbookData.getMkscShrnIscd(), ""))) {
 
-                                log.info("✅ 호가 데이터 매칭 - StockCode: {}, AskPrice1: {}, BidPrice1: {}",
-                                        stockCode, orderbookData.getAskp1(), orderbookData.getBidp1());
 
                                 // 데이터 핸들러를 통해 KisRealtimeService로 데이터 전달
                                 dataHandler.accept(orderbookData);
@@ -773,18 +715,11 @@ public class KisApiComponent {
                         H0STASP0Data orderbookData = (H0STASP0Data) data;
 
                         // 종목코드 필드들 모두 로깅
-                        log.info(
-                                "📊 호가 단일 데이터 상세 - StockCode요청: {}, MkscShrnIscd: {}, StckShrnIscd: {}, AskPrice1: {}, BidPrice1: {}",
-                                stockCode, orderbookData.getMkscShrnIscd(),
-                                getFieldSafely(() -> orderbookData.getMkscShrnIscd(), "N/A"),
-                                orderbookData.getAskp1(), orderbookData.getBidp1());
 
                         // 종목코드 필터링 (해당 종목만 처리)
                         if (stockCode.equals(orderbookData.getMkscShrnIscd()) ||
                                 stockCode.equals(getFieldSafely(() -> orderbookData.getMkscShrnIscd(), ""))) {
 
-                            log.info("✅ 호가 데이터 매칭 - StockCode: {}, AskPrice1: {}, BidPrice1: {}",
-                                    stockCode, orderbookData.getAskp1(), orderbookData.getBidp1());
 
                             // 데이터 핸들러를 통해 KisRealtimeService로 데이터 전달
                             dataHandler.accept(orderbookData);
@@ -797,14 +732,11 @@ public class KisApiComponent {
                                 data != null ? data.getClass().getSimpleName() : "null");
                     }
                 } catch (Exception e) {
-                    log.error("❌ 실시간 호가 데이터 처리 중 오류 - StockCode: {}", stockCode, e);
                 }
             });
 
-            log.info("✅ 호가 핸들러 추가 완료 - StockCode: {}", stockCode);
 
         } catch (Exception e) {
-            log.error("❌ 호가 핸들러 추가 실패 - StockCode: {}", stockCode, e);
             throw new RuntimeException("호가 핸들러 추가 실패", e);
         }
     }
@@ -817,7 +749,6 @@ public class KisApiComponent {
 
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                log.info("🔄 {} 시도 {}/{}", operationName, attempt, maxRetries);
                 return operation.get();
             } catch (Exception e) {
                 lastException = e;
@@ -842,8 +773,6 @@ public class KisApiComponent {
                                 e.getMessage().contains("Invalid state") ||
                                 e.getCause() instanceof IllegalStateException)) {
                     isRetryableError = true;
-                    log.warn("⚠️ {} WebSocket 상태 충돌 발생 (시도 {}/{}), {}ms 후 재시도: {}",
-                            operationName, attempt, maxRetries, waitTime, e.getMessage());
                 }
                 // API 호출 한도 초과 에러
                 else if (e.getMessage() != null &&
@@ -861,8 +790,6 @@ public class KisApiComponent {
                                 e.getMessage().contains("1009"))) {
                     isRetryableError = true;
                     waitTime = 2000L * attempt; // 메시지 크기 초과 시 더 긴 대기 (2초, 4초, 6초)
-                    log.warn("⚠️ {} WebSocket 메시지 크기 초과 (시도 {}/{}), {}ms 후 재시도: {}",
-                            operationName, attempt, maxRetries, waitTime, e.getMessage());
                 }
                 // AppKey 중복 사용 에러 (OPSP8996)
                 else if (e.getMessage() != null &&
@@ -884,10 +811,8 @@ public class KisApiComponent {
                     }
                 } else if (!isRetryableError) {
                     // 재시도 불가능한 에러인 경우 즉시 실패
-                    log.error("❌ {} 재시도 불가능한 에러로 즉시 실패: {}", operationName, e.getMessage());
                     break;
                 } else {
-                    log.error("❌ {} 최대 재시도 횟수 초과", operationName);
                 }
             }
         }
@@ -913,7 +838,6 @@ public class KisApiComponent {
     @SuppressWarnings("unused")
     private void validateWebSocketConnection(KisClient client, String credentialsName, AccountType accountType) {
         try {
-            log.info("🔍 WebSocket 연결 상태 검증 시작 - AccountType: {}", accountType);
 
             // KIS 클라이언트의 WebSocket 연결 상태 확인
             // 실제로는 KIS API 라이브러리에서 제공하는 연결 상태 확인 메서드를 사용해야 하지만,
@@ -930,11 +854,8 @@ public class KisApiComponent {
                         (result != null ? result.getMsg1() : "응답 없음"));
             }
 
-            log.info("✅ WebSocket 연결 상태 검증 완료 - AccountType: {}", accountType);
 
         } catch (Exception e) {
-            log.error("❌ WebSocket 연결 상태 검증 실패 - AccountType: {}, Error: {}",
-                    accountType, e.getMessage());
             throw new RuntimeException("WebSocket 연결 상태 불량", e);
         }
     }
