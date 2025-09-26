@@ -65,7 +65,6 @@ public class WebSocketSessionInterceptor implements ChannelInterceptor {
     }
 
     private void handleConnect(String sessionId, StompHeaderAccessor accessor) {
-        log.info("WebSocket CONNECT - SessionId: {}", sessionId);
         
         // 핸드셰이크에서 설정된 사용자 정보 확인
         Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
@@ -82,19 +81,15 @@ public class WebSocketSessionInterceptor implements ChannelInterceptor {
                 accessor.setUser(userPrincipal);
 
                 webSocketReconnectionService.registerSession(sessionId, userId);
-                log.info("인증된 사용자 WebSocket 연결 - SessionId: {}, UserId: {}, Username: {}, Principal: {}",
-                        sessionId, userId, username, userPrincipal);
             } else {
                 // 게스트도 세션 등록 (userId는 null)
                 webSocketReconnectionService.registerSession(sessionId, null);
-                log.info("게스트 사용자 WebSocket 연결 - SessionId: {}", sessionId);
             }
         }
     }
 
     private void handleSubscribe(String sessionId, StompHeaderAccessor accessor) {
         String destination = accessor.getDestination();
-        log.info("WebSocket SUBSCRIBE - SessionId: {}, Destination: {}", sessionId, destination);
         
         // 세션에서 사용자 정보 조회
         String userId = sessionUserMap.get(sessionId);
@@ -106,8 +101,6 @@ public class WebSocketSessionInterceptor implements ChannelInterceptor {
                 String stockCode = parts[4];
                 String dataType = parts[5]; // price 또는 orderbook
                 
-                log.info("실시간 주식 구독 - UserId: {}, StockCode: {}, DataType: {}, SessionId: {}", 
-                        userId != null ? userId : "guest", stockCode, dataType, sessionId);
                         
                 // 구독 정보를 세션에 저장
                 Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
@@ -123,9 +116,6 @@ public class WebSocketSessionInterceptor implements ChannelInterceptor {
         String subscriptionId = accessor.getSubscriptionId();
         String userId = sessionUserMap.get(sessionId);
         
-        log.info("WebSocket UNSUBSCRIBE - SessionId: {}, SubscriptionId: {}, UserId: {}", 
-                sessionId, subscriptionId, userId != null ? userId : "guest");
-        
         // 구독 정보 정리
         Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
         if (sessionAttributes != null) {
@@ -136,8 +126,6 @@ public class WebSocketSessionInterceptor implements ChannelInterceptor {
 
     private void handleDisconnect(String sessionId) {
         String userId = sessionUserMap.get(sessionId);
-        log.info("WebSocket DISCONNECT - SessionId: {}, UserId: {}",
-                sessionId, userId != null ? userId : "guest");
 
         sessionUserMap.remove(sessionId);
 
