@@ -45,7 +45,7 @@ import org.springframework.util.StringUtils;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class StockServiceImpl implements StockService {
 
     private final StockRepository stockRepository;
