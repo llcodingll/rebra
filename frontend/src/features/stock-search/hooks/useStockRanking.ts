@@ -11,7 +11,7 @@ export type RankingType = 'volume' | 'rising' | 'falling';
  * @param refetchInterval 자동 refetch 간격 (기본값: 1초)
  * @returns 랭킹 데이터와 상태
  */
-export const useStockRanking = (rankingType: RankingType, refetchInterval: number = 100000) => {
+export const useStockRanking = (rankingType: RankingType, refetchInterval: number = 1000) => {
   const { accountId } = useAccountStore();
 
   // 랭킹 타입에 따른 API 함수 선택

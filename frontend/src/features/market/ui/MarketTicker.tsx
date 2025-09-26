@@ -25,10 +25,10 @@ export default function MarketTicker() {
   // 한글 이름을 영어 대문자로 변환
   const translateToEnglish = (koreanName: string) => {
     const nameMapping: { [key: string]: string } = {
-      '코스피': 'KOSPI',
-      '코스닥': 'KOSDAQ',
+      코스피: 'KOSPI',
+      코스닥: 'KOSDAQ',
       '코스피 200': 'KOSPI 200',
-      'KRX 300': 'KRX 300'
+      'KRX 300': 'KRX 300',
     };
     return nameMapping[koreanName] || koreanName.toUpperCase();
   };
@@ -99,35 +99,35 @@ export default function MarketTicker() {
   }, []);
 
   const renderMarketItems = () => {
-    if (isLoading || marketData.length === 0) {
-      // 로딩 중이거나 데이터가 없을 때 기본 데이터 표시
-      const defaultData = [
-        { name: 'Loading...', value: '---', change: '---', changePercent: '(---%)', isNegative: false },
-      ];
-      return defaultData.map((item, index) => (
-        <div key={index} className={styles.tickerItem}>
-          <div className={styles.itemName}>{item.name}</div>
-          <div className={styles.itemValue}>{item.value}</div>
-          <div className={styles.changeContainer}>
-            <div className={`${styles.changeIcon} ${styles.positive}`}>
-              <svg viewBox='0 0 11 6' fill='none' xmlns='http://www.w3.org/2000/svg'>
-                <path
-                  d='M1 5L4.71875 1.28125L6.90625 3.46875L9.75 0.625'
-                  stroke='#0066cc'
-                  strokeWidth='0.875'
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                />
-              </svg>
-            </div>
-            <div className={styles.changeText}>
-              <span className={`${styles.changeValue} ${styles.positive}`}>{item.change}</span>
-              <span className={`${styles.changePercent} ${styles.positive}`}>{item.changePercent}</span>
-            </div>
-          </div>
-        </div>
-      ));
-    }
+    // if (isLoading || marketData.length === 0) {
+    //   // 로딩 중이거나 데이터가 없을 때 기본 데이터 표시
+    //   const defaultData = [
+    //     { name: 'Loading...', value: '---', change: '---', changePercent: '(---%)', isNegative: false },
+    //   ];
+    //   return defaultData.map((item, index) => (
+    //     <div key={index} className={styles.tickerItem}>
+    //       <div className={styles.itemName}>{item.name}</div>
+    //       <div className={styles.itemValue}>{item.value}</div>
+    //       <div className={styles.changeContainer}>
+    //         <div className={`${styles.changeIcon} ${styles.positive}`}>
+    //           <svg viewBox='0 0 11 6' fill='none' xmlns='http://www.w3.org/2000/svg'>
+    //             <path
+    //               d='M1 5L4.71875 1.28125L6.90625 3.46875L9.75 0.625'
+    //               stroke='#0066cc'
+    //               strokeWidth='0.875'
+    //               strokeLinecap='round'
+    //               strokeLinejoin='round'
+    //             />
+    //           </svg>
+    //         </div>
+    //         <div className={styles.changeText}>
+    //           <span className={`${styles.changeValue} ${styles.positive}`}>{item.change}</span>
+    //           <span className={`${styles.changePercent} ${styles.positive}`}>{item.changePercent}</span>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   ));
+    // }
 
     return marketData.map((item, index) => (
       <div key={index} className={styles.tickerItem}>
