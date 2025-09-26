@@ -251,6 +251,10 @@ export default function DashboardPage() {
             portfolioId={selectedPortfolio ? Number(selectedPortfolio.id) : undefined}
             initialAutoRebalancing={portfolioDetailData?.portfolio?.autoRebalance || false}
             isLoadingSettings={isDetailLoading}
+            portfolioStocks={portfolioDetailData?.registeredStocks?.map(stock => ({
+              stockCode: stock.stockCode,
+              stockName: stock.stockName
+            })) || []}
             onAutoRebalancingChanged={() => {
               // 자동 리밸런싱 설정 변경 시 포트폴리오 상세 정보 새로고침
               refetchPortfolioDetail();
