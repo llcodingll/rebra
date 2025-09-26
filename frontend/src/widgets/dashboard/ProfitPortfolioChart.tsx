@@ -187,7 +187,7 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
               className={styles.recentTrades}
             >
               <h3 className={styles.tradesTitle}>
-                {selectedId ? '거래 내역' : selectedDate ? `거래 내역 (날짜: ${selectedDate})` : '거래 내역을 보려면 차트나 히스토리를 클릭하세요'}
+                {selectedId ? '거래 내역' : selectedDate ? `거래 내역 (날짜: ${selectedDate})` : ''}
               </h3>
               {(isDetailLoading || isDateTradesLoading) ? (
                 <div className={styles.noTrades}>거래 내역을 불러오는 중...</div>
@@ -215,7 +215,7 @@ export default function ProfitPortfolioChart({ data, portfolioId }: ProfitPortfo
               ) : (selectedId || selectedDate) ? (
                 <div className={styles.noTrades}>해당 {selectedId ? '리밸런싱' : '날짜'}에 거래 내역이 없습니다.</div>
               ) : (
-                <div className={styles.noTrades}>차트의 점이나 히스토리 행을 클릭해서 거래 내역을 확인하세요.</div>
+                <div className={styles.noTrades}>차트의 점이나 히스토리 행을 클릭해서<br/> 거래 내역을 확인하세요.</div>
               )}
             </motion.div>
           </div>
