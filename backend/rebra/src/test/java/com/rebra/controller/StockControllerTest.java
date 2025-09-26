@@ -445,7 +445,7 @@ class StockControllerTest {
                     .purchaseAmount(650000)
                     .holdingQuantity(10)
                     .orderableQuantity(10)
-                    .ordPsblCash(new BigDecimal("10000000"))
+                    .ordPsblCash(10000000L)
                     .build();
 
             given(stockService.getStockHolding(eq(stockCode), eq(accountId))).willReturn(response);

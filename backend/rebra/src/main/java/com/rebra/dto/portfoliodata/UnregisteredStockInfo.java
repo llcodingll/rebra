@@ -19,9 +19,9 @@ public class UnregisteredStockInfo {
         return UnregisteredStockInfo.builder()
             .stockCode(balance.getPdno())
             .stockName(balance.getPrdtName())
-            .purchasePrice(Integer.parseInt(balance.getPchsAvgPric()))
+            .purchasePrice((int) Double.parseDouble(balance.getPchsAvgPric()))
             .quantity(Long.parseLong(balance.getHldgQty()))
-            .currentPrice(Integer.parseInt(balance.getPrpr()))
+            .currentPrice((int) Double.parseDouble(balance.getPrpr()))
             .build();
     }
 }

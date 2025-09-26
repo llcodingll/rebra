@@ -3,6 +3,7 @@ package com.rebra.dto.response;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquirePsblOrderResult;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,7 +33,7 @@ public class StockHoldingDetailResponse {
     private Integer orderableQuantity;
 
     @Schema(description = "주문가능금액", example = "10000000")
-    private BigDecimal ordPsblCash;
+    private Long ordPsblCash;
 
     /**
      * KIS API 응답을 StockHoldingDetailResponse로 변환 (매수가능조회 포함)
@@ -51,7 +52,7 @@ public class StockHoldingDetailResponse {
                 .purchaseAmount(Integer.parseInt(holding.getPchsAmt()))
                 .holdingQuantity(Integer.parseInt(holding.getHldgQty()))
                 .orderableQuantity(Integer.parseInt(holding.getOrdPsblQty()))
-                .ordPsblCash(new BigDecimal(possibleOrderAmount))
+                .ordPsblCash((long) Double.parseDouble(possibleOrderAmount))
                 .build();
     }
 
@@ -67,11 +68,11 @@ public class StockHoldingDetailResponse {
                 : "0";
 
         return StockHoldingDetailResponse.builder()
-                .averagePurchasePrice(BigDecimal.ZERO)
-                .purchaseAmount(BigDecimal.ZERO)
+                .averagePurchasePrice(0)
+                .purchaseAmount(0)
                 .holdingQuantity(0)
                 .orderableQuantity(0)
-                .ordPsblCash(new BigDecimal(possibleOrderAmount))
+                .ordPsblCash((long) Double.parseDouble(possibleOrderAmount))
                 .build();
     }
 }
