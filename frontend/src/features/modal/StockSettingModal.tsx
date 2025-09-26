@@ -187,6 +187,7 @@ export default function StockSettingsModal({
   const totalWeight = stockSettings.reduce((sum, setting) => sum + setting.weight, 0);
   const validationMessages = getValidationMessages();
   const hasErrors = validationMessages.some(msg => msg.type === 'error');
+  const hasEmptyThresholds = stockSettings.some(setting => setting.threshold === null || setting.threshold === undefined);
 
   return (
     <AnimatePresence>
@@ -358,7 +359,7 @@ export default function StockSettingsModal({
                 </button>
                 <button
                   onClick={handleSaveClick}
-                  disabled={!hasChanges || isSaving || hasErrors}
+                  disabled={!hasChanges || isSaving || hasErrors || hasEmptyThresholds}
                   className={styles.saveButton}
                 >
                   <Save size={16} />
