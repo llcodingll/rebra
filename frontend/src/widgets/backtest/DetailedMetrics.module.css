@@ -8,7 +8,7 @@
 }
 
 .detailTitle {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   color: #111827;
   margin: 0 0 20px 0;
@@ -45,7 +45,7 @@
 }
 
 .detailLabel {
-  font-size: 14px;
+  font-size: 16px;
   color: #6b7280;
   font-weight: 500;
 }
@@ -96,11 +96,15 @@
 }
 
 .detailValue {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #111827;
 }
 
 .detailValue.negative {
-  color: #ef4444;
+  color: #0066cc;
+}
+
+.detailValue.positive {
+  color: #e7000b;
 }
