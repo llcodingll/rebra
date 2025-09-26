@@ -7,10 +7,9 @@ import type { StockSearchRequest, SearchableStock } from '../api/types';
  * 주식 검색 훅
  * @param searchQuery 검색어
  * @param debounceMs 디바운스 시간 (기본값: 300ms)
- * @param favoriteStockCodes 관심종목 코드 목록 (선택적)
  * @returns 검색 결과와 상태
  */
-export const useStockSearch = (searchQuery: string, debounceMs: number = 300, favoriteStockCodes?: string[]) => {
+export const useStockSearch = (searchQuery: string, debounceMs: number = 300) => {
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [isDebouncing, setIsDebouncing] = useState(false);
 
@@ -69,9 +68,7 @@ export const useStockSearch = (searchQuery: string, debounceMs: number = 300, fa
 
   // 현재 입력과 디바운싱된 쿼리가 일치하고 검색 결과가 있을 때만 표시
   if (hasCurrentQuery && shouldSearch && searchResponse && isQueryMatching) {
-    searchResults = transformSearchResults(searchResponse, {
-      favoriteStockCodes,
-    });
+    searchResults = transformSearchResults(searchResponse);
     console.log(`✨ 변환된 검색 결과: ${searchResults.length}개`);
   }
 

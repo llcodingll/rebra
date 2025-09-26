@@ -55,7 +55,7 @@ export default function SearchTableWidget({ onStockSelect }: SearchTableWidgetPr
     <div className={styles.splitTableContainer}>
       {/* 왼쪽 검색 테이블 */}
       <div className={styles.leftTable}>
-        <SearchTable searchQuery={searchQuery} onStockSelect={onStockSelect} onToggleFavorite={toggleFavorite} />
+        <SearchTable searchQuery={searchQuery} onStockSelect={onStockSelect} />
       </div>
 
       {/* 오른쪽 관심 종목 테이블 */}
