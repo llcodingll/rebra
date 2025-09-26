@@ -162,14 +162,27 @@
   text-align: right;
   width: 100%;
   font-weight: 500;
+  display: flex;
+  justify-content: flex-end;
 }
 
-.change.positive {
+.change .highlight {
+  --highlight-alpha: 0;
+  transition: background-color 0.1s ease;
+  border-radius: 4px;
+  width: 80px;
+  padding: 3px 6px;
+  display: inline-block;
+}
+
+.change.positive .highlight {
   color: #ef1515;
+  background-color: rgba(239, 21, 21, var(--highlight-alpha));
 }
 
-.change.negative {
+.change.negative .highlight {
   color: #1570ef;
+  background-color: rgba(21, 112, 239, var(--highlight-alpha));
 }
 
 .volume {

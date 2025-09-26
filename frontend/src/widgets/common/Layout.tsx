@@ -1,7 +1,7 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useMemo, useLayoutEffect, useEffect, useState } from 'react';
 import Header from './Header';
-import MarketTicker from './MarketTicker';
+import MarketTicker from '../../features/market/ui/MarketTicker';
 import styles from '../../App.module.css';
 
 type DashboardTab = 'dashboard' | 'search' | 'backtest';
