@@ -67,8 +67,6 @@ public class RealtimeController {
             return;
         }
 
-        log.info("📡 일괄 구독 요청 - userId={}, sessionId={}, 요청종목수={}, 총구독수={}",
-                userId, sessionId, request.getStocks().size(), request.getTotalSubscriptionCount());
 
         // 입력 검증
         if (!validateBulkSubscriptionRequest(request, userId)) {
@@ -89,12 +87,8 @@ public class RealtimeController {
                         // 성공한 구독들을 재연결 서비스에 등록
                         registerSuccessfulSubscriptions(response, sessionId);
 
-                        log.info("✅ 일괄 구독 처리 완료 - userId={}, 성공={}, 실패={}",
-                                userId, response.getTotalSuccessful(),
-                                response.getTotalFailed());
                     })
                     .exceptionally(throwable -> {
-                        log.error("❌ 일괄 구독 처리 중 예외 발생 - userId={}", userId, throwable);
                         BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
                                 "서버 오류: " + throwable.getMessage(), sessionId);
                         webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
@@ -102,7 +96,6 @@ public class RealtimeController {
                     });
 
         } catch (Exception e) {
-            log.error("❌ 일괄 구독 초기 처리 실패 - userId={}", userId, e);
             BulkSubscriptionResponse errorResponse = BulkSubscriptionResponse.failure(
                     "초기 처리 실패: " + e.getMessage(), sessionId);
             webSocketHelper.sendBulkSubscriptionResponse(userId, errorResponse);
@@ -125,8 +118,6 @@ public class RealtimeController {
             return;
         }
 
-        log.info("🔌 일괄 구독 해제 요청 - userId={}, sessionId={}, 요청종목수={}",
-                userId, sessionId, request.getStocks().size());
 
         try {
             List<SubscriptionResult> results = new ArrayList<>();
@@ -151,12 +142,10 @@ public class RealtimeController {
             int successCount = (int) results.stream().filter(SubscriptionResult::isSuccess).count();
             int failureCount = results.size() - successCount;
 
-            log.info("✅ 일괄 구독 해제 완료 - userId={}, 성공={}, 실패={}", userId, successCount, failureCount);
 
             webSocketHelper.sendBulkUnsubscriptionResponse(userId, results, successCount, failureCount);
 
         } catch (Exception e) {
-            log.error("❌ 일괄 구독 해제 처리 실패 - userId={}", userId, e);
             webSocketHelper.sendBulkUnsubscriptionError(userId, "서버 오류: " + e.getMessage());
         }
     }
@@ -203,12 +192,10 @@ public class RealtimeController {
      */
     private Account getUserAccount(Long userId) {
         var allAccounts = accountRepository.findByUserId(userId);
-        log.info("📋 사용자 {}의 전체 계좌 수: {}", userId, allAccounts.size());
 
         var connectedAccounts = allAccounts.stream()
                 .filter(Account::isConnected)
                 .toList();
-        log.info("🔗 사용자 {}의 연결된 계좌 수: {}", userId, connectedAccounts.size());
 
         return accountRepository.findTopByUserIdAndIsConnectedOrderByCreatedAtAsc(userId, true)
                 .orElseThrow(() -> new RuntimeException(
@@ -223,28 +210,14 @@ public class RealtimeController {
                                                              Account account, String sessionId, Long userId) {
         List<SubscriptionResult> results = new ArrayList<>();
 
-        log.info("🔄 일괄 구독 처리 시작 - userId={}, 총 {}개 종목", userId, request.getStocks().size());
-
-        // 추가 디버깅 로그
-        log.info("🔍 request 객체 정보: {}", request);
-        log.info("🔍 request.getStocks() null 여부: {}", request.getStocks() == null);
-        if (request.getStocks() != null) {
-            log.info("🔍 실제 stocks 리스트: {}", request.getStocks());
-            log.info("🔍 stocks 클래스 타입: {}", request.getStocks().getClass());
-            log.info("🔍 stocks isEmpty: {}", request.getStocks().isEmpty());
-        }
 
         List<StockSubscription> stocksList = request.getStocks();
-        log.info("🔍 루프 시작 전 - 리스트 크기: {}", stocksList.size());
 
         // 각 종목별로 구독 처리                                           │
         for (int i = 0; i < stocksList.size(); i++) {
             StockSubscription stock = stocksList.get(i);
             String stockCode = stock.getStockCode();
 
-            log.debug("✅stockCodestockCodestockCodestockCodestockCode");
-
-            log.debug("" + stock.getImplementedDataTypes().size());
             // 구현된 데이터 타입만 처리
 
             for (String dataType : stock.getImplementedDataTypes()) {
@@ -253,11 +226,9 @@ public class RealtimeController {
                     results.add(SubscriptionResult.success(stockCode, dataType,
                             "구독이 성공했습니다"));
 
-                    log.debug("✅ 개별 구독 성공 - stockCode={}, dataType={}", stockCode, dataType);
 
                 } catch (Exception e) {
                     results.add(SubscriptionResult.failure(stockCode, dataType, e));
-                    log.error("❌ 개별 구독 실패 - stockCode={}, dataType={}", stockCode, dataType, e);
                 }
             }
 
@@ -298,11 +269,7 @@ public class RealtimeController {
                     result.getStockCode(), result.getDataType())) {
                 webSocketReconnectionService.addSubscription(sessionId,
                         result.getStockCode(), result.getDataType());
-                log.debug("새로운 구독 등록 - SessionId: {}, StockCode: {}, DataType: {}",
-                        sessionId, result.getStockCode(), result.getDataType());
             } else {
-                log.debug("이미 등록된 구독 건너뛰기 - SessionId: {}, StockCode: {}, DataType: {}",
-                        sessionId, result.getStockCode(), result.getDataType());
             }
         }
     }
@@ -362,13 +329,9 @@ public class RealtimeController {
                 long sequence = Long.parseLong(sequenceObj.toString());
                 webSocketReconnectionService.handleHeartbeatResponse(sessionId, sequence);
 
-                log.debug("💚 클라이언트 하트비트 응답 처리됨 - SessionId: {}, Sequence: {}",
-                        sessionId, sequence);
             } else {
-                log.warn("❌ 하트비트 응답에 sequence 없음 - SessionId: {}", sessionId);
             }
         } catch (Exception e) {
-            log.error("❌ 하트비트 응답 처리 실패 - SessionId: {}", sessionId, e);
         }
     }
 }

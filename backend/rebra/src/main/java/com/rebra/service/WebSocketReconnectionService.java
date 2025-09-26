@@ -479,7 +479,6 @@ public class WebSocketReconnectionService {
      * 동일한 userId의 기존 세션들 완전 정리 (새로고침 시 사용)
      */
     private void cleanupExistingUserSessions(Long userId) {
-        log.debug("🧹 기존 사용자 세션 정리 시작 - UserId: {}", userId);
 
         // 동일한 userId를 가진 기존 세션 찾기
         List<String> existingSessionIds = new ArrayList<>();
@@ -492,44 +491,32 @@ public class WebSocketReconnectionService {
         }
 
         if (!existingSessionIds.isEmpty()) {
-            log.info("🧹 기존 세션 발견 - UserId: {}, 정리할 세션: {}개", userId, existingSessionIds.size());
 
             // 각 기존 세션을 개별적으로 정리
             for (String existingSessionId : existingSessionIds) {
                 try {
-                    log.debug("🧹 기존 세션 정리 중 - UserId: {}, SessionId: {}", userId, existingSessionId);
 
                     // 1. 세션 활동 정보 제거
                     sessionActivity.remove(existingSessionId);
 
                     // 2. 하트비트 추적기 즉시 제거
                     heartbeatTrackers.remove(existingSessionId);
-                    log.debug("💚 하트비트 추적기 정리 - SessionId: {}", existingSessionId);
 
                     // 3. 세션 구독 정보 제거 (KIS 구독 해제는 생략 - 새로고침이므로 불필요)
                     SessionSubscriptions oldSubscription = sessionSubscriptions.remove(existingSessionId);
                     if (oldSubscription != null) {
-                        log.debug("🧹 기존 세션 구독 정보 제거 - SessionId: {}, 체결가: {}개, 호가: {}개",
-                                existingSessionId,
-                                oldSubscription.getPriceSubscriptions().size(),
-                                oldSubscription.getOrderbookSubscriptions().size());
                     }
 
                     // 4. 세션 처리 상태 정리
                     sessionsBeingProcessed.remove(existingSessionId);
                     sessionLocks.remove(existingSessionId);
 
-                    log.debug("✅ 기존 세션 정리 완료 - SessionId: {}", existingSessionId);
 
                 } catch (Exception e) {
-                    log.error("❌ 기존 세션 정리 실패 - SessionId: {}", existingSessionId, e);
+                    log.error("기존 세션 정리 실패 - SessionId: {}", existingSessionId, e);
                 }
             }
 
-            log.info("✅ 기존 사용자 세션 정리 완료 - UserId: {}, 정리된 세션: {}개",
-                    userId, existingSessionIds.size());
-        } else {
-            log.debug("🧹 기존 세션 없음 - UserId: {}", userId);
         }
     }
 
@@ -629,7 +616,6 @@ public class WebSocketReconnectionService {
      */
     private void unsubscribeFromKisWithDuplicationCheck(Long userId, SessionSubscriptions subscriptions,
                                                         String sessionId, String reason) {
-        log.info("🔌 KIS 구독 해제 시작 (비동기) - SessionId: {}, UserId: {}, Reason: {}", sessionId, userId, reason);
 
         // 구독 정보를 미리 복사하여 동시성 문제 방지
         Set<String> priceStocks = new HashSet<>(subscriptions.getPriceSubscriptions().keySet());
@@ -645,22 +631,14 @@ public class WebSocketReconnectionService {
         for (String stockCode : priceStocks) {
             CompletableFuture<Void> task = CompletableFuture.runAsync(() -> {
                         try {
-                            log.debug("🔌 체결가 구독 해제 시도 - SessionId: {}, UserId: {}, StockCode: {}, Reason: {}",
-                                    sessionId, userId, stockCode, reason);
                             kisRealtimeService.stopPriceSubscription(userId, stockCode, sessionId);
-                            log.debug("✅ 체결가 구독 해제 성공 - StockCode: {}", stockCode);
 
                         } catch (Exception e) {
-                            log.debug("❌ 체결가 구독 해제 실패 (무시됨) - SessionId: {}, StockCode: {}, Reason: {}, Error: {}",
-                                    sessionId, stockCode, reason, e.getMessage());
+                            // 구독 해제 실패 무시
                         }
                     }, unsubscribeExecutor)
                     .orTimeout(3, TimeUnit.SECONDS) // 3초 타임아웃
-                    .exceptionally(throwable -> {
-                        log.debug("⏰ 체결가 구독 해제 타임아웃 - StockCode: {}, Error: {}",
-                                stockCode, throwable.getMessage());
-                        return null;
-                    });
+                    .exceptionally(throwable -> null);
 
             unsubscribeTasks.add(task);
         }
@@ -669,22 +647,14 @@ public class WebSocketReconnectionService {
         for (String stockCode : orderbookStocks) {
             CompletableFuture<Void> task = CompletableFuture.runAsync(() -> {
                         try {
-                            log.debug("🔌 호가 구독 해제 시도 - SessionId: {}, UserId: {}, StockCode: {}, Reason: {}",
-                                    sessionId, userId, stockCode, reason);
                             kisRealtimeService.stopOrderbookSubscription(userId, stockCode, sessionId);
-                            log.debug("✅ 호가 구독 해제 성공 - StockCode: {}", stockCode);
 
                         } catch (Exception e) {
-                            log.debug("❌ 호가 구독 해제 실패 (무시됨) - SessionId: {}, StockCode: {}, Reason: {}, Error: {}",
-                                    sessionId, stockCode, reason, e.getMessage());
+                            // 구독 해제 실패 무시
                         }
                     }, unsubscribeExecutor)
                     .orTimeout(3, TimeUnit.SECONDS) // 3초 타임아웃
-                    .exceptionally(throwable -> {
-                        log.debug("⏰ 호가 구독 해제 타임아웃 - StockCode: {}, Error: {}",
-                                stockCode, throwable.getMessage());
-                        return null;
-                    });
+                    .exceptionally(throwable -> null);
 
             unsubscribeTasks.add(task);
         }

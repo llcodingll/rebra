@@ -19,24 +19,16 @@ public class WebSocketBufferConfig implements WebSocketConfigurer {
 
     @PostConstruct
     public void logWebSocketConfig() {
-        log.info("🔧 WebSocket Buffer Configuration 초기화");
-        log.info("📊 최대 텍스트 메시지 크기: 1MB");
-        log.info("📊 최대 바이너리 메시지 크기: 1MB");
-        log.info("⏱️ 세션 타임아웃: 30분");
-
         // 시스템 속성으로 Tomcat WebSocket 버퍼 크기 설정
         System.setProperty("org.apache.tomcat.websocket.textBufferSize", "1048576"); // 1MB
         System.setProperty("org.apache.tomcat.websocket.binaryBufferSize", "1048576"); // 1MB
         System.setProperty("org.apache.tomcat.websocket.SESSION_TIMEOUT", "1800000"); // 30분 (ms)
-
-        log.info("✅ Tomcat WebSocket 시스템 속성 설정 완료");
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         // 기본적으로 별도 핸들러 등록은 필요하지 않음
         // Spring의 STOMP 설정이 이미 WebSocketConfig에서 처리됨
-        log.debug("WebSocket handlers registered with increased buffer size");
     }
 
     /**
@@ -54,7 +46,6 @@ public class WebSocketBufferConfig implements WebSocketConfigurer {
         //     log.debug("Jetty not available, using default upgrade strategy");
         // }
 
-        log.debug("Default WebSocket handshake handler created with system buffer settings");
         return handshakeHandler;
     }
 }
