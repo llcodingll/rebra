@@ -115,7 +115,6 @@ export class StockStompClient {
     });
 
     this.subscriptions.set('bulk-subscription-result', subscription);
-    console.log('📡 일괄 구독 결과 리스너 설정 완료');
   }
 
   /**
@@ -164,7 +163,6 @@ export class StockStompClient {
           }
         });
         this.subscriptions.set(`price-${stockCode}`, priceSubscription);
-        console.log(`📡 체결가 채널 구독: ${priceChannel}`);
       }
 
       // 호가 데이터 채널
@@ -179,7 +177,6 @@ export class StockStompClient {
           }
         });
         this.subscriptions.set(`orderbook-${stockCode}`, orderbookSubscription);
-        console.log(`📡 호가 채널 구독: ${orderbookChannel}`);
       }
     });
   }
@@ -198,8 +195,6 @@ export class StockStompClient {
         dataTypes: ['all'], // 모든 데이터 타입 해제
       })),
     };
-
-    console.log('📡 일괄 구독 해제 요청:', request);
 
     // 서버로 일괄 구독 해제 요청 전송
     this.client.publish({
@@ -224,7 +219,6 @@ export class StockStompClient {
     if (priceSubscription) {
       priceSubscription.unsubscribe();
       this.subscriptions.delete(priceKey);
-      console.log(`🔌 체결가 채널 해제: ${stockCode}`);
     }
 
     // 호가 채널 해제
@@ -233,7 +227,6 @@ export class StockStompClient {
     if (orderbookSubscription) {
       orderbookSubscription.unsubscribe();
       this.subscriptions.delete(orderbookKey);
-      console.log(`🔌 호가 채널 해제: ${stockCode}`);
     }
   }
 
@@ -241,13 +234,10 @@ export class StockStompClient {
    * 모든 구독 해제 및 연결 종료
    */
   disconnect(): void {
-    console.log('🔌 STOMP 연결 해제 시작...');
-
     // 모든 구독 해제
     this.subscriptions.forEach((subscription, key) => {
       try {
         subscription.unsubscribe();
-        console.log(`🔌 구독 해제: ${key}`);
       } catch (error) {
         console.error(`❌ 구독 해제 오류 [${key}]:`, error);
       }

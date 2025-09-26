@@ -13,8 +13,6 @@ export default function WatchlistIcon({
   onClick,
   className = '',
 }: WatchlistIconProps) {
-  console.log('💖 WatchlistIcon 렌더링:', { isFavorite, className });
-
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onClick?.(e);

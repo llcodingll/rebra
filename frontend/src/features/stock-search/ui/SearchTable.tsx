@@ -31,9 +31,6 @@ export default function SearchTable({ searchQuery, onStockSelect }: SearchTableP
 
   const handleToggleFavorite = (stockCode: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    console.log('🔄 SearchTable - 토글 시작:', stockCode);
-    console.log('📋 SearchTable - 현재 watchlistData:', watchlistData);
-    console.log('❤️ SearchTable - 현재 isFavorite:', isWatchlistStock(stockCode, watchlistData));
     toggleWatchlist.mutate(stockCode);
   };
 

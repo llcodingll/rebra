@@ -45,8 +45,6 @@ export const useStockRanking = (rankingType: RankingType, refetchInterval: numbe
     // },
   });
 
-  console.log('🔄 useStockRanking 훅 실행:', rankingType);
-
   return {
     rankingData: rankingData?.rankings || [],
     isLoading,
