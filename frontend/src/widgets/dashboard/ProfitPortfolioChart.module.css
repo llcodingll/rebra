@@ -47,7 +47,7 @@
   color: #475569;
   padding: 8px 16px;
   border-radius: 12px;
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 500;
 }
 
@@ -89,7 +89,7 @@
 }
 
 .totalValueHeader h3 {
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 600;
   color: #475569;
   margin: 0;
@@ -128,12 +128,12 @@
 }
 
 .returnAmount {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
 }
 
 .returnPercent {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
 }
 
@@ -299,10 +299,11 @@
 }
 
 .tradesTitle {
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 600;
   color: #475569;
   margin: 0 0 16px 0;
+  white-space: pre-line;
 }
 
 .tradesScrollContainer {
@@ -365,7 +366,7 @@
 }
 
 .stockName {
-  font-size: 16px;
+  font-size: 18px;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   color: black;
   font-weight: 500;
@@ -392,13 +393,13 @@
 
 
 .tradeDetail {
-  font-size: 12px;
+  font-size: 14px;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   color: #4a5565;
 }
 
 .tradeReason {
-  font-size: 11px;
+  font-size: 14px;
   color: #64748b;
   margin-top: 4px;
   padding: 4px 8px;
@@ -411,7 +412,7 @@
   padding: 20px;
   text-align: center;
   color: #64748b;
-  font-size: 14px;
+  font-size: 17px;
   font-style: italic;
 }
 

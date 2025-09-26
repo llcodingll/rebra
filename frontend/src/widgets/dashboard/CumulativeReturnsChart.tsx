@@ -390,9 +390,7 @@ export default function CumulativeReturnsChart({
         <div className={styles.legendItem}>
           <div className={`${styles.legendDot} ${styles.portfolio}`}></div>
           <span>{portfolioData.portfolioName}</span>
-          <span className={styles.legendValue}>
-            {portfolioData.statistics.finalValue.toLocaleString()}원
-          </span>
+          
         </div>
       </div>
 
