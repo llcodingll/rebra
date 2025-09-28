@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAccountStore } from '../../entities/account/accountStore';
 import styles from './SearchPage.module.css';
 import HoldingsTableWidget from '../../widgets/search/HoldingsTableWidget';
 import RankingTableWidget from '../../widgets/search/RankingTableWidget';
@@ -9,6 +10,16 @@ import NewsWidget from '../../widgets/search/NewsWidget';
 export default function SearchPage() {
   const [activeSubTab, setActiveSubTab] = useState<'ranking' | 'search' | 'holdings' | 'holdings-v2'>('ranking');
   const navigate = useNavigate();
+  const { accountId } = useAccountStore();
+  // const accountId = null;
+
+  // accountId가 null일 때 접근 방지
+  useEffect(() => {
+    if (accountId === null) {
+      alert('계좌 정보가 필요합니다.\n계좌를 등록해주세요.');
+      navigate('/dashboard');
+    }
+  }, [accountId, navigate]);
 
   const handleStockSelect = (stock: { code: string; name: string }) => {
     navigate(`/search/stocks/${stock.code}`, {
