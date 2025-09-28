@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import styles from './OrderBook.module.css';
 import LoadingSpinner from '../../shared/ui/LoadingSpinner';
 import { OptimizedOrderbookData } from '../../features/stock-detail/api/types';
@@ -45,6 +45,10 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
   };
   const orderBookTableRef = useRef<HTMLDivElement>(null);
   const hasScrolledToCenter = useRef(false);
+  const lastOrderBookRef = useRef<OptimizedOrderbookData | null>(null);
+
+  // 내부 로딩 상태 관리
+  const [isProcessingData, setIsProcessingData] = useState(false);
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);
@@ -127,9 +131,11 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
     return rows;
   };
 
-  // 현재가와 가장 가까운 호가 찾기
+  // 현재가와 가장 가까운 호가 찾기 (개선된 버전)
   const findCurrentPriceRowIndex = (rows: OrderBookRow[], currentPrice: number): number => {
-    if (rows.length === 0 || currentPrice <= 0) return -1;
+    if (rows.length === 0 || currentPrice <= 0) {
+      return -1;
+    }
 
     let closestIndex = -1;
     let minDiff = Infinity;
@@ -141,6 +147,12 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
         closestIndex = index;
       }
     });
+
+    // 허용 오차 내에서만 매칭 (가격 차이가 너무 클 경우 매칭하지 않음)
+    const maxAllowedDiff = currentPrice * 0.1; // 현재가의 10% 이내
+    if (minDiff > maxAllowedDiff) {
+      return -1;
+    }
 
     return closestIndex;
   };
@@ -155,13 +167,48 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
     return max;
   };
 
-  const orderBookRows = generateOrderBookRows();
-  const currentPriceRowIndex = findCurrentPriceRowIndex(orderBookRows, stockInfo.currentPrice);
-  const maxQuantity = getMaxQuantity(orderBookRows);
+  // 메모이제이션으로 성능 최적화
+  const orderBookRows = useMemo(() => {
+    setIsProcessingData(true);
+    const rows = generateOrderBookRows();
+    // 다음 렌더링에서 로딩 상태 해제
+    setTimeout(() => setIsProcessingData(false), 0);
+    return rows;
+  }, [orderBook]);
+
+  const currentPriceRowIndex = useMemo(() => {
+    if (orderBookRows.length === 0 || stockInfo.currentPrice <= 0) {
+      return -1;
+    }
+    return findCurrentPriceRowIndex(orderBookRows, stockInfo.currentPrice);
+  }, [orderBookRows, stockInfo.currentPrice]);
+
+  const maxQuantity = useMemo(() => {
+    return getMaxQuantity(orderBookRows);
+  }, [orderBookRows]);
+
+  // 데이터 준비 상태 확인
+  const isDataReady = orderBookRows.length > 0 && stockInfo.currentPrice > 0 && currentPriceRowIndex >= 0;
+  const showLoading = isLoading || isProcessingData || !isDataReady;
+
+  // 데이터 소스 변경 감지 및 스크롤 초기화
+  useEffect(() => {
+    if (lastOrderBookRef.current !== orderBook) {
+      // 데이터 소스가 변경되었을 때 스크롤 상태 초기화
+      hasScrolledToCenter.current = false;
+      lastOrderBookRef.current = orderBook;
+    }
+  }, [orderBook]);
 
   // 초기 로드 시에만 현재가를 중심으로 스크롤 위치 조정
   useEffect(() => {
-    if (orderBookTableRef.current && currentPriceRowIndex >= 0 && !hasScrolledToCenter.current) {
+    if (
+      orderBookTableRef.current &&
+      currentPriceRowIndex >= 0 &&
+      !hasScrolledToCenter.current &&
+      isDataReady &&
+      !isProcessingData
+    ) {
       const container = orderBookTableRef.current;
       const rowHeight = 40; // CSS에서 설정한 .orderRow 높이
       const containerHeight = container.clientHeight;
@@ -174,7 +221,7 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
       // 한 번 스크롤했음을 표시
       hasScrolledToCenter.current = true;
     }
-  }, [currentPriceRowIndex]);
+  }, [currentPriceRowIndex, isDataReady, isProcessingData]);
 
   // if (!orderBook) {
   //   return (
@@ -196,9 +243,9 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
       </div>
 
       <div className={styles.orderBookContent}>
-        {isLoading && (
+        {showLoading && (
           <div className={styles.loadingOverlay}>
-            <LoadingSpinner size="medium" />
+            <LoadingSpinner size='medium' />
           </div>
         )}
         {/* 메인 호가 테이블 */}

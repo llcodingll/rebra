@@ -59,7 +59,6 @@ export class StockStompClient {
 
       onDisconnect: () => {
         this.isConnected = false;
-        console.log('🔌 STOMP 연결 해제');
         this.callbacks.onDisconnect?.();
       },
     });
@@ -239,7 +238,7 @@ export class StockStompClient {
       try {
         subscription.unsubscribe();
       } catch (error) {
-        console.error(`❌ 구독 해제 오류 [${key}]:`, error);
+        console.error(`구독 해제 오류 [${key}]:`, error);
       }
     });
 
@@ -252,7 +251,6 @@ export class StockStompClient {
     }
 
     this.isConnected = false;
-    console.log('✅ STOMP 연결 해제 완료');
   }
 
   /**

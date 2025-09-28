@@ -76,7 +76,6 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
   const handleDisconnect = useCallback(() => {
     if (!mountedRef.current) return;
     setIsConnected(false);
-    console.log('🔌 STOMP 연결 해제');
   }, []);
 
   const handleError = useCallback((errorMessage: string) => {
@@ -187,9 +186,6 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
         return;
       }
 
-      // 실제 STOMP 연결
-      console.log(`🚀 실시간 연결 시작: ${stockCode}`);
-
       await stompClient.connect();
 
       if (!mountedRef.current) return;
@@ -212,7 +208,6 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
 
   // 수동 재연결
   const reconnect = useCallback(() => {
-    console.log('🔄 수동 재연결 시작');
     if (stompClient) {
       stompClient.disconnect();
     }
@@ -221,8 +216,6 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
 
   // 수동 연결 해제
   const disconnect = useCallback(() => {
-    console.log('🔌 수동 연결 해제');
-
     // 시뮬레이션 정리
     if (simulationCleanupRef.current) {
       simulationCleanupRef.current();
@@ -265,8 +258,6 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
 
     // 클린업 함수
     return () => {
-      console.log(`🧹 useRealtimeStock cleanup: ${stockCode}`);
-
       // 시뮬레이션 정리
       if (simulationCleanupRef.current) {
         simulationCleanupRef.current();
