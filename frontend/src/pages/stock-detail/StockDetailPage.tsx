@@ -10,6 +10,7 @@ import { useInfiniteChartData, mergeInfiniteChartData } from '../../features/sto
 import { useStockHolding } from '../../features/stock-detail/hooks/useStockHolding';
 import { useOrderBookFallback } from '../../features/stock-detail/hooks/useOrderBookFallback';
 import { isDevMode } from '../../features/stock-detail/lib/mockData';
+import LoadingSpinner from '../../shared/ui/LoadingSpinner';
 import styles from './StockDetailPage.module.css';
 
 interface OrderBookItem {
@@ -42,7 +43,11 @@ export default function StockDetailPage() {
 
   // console.log(holdingData);
   // 차트 데이터에서 현재 가격 정보 가져오기 (일봉 기준)
-  const { data: infiniteData, isLoading: isChartLoading } = useInfiniteChartData(stockCode, 'daily', true);
+  const {
+    data: infiniteData,
+    isLoading: isChartLoading,
+    isFetching: isChartFetching
+  } = useInfiniteChartData(stockCode, 'daily', true);
   const chartApiData = useMemo(() => {
     return mergeInfiniteChartData(infiniteData?.pages);
   }, [infiniteData?.pages]);
@@ -52,14 +57,11 @@ export default function StockDetailPage() {
   const currentPrice = hasRealData ? realtimePrice?.stckPrpr || Number(chartApiData?.summary?.currentPrice) : 0;
 
   // 보유 정보 조회
-  const { holdingData, isLoading: isHoldingLoading, refetch: refetchHolding } = useStockHolding(stockCode, currentPrice);
-
-  // 디버깅: 로딩 상태 확인
-  console.log('=== StockDetailPage 디버깅 ===');
-  console.log('stockCode:', stockCode);
-  console.log('currentPrice:', currentPrice);
-  console.log('holdingData:', holdingData);
-  console.log('isHoldingLoading:', isHoldingLoading);
+  const {
+    holdingData,
+    isLoading: isHoldingLoading,
+    refetch: refetchHolding,
+  } = useStockHolding(stockCode, currentPrice);
 
   // 호가 데이터 폴백 (REST API + 웹소켓 조합)
   const { orderbook: fallbackOrderbook, isLoading: isOrderbookLoading } = useOrderBookFallback(stockCode, orderbook);
@@ -195,11 +197,17 @@ export default function StockDetailPage() {
       <div className={styles.mainContent}>
         {/* 좌측: 차트 */}
         <div className={styles.chartSection}>
+          {(isChartLoading || (isChartFetching && !chartApiData)) && (
+            <div className={styles.chartLoadingOverlay}>
+              <LoadingSpinner size="large" />
+            </div>
+          )}
           <RealTimeChart stockCode={safeStockInfo.code} stockName={safeStockInfo.name} realtimeData={realtimePrice} />
         </div>
 
         <OrderBook
           orderBook={fallbackOrderbook}
+          isLoading={isOrderbookLoading}
           stockInfo={{
             currentPrice: safeStockInfo.currentPrice || (hasRealData ? 0 : 71400), // 실제 데이터 있으면 0, 없으면 기본값
             prevClose: prevClose || 71400, // 전일 종가

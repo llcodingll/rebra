@@ -14,8 +14,6 @@ export default function HoldingInfoTable({ holdingData, currentPrice = 0, isLoad
     return new Intl.NumberFormat('ko-KR').format(value);
   };
 
-  console.log(isLoading);
-
   const formatPercent = (value: number | undefined) => {
     if (value === undefined || value === null) return '-';
     const sign = value >= 0 ? '+' : '';

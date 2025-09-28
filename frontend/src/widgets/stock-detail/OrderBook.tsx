@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import styles from './OrderBook.module.css';
+import LoadingSpinner from '../../shared/ui/LoadingSpinner';
 import { OptimizedOrderbookData } from '../../features/stock-detail/api/types';
 
 interface OrderBookProps {
@@ -18,6 +19,7 @@ interface OrderBookProps {
     volumeRate?: number;
   };
   onPriceClick?: (price: number) => void;
+  isLoading?: boolean;
 }
 
 interface OrderBookRow {
@@ -34,7 +36,7 @@ interface TradeHistoryItem {
   time: string;
 }
 
-export default function OrderBook({ orderBook, stockInfo, onPriceClick }: OrderBookProps) {
+export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoading = false }: OrderBookProps) {
   // 가격 비교 함수 - 전일종가 대비 색상 결정
   const getPriceColorClass = (price: number, prevClose: number) => {
     if (price > prevClose) return styles.priceUp;
@@ -194,6 +196,11 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick }: OrderB
       </div>
 
       <div className={styles.orderBookContent}>
+        {isLoading && (
+          <div className={styles.loadingOverlay}>
+            <LoadingSpinner size="medium" />
+          </div>
+        )}
         {/* 메인 호가 테이블 */}
         <div ref={orderBookTableRef} className={styles.orderBookTable}>
           {orderBookRows.map((row, index) => {
