@@ -165,7 +165,7 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick }: OrderB
       const containerHeight = container.clientHeight;
 
       // 현재가 행이 컨테이너 중앙에 오도록 스크롤 위치 계산
-      const targetScrollTop = (currentPriceRowIndex * rowHeight) - (containerHeight / 2) + (rowHeight / 2);
+      const targetScrollTop = currentPriceRowIndex * rowHeight - containerHeight / 2 + rowHeight / 2;
 
       container.scrollTop = Math.max(0, targetScrollTop);
 
@@ -220,16 +220,16 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick }: OrderB
 
                 {/* 가운데: 가격 */}
                 <div
-                  className={`${styles.priceCell} ${isCurrentPrice ? styles.currentPriceHighlight : ''} ${onPriceClick ? styles.clickable : ''}`}
+                  className={`${styles.priceCell} ${isCurrentPrice ? styles.currentPriceHighlight : ''} ${
+                    onPriceClick ? styles.clickable : ''
+                  }`}
                   onClick={() => onPriceClick?.(row.price)}
                 >
                   <div className={`${styles.price} ${getPriceColorClass(row.price, stockInfo.prevClose)}`}>
                     {formatNumber(row.price)}
                   </div>
                   {stockInfo.prevClose > 0 && (
-                    <div
-                      className={`${styles.changeRate} ${getPriceColorClass(row.price, stockInfo.prevClose)}`}
-                    >
+                    <div className={`${styles.changeRate} ${getPriceColorClass(row.price, stockInfo.prevClose)}`}>
                       {row.price > stockInfo.prevClose ? '+' : ''}
                       {(((row.price - stockInfo.prevClose) / stockInfo.prevClose) * 100).toFixed(2)}%
                     </div>

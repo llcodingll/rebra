@@ -1,5 +1,12 @@
 import { ApiClient } from '../../../shared/api/apiClient';
-import type { StockDetailResponse, StockChartData, ChartDataRequest, StockHoldingApiResponse } from './types';
+import type {
+  StockDetailResponse,
+  StockChartData,
+  ChartDataRequest,
+  StockHoldingApiResponse,
+  RestCurrentQuotesResponse,
+  OptimizedOrderbookData
+} from './types';
 import type { Result, AppError } from '../../../shared/util/result';
 
 class StockApiService extends ApiClient {
@@ -68,6 +75,30 @@ class StockApiService extends ApiClient {
     return this.get<StockChartData>(
       `/api/stocks/${params.stockCode}/chart/yearly?startDate=${params.startDate}&endDate=${params.endDate}`
     );
+  };
+
+  /**
+   * 현재 호가 정보 조회 (REST API)
+   * @param params 종목코드, 계좌ID
+   * @returns 호가 정보
+   */
+  getCurrentQuotes = async (params: {
+    stockCode: string;
+    accountId: number;
+  }): Promise<Result<OptimizedOrderbookData, AppError>> => {
+    const result = await this.get<RestCurrentQuotesResponse>(
+      `/api/stocks/${params.stockCode}/current-quotes?accountId=${params.accountId}`
+    );
+
+    // 성공 시 output1 데이터만 반환 (OptimizedOrderbookData 타입)
+    if (result.success) {
+      return {
+        success: true,
+        data: result.data.output1,
+      };
+    }
+
+    return result;
   };
 }
 
