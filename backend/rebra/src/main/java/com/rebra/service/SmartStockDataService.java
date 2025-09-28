@@ -49,6 +49,14 @@ public class SmartStockDataService {
             stockService.ensureStockDataWithTransaction(stockCode, requestStart, requestEnd);
         } finally {
             log.info("Lock 해제 - 종목: {}, 스레드: {}", stockCode, Thread.currentThread().getName());
+            
+            // DB 반영 대기
+            try {
+                Thread.sleep(5000); // 5초 대기
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            
             lock.unlock();
         }
     }
