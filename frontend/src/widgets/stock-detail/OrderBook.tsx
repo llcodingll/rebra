@@ -160,10 +160,21 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
   // 잔량 최대값 계산 (시각화 바 위해)
   const getMaxQuantity = (rows: OrderBookRow[]): number => {
     let max = 0;
+    let maxAsk = 0;
+    let maxBid = 0;
+
     rows.forEach((row) => {
-      if (row.askQuantity && row.askQuantity > max) max = row.askQuantity;
-      if (row.bidQuantity && row.bidQuantity > max) max = row.bidQuantity;
+      // 문자열을 숫자로 변환해서 비교
+      const askQty = row.askQuantity ? Number(row.askQuantity) : 0;
+      const bidQty = row.bidQuantity ? Number(row.bidQuantity) : 0;
+
+      if (askQty > max) max = askQty;
+      if (bidQty > max) max = bidQty;
+
+      if (askQty > maxAsk) maxAsk = askQty;
+      if (bidQty > maxBid) maxBid = bidQty;
     });
+
     return max;
   };
 
@@ -190,6 +201,14 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
   // 데이터 준비 상태 확인
   const isDataReady = orderBookRows.length > 0 && stockInfo.currentPrice > 0 && currentPriceRowIndex >= 0;
   const showLoading = isLoading || isProcessingData || !isDataReady;
+
+  // 그리드 컨테이너 크기 디버깅
+  useEffect(() => {
+    if (orderBookTableRef.current && orderBookRows.length > 0) {
+      const container = orderBookTableRef.current;
+      const firstRow = container.querySelector('.orderRow') as HTMLElement;
+    }
+  }, [orderBookRows.length]);
 
   // 데이터 소스 변경 감지 및 스크롤 초기화
   useEffect(() => {
@@ -253,9 +272,11 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
           {orderBookRows.map((row, index) => {
             const isCurrentPrice = index === currentPriceRowIndex;
 
-            // 잔량 비율 계산
-            const askQuantityPercent = row.askQuantity && maxQuantity > 0 ? (row.askQuantity / maxQuantity) * 100 : 0;
-            const bidQuantityPercent = row.bidQuantity && maxQuantity > 0 ? (row.bidQuantity / maxQuantity) * 100 : 0;
+            // 잔량 비율 계산 (숫자 변환 적용)
+            const askQuantityPercent =
+              row.askQuantity && maxQuantity > 0 ? (Number(row.askQuantity) / maxQuantity) * 100 : 0;
+            const bidQuantityPercent =
+              row.bidQuantity && maxQuantity > 0 ? (Number(row.bidQuantity) / maxQuantity) * 100 : 0;
 
             return (
               <div key={`row-${index}`} className={styles.orderRow}>
