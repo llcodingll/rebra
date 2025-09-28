@@ -48,7 +48,6 @@ export default function SellOrderForm({
     return (
       <div className={styles.orderForm}>
         <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>📈</div>
           <div className={styles.emptyMessage}>판매할 주식이 없어요</div>
           <div className={styles.emptySubMessage}>먼저 주식을 구매해주세요.</div>
         </div>
