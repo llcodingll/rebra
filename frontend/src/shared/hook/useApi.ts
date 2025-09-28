@@ -36,7 +36,7 @@ export const useApi = <TData, TVariables = void>({
   onSuccess,
   ...options
 }: UseApiOptions<TData, TVariables>) => {
-  return useQuery<TData, AppError, TData, QueryKey>({
+  const queryResult = useQuery<TData, AppError, TData, QueryKey>({
     queryKey,
     queryFn: async () => {
       const result = await apiFunction(variables as TVariables);
@@ -66,6 +66,12 @@ export const useApi = <TData, TVariables = void>({
     },
     ...options,
   });
+
+  // isFetching 상태도 함께 반환
+  return {
+    ...queryResult,
+    isFetching: queryResult.isFetching,
+  };
 };
 
 // API 뮤테이션 훅 옵션 타입

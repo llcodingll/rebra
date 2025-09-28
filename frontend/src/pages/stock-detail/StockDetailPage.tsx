@@ -42,7 +42,7 @@ export default function StockDetailPage() {
 
   // console.log(holdingData);
   // 차트 데이터에서 현재 가격 정보 가져오기 (일봉 기준)
-  const { data: infiniteData } = useInfiniteChartData(stockCode, 'daily', true);
+  const { data: infiniteData, isLoading: isChartLoading } = useInfiniteChartData(stockCode, 'daily', true);
   const chartApiData = useMemo(() => {
     return mergeInfiniteChartData(infiniteData?.pages);
   }, [infiniteData?.pages]);
@@ -52,10 +52,17 @@ export default function StockDetailPage() {
   const currentPrice = hasRealData ? realtimePrice?.stckPrpr || Number(chartApiData?.summary?.currentPrice) : 0;
 
   // 보유 정보 조회
-  const { holdingData, refetch: refetchHolding } = useStockHolding(stockCode, currentPrice);
+  const { holdingData, isLoading: isHoldingLoading, refetch: refetchHolding } = useStockHolding(stockCode, currentPrice);
+
+  // 디버깅: 로딩 상태 확인
+  console.log('=== StockDetailPage 디버깅 ===');
+  console.log('stockCode:', stockCode);
+  console.log('currentPrice:', currentPrice);
+  console.log('holdingData:', holdingData);
+  console.log('isHoldingLoading:', isHoldingLoading);
 
   // 호가 데이터 폴백 (REST API + 웹소켓 조합)
-  const { orderbook: fallbackOrderbook } = useOrderBookFallback(stockCode, orderbook);
+  const { orderbook: fallbackOrderbook, isLoading: isOrderbookLoading } = useOrderBookFallback(stockCode, orderbook);
 
   // 실제 주식 정보 (차트 API 데이터 우선, 실시간 데이터는 보조) + SearchPage에서 전달받은 정보 우선 사용
   const displayStockInfo =
@@ -176,7 +183,11 @@ export default function StockDetailPage() {
         </div>
 
         <div className={styles.holdingInfoWrapper}>
-          <HoldingInfoTable holdingData={holdingData} currentPrice={safeStockInfo.currentPrice} />
+          <HoldingInfoTable
+            holdingData={holdingData}
+            currentPrice={safeStockInfo.currentPrice}
+            isLoading={isHoldingLoading}
+          />
         </div>
       </div>
 
