@@ -505,7 +505,23 @@ public class StockServiceImpl implements StockService {
 
         } catch (Exception e) {
             log.error("FSS API 종목기본정보 검색 실패 - 종목명: {}, 오류: {}", stockName, e.getMessage());
-            return List.of();
+            log.info("API 예외로 인해 DB에서 종목 기본정보 조회 시도");
+            
+            // API 예외 발생 시 DB에서 조회
+            List<Stock> dbStocks = stockRepository.findByStockNameContainingIgnoreCaseAndIsActiveTrue(
+                    stockName, 
+                    org.springframework.data.domain.PageRequest.of(0, 50)
+            ).getContent();
+            
+            if (!dbStocks.isEmpty()) {
+                log.info("DB에서 종목 기본정보 조회 성공 - 조회된 건수: {}", dbStocks.size());
+                return dbStocks.stream()
+                        .map(StockBasicInfoResponse::from)
+                        .collect(Collectors.toList());
+            } else {
+                log.warn("DB에서도 종목 기본정보를 찾을 수 없음 - 종목명: {}", stockName);
+                return List.of();
+            }
         }
     }
 

@@ -63,19 +63,38 @@ public class StockHistoricalServiceImpl implements StockHistoricalService {
         
         // FSS API에서 먼저 조회 (모든 관련 종목 검색)
         log.info("FSS API에서 조회 시작 - 모든 관련 종목 검색");
-        List<FssStockPriceResponse.StockItem> apiResults = fssApiClient.getStockPriceByNameAndDate(stockName, date);
-
-        if (apiResults.isEmpty()) {
-            log.warn("FSS API에서 데이터를 찾을 수 없음 - 종목명: {}, 날짜: {}", stockName, date);
-            // API에서 데이터가 없으면 DB에서 조회해보기
+        List<FssStockPriceResponse.StockItem> apiResults = new ArrayList<>();
+        
+        try {
+            apiResults = fssApiClient.getStockPriceByNameAndDate(stockName, date);
+            
+            if (apiResults.isEmpty()) {
+                log.warn("FSS API에서 데이터를 찾을 수 없음 - 종목명: {}, 날짜: {}", stockName, date);
+                // API에서 데이터가 없으면 DB에서 조회해보기
+                List<StockPrice> dbResults = stockPriceRepository.findByNameContainingAndDate(stockName, date);
+                if (!dbResults.isEmpty()) {
+                    log.info("DB에서 기존 데이터 조회 성공 - 조회된 건수: {}", dbResults.size());
+                    stockData = dbResults.stream()
+                            .map(StockHistoricalDataResponse::from)
+                            .collect(Collectors.toList());
+                }
+            }
+        } catch (Exception e) {
+            log.error("FSS API 호출 중 예외 발생 - 종목명: {}, 날짜: {}, 에러: {}", stockName, date, e.getMessage());
+            log.info("API 예외로 인해 DB에서 대체 데이터 조회 시도");
+            // API 예외 발생 시 DB에서 조회해보기
             List<StockPrice> dbResults = stockPriceRepository.findByNameContainingAndDate(stockName, date);
             if (!dbResults.isEmpty()) {
-                log.info("DB에서 기존 데이터 조회 성공 - 조회된 건수: {}", dbResults.size());
+                log.info("DB에서 대체 데이터 조회 성공 - 조회된 건수: {}", dbResults.size());
                 stockData = dbResults.stream()
                         .map(StockHistoricalDataResponse::from)
                         .collect(Collectors.toList());
+            } else {
+                log.warn("DB에서도 데이터를 찾을 수 없음 - 종목명: {}, 날짜: {}", stockName, date);
             }
-        } else {
+        }
+        
+        if (!apiResults.isEmpty()) {
             // API 결과 처리 - Stock 엔티티 배치 저장 후 StockPrice 생성
             
             // 유효한 종목들 필터링 및 종목코드 수집
