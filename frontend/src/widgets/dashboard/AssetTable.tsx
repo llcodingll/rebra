@@ -64,13 +64,13 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
       return portfolioApi.registerStock(portfolioId, { stockCode });
     },
     onSuccess: (data) => {
-      console.log('=== 주식 등록 성공 ===');
-      console.log('등록된 주식:', data);
+      // console.log('=== 주식 등록 성공 ===');
+      // console.log('등록된 주식:', data);
       onStockRegistered?.(); // 성공 시 콜백 호출
     },
     onError: (error) => {
-      console.error('=== 주식 등록 실패 ===');
-      console.error('에러:', error);
+      // console.error('=== 주식 등록 실패 ===');
+      // console.error('에러:', error);
       alert('주식 등록에 실패했습니다. 다시 시도해주세요.');
     }
   });
@@ -84,14 +84,14 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
       return portfolioApi.deleteStock(portfolioId, { stockCode });
     },
     onSuccess: (response, stockCode) => {
-      console.log('=== 주식 삭제 성공 ===');
-      console.log('삭제 응답:', response);
+      // console.log('=== 주식 삭제 성공 ===');
+      // console.log('삭제 응답:', response);
       const stockName = data.find(stock => stock.code === stockCode)?.name || '해당 주식';
       onStockRemoved?.(); // 성공 시 콜백 호출
     },
     onError: (error) => {
-      console.error('=== 주식 삭제 실패 ===');
-      console.error('에러:', error);
+      // console.error('=== 주식 삭제 실패 ===');
+      // console.error('에러:', error);
       alert('주식 삭제에 실패했습니다. 다시 시도해주세요.');
     }
   });
@@ -114,27 +114,27 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
       return portfolioApi.updateStocks(portfolioId, requestData);
     },
     onSuccess: (data) => {
-      console.log('=== 주식 설정 업데이트 성공 ===');
-      console.log('업데이트 결과:', data);
+      // console.log('=== 주식 설정 업데이트 성공 ===');
+      // console.log('업데이트 결과:', data);
       closeStockSettingModal();
       onEditModeChange?.(false);
       onStockSettingsUpdated?.(); // 주식 설정 업데이트 전용 콜백 호출
     },
     onError: (error) => {
-      console.error('=== 주식 설정 업데이트 실패 ===');
-      console.error('에러:', error);
+      // console.error('=== 주식 설정 업데이트 실패 ===');
+      // console.error('에러:', error);
       alert('주식 설정 업데이트에 실패했습니다. 다시 시도해주세요.');
     }
   });
 
   const handleSaveSettings = (updatedStocks: Stock[]) => {
-    console.log('주식 설정 저장:', updatedStocks);
+    // console.log('주식 설정 저장:', updatedStocks);
     updateStocks(updatedStocks);
   };
 
   const handleAddStock = (stock: Stock) => {
     if (!portfolioId) {
-      alert('포트폴리오 정보가 없습니다.');
+      // alert('포트폴리오 정보가 없습니다.');
       return;
     }
 
@@ -142,7 +142,7 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
       title: '주식 추가',
       message: `${stock.name}(${stock.code})을 포트폴리오에 추가하시겠습니까?`,
       onConfirm: () => {
-        console.log('주식 추가 확인:', stock);
+        // console.log('주식 추가 확인:', stock);
         registerStock(stock.code);
       },
       type: 'default'
@@ -150,21 +150,21 @@ export default function AssetTable({ title, type, data, portfolioId, onStockRegi
   };
 
   const handleRemoveStock = (stock: Stock) => {
-    console.log('=== handleRemoveStock 호출됨 ===');
-    console.log('stock:', stock);
-    console.log('portfolioId:', portfolioId);
+    // console.log('=== handleRemoveStock 호출됨 ===');
+    // console.log('stock:', stock);
+    // console.log('portfolioId:', portfolioId);
 
     if (!portfolioId) {
       alert('포트폴리오 정보가 없습니다.');
       return;
     }
 
-    console.log('확인 모달 표시');
+    // console.log('확인 모달 표시');
     showConfirm({
       title: '주식 삭제',
       message: `${stock.name}(${stock.code})을 포트폴리오에서 제거하시겠습니까?`,
       onConfirm: () => {
-        console.log('주식 삭제 확인:', stock);
+        // console.log('주식 삭제 확인:', stock);
         deleteStock(stock.code);
       },
       type: 'danger'

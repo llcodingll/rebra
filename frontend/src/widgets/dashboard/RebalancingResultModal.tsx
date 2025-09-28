@@ -27,12 +27,17 @@ interface RebalancingResultModalProps {
   isOpen: boolean;
   onClose: () => void;
   result: RebalancingResult;
+  portfolioStocks?: Array<{
+    stockCode: string;
+    stockName: string;
+  }>;
 }
 
 export default function RebalancingResultModal({
   isOpen,
   onClose,
-  result
+  result,
+  portfolioStocks = []
 }: RebalancingResultModalProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('ko-KR').format(price);
@@ -40,6 +45,17 @@ export default function RebalancingResultModal({
 
   const formatDateTime = (dateTime: string) => {
     return new Date(dateTime).toLocaleString('ko-KR');
+  };
+
+  // 리밸런싱 결과 데이터 로그 출력
+  console.log('🔄 리밸런싱 결과 데이터:', result);
+  console.log('📊 주문 결과들:', result.orderResults);
+  console.log('🏦 포트폴리오 주식 데이터:', portfolioStocks);
+
+  // stockCode로 stockName을 찾는 함수
+  const getStockNameByCode = (stockCode: string): string => {
+    const stock = portfolioStocks.find(stock => stock.stockCode === stockCode);
+    return stock?.stockName || stockCode;
   };
 
   const successfulOrders = result.orderResults?.filter(order => order.success) || [];
@@ -101,8 +117,7 @@ export default function RebalancingResultModal({
                     <span className={`${styles.orderType} ${styles[order.orderType.toLowerCase()]}`}>
                       {order.orderType === 'BUY' ? '매수' : '매도'}
                     </span>
-                    <span className={styles.stockCode}>({order.stockCode})</span>
-                    <span className={styles.orderId}>#{order.orderId}</span>
+                    <span className={styles.stockCode}>{getStockNameByCode(order.stockCode)} ({order.stockCode})</span>
                   </div>
                   <div className={styles.orderDetails}>
                     <span>수량: {formatPrice(order.quantity)}주</span>
@@ -126,7 +141,7 @@ export default function RebalancingResultModal({
                     <span className={`${styles.orderType} ${styles.failed}`}>
                       {order.orderType === 'BUY' ? '매수' : '매도'}
                     </span>
-                    <span className={styles.stockCode}>({order.stockCode})</span>
+                    <span className={styles.stockCode}>{getStockNameByCode(order.stockCode)} ({order.stockCode})</span>
                   </div>
                   <div className={styles.orderDetails}>
                     <span>수량: {formatPrice(order.quantity)}주</span>

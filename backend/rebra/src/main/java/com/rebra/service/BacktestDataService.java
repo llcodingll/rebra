@@ -27,7 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
@@ -522,19 +521,19 @@ public class BacktestDataService {
         List<Map<String, Object>> detailsList = (List<Map<String, Object>>) responseMap.get("details");
 
         // BacktestRecord에 결과 업데이트
-        Integer finalValue = Integer.valueOf(summaryMap.get("final_value").toString());
+        Integer finalValue = Double.valueOf(summaryMap.get("final_value").toString()).intValue();
         Double totalReturn = Double.valueOf(summaryMap.get("total_return").toString());
         Double buyHoldReturn = Double.valueOf(summaryMap.get("buy_hold_return").toString());
         Double excessReturn = totalReturn - buyHoldReturn;
         Double periodGrowthRate = Double.valueOf(summaryMap.get("period_growth_rate").toString());
-        Integer rebalancingCount = Integer.valueOf(summaryMap.get("rebalancing_count").toString());
-        Integer totalFee = Integer.valueOf(summaryMap.get("total_fee").toString());
+        Integer rebalancingCount = Double.valueOf(summaryMap.get("rebalancing_count").toString()).intValue();
+        Integer totalFee = Double.valueOf(summaryMap.get("total_fee").toString()).intValue();
         Integer totalBorrowingCost = summaryMap.get("total_borrowing_cost") != null ?
-                Integer.valueOf(summaryMap.get("total_borrowing_cost").toString()) : 0;
+                Double.valueOf(summaryMap.get("total_borrowing_cost").toString()).intValue() : 0;
         Integer maxBorrowingAmount = summaryMap.get("max_borrowing_amount") != null ?
-                Integer.valueOf(summaryMap.get("max_borrowing_amount").toString()) : null;
+                Double.valueOf(summaryMap.get("max_borrowing_amount").toString()).intValue() : null;
         Integer minCashBalance = summaryMap.get("min_cash_balance") != null ?
-                Integer.valueOf(summaryMap.get("min_cash_balance").toString()) : null;
+                Double.valueOf(summaryMap.get("min_cash_balance").toString()).intValue() : null;
         Double maxDrawdown = summaryMap.get("max_drawdown") != null ?
                 Double.valueOf(summaryMap.get("max_drawdown").toString()) : null;
         Double volatility = summaryMap.get("volatility") != null ?

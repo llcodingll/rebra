@@ -15,7 +15,7 @@
 }
 
 .chartTitle {
-  font-size: 20px;
+  font-size: 23px;
   font-weight: 700;
   color: #111827;
   margin: 0;
@@ -174,7 +174,7 @@
 }
 
 .tooltipDate {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 700;
   color: #111827;
   margin-bottom: 12px;
@@ -189,14 +189,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 16px;
   color: #374151;
   margin-bottom: 6px;
 }
 
 .tooltipIcon {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   color: #6b7280;
 }
 

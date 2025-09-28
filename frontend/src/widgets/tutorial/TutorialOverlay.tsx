@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './TutorialOverlay.module.css';
 import mascotImage from '../../assets/images/mascots/mascots1.png';
@@ -26,6 +26,13 @@ export default function TutorialOverlay({
   currentStepIndex = 0
 }: TutorialOverlayProps) {
   const [activeStepIndex, setActiveStepIndex] = useState(currentStepIndex);
+
+  // 튜토리얼이 열릴 때마다 첫 번째 단계로 초기화
+  useEffect(() => {
+    if (isOpen) {
+      setActiveStepIndex(0);
+    }
+  }, [isOpen]);
 
   const currentStep = steps[activeStepIndex];
 

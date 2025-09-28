@@ -39,7 +39,7 @@ export default function RebalancingPeriodModal({ isOpen, onClose }: RebalancingP
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title="리밸런싱 주기 설정(수정 예정)"
+      title="리밸런싱 주기 설정"
       size="large"
     >
       <div className={styles.content}>

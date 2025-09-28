@@ -27,7 +27,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) {
   const [selectedStock, setSelectedStock] = useState(data[0] || null);
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
-  console.log("AssetPortfolioChart 렌더링", data.length);
+  // console.log("AssetPortfolioChart 렌더링", data.length);
 
   // 등록된 주식이 없는 경우 빈 상태 표시
   if (data.length === 0) {
@@ -46,7 +46,7 @@ export default function AssetPortfolioChart({ data }: AssetPortfolioChartProps) 
               <BarChart3 className={styles.emptyStateIcon} />
               <h3 className={styles.emptyStateTitle}>포트폴리오에 주식을 등록해보세요!</h3>
               <p className={styles.emptyStateDescription}>
-                주식을 등록하면 포트폴리오 구성과 수익률을 확인할 수 있습니다.
+                주식을 등록하면 <br/>포트폴리오 구성과 수익률을 확인할 수 있습니다.
               </p>
             </div>
           </div>

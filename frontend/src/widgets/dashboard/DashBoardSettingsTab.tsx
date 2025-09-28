@@ -13,9 +13,13 @@ interface DashBoardSettingsTabProps {
   isLoadingSettings?: boolean;
   onAutoRebalancingChanged?: () => void;
   onRebalancingExecuted?: () => void;
+  portfolioStocks?: Array<{
+    stockCode: string;
+    stockName: string;
+  }>;
 }
 
-export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalancing = false, isLoadingSettings = false, onAutoRebalancingChanged, onRebalancingExecuted }: DashBoardSettingsTabProps) {
+export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalancing = false, isLoadingSettings = false, onAutoRebalancingChanged, onRebalancingExecuted, portfolioStocks = [] }: DashBoardSettingsTabProps) {
     const { confirmState, showConfirm, hideConfirm } = useConfirmModal();
     const { isOpen: isPeriodModalOpen, open: openPeriodModal, close: closePeriodModal } = useModalState();
     const { isOpen: isResultModalOpen, open: openResultModal, close: closeResultModal } = useModalState();
@@ -36,14 +40,14 @@ export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalanci
             return portfolioApi.setAutoRebalancing(portfolioId, { autoRebalancing: enabled });
         },
         onSuccess: (data) => {
-            console.log('자동 리밸런싱 설정 성공:', data);
+            // console.log('자동 리밸런싱 설정 성공:', data);
             // 포트폴리오 상세 정보 새로고침으로 실제 서버 상태 동기화
             if (onAutoRebalancingChanged) {
                 onAutoRebalancingChanged();
             }
         },
         onError: (error) => {
-            console.error('자동 리밸런싱 설정 실패:', error);
+            // console.error('자동 리밸런싱 설정 실패:', error);
             // 에러 시에도 서버 상태와 동기화
             if (onAutoRebalancingChanged) {
                 onAutoRebalancingChanged();
@@ -60,7 +64,7 @@ export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalanci
             return portfolioApi.executeRebalancing(portfolioId);
         },
         onSuccess: (data) => {
-            console.log('리밸런싱 실행 성공:', data);
+            // console.log('리밸런싱 실행 성공:', data);
 
             // 결과 데이터를 저장하고 모달 열기
             setRebalancingResult(data);
@@ -71,7 +75,7 @@ export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalanci
             }
         },
         onError: (error) => {
-            console.error('리밸런싱 실행 실패:', error);
+            // console.error('리밸런싱 실행 실패:', error);
             alert('리밸런싱 실행에 실패했습니다. 다시 시도해주세요.');
         }
     });
@@ -180,6 +184,7 @@ export default function DashBoardSettingsTab({ portfolioId, initialAutoRebalanci
                     isOpen={isResultModalOpen}
                     onClose={closeResultModal}
                     result={rebalancingResult}
+                    portfolioStocks={portfolioStocks}
                 />
             )}
                     </>

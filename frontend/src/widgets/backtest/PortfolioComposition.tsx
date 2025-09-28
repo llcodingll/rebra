@@ -88,7 +88,7 @@ export default function PortfolioComposition({ portfolioStocks }: PortfolioCompo
       <div className={styles.cardHeader}>
         <div className={styles.headerLeft}>
           <PieChartIcon className={styles.headerIcon} />
-          <h3>포트폴리오 구성</h3>
+          <h3>백테스트 구성</h3>
         </div>
         <div className={styles.headerBadge}>
           <span>총 {portfolioStocks.length}개 종목</span>
@@ -104,7 +104,7 @@ export default function PortfolioComposition({ portfolioStocks }: PortfolioCompo
             transition={{ duration: 0.5, delay: 0.3 }}
             className={styles.legend}
           >
-            <h4 className={styles.legendTitle}>포트폴리오 구성</h4>
+            <h4 className={styles.legendTitle}>백테스트 구성</h4>
             <div className={styles.legendList}>
               {portfolioStocks.map((stock, index) => (
                 <motion.div

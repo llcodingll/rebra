@@ -18,7 +18,7 @@
 }
 
 .controlGroup h3 {
-  font-size: 16px;
+  font-size: 20px;
   font-family: 'Inter', sans-serif;
   color: #4a5565;
   margin: 0;
@@ -30,7 +30,7 @@
   border-radius: 12px;
   padding: 16px 24px;
   color: white;
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -98,7 +98,7 @@
 }
 
 .toggleLabel {
-  font-size: 17px;
+  font-size: 20px;
   font-family: 'Inter', sans-serif;
   color: #6b7280;
   transition: color 0.3s ease;

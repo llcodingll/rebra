@@ -51,7 +51,7 @@
   color: #475569;
   padding: 8px 16px;
   border-radius: 12px;
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 500;
 }
 
@@ -85,7 +85,7 @@
 }
 
 .totalValueHeader h3 {
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 600;
   color: #475569;
   margin: 0;
@@ -100,18 +100,18 @@
 .iconPositive {
   width: 16px;
   height: 16px;
-  color: #10b981;
+  color: #ef4444;
 }
 
 .iconNegative {
   width: 16px;
   height: 16px;
-  color: #ef4444;
+  color: #007bff;
 }
 
 .amount {
-  font-size: 28px;
-  font-weight: 500;
+  font-size: 32px;
+  font-weight: 700;
   color: #030213;
   margin-bottom: 8px;
   line-height: 1.2;
@@ -124,21 +124,21 @@
 }
 
 .returnAmount {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.returnPercent {
   font-size: 16px;
   font-weight: 500;
 }
 
-.returnPercent {
-  font-size: 14px;
-  font-weight: 500;
-}
-
 .returnInfo.positive {
-  color: #10b981;
+  color: #ef4444;
 }
 
 .returnInfo.negative {
-  color: #ef4444;
+  color: #007bff;
 }
 
 /* 범례 */
@@ -150,7 +150,7 @@
 }
 
 .legendTitle {
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 600;
   color: #030213;
   margin: 0 0 16px 0;
@@ -202,14 +202,14 @@
 }
 
 .legendName {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #030213;
   line-height: 1.3;
 }
 
 .legendCode {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   color: #717182;
 }
@@ -222,22 +222,22 @@
 }
 
 .legendWeight {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #030213;
 }
 
 .legendReturn {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
 }
 
 .legendReturn.positive {
-  color: #10b981;
+  color: #ef4444;
 }
 
 .legendReturn.negative {
-  color: #ef4444;
+  color: #007bff;
 }
 
 /* 차트 영역 */
@@ -298,14 +298,14 @@
 }
 
 .stockName {
-  font-size: 18px;
+  font-size: 21px;
   font-weight: 700;
   color: #030213;
   margin: 0;
 }
 
 .stockCode {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   color: #717182;
   background: #f1f5f9;
@@ -324,7 +324,7 @@
 }
 
 .currentPrice {
-  font-size: 20px;
+  font-size: 23px;
   font-weight: 700;
   color: #030213;
 }
@@ -357,7 +357,7 @@
 }
 
 .metricLabel {
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 500;
   color: #717182;
   text-transform: uppercase;
@@ -365,17 +365,17 @@
 }
 
 .metricValue {
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 600;
   color: #030213;
 }
 
 .metricValue.positive {
-  color: #10b981;
+  color: #ef4444;
 }
 
 .metricValue.negative {
-  color: #ef4444;
+  color: #007bff;
 }
 
 /* 비중 분석 */
@@ -418,13 +418,13 @@
 }
 
 .weightLabel {
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 500;
   color: #475569;
 }
 
 .weightValue {
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 600;
   color: #030213;
 }
@@ -466,7 +466,7 @@
 }
 
 .rebalancingHeader span {
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 500;
   color: #92400e;
 }
@@ -602,13 +602,13 @@
 }
 
 .targetLabel {
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 500;
   color: #475569;
 }
 
 .targetValue {
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 600;
   color: #030213;
 }
@@ -634,11 +634,11 @@
 
 /* 애니메이션 클래스 */
 .positive {
-  color: #10b981;
+  color: #ef4444;
 }
 
 .negative {
-  color: #ef4444;
+  color: #007bff;
 }
 
 .selected {

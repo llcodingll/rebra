@@ -8,6 +8,8 @@ interface SummaryCardData {
   value: string;
   subtext?: string;
   highlight?: boolean;
+  isPositive?: boolean;
+  isNegative?: boolean;
 }
 
 interface ResultsHeaderProps {
@@ -63,13 +65,14 @@ export default function ResultsHeader({
     },
     {
       label: '최종 평가액',
-      value: formatCompactPrice(backtestResult.summary.finalValue),
-      highlight: true
+      value: formatCompactPrice(backtestResult.summary.finalValue)
     },
     {
       label: '최종 수익률',
       value: `${backtestResult.summary.totalReturnPercentage >= 0 ? '+' : ''}${backtestResult.summary.totalReturnPercentage.toFixed(2)}%`,
-      highlight: true
+      highlight: true,
+      isPositive: backtestResult.summary.totalReturnPercentage > 0,
+      isNegative: backtestResult.summary.totalReturnPercentage < 0
     },
     {
       label: '총 리밸런싱 횟수',
@@ -115,7 +118,7 @@ export default function ResultsHeader({
             className={styles.summaryCard}
           >
             <div className={styles.summaryLabel}>{card.label}</div>
-            <div className={`${styles.summaryValue} ${card.highlight ? styles.highlight : ''}`}>
+            <div className={`${styles.summaryValue} ${card.isPositive ? styles.positive : card.isNegative ? styles.negative : card.highlight ? styles.highlight : ''}`}>
               {card.value}
             </div>
             {card.subtext && (

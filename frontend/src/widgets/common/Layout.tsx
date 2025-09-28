@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useMemo, useLayoutEffect, useEffect, useState } from 'react';
+import { useMemo, useLayoutEffect, useEffect, useState, useCallback } from 'react';
 import Header from './Header';
 import MarketTicker from '../../features/market/ui/MarketTicker';
 import styles from '../../App.module.css';
@@ -8,7 +8,11 @@ type DashboardTab = 'dashboard' | 'search' | 'backtest';
 export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [tutorialTarget, setTutorialTarget] = useState<{ page: string; start: () => void } | null>(null);
+  const [tutorialStates, setTutorialStates] = useState({
+    dashboard: false,
+    search: false,
+    backtest: false,
+  });
 
   const activeTab = useMemo(() => {
     const path = location.pathname;
@@ -53,38 +57,26 @@ export default function Layout() {
   };
 
   const handleTutorialClick = () => {
-    console.log('튜토리얼 버튼 클릭됨');
-    console.log('activeTab:', activeTab);
-    console.log('tutorialTarget:', tutorialTarget);
-    if (tutorialTarget && tutorialTarget.page === activeTab) {
-      console.log('튜토리얼 시작 호출');
-      tutorialTarget.start();
-    } else {
-      console.log('튜토리얼 타겟이 없거나 페이지가 맞지 않음');
-    }
+    console.log('튜토리얼 버튼 클릭됨', activeTab);
+    setTutorialStates(prev => ({
+      ...prev,
+      [activeTab]: true
+    }));
   };
 
-  // Tutorial target 등록을 위한 함수를 context로 제공
-  const registerTutorialTarget = (page: string, startFunction: () => void) => {
-    console.log('튜토리얼 타겟 등록:', page);
-    setTutorialTarget({ page, start: startFunction });
+  const closeTutorial = (page: DashboardTab) => {
+    setTutorialStates(prev => ({
+      ...prev,
+      [page]: false
+    }));
   };
-
-  // 페이지 변경 시 tutorial target 초기화 (다른 페이지로 이동할 때만)
-  useEffect(() => {
-    console.log('페이지 변경됨, 현재 타겟과 비교:', tutorialTarget?.page, 'vs', activeTab);
-    if (tutorialTarget && tutorialTarget.page !== activeTab) {
-      console.log('다른 페이지로 이동, 튜토리얼 타겟 초기화');
-      setTutorialTarget(null);
-    }
-  }, [location.pathname, activeTab, tutorialTarget]);
 
   return (
     <div className={styles.app}>
       <Header activeTab={activeTab} onTabChange={handleTabChange} onTutorialClick={handleTutorialClick} />
       {!isStockDetailPage && <MarketTicker />}
       <main className={styles.main}>
-        <Outlet context={{ registerTutorialTarget }} />
+        <Outlet context={{ tutorialStates, closeTutorial }} />
       </main>
     </div>
   );
