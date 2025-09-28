@@ -112,7 +112,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData }: Re
         const updatedVolume: VolumeData = {
           ...lastVolume,
           value: volume,
-          color: price >= lastCandle.open ? '#ea3939' : '#3b82f6',
+          color: price >= lastCandle.open ? '#ea3939' : '#387eefff',
         };
 
         // ref 업데이트
@@ -268,10 +268,10 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData }: Re
     // 시리즈 추가
     const priceSeries = priceChart.addSeries(CandlestickSeries, {
       upColor: '#ea3939',
-      downColor: '#3b82f6',
+      downColor: '#387eefff',
       borderVisible: false,
       wickUpColor: '#ea3939',
-      wickDownColor: '#3b82f6',
+      wickDownColor: '#387eefff',
       priceFormat: {
         type: 'price',
         precision: 0,
@@ -459,7 +459,6 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData }: Re
         amount: priceChange,
         rate: changeRate,
       });
-
     }
   }, [chartApiData]);
 

@@ -18,7 +18,7 @@ export const useWatchlist = () => {
     enabled: !!accountId,
     errorMessages: {
       404: '관심종목을 찾을 수 없습니다',
-      500: '관심종목 조회 중 오류가 발생했습니다'
+      500: '관심종목 조회 중 오류가 발생했습니다',
     },
     staleTime: 5 * 60 * 1000, // 5분간 fresh 상태 유지
   });
@@ -56,15 +56,15 @@ export const useToggleWatchlist = () => {
 
       // 낙관적 업데이트 적용
       if (previousData) {
-        const isCurrentlyFavorite = previousData.some(item => item.stockCode === stockCode);
+        const isCurrentlyFavorite = previousData.some((item) => item.stockCode === stockCode);
 
         if (isCurrentlyFavorite) {
           // 제거
-          const newData = previousData.filter(item => item.stockCode !== stockCode);
+          const newData = previousData.filter((item) => item.stockCode !== stockCode);
           queryClient.setQueryData(['watchlist', accountId], newData);
         } else {
           // 추가 (임시 이름 사용)
-          const newData = [...previousData, { stockCode, stockName: `종목-${stockCode}` }];
+          const newData = [{ stockCode, stockName: `종목-${stockCode}` }, ...previousData];
           queryClient.setQueryData(['watchlist', accountId], newData);
         }
       }
@@ -82,9 +82,6 @@ export const useToggleWatchlist = () => {
       // 관심종목 목록 다시 조회
       queryClient.invalidateQueries({ queryKey: ['watchlist', accountId] });
     },
-    onError: (error) => {
-      console.error('관심종목 토글 실패:', error.message);
-    }
   });
 };
 
@@ -96,5 +93,5 @@ export const useToggleWatchlist = () => {
  */
 export const isWatchlistStock = (stockCode: string, watchlistData?: WatchlistResponse): boolean => {
   if (!watchlistData) return false;
-  return watchlistData.some(item => item.stockCode === stockCode);
+  return watchlistData.some((item) => item.stockCode === stockCode);
 };

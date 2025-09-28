@@ -21,7 +21,7 @@ export const transformToVolumeData = (chartData: StockChartItem[]): VolumeData[]
   return chartData.map((item) => {
     const open = Number(item.openPrice);
     const close = Number(item.closePrice);
-    const color = close >= open ? '#dc2626' : '#2563eb'; // 상승: 빨강, 하락: 파랑
+    const color = close >= open ? '#dc2626' : '#387eefff'; // 상승: 빨강, 하락: 파랑
 
     return {
       time: dateStringToTimestamp(item.tradingDate),
@@ -37,9 +37,10 @@ export const transformToVolumeData = (chartData: StockChartItem[]): VolumeData[]
 export const transformChartData = (apiData: StockChartData) => {
   // 무한 스크롤에서는 이미 mergeInfiniteChartData에서 정렬됨
   // 단일 요청의 경우에만 reverse 적용
-  const sortedChartData = apiData.chartData && apiData.chartData.length > 0
-    ? [...apiData.chartData].sort((a, b) => a.tradingDate.localeCompare(b.tradingDate))
-    : [];
+  const sortedChartData =
+    apiData.chartData && apiData.chartData.length > 0
+      ? [...apiData.chartData].sort((a, b) => a.tradingDate.localeCompare(b.tradingDate))
+      : [];
 
   const candleData = transformToCandleData(sortedChartData);
   const volumeData = transformToVolumeData(sortedChartData);

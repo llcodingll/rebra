@@ -32,10 +32,16 @@ export default function StockBasicInfo({ stockInfo, realTimePrice, realTimePrice
   const changeAmount = realTimePriceChange ? realTimePriceChange.amount : stockInfo.change;
   const changeRate = realTimePriceChange ? realTimePriceChange.rate : stockInfo.changePercent;
 
+  // 종목명 길이 제한 함수
+  const truncateStockName = (name: string, maxLength: number = 15) => {
+    if (name.length <= maxLength) return name;
+    return `${name.substring(0, maxLength)}...`;
+  };
+
   return (
     <div className={styles.stockBasicInfo}>
       <div className={styles.stockTitle}>
-        <h1 className={styles.stockName}>{stockInfo.name}</h1>
+        <h1 className={styles.stockName}>{truncateStockName(stockInfo.name)}</h1>
         <span className={styles.stockCode}>{stockInfo.code}</span>
       </div>
       <div className={styles.priceInfo}>
