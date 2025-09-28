@@ -12,6 +12,8 @@ import com.rebra.entity.Account;
 import com.rebra.entity.AccountType;
 import com.rebra.entity.Portfolio;
 import com.rebra.entity.PortfolioStock;
+import com.rebra.entity.Stock;
+import com.rebra.entity.StockPrice;
 import com.rebra.entity.RebalancingOrder;
 import com.rebra.entity.TradeRecord;
 import com.rebra.enums.TransactionStatus;
@@ -21,11 +23,18 @@ import com.rebra.repository.AccountRepository;
 import com.rebra.repository.PortfolioRepository;
 import com.rebra.repository.PortfolioStockRepository;
 import com.rebra.repository.StockRepository;
+import com.rebra.repository.StockPriceRepository;
 import com.rebra.repository.RebalancingOrderRepository;
 import com.rebra.repository.TradeRecordRepository;
 import com.rebra.scheduler.PerformanceMetricsScheduler;
 import com.rebra.service.TokenService;
 import com.rebra.util.CookieUtil;
+import jakarta.servlet.http.HttpServletResponse;
+import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import java.time.Duration;
@@ -57,6 +66,8 @@ public class DummyController {
     private final AccountRepository accountRepository;
     private final PortfolioRepository portfolioRepository;
     private final PortfolioStockRepository portfolioStockRepository;
+    private final StockRepository stockRepository;
+    private final StockPriceRepository stockPriceRepository;
     private final RebalancingOrderRepository rebalancingOrderRepository;
     private final TradeRecordRepository tradeRecordRepository;
     private final PerformanceMetricsScheduler performanceMetricsScheduler;
@@ -137,5 +148,4 @@ public class DummyController {
                             HttpStatus.INTERNAL_SERVER_ERROR));
         }
     }
-
 }

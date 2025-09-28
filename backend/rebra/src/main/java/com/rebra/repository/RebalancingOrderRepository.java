@@ -4,9 +4,11 @@ import com.rebra.entity.RebalancingOrder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -120,4 +122,14 @@ public interface RebalancingOrderRepository extends JpaRepository<RebalancingOrd
             @Param("portfolioId") Long portfolioId,
             @Param("startOfDay") LocalDateTime startOfDay,
             @Param("endOfDay") LocalDateTime endOfDay);
+
+    /**
+     * RebalancingOrder의 매수/매도 금액 업데이트
+     */
+    @Modifying
+    @Transactional
+    @Query("UPDATE RebalancingOrder ro SET ro.totalBuyAmount = :totalBuyAmount, ro.totalSellAmount = :totalSellAmount WHERE ro.id = :id")
+    int updateAmounts(@Param("id") Long id,
+                     @Param("totalBuyAmount") Long totalBuyAmount,
+                     @Param("totalSellAmount") Long totalSellAmount);
 }
