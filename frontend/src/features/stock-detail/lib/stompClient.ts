@@ -59,7 +59,6 @@ export class StockStompClient {
 
       onDisconnect: () => {
         this.isConnected = false;
-        console.log('🔌 STOMP 연결 해제');
         this.callbacks.onDisconnect?.();
       },
     });
@@ -251,8 +250,16 @@ export class StockStompClient {
       this.client.deactivate();
     }
 
+    // WebSocket 강제 종료 (추가 안전장치)
+    try {
+      if (this.client.webSocket && this.client.webSocket.readyState !== WebSocket.CLOSED) {
+        this.client.webSocket.close();
+      }
+    } catch (error) {
+      console.error('❌ WebSocket 강제 종료 실패:', error);
+    }
+
     this.isConnected = false;
-    console.log('✅ STOMP 연결 해제 완료');
   }
 
   /**
@@ -260,6 +267,41 @@ export class StockStompClient {
    */
   getConnectionStatus(): boolean {
     return this.isConnected && this.client.connected;
+  }
+
+  /**
+   * WebSocket 연결 상태 상세 확인
+   */
+  getDetailedConnectionStatus(): {
+    isConnected: boolean;
+    clientConnected: boolean;
+    webSocketState: number | null;
+    webSocketStateText: string;
+  } {
+    const webSocketState = this.client.webSocket?.readyState || null;
+    const webSocketStateText =
+      webSocketState !== null
+        ? ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][webSocketState] || 'UNKNOWN'
+        : 'NO_WEBSOCKET';
+
+    return {
+      isConnected: this.isConnected,
+      clientConnected: this.client.connected,
+      webSocketState,
+      webSocketStateText,
+    };
+  }
+
+  /**
+   * 연결이 완전히 정리되었는지 확인
+   */
+  isFullyDisconnected(): boolean {
+    const status = this.getDetailedConnectionStatus();
+    return (
+      !status.isConnected &&
+      !status.clientConnected &&
+      (status.webSocketState === WebSocket.CLOSED || status.webSocketState === null)
+    );
   }
 
   /**

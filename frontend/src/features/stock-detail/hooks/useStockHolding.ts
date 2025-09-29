@@ -22,6 +22,7 @@ export const useStockHolding = (stockCode: string, currentPrice: number = 0, ena
   const {
     data: holdingResponse,
     isLoading,
+    isFetching,
     error,
     refetch,
   } = useApi({
@@ -38,6 +39,7 @@ export const useStockHolding = (stockCode: string, currentPrice: number = 0, ena
       500: '보유 정보 조회 중 서버 오류가 발생했습니다',
     },
   });
+
 
   // holdingResponse가 유효할 때 previousHoldingResponse 업데이트
   useEffect(() => {
@@ -75,10 +77,13 @@ export const useStockHolding = (stockCode: string, currentPrice: number = 0, ena
     };
   }, [holdingResponse, currentPrice]); // previousHoldingResponse.current 의존성 제거
 
+  // 적절한 로딩 상태 계산: 초기 로딩이나 데이터 페칭 중
+  const isHoldingLoading = isLoading || (isFetching && !holdingResponse);
+
   return {
     holdingData,
     rawData: holdingResponse,
-    isLoading: shouldFetch ? isLoading : false,
+    isLoading: isHoldingLoading,
     error: shouldFetch ? error : null,
     hasHolding: !!holdingResponse,
     hasAccount: accountId !== null,

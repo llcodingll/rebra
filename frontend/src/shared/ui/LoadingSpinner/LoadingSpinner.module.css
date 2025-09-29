@@ -1,0 +1,46 @@
+.spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinnerCircle {
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 크기 변형 */
+.small .spinnerCircle {
+  width: 16px;
+  height: 16px;
+  border-width: 1.5px;
+}
+
+.medium .spinnerCircle {
+  width: 24px;
+  height: 24px;
+  border-width: 2px;
+}
+
+.large .spinnerCircle {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+/* 성능 최적화를 위한 GPU 가속 */
+.spinnerCircle {
+  will-change: transform;
+  transform: translateZ(0);
+}

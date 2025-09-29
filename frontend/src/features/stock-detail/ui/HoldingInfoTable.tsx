@@ -1,12 +1,14 @@
 import styles from './HoldingInfoTable.module.css';
+import LoadingSpinner from '../../../shared/ui/LoadingSpinner';
 import type { StockHoldingData } from '../api/types';
 
 interface HoldingInfoTableProps {
   holdingData: StockHoldingData | null;
   currentPrice?: number;
+  isLoading?: boolean;
 }
 
-export default function HoldingInfoTable({ holdingData, currentPrice = 0 }: HoldingInfoTableProps) {
+export default function HoldingInfoTable({ holdingData, currentPrice = 0, isLoading = false }: HoldingInfoTableProps) {
   const formatNumber = (value: number | undefined) => {
     if (value === undefined || value === null) return '-';
     return new Intl.NumberFormat('ko-KR').format(value);
@@ -26,27 +28,32 @@ export default function HoldingInfoTable({ holdingData, currentPrice = 0 }: Hold
   };
 
   // 보유하지 않는 경우
-  if (!holdingData) {
-    return (
-      <div className={styles.holdingContainer}>
-        <div className={styles.externalHeader}>현재 보유 정보</div>
-        <div className={styles.holdingTable}>
-          <div className={styles.emptyState}>보유한 주식이 없습니다.</div>
-        </div>
-      </div>
-    );
-  }
+  // if (!holdingData) {
+  //   return (
+  //     <div className={styles.holdingContainer}>
+  //       <div className={styles.externalHeader}>현재 보유 정보</div>
+  //       <div className={styles.holdingTable}>
+  //         <div className={styles.emptyState}>보유한 주식이 없습니다.</div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className={styles.holdingContainer}>
       <div className={styles.externalHeader}>현재 보유 정보</div>
       <div className={styles.holdingTable}>
+        {isLoading && (
+          <div className={styles.loadingOverlay}>
+            <LoadingSpinner size='medium' />
+          </div>
+        )}
         <div className={styles.tableContent}>
           <div className={`${styles.tableColumn} ${styles.singleColumn}`}>
             <div className={styles.columnHeader}>평균단가</div>
             <div className={styles.singleColumnData}>
               <div className={styles.singleDataValue}>
-                {holdingData ? formatNumber(holdingData.averagePurchasePrice) : '-'}원
+                {holdingData ? formatNumber(holdingData.averagePurchasePrice) + '원' : '-'}
               </div>
             </div>
           </div>

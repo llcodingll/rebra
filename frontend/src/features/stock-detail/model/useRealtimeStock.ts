@@ -76,7 +76,6 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
   const handleDisconnect = useCallback(() => {
     if (!mountedRef.current) return;
     setIsConnected(false);
-    console.log('🔌 STOMP 연결 해제');
   }, []);
 
   const handleError = useCallback((errorMessage: string) => {
@@ -187,9 +186,6 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
         return;
       }
 
-      // 실제 STOMP 연결
-      console.log(`🚀 실시간 연결 시작: ${stockCode}`);
-
       await stompClient.connect();
 
       if (!mountedRef.current) return;
@@ -212,7 +208,6 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
 
   // 수동 재연결
   const reconnect = useCallback(() => {
-    console.log('🔄 수동 재연결 시작');
     if (stompClient) {
       stompClient.disconnect();
     }
@@ -221,8 +216,6 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
 
   // 수동 연결 해제
   const disconnect = useCallback(() => {
-    console.log('🔌 수동 연결 해제');
-
     // 시뮬레이션 정리
     if (simulationCleanupRef.current) {
       simulationCleanupRef.current();
@@ -252,21 +245,43 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
       return;
     }
 
-    // 이전 연결 정리
-    if (stompClientRef.current) {
-      stompClientRef.current.disconnect();
-    }
+    // 이전 연결 정리 및 대기
+    const initializeWithDelay = async () => {
+      // 이전 연결 정리
+      if (stompClientRef.current) {
+        const oldClient = stompClientRef.current;
 
-    // 새 클라이언트 저장
-    stompClientRef.current = stompClient;
+        // 연결 상태 로깅
+        const beforeStatus = oldClient.getDetailedConnectionStatus();
 
-    // 연결 시작
-    initializeConnection();
+        oldClient.disconnect();
+        stompClientRef.current = null;
+
+        // 연결이 완전히 정리될 때까지 대기
+        let waitCount = 0;
+        const maxWait = 10; // 최대 5초 대기 (500ms * 10)
+
+        while (!oldClient.isFullyDisconnected() && waitCount < maxWait) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          waitCount++;
+
+          const currentStatus = oldClient.getDetailedConnectionStatus();
+        }
+
+        const finalStatus = oldClient.getDetailedConnectionStatus();
+      }
+
+      // 새 클라이언트 저장
+      stompClientRef.current = stompClient;
+
+      // 연결 시작
+      initializeConnection();
+    };
+
+    initializeWithDelay();
 
     // 클린업 함수
     return () => {
-      console.log(`🧹 useRealtimeStock cleanup: ${stockCode}`);
-
       // 시뮬레이션 정리
       if (simulationCleanupRef.current) {
         simulationCleanupRef.current();
@@ -288,8 +303,33 @@ export function useRealtimeStock(stockCode: string): UseRealtimeStockReturn {
   useEffect(() => {
     mountedRef.current = true;
 
+    // 페이지 언로드 시 연결 정리
+    const handleBeforeUnload = () => {
+      if (stompClientRef.current) {
+        stompClientRef.current.disconnect();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
       mountedRef.current = false;
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+
+      // 컴포넌트 언마운트 시 확실한 정리
+      if (stompClientRef.current) {
+        const client = stompClientRef.current;
+        const status = client.getDetailedConnectionStatus();
+
+        client.disconnect();
+        stompClientRef.current = null;
+      }
+
+      // 시뮬레이션 정리
+      if (simulationCleanupRef.current) {
+        simulationCleanupRef.current();
+        simulationCleanupRef.current = null;
+      }
     };
   }, []);
 

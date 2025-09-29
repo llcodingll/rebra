@@ -1,7 +1,7 @@
 .stockBasicInfo {
   height: 100%;
   display: flex;
-  padding-left: 20px;
+  padding-left: 10px;
   flex-direction: column;
   justify-content: flex-end;
 }
@@ -15,7 +15,7 @@
 .stockName {
   font-size: 28px;
   font-weight: 700;
-  color: #111827;
+  color: #494949;
   margin: 0;
 }
 
@@ -34,7 +34,7 @@
 .currentPrice {
   font-size: 36px;
   font-weight: 700;
-  color: #111827;
+  color: #494949;
   font-variant-numeric: tabular-nums;
 }
 

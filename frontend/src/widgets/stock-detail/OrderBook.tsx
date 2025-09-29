@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import styles from './OrderBook.module.css';
+import LoadingSpinner from '../../shared/ui/LoadingSpinner';
 import { OptimizedOrderbookData } from '../../features/stock-detail/api/types';
 
 interface OrderBookProps {
@@ -18,6 +19,7 @@ interface OrderBookProps {
     volumeRate?: number;
   };
   onPriceClick?: (price: number) => void;
+  isLoading?: boolean;
 }
 
 interface OrderBookRow {
@@ -34,22 +36,22 @@ interface TradeHistoryItem {
   time: string;
 }
 
-export default function OrderBook({ orderBook, stockInfo, onPriceClick }: OrderBookProps) {
+const OrderBook = memo(function OrderBook({ orderBook, stockInfo, onPriceClick, isLoading = false }: OrderBookProps) {
   // 가격 비교 함수 - 전일종가 대비 색상 결정
-  const getPriceColorClass = (price: number, prevClose: number) => {
+  const getPriceColorClass = useCallback((price: number, prevClose: number) => {
     if (price > prevClose) return styles.priceUp;
     if (price < prevClose) return styles.priceDown;
     return styles.priceEqual;
-  };
+  }, []);
   const orderBookTableRef = useRef<HTMLDivElement>(null);
   const hasScrolledToCenter = useRef(false);
 
-  const formatNumber = (num: number) => {
+  const formatNumber = useCallback((num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);
-  };
+  }, []);
 
   // 연속적인 20개 호가 데이터 생성
-  const generateOrderBookRows = (): OrderBookRow[] => {
+  const generateOrderBookRows = useCallback((): OrderBookRow[] => {
     if (!orderBook) return [];
 
     // 매도 호가 (askp10 → askp1 순서로 상단부터)
@@ -123,11 +125,13 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick }: OrderB
     });
 
     return rows;
-  };
+  }, [orderBook]);
 
-  // 현재가와 가장 가까운 호가 찾기
-  const findCurrentPriceRowIndex = (rows: OrderBookRow[], currentPrice: number): number => {
-    if (rows.length === 0 || currentPrice <= 0) return -1;
+  // 현재가와 가장 가까운 호가 찾기 (개선된 버전)
+  const findCurrentPriceRowIndex = useCallback((rows: OrderBookRow[], currentPrice: number): number => {
+    if (rows.length === 0 || currentPrice <= 0) {
+      return -1;
+    }
 
     let closestIndex = -1;
     let minDiff = Infinity;
@@ -140,22 +144,52 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick }: OrderB
       }
     });
 
+    // 허용 오차 내에서만 매칭 (가격 차이가 너무 클 경우 매칭하지 않음)
+    const maxAllowedDiff = currentPrice * 0.1; // 현재가의 10% 이내
+    if (minDiff > maxAllowedDiff) {
+      return -1;
+    }
+
     return closestIndex;
-  };
+  }, []);
 
   // 잔량 최대값 계산 (시각화 바 위해)
-  const getMaxQuantity = (rows: OrderBookRow[]): number => {
+  const getMaxQuantity = useCallback((rows: OrderBookRow[]): number => {
     let max = 0;
-    rows.forEach((row) => {
-      if (row.askQuantity && row.askQuantity > max) max = row.askQuantity;
-      if (row.bidQuantity && row.bidQuantity > max) max = row.bidQuantity;
-    });
-    return max;
-  };
+    let maxAsk = 0;
+    let maxBid = 0;
 
-  const orderBookRows = generateOrderBookRows();
-  const currentPriceRowIndex = findCurrentPriceRowIndex(orderBookRows, stockInfo.currentPrice);
-  const maxQuantity = getMaxQuantity(orderBookRows);
+    rows.forEach((row) => {
+      // 문자열을 숫자로 변환해서 비교
+      const askQty = row.askQuantity ? Number(row.askQuantity) : 0;
+      const bidQty = row.bidQuantity ? Number(row.bidQuantity) : 0;
+
+      if (askQty > max) max = askQty;
+      if (bidQty > max) max = bidQty;
+
+      if (askQty > maxAsk) maxAsk = askQty;
+      if (bidQty > maxBid) maxBid = bidQty;
+    });
+
+    return max;
+  }, []);
+
+  // 메모이제이션으로 성능 최적화
+  const orderBookRows = useMemo(() => {
+    return generateOrderBookRows();
+  }, [orderBook]);
+
+  // 실시간 포커스용 인덱스 (계속 업데이트)
+  const currentPriceRowIndex = useMemo(() => {
+    if (orderBookRows.length === 0 || stockInfo.currentPrice <= 0) {
+      return -1;
+    }
+    return findCurrentPriceRowIndex(orderBookRows, stockInfo.currentPrice);
+  }, [orderBookRows, stockInfo.currentPrice]);
+
+  const maxQuantity = useMemo(() => {
+    return getMaxQuantity(orderBookRows);
+  }, [orderBookRows]);
 
   // 초기 로드 시에만 현재가를 중심으로 스크롤 위치 조정
   useEffect(() => {
@@ -194,14 +228,21 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick }: OrderB
       </div>
 
       <div className={styles.orderBookContent}>
+        {isLoading && (
+          <div className={styles.loadingOverlay}>
+            <LoadingSpinner size='medium' />
+          </div>
+        )}
         {/* 메인 호가 테이블 */}
         <div ref={orderBookTableRef} className={styles.orderBookTable}>
           {orderBookRows.map((row, index) => {
             const isCurrentPrice = index === currentPriceRowIndex;
 
-            // 잔량 비율 계산
-            const askQuantityPercent = row.askQuantity && maxQuantity > 0 ? (row.askQuantity / maxQuantity) * 100 : 0;
-            const bidQuantityPercent = row.bidQuantity && maxQuantity > 0 ? (row.bidQuantity / maxQuantity) * 100 : 0;
+            // 잔량 비율 계산 (숫자 변환 적용)
+            const askQuantityPercent =
+              row.askQuantity && maxQuantity > 0 ? (Number(row.askQuantity) / maxQuantity) * 100 : 0;
+            const bidQuantityPercent =
+              row.bidQuantity && maxQuantity > 0 ? (Number(row.bidQuantity) / maxQuantity) * 100 : 0;
 
             return (
               <div key={`row-${index}`} className={styles.orderRow}>
@@ -220,16 +261,16 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick }: OrderB
 
                 {/* 가운데: 가격 */}
                 <div
-                  className={`${styles.priceCell} ${isCurrentPrice ? styles.currentPriceHighlight : ''} ${onPriceClick ? styles.clickable : ''}`}
+                  className={`${styles.priceCell} ${isCurrentPrice ? styles.currentPriceHighlight : ''} ${
+                    onPriceClick ? styles.clickable : ''
+                  }`}
                   onClick={() => onPriceClick?.(row.price)}
                 >
                   <div className={`${styles.price} ${getPriceColorClass(row.price, stockInfo.prevClose)}`}>
                     {formatNumber(row.price)}
                   </div>
                   {stockInfo.prevClose > 0 && (
-                    <div
-                      className={`${styles.changeRate} ${getPriceColorClass(row.price, stockInfo.prevClose)}`}
-                    >
+                    <div className={`${styles.changeRate} ${getPriceColorClass(row.price, stockInfo.prevClose)}`}>
                       {row.price > stockInfo.prevClose ? '+' : ''}
                       {(((row.price - stockInfo.prevClose) / stockInfo.prevClose) * 100).toFixed(2)}%
                     </div>
@@ -255,4 +296,6 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick }: OrderB
       </div>
     </div>
   );
-}
+});
+
+export default OrderBook;

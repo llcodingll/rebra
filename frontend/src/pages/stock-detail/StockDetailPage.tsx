@@ -8,7 +8,9 @@ import OrderFormContainer from '../../widgets/stock-detail/order/OrderFormContai
 import { useRealtimeStock } from '../../features/stock-detail/model/useRealtimeStock';
 import { useInfiniteChartData, mergeInfiniteChartData } from '../../features/stock-detail/hooks/useInfiniteChartData';
 import { useStockHolding } from '../../features/stock-detail/hooks/useStockHolding';
+import { useOrderBookFallback } from '../../features/stock-detail/hooks/useOrderBookFallback';
 import { isDevMode } from '../../features/stock-detail/lib/mockData';
+import LoadingSpinner from '../../shared/ui/LoadingSpinner';
 import styles from './StockDetailPage.module.css';
 
 interface OrderBookItem {
@@ -39,11 +41,13 @@ export default function StockDetailPage() {
     reconnect,
   } = useRealtimeStock(stockCode);
 
-  console.log('StockDetailPage');
-
   // console.log(holdingData);
   // 차트 데이터에서 현재 가격 정보 가져오기 (일봉 기준)
-  const { data: infiniteData } = useInfiniteChartData(stockCode, 'daily', true);
+  const {
+    data: infiniteData,
+    isLoading: isChartLoading,
+    isFetching: isChartFetching
+  } = useInfiniteChartData(stockCode, 'daily', true);
   const chartApiData = useMemo(() => {
     return mergeInfiniteChartData(infiniteData?.pages);
   }, [infiniteData?.pages]);
@@ -52,8 +56,15 @@ export default function StockDetailPage() {
   const hasRealData = !!(realtimePrice?.stckPrpr || chartApiData?.summary?.currentPrice);
   const currentPrice = hasRealData ? realtimePrice?.stckPrpr || Number(chartApiData?.summary?.currentPrice) : 0;
 
-  // 보유 정보 조회 (중앙 집중식 관리)
-  const { holdingData, refetch: refetchHolding } = useStockHolding(stockCode, currentPrice);
+  // 보유 정보 조회
+  const {
+    holdingData,
+    isLoading: isHoldingLoading,
+    refetch: refetchHolding,
+  } = useStockHolding(stockCode, currentPrice);
+
+  // 호가 데이터 폴백 (REST API + 웹소켓 조합)
+  const { orderbook: fallbackOrderbook, isLoading: isOrderbookLoading } = useOrderBookFallback(stockCode, orderbook);
 
   // 실제 주식 정보 (차트 API 데이터 우선, 실시간 데이터는 보조) + SearchPage에서 전달받은 정보 우선 사용
   const displayStockInfo =
@@ -109,16 +120,16 @@ export default function StockDetailPage() {
   };
 
   // 로딩 상태 처리
-  if (isLoading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.loadingState}>
-          <div className={styles.loadingSpinner}>⏳</div>
-          <p>📊 주식 정보를 불러오는 중...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <div className={styles.container}>
+  //       <div className={styles.loadingState}>
+  //         <div className={styles.loadingSpinner}></div>
+  //         <p>주식 정보를 불러오는 중...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   // 에러 상태 처리 (개발 모드가 아닐 때만)
   if (error && isDevMode()) {
@@ -151,7 +162,6 @@ export default function StockDetailPage() {
 
   return (
     <div className={styles.container}>
-
       {/* 주식 정보 및 보유 현황 섹션 */}
       <div className={styles.stockInfoSection}>
         <div className={styles.stockBasicInfoWrapper}>
@@ -175,7 +185,11 @@ export default function StockDetailPage() {
         </div>
 
         <div className={styles.holdingInfoWrapper}>
-          <HoldingInfoTable holdingData={holdingData} currentPrice={safeStockInfo.currentPrice} />
+          <HoldingInfoTable
+            holdingData={holdingData}
+            currentPrice={safeStockInfo.currentPrice}
+            isLoading={isHoldingLoading}
+          />
         </div>
       </div>
 
@@ -183,11 +197,17 @@ export default function StockDetailPage() {
       <div className={styles.mainContent}>
         {/* 좌측: 차트 */}
         <div className={styles.chartSection}>
+          {(isChartLoading || (isChartFetching && !chartApiData)) && (
+            <div className={styles.chartLoadingOverlay}>
+              <LoadingSpinner size="large" />
+            </div>
+          )}
           <RealTimeChart stockCode={safeStockInfo.code} stockName={safeStockInfo.name} realtimeData={realtimePrice} />
         </div>
 
         <OrderBook
-          orderBook={orderbook}
+          orderBook={fallbackOrderbook}
+          isLoading={isOrderbookLoading}
           stockInfo={{
             currentPrice: safeStockInfo.currentPrice || (hasRealData ? 0 : 71400), // 실제 데이터 있으면 0, 없으면 기본값
             prevClose: prevClose || 71400, // 전일 종가

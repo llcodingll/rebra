@@ -318,3 +318,37 @@ export const SUBSCRIPTION_DATA_TYPES = {
 } as const;
 
 export type SubscriptionDataType = (typeof SUBSCRIPTION_DATA_TYPES)[keyof typeof SUBSCRIPTION_DATA_TYPES];
+
+// =============================================================================
+// REST API 호가 조회 관련 타입 정의
+// =============================================================================
+
+/**
+ * REST API 호가 조회 응답 타입
+ * /api/stocks/{stockCode}/current-quotes
+ */
+export interface RestCurrentQuotesResponse {
+  contentType: string;
+  trId: string;
+  trCont: string;
+  gtUid: string;
+  rtCd: string;
+  msgCd: string;
+  msg1: string;
+  output1: OptimizedOrderbookData; // 기존 타입 재사용
+  output2: {
+    antcMkopClsCode: string;
+    stckPrpr: string;
+    stckOprc: string;
+    stckHgpr: string;
+    stckLwpr: string;
+    stckSdpr: string;
+    antcCnpr: string;
+    antcCntgVrssSign: string;
+    antcCntgVrss: string;
+    antcCntgPrdyCtrt: string;
+    antcVol: string;
+    stckShrnIscd: string;
+    viClsCode: string;
+  };
+}

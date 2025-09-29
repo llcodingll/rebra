@@ -54,7 +54,7 @@ export default function NicknameInput({ value, onChange, onValidityChange }: Nic
 
     const result = await authApi.checkNickname(value);
     if (isOk(result)) {
-      setDuplicateStatus(result.data.isDuplicated ? 'unavailable' : 'available');
+      setDuplicateStatus(result.data.duplicated ? 'unavailable' : 'available');
     } else {
       setDuplicateStatus('none');
       setValidationMessage('중복 확인 중 오류가 발생했습니다.');
@@ -74,14 +74,14 @@ export default function NicknameInput({ value, onChange, onValidityChange }: Nic
     <div className={styles.nicknameInput}>
       <div className={styles.inputGroup}>
         <input
-          type="text"
+          type='text'
           value={value}
           onChange={(e) => handleInputChange(e.target.value)}
-          placeholder="닉네임을 입력해주세요"
+          placeholder='닉네임을 입력해주세요'
           className={`${styles.input} ${showError ? styles.inputError : ''} ${showSuccess ? styles.inputSuccess : ''}`}
         />
         <button
-          type="button"
+          type='button'
           onClick={handleDuplicateCheck}
           className={styles.checkButton}
           disabled={validationStatus !== 'valid' || duplicateStatus === 'checking'}
@@ -89,24 +89,12 @@ export default function NicknameInput({ value, onChange, onValidityChange }: Nic
           {duplicateStatus === 'checking' ? '확인 중...' : '중복 확인'}
         </button>
       </div>
-      
-      {validationMessage && (
-        <div className={styles.validationMessage}>
-          {validationMessage}
-        </div>
-      )}
-      
-      {duplicateStatus === 'available' && (
-        <div className={styles.successMessage}>
-          사용 가능한 닉네임입니다.
-        </div>
-      )}
-      
-      {duplicateStatus === 'unavailable' && (
-        <div className={styles.errorMessage}>
-          이미 사용 중인 닉네임입니다.
-        </div>
-      )}
+
+      {validationMessage && <div className={styles.validationMessage}>{validationMessage}</div>}
+
+      {duplicateStatus === 'available' && <div className={styles.successMessage}>사용 가능한 닉네임입니다.</div>}
+
+      {duplicateStatus === 'unavailable' && <div className={styles.errorMessage}>이미 사용 중인 닉네임입니다.</div>}
     </div>
   );
 }
