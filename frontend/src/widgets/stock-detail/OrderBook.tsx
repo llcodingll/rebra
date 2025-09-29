@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo, useState } from 'react';
+import { useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import styles from './OrderBook.module.css';
 import LoadingSpinner from '../../shared/ui/LoadingSpinner';
 import { OptimizedOrderbookData } from '../../features/stock-detail/api/types';
@@ -36,26 +36,22 @@ interface TradeHistoryItem {
   time: string;
 }
 
-export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoading = false }: OrderBookProps) {
+const OrderBook = memo(function OrderBook({ orderBook, stockInfo, onPriceClick, isLoading = false }: OrderBookProps) {
   // 가격 비교 함수 - 전일종가 대비 색상 결정
-  const getPriceColorClass = (price: number, prevClose: number) => {
+  const getPriceColorClass = useCallback((price: number, prevClose: number) => {
     if (price > prevClose) return styles.priceUp;
     if (price < prevClose) return styles.priceDown;
     return styles.priceEqual;
-  };
+  }, []);
   const orderBookTableRef = useRef<HTMLDivElement>(null);
   const hasScrolledToCenter = useRef(false);
-  const lastOrderBookRef = useRef<OptimizedOrderbookData | null>(null);
 
-  // 내부 로딩 상태 관리
-  const [isProcessingData, setIsProcessingData] = useState(false);
-
-  const formatNumber = (num: number) => {
+  const formatNumber = useCallback((num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num);
-  };
+  }, []);
 
   // 연속적인 20개 호가 데이터 생성
-  const generateOrderBookRows = (): OrderBookRow[] => {
+  const generateOrderBookRows = useCallback((): OrderBookRow[] => {
     if (!orderBook) return [];
 
     // 매도 호가 (askp10 → askp1 순서로 상단부터)
@@ -129,10 +125,10 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
     });
 
     return rows;
-  };
+  }, [orderBook]);
 
   // 현재가와 가장 가까운 호가 찾기 (개선된 버전)
-  const findCurrentPriceRowIndex = (rows: OrderBookRow[], currentPrice: number): number => {
+  const findCurrentPriceRowIndex = useCallback((rows: OrderBookRow[], currentPrice: number): number => {
     if (rows.length === 0 || currentPrice <= 0) {
       return -1;
     }
@@ -155,10 +151,10 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
     }
 
     return closestIndex;
-  };
+  }, []);
 
   // 잔량 최대값 계산 (시각화 바 위해)
-  const getMaxQuantity = (rows: OrderBookRow[]): number => {
+  const getMaxQuantity = useCallback((rows: OrderBookRow[]): number => {
     let max = 0;
     let maxAsk = 0;
     let maxBid = 0;
@@ -176,17 +172,14 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
     });
 
     return max;
-  };
+  }, []);
 
   // 메모이제이션으로 성능 최적화
   const orderBookRows = useMemo(() => {
-    setIsProcessingData(true);
-    const rows = generateOrderBookRows();
-    // 다음 렌더링에서 로딩 상태 해제
-    setTimeout(() => setIsProcessingData(false), 0);
-    return rows;
+    return generateOrderBookRows();
   }, [orderBook]);
 
+  // 실시간 포커스용 인덱스 (계속 업데이트)
   const currentPriceRowIndex = useMemo(() => {
     if (orderBookRows.length === 0 || stockInfo.currentPrice <= 0) {
       return -1;
@@ -198,49 +191,22 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
     return getMaxQuantity(orderBookRows);
   }, [orderBookRows]);
 
-  // 데이터 준비 상태 확인
-  const isDataReady = orderBookRows.length > 0 && stockInfo.currentPrice > 0 && currentPriceRowIndex >= 0;
-  const showLoading = isLoading || isProcessingData || !isDataReady;
-
-  // 그리드 컨테이너 크기 디버깅
-  useEffect(() => {
-    if (orderBookTableRef.current && orderBookRows.length > 0) {
-      const container = orderBookTableRef.current;
-      const firstRow = container.querySelector('.orderRow') as HTMLElement;
-    }
-  }, [orderBookRows.length]);
-
-  // 데이터 소스 변경 감지 및 스크롤 초기화
-  useEffect(() => {
-    if (lastOrderBookRef.current !== orderBook) {
-      // 데이터 소스가 변경되었을 때 스크롤 상태 초기화
-      hasScrolledToCenter.current = false;
-      lastOrderBookRef.current = orderBook;
-    }
-  }, [orderBook]);
-
   // 초기 로드 시에만 현재가를 중심으로 스크롤 위치 조정
   useEffect(() => {
-    if (
-      orderBookTableRef.current &&
-      currentPriceRowIndex >= 0 &&
-      !hasScrolledToCenter.current &&
-      isDataReady &&
-      !isProcessingData
-    ) {
+    if (orderBookTableRef.current && currentPriceRowIndex >= 0 && !hasScrolledToCenter.current) {
       const container = orderBookTableRef.current;
       const rowHeight = 40; // CSS에서 설정한 .orderRow 높이
       const containerHeight = container.clientHeight;
 
       // 현재가 행이 컨테이너 중앙에 오도록 스크롤 위치 계산
-      const targetScrollTop = currentPriceRowIndex * rowHeight - containerHeight / 2 + rowHeight / 2;
+      const targetScrollTop = (currentPriceRowIndex * rowHeight) - (containerHeight / 2) + (rowHeight / 2);
 
       container.scrollTop = Math.max(0, targetScrollTop);
 
       // 한 번 스크롤했음을 표시
       hasScrolledToCenter.current = true;
     }
-  }, [currentPriceRowIndex, isDataReady, isProcessingData]);
+  }, [currentPriceRowIndex]);
 
   // if (!orderBook) {
   //   return (
@@ -262,7 +228,7 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
       </div>
 
       <div className={styles.orderBookContent}>
-        {showLoading && (
+        {isLoading && (
           <div className={styles.loadingOverlay}>
             <LoadingSpinner size='medium' />
           </div>
@@ -330,4 +296,6 @@ export default function OrderBook({ orderBook, stockInfo, onPriceClick, isLoadin
       </div>
     </div>
   );
-}
+});
+
+export default OrderBook;

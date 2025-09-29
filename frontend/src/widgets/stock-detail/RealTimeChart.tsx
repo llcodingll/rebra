@@ -102,9 +102,33 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData }: Re
         const lastCandle = lastCandleRef.current;
         const lastVolume = lastVolumeRef.current;
 
+        // 전일 종가 계산 (현재 캔들 데이터에서 전일 캔들의 종가 찾기)
+        const currentCandleData = candleDataRef.current;
+        let previousClose = lastCandle.open; // 기본값: 당일 시가
+
+        if (currentCandleData.length >= 2) {
+          // 전일 캔들의 종가 사용
+          previousClose = currentCandleData[currentCandleData.length - 2].close;
+        }
+
+        // 한국 관례에 맞게 TradingView 캔들 데이터 조정
+        let adjustedOpen: number;
+        let adjustedClose: number;
+
+        if (price >= previousClose) {
+          // 상승: TradingView가 빨간색으로 표시하도록 close > open 설정
+          adjustedOpen = Math.min(previousClose, price);
+          adjustedClose = Math.max(previousClose, price);
+        } else {
+          // 하락: TradingView가 파란색으로 표시하도록 open > close 설정
+          adjustedOpen = Math.max(previousClose, price);
+          adjustedClose = Math.min(previousClose, price);
+        }
+
         const updatedCandle: CandleData = {
           ...lastCandle,
-          close: price,
+          open: adjustedOpen,
+          close: adjustedClose,
           high: Math.max(lastCandle.high, price),
           low: Math.min(lastCandle.low, price),
         };
@@ -112,7 +136,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData }: Re
         const updatedVolume: VolumeData = {
           ...lastVolume,
           value: volume,
-          color: price >= lastCandle.open ? '#ea3939' : '#387eefff',
+          color: price >= previousClose ? '#dc2626' : '#387eefff', // 전일 종가 기준으로 변경
         };
 
         // ref 업데이트
@@ -121,7 +145,6 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData }: Re
 
         // 차트 업데이트
         try {
-          const currentCandleData = candleDataRef.current;
           const updatedCandleArray = [...currentCandleData];
           const updatedVolumeArray = [...volumeData];
 
@@ -140,7 +163,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData }: Re
         setCurrentPrice(price);
       }
     }
-  }, [realtimeData]);
+  }, [realtimeData, volumeData]);
 
   // 차트 크기 동기화 함수
   const resizeCharts = () => {
@@ -267,10 +290,10 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData }: Re
 
     // 시리즈 추가
     const priceSeries = priceChart.addSeries(CandlestickSeries, {
-      upColor: '#ea3939',
+      upColor: '#dc2626',
       downColor: '#387eefff',
       borderVisible: false,
-      wickUpColor: '#ea3939',
+      wickUpColor: '#dc2626',
       wickDownColor: '#387eefff',
       priceFormat: {
         type: 'price',
@@ -280,7 +303,7 @@ export default function RealTimeChart({ stockCode, stockName, realtimeData }: Re
     });
 
     const volumeSeries = volumeChart.addSeries(HistogramSeries, {
-      color: '#ea3939',
+      color: '#dc2626',
       priceFormat: { type: 'volume' },
     });
 
