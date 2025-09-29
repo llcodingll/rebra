@@ -29,4 +29,5 @@ public class HomeController {
     public Map<String, String> health() {
         return Map.of("status", "healthy");
     }
+
 }
