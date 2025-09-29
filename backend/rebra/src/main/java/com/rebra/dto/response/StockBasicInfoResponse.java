@@ -1,6 +1,7 @@
 package com.rebra.dto.response;
 
 import com.rebra.dto.external.FssStockBasicInfoResponse;
+import com.rebra.entity.Stock;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -83,6 +84,26 @@ public class StockBasicInfoResponse {
                 .depositCancellationDate(parseDate(item.getDpsgCanDt()))
                 .issueTypeName(item.getIssuFrmtClsfNm())
                 .baseDate(parseDate(item.getBasDt()))
+                .build();
+    }
+
+    public static StockBasicInfoResponse from(Stock stock) {
+        return StockBasicInfoResponse.builder()
+                .stockCode(stock.getStockCode())
+                .stockName(stock.getStockName())
+                .isinCode(null)
+                .isinCodeName(null)
+                .corporateRegistrationNumber(null)
+                .securitiesTypeCode(null)
+                .securitiesTypeName(null)
+                .parValue(null)
+                .issuedShares(null)
+                .listingDate(null)
+                .delistingDate(null)
+                .depositRegistrationDate(null)
+                .depositCancellationDate(null)
+                .issueTypeName(null)
+                .baseDate(null)
                 .build();
     }
 
