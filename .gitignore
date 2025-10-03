@@ -4,3 +4,7 @@
 
 # Node.js
 node_modules/
+
+# rebalance 서버 설정 파일
+backend/rebalance/src/main/resources/application.yml
+backend/rebalance/src/main/resources/application-*.yml
