@@ -93,4 +93,12 @@ public class RebalancingExecutionResponse {
                 .failureReason(reason)
                 .build();
     }
+
+    public static RebalancingExecutionResponse queued(Long portfolioId) {
+        return RebalancingExecutionResponse.builder()
+                .success(true)
+                .executionTime(LocalDateTime.now())
+                .failureReason(null)
+                .build();
+    }
 }

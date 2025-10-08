@@ -1,17 +1,25 @@
 package com.rebra.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rebra.dto.DecryptedAccountCredentials;
+import com.rebra.dto.rebalancing.RebalancingOrderMessage;
 import com.rebra.dto.response.RebalancingExecutionResponse;
 import com.rebra.entity.*;
 import com.rebra.enums.ExecutionType;
+import com.rebra.enums.TransactionStatus;
+import com.rebra.repository.OutboxEventRepository;
 import com.rebra.repository.PortfolioRepository;
+import com.rebra.repository.RebalancingOrderRepository;
+import com.rebra.util.AccountEncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -19,10 +27,10 @@ import java.util.List;
 public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingService {
 
     private final PortfolioRepository portfolioRepository;
-    private final PortfolioRebalancingProcessor processor;
+    private final RebalancingOrderRepository rebalancingOrderRepository;
+    private final OutboxEventRepository outboxEventRepository;
     private final HolidayService holidayService;
-
-
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
@@ -30,65 +38,113 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
         Portfolio portfolio = portfolioRepository.findByIdAndUserIdWithPortfolioStocks(portfolioId, userId)
                 .orElseThrow(() -> new RuntimeException("포트폴리오를 찾을 수 없습니다"));
 
-        log.info("수동 리밸런싱 요청: 포트폴리오 {}", portfolioId);
-        
-        // 1. RebalancingCalculation 생성
-        RebalancingCalculation calculation = processor.calculateRebalancing(portfolio);
-        
-        // 2. 바로 리밸런싱 실행 (판단 없이)
-        RebalancingExecutionResponse result = processor.doRebalancing(calculation, portfolio, ExecutionType.MANUAL);
-        
-        if (result.isSuccess()) {
-            portfolio.updateLastRebalanceDate(LocalDate.now());
-            portfolioRepository.save(portfolio);
-            log.info("수동 리밸런싱 완료: 포트폴리오 {}", portfolioId);
-        } else {
-            log.error("수동 리밸런싱 실패: 포트폴리오 {} - {}", portfolioId, result.getFailureReason());
-        }
-        
-        return result;
+        log.info("수동 리밸런싱 요청 (Outbox 큐잉): 포트폴리오 {}", portfolioId);
+        enqueueRebalancing(portfolio, ExecutionType.MANUAL);
+
+        return RebalancingExecutionResponse.queued(portfolioId);
     }
 
     @Override
     public void processAllActivePortfolios() {
         LocalDate today = LocalDate.now();
-        
-        // 거래일 체크
+
         if (!isTradingDay(today)) {
             log.info("오늘({})은 비거래일입니다. 리밸런싱 처리 건너뜀", today);
             return;
         }
-        
-        // 오늘 처리할 포트폴리오 조회 (nextRebalanceDate <= today)
+
         List<Portfolio> pendingPortfolios = portfolioRepository
-            .findByAutoRebalancingTrueAndNextRebalanceDateLessThanEqual(today);
-        
+                .findByAutoRebalancingTrueAndNextRebalanceDateLessThanEqual(today);
+
         log.info("리밸런싱 대상 포트폴리오: {}개", pendingPortfolios.size());
-        
+
         for (Portfolio portfolio : pendingPortfolios) {
             try {
-                // 별도 서비스를 통해 호출 → 프록시 거침 → 트랜잭션 적용됨
-                processor.processPortfolio(portfolio.getId(), today);
+                enqueueRebalancingInTx(portfolio, today);
             } catch (Exception e) {
-                log.error("포트폴리오 {} 리밸런싱 실패", portfolio.getId(), e);
+                log.error("포트폴리오 {} 리밸런싱 큐잉 실패", portfolio.getId(), e);
             }
         }
     }
 
-
-
-
-
-
+    // 자동 리밸런싱: 별도 TX (포트폴리오별 독립)
+    @Transactional
+    public void enqueueRebalancingInTx(Portfolio portfolio, LocalDate today) {
+        enqueueRebalancing(portfolio, ExecutionType.AUTO);
+        portfolio.updateNextRebalanceDate(today.plusDays(1));
+        portfolioRepository.save(portfolio);
+    }
 
     /**
-     * 해당 날짜가 거래일인지 판단한다
-     * 
-     * @param date 확인할 날짜
-     * @return 거래일이면 true
+     * RebalancingOrder(PENDING) + OutboxEvent(PENDING)를 같은 트랜잭션에서 저장한다.
+     * OutboxEventRelay가 5초 후 Kafka에 발행한다.
      */
+    private void enqueueRebalancing(Portfolio portfolio, ExecutionType executionType) {
+        Account account = portfolio.getAccount();
+        Long userId = portfolio.getUser().getId();
+
+        // 자격증명 복호화
+        DecryptedAccountCredentials creds =
+                AccountEncryptionUtil.decryptAccountCredentials(account, userId);
+
+        // RebalancingOrder INSERT (PENDING)
+        RebalancingOrder rebalancingOrder = RebalancingOrder.builder()
+                .portfolio(portfolio)
+                .totalBuyAmount(0L)
+                .totalSellAmount(0L)
+                .rebalancingDate(LocalDateTime.now())
+                .status(TransactionStatus.PENDING)
+                .executionType(executionType)
+                .totalPortfolioValue(0L)
+                .build();
+        rebalancingOrder = rebalancingOrderRepository.save(rebalancingOrder);
+
+        // DTO 빌드
+        List<RebalancingOrderMessage.StockTargetDto> targets = portfolio.getPortfolioStocks().stream()
+                .map(ps -> RebalancingOrderMessage.StockTargetDto.builder()
+                        .stockCode(ps.getStockCode())
+                        .stockName(ps.getStockCode()) // 종목명은 stockCode로 대체 (잔고 조회 후 업데이트됨)
+                        .targetWeight(ps.getTargetWeight() != null ? ps.getTargetWeight().doubleValue() : 0.0)
+                        .thresholdPercentage(ps.getThresholdPercentage() != null
+                                ? ps.getThresholdPercentage().doubleValue() : 0.05)
+                        .build())
+                .collect(Collectors.toList());
+
+        RebalancingOrderMessage message = RebalancingOrderMessage.builder()
+                .jobId(rebalancingOrder.getId())
+                .portfolioId(portfolio.getId())
+                .userId(userId)
+                .accountId(account.getId())
+                .accountNumber(creds.getAccountNumber())
+                .appKey(creds.getAppKey())
+                .appSecret(creds.getAppSecret())
+                .accountType(account.getAccountType().name())
+                .executionType(executionType.name())
+                .strategy(portfolio.getRebalancingStrategy() != null
+                        ? portfolio.getRebalancingStrategy().name() : "THRESHOLD")
+                .safeAssetRatio(portfolio.getSafeAssetRatio())
+                .targets(targets)
+                .triggeredAt(LocalDateTime.now())
+                .build();
+
+        // JSON 직렬화
+        String payload;
+        try {
+            payload = objectMapper.writeValueAsString(message);
+        } catch (Exception e) {
+            throw new RuntimeException("RebalancingOrderMessage 직렬화 실패", e);
+        }
+
+        // OutboxEvent INSERT (PENDING)
+        OutboxEvent outboxEvent = OutboxEvent.create(
+                rebalancingOrder.getId(), portfolio.getId(), payload);
+        outboxEventRepository.save(outboxEvent);
+
+        log.info("리밸런싱 큐잉 완료 jobId={} portfolioId={}",
+                rebalancingOrder.getId(), portfolio.getId());
+    }
+
     private boolean isTradingDay(LocalDate date) {
         return holidayService.isTradingDay(date);
     }
-
 }

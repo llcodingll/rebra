@@ -24,6 +24,10 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.util.backoff.FixedBackOff;
 
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.common.config.TopicConfig;
+import org.springframework.kafka.config.TopicBuilder;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -123,6 +127,60 @@ public class KafkaConfig {
         KafkaTemplate<String, Object> template = new KafkaTemplate<>(producerFactory());
         template.setDefaultTopic("backtest-request");
         return template;
+    }
+
+    // 리밸런싱 주문 발행 전용 KafkaTemplate (OutboxEventRelay에서 사용)
+    @Bean("rebalancingOrdersKafkaTemplate")
+    public KafkaTemplate<String, Object> rebalancingOrdersKafkaTemplate() {
+        KafkaTemplate<String, Object> template = new KafkaTemplate<>(producerFactory());
+        template.setDefaultTopic("rebalancing-orders");
+        return template;
+    }
+
+    // 리밸런싱 결과 Consumer Factory
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, Object> rebalancingResultsListenerContainerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        configProps.put(ConsumerConfig.GROUP_ID_CONFIG, "rebra-main-server");
+        configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
+        configProps.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class.getName());
+        configProps.put(JsonDeserializer.TRUSTED_PACKAGES, "com.rebra.kafka.dto,java.util");
+        configProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "java.util.Map");
+        configProps.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        configProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+
+        ConcurrentKafkaListenerContainerFactory<String, Object> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(new DefaultKafkaConsumerFactory<>(configProps));
+        factory.setConcurrency(4);
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
+        factory.setCommonErrorHandler(new DefaultErrorHandler(
+                (record, exception) -> log.error(
+                        "결과 재시도 초과: topic={} offset={} error={}",
+                        record.topic(), record.offset(), exception.getMessage()),
+                new FixedBackOff(5000L, 3L)
+        ));
+        return factory;
+    }
+
+    // 리밸런싱 토픽 (파티션 4개)
+    @Bean
+    public KafkaAdmin.NewTopics rebalancingTopics() {
+        return new KafkaAdmin.NewTopics(
+                TopicBuilder.name("rebalancing-orders")
+                        .partitions(4).replicas(1)
+                        .config(TopicConfig.RETENTION_MS_CONFIG,
+                                String.valueOf(7L * 24 * 60 * 60 * 1000))
+                        .build(),
+                TopicBuilder.name("rebalancing-results")
+                        .partitions(4).replicas(1)
+                        .config(TopicConfig.RETENTION_MS_CONFIG,
+                                String.valueOf(7L * 24 * 60 * 60 * 1000))
+                        .build()
+        );
     }
 
 }

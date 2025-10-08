@@ -71,4 +71,13 @@ public class RebalancingOrder extends BaseEntity {
         this.cumulativeReturn = cumulativeReturn;
         this.totalPortfolioValue = totalPortfolioValue;
     }
+
+    public void updateStatus(TransactionStatus status) {
+        this.status = status;
+    }
+
+    public void updateAmounts(Long totalBuyAmount, Long totalSellAmount) {
+        this.totalBuyAmount = totalBuyAmount;
+        this.totalSellAmount = totalSellAmount;
+    }
 }
