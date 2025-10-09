@@ -4,8 +4,6 @@ import com.rebra.rebalance.application.rebalancing.dto.RebalancingOrderCommand;
 import com.rebra.rebalance.application.rebalancing.dto.RebalancingResultEvent;
 import com.rebra.rebalance.domain.rebalancing.model.OrderRecord;
 import com.rebra.rebalance.domain.rebalancing.model.RebalancingExecution;
-import com.rebra.rebalance.domain.rebalancing.repository.OrderRecordRepository;
-import com.rebra.rebalance.domain.rebalancing.repository.RebalancingExecutionRepository;
 import com.rebra.rebalance.domain.rebalancing.service.RebalancingDomainService;
 import com.rebra.rebalance.exception.IdempotencyViolationException;
 import com.rebra.rebalance.exception.KisApiException;
@@ -17,7 +15,6 @@ import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -28,91 +25,60 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RebalancingApplicationService {
 
-    private final RebalancingExecutionRepository executionRepository;
-    private final OrderRecordRepository orderRecordRepository;
+    private final RebalancingTransactionService txService;
     private final RebalancingDomainService domainService;
     private final KisApiAdapter kisApiAdapter;
     private final RebalancingResultProducer resultProducer;
 
     private static final LocalTime CUTOFF_TIME = LocalTime.of(15, 30);
 
-    @Transactional
     public void execute(RebalancingOrderCommand command) {
+        checkCutoff(command);
+        RebalancingExecution execution = checkIdempotency(command);
+        InquireBalanceResult balance = fetchBalance(command);
+        recoverIfProcessing(command, execution);
+        List<RebalancingDomainService.OrderPlan> plans = calculatePlans(command, execution, balance);
+        if (plans.isEmpty()) {
+            log.info("리밸런싱 불필요 jobId={}", command.getJobId());
+            txService.completeExecution(execution, command, List.of());
+            return;
+        }
+        txService.markProcessing(execution);
+        List<OrderRecord> tradeResults = executeOrders(command, execution, plans);
+        txService.completeExecution(execution, command, tradeResults);
+    }
 
-        // STEP 1: 15:30 cutoff 체크
+    private void checkCutoff(RebalancingOrderCommand command) {
         if (LocalTime.now().isAfter(CUTOFF_TIME)) {
             log.warn("15:30 cutoff 초과 jobId={}", command.getJobId());
             resultProducer.send(RebalancingResultEvent.failed(
                     command.getJobId(), command.getPortfolioId(), "15:30 cutoff 초과"));
             throw new RebalancingCutoffException(command.getJobId());
         }
-
-        // STEP 2: 멱등성 체크
-        RebalancingExecution execution = executionRepository
-                .findByJobId(command.getJobId())
-                .orElseGet(() -> executionRepository.save(
-                        RebalancingExecution.create(command.getJobId(), command.getPortfolioId())));
-
-        if (execution.isCompleted()) {
-            log.info("중복 consume 스킵 jobId={}", command.getJobId());
-            throw new IdempotencyViolationException(command.getJobId());
-        }
-        if (execution.isFailed()) {
-            log.warn("이미 FAILED 처리된 job jobId={}", command.getJobId());
-            throw new IdempotencyViolationException(command.getJobId());
-        }
-
-        // STEP 3: KIS API 잔고 조회 (트랜잭션과 무관한 외부 호출)
-        InquireBalanceResult balance = kisApiAdapter.getBalance(command);
-
-        // STEP 4: PROCESSING 상태면 미체결 order_record 복구
-        List<OrderRecord> pendingOrders = execution.getPendingOrders();
-        if (execution.isProcessing() && !pendingOrders.isEmpty()) {
-            recoverPendingOrders(command, pendingOrders);
-        }
-
-        // STEP 5: 주문 계산
-        List<OrderRecord> completedOrders = execution.getCompletedOrders();
-        List<RebalancingDomainService.OrderPlan> plans;
-
-        if (execution.isProcessing()) {
-            plans = domainService.recalculateRemainingOrders(
-                    balance, command.getTargets(), completedOrders, pendingOrders);
-        } else {
-            plans = domainService.calculateOrders(
-                    balance, command.getTargets(), command.getStrategy());
-        }
-
-        if (plans.isEmpty()) {
-            log.info("리밸런싱 불필요 jobId={}", command.getJobId());
-            complete(execution, command, List.of());
-            return;
-        }
-
-        // STEP 6: PENDING → PROCESSING (매도 실행 직전에 상태 전환)
-        execution.startProcessing();
-        executionRepository.save(execution);
-
-        // STEP 7: 개별 주문 실행
-        List<OrderRecord> tradeResults = executeOrders(command, execution, plans);
-
-        // STEP 8: 완료 처리
-        complete(execution, command, tradeResults);
     }
 
-    @Transactional
-    protected void recoverPendingOrders(RebalancingOrderCommand command,
-                                        List<OrderRecord> pendingOrders) {
-        for (OrderRecord pending : pendingOrders) {
+    private RebalancingExecution checkIdempotency(RebalancingOrderCommand command) {
+        RebalancingExecution execution = txService.findOrCreate(
+                command.getJobId(), command.getPortfolioId());
+        if (execution.isCompleted() || execution.isFailed()) {
+            log.info("중복 또는 이미 처리된 job 스킵 jobId={}", command.getJobId());
+            throw new IdempotencyViolationException(command.getJobId());
+        }
+        return execution;
+    }
+
+    private InquireBalanceResult fetchBalance(RebalancingOrderCommand command) {
+        return kisApiAdapter.getBalance(command);
+    }
+
+    private void recoverIfProcessing(RebalancingOrderCommand command,
+                                      RebalancingExecution execution) {
+        if (!execution.isProcessing()) return;
+        for (OrderRecord pending : execution.getPendingOrders()) {
             try {
                 boolean executed = kisApiAdapter.isOrderExecuted(
                         command, pending.getKisOrderNumber());
-                if (executed) {
-                    pending.complete(pending.getKisOrderNumber());
-                } else {
-                    pending.fail("재처리 시 미체결 확인");
-                }
-                orderRecordRepository.save(pending);
+                txService.recoverOrder(pending, executed);
             } catch (Exception e) {
                 log.error("복구 조회 실패 orderId={}", pending.getId(), e);
                 throw new RebalancingRecoveryException(command.getJobId(), e.getMessage());
@@ -120,61 +86,37 @@ public class RebalancingApplicationService {
         }
     }
 
-    protected List<OrderRecord> executeOrders(RebalancingOrderCommand command,
-                                              RebalancingExecution execution,
-                                              List<RebalancingDomainService.OrderPlan> plans) {
+    private List<RebalancingDomainService.OrderPlan> calculatePlans(
+            RebalancingOrderCommand command,
+            RebalancingExecution execution,
+            InquireBalanceResult balance) {
+        if (execution.isProcessing()) {
+            return domainService.recalculateRemainingOrders(
+                    balance, command.getTargets(),
+                    execution.getCompletedOrders(), execution.getPendingOrders());
+        }
+        return domainService.calculateOrders(
+                balance, command.getTargets(), command.getStrategy());
+    }
+
+    private List<OrderRecord> executeOrders(RebalancingOrderCommand command,
+                                             RebalancingExecution execution,
+                                             List<RebalancingDomainService.OrderPlan> plans) {
         List<OrderRecord> results = new ArrayList<>();
-
         for (RebalancingDomainService.OrderPlan plan : plans) {
-            OrderRecord record = saveOrderPending(execution, plan);
-
+            OrderRecord record = txService.saveOrderPending(execution, plan);
             try {
-                String kisOrderNumber = kisApiAdapter.placeOrder(
-                        command,
-                        plan.stockCode(), plan.stockName(),
+                String orderNum = kisApiAdapter.placeOrder(
+                        command, plan.stockCode(), plan.stockName(),
                         plan.orderType(), plan.quantity());
-                completeOrder(record, kisOrderNumber);
-                results.add(record);
+                txService.completeOrder(record, orderNum);
             } catch (KisApiException e) {
-                log.error("주문 실패 {} {} {}주", plan.orderType(), plan.stockCode(), plan.quantity(), e);
-                failOrder(record, e.getMessage());
-                results.add(record);
+                log.error("주문 실패 {} {} {}주",
+                        plan.orderType(), plan.stockCode(), plan.quantity(), e);
+                txService.failOrder(record, e.getMessage());
             }
+            results.add(record);
         }
         return results;
-    }
-
-    @Transactional
-    protected OrderRecord saveOrderPending(RebalancingExecution execution,
-                                           RebalancingDomainService.OrderPlan plan) {
-        OrderRecord record = OrderRecord.pending(
-                execution,
-                plan.stockCode(), plan.stockName(),
-                plan.orderType(), plan.quantity(), plan.price());
-        return orderRecordRepository.save(record);
-    }
-
-    @Transactional
-    protected void completeOrder(OrderRecord record, String kisOrderNumber) {
-        record.complete(kisOrderNumber);
-        orderRecordRepository.save(record);
-    }
-
-    @Transactional
-    protected void failOrder(OrderRecord record, String reason) {
-        record.fail(reason);
-        orderRecordRepository.save(record);
-    }
-
-    @Transactional
-    protected void complete(RebalancingExecution execution,
-                            RebalancingOrderCommand command,
-                            List<OrderRecord> tradeResults) {
-        execution.complete();
-        executionRepository.save(execution);
-
-        RebalancingResultEvent result = RebalancingResultEvent.completed(
-                command.getJobId(), command.getPortfolioId(), tradeResults);
-        resultProducer.sendSync(result);
     }
 }
