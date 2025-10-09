@@ -38,6 +38,7 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -159,7 +160,8 @@ public class BacktestServiceImpl implements BacktestService {
 
                 // 5단계: Kafka로 백테스트 요청 전송
                 BacktestRequest backtestRequest = backtestDataService.createBacktestRequest(backtestRecordDto, request, tickers, null);
-                kafkaTemplate.send("backtest-request", backtestRecordDto.getId().toString(), backtestRequest);
+                kafkaTemplate.send("backtest-request", backtestRecordDto.getId().toString(), backtestRequest)
+                    .get(10, TimeUnit.SECONDS);
                 log.info("백테스트 요청 전송 완료: backtestId={}", backtestRecordDto.getId());
 
                 // 6단계: 상태를 PROCESSING으로 변경 (트랜잭션 있음)
