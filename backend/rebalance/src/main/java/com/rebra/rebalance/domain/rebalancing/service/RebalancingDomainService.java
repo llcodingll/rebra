@@ -148,7 +148,7 @@ public class RebalancingDomainService {
                         return !completedBuyCodes.contains(plan.stockCode());
                     }
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private Map<String, HoldingInfo> buildHoldingsMap(InquireBalanceResult balance) {
