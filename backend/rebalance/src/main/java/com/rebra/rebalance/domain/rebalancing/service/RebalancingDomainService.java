@@ -4,7 +4,7 @@ import com.rebra.rebalance.domain.rebalancing.model.OrderRecord;
 import com.rebra.rebalance.domain.rebalancing.model.OrderStatus;
 import com.rebra.rebalance.domain.rebalancing.model.OrderType;
 import com.rebra.rebalance.domain.rebalancing.model.RebalancingStrategy;
-import com.rebra.rebalance.infrastructure.kafka.dto.StockTargetDto;
+import com.rebra.rebalance.domain.rebalancing.model.StockTargetDto;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

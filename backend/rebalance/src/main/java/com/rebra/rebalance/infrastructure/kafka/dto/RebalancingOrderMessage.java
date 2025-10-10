@@ -1,5 +1,7 @@
 package com.rebra.rebalance.infrastructure.kafka.dto;
 
+import com.rebra.rebalance.domain.rebalancing.model.StockTargetDto;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

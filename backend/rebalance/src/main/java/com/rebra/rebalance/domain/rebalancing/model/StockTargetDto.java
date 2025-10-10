@@ -1,4 +1,4 @@
-package com.rebra.rebalance.infrastructure.kafka.dto;
+package com.rebra.rebalance.domain.rebalancing.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

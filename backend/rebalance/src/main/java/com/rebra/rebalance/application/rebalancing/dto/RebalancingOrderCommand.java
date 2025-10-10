@@ -4,7 +4,7 @@ import com.rebra.rebalance.domain.rebalancing.model.AccountType;
 import com.rebra.rebalance.domain.rebalancing.model.ExecutionType;
 import com.rebra.rebalance.domain.rebalancing.model.RebalancingStrategy;
 import com.rebra.rebalance.infrastructure.kafka.dto.RebalancingOrderMessage;
-import com.rebra.rebalance.infrastructure.kafka.dto.StockTargetDto;
+import com.rebra.rebalance.domain.rebalancing.model.StockTargetDto;
 import lombok.Builder;
 import lombok.Getter;
 
