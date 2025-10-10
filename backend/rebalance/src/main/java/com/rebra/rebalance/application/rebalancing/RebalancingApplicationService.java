@@ -50,7 +50,6 @@ public class RebalancingApplicationService {
 
     private void checkCutoff(RebalancingOrderCommand command) {
         if (LocalTime.now().isAfter(CUTOFF_TIME)) {
-            log.warn("15:30 cutoff 초과 jobId={}", command.getJobId());
             resultProducer.send(RebalancingResultEvent.failed(
                     command.getJobId(), command.getPortfolioId(), "15:30 cutoff 초과"));
             throw new RebalancingCutoffException(command.getJobId());
@@ -61,7 +60,6 @@ public class RebalancingApplicationService {
         RebalancingExecution execution = txService.findOrCreate(
                 command.getJobId(), command.getPortfolioId());
         if (execution.isCompleted() || execution.isFailed()) {
-            log.info("중복 또는 이미 처리된 job 스킵 jobId={}", command.getJobId());
             throw new IdempotencyViolationException(command.getJobId());
         }
         return execution;
