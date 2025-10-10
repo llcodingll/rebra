@@ -9,6 +9,7 @@ import com.rebra.rebalance.domain.rebalancing.repository.RebalancingExecutionRep
 import com.rebra.rebalance.domain.rebalancing.service.RebalancingDomainService;
 import com.rebra.rebalance.infrastructure.kafka.RebalancingResultProducer;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,9 +26,11 @@ public class RebalancingTransactionService {
 
     @Transactional
     public RebalancingExecution findOrCreate(Long jobId, Long portfolioId) {
-        return executionRepository.findByJobId(jobId)
+        RebalancingExecution execution = executionRepository.findByJobId(jobId)
                 .orElseGet(() -> executionRepository.save(
                         RebalancingExecution.create(jobId, portfolioId)));
+        Hibernate.initialize(execution.getOrderRecords());
+        return execution;
     }
 
     @Transactional
