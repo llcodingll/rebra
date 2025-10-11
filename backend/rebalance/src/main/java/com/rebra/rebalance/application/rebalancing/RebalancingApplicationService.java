@@ -18,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -36,7 +35,7 @@ public class RebalancingApplicationService {
     public void execute(RebalancingOrderCommand command) {
         checkCutoff(command);
         RebalancingExecution execution = checkIdempotency(command);
-        InquireBalanceResult balance = fetchBalance(command);
+        InquireBalanceResult balance = kisApiAdapter.getBalance(command);
         recoverIfProcessing(command, execution);
         List<OrderPlan> plans = calculatePlans(command, execution, balance);
         if (plans.isEmpty()) {
@@ -64,10 +63,6 @@ public class RebalancingApplicationService {
             throw new IdempotencyViolationException(command.getJobId());
         }
         return execution;
-    }
-
-    private InquireBalanceResult fetchBalance(RebalancingOrderCommand command) {
-        return kisApiAdapter.getBalance(command);
     }
 
     private void recoverIfProcessing(RebalancingOrderCommand command,
@@ -101,21 +96,25 @@ public class RebalancingApplicationService {
     private List<OrderRecord> executeOrders(RebalancingOrderCommand command,
                                              RebalancingExecution execution,
                                              List<OrderPlan> plans) {
-        List<OrderRecord> results = new ArrayList<>();
-        for (OrderPlan plan : plans) {
-            OrderRecord record = txService.saveOrderPending(execution, plan);
-            try {
-                String orderNum = kisApiAdapter.placeOrder(
-                        command, plan.stockCode(), plan.stockName(),
-                        plan.orderType(), plan.quantity());
-                txService.completeOrder(record, orderNum);
-            } catch (KisApiException e) {
-                log.error("주문 실패 {} {} {}주",
-                        plan.orderType(), plan.stockCode(), plan.quantity(), e);
-                txService.failOrder(record, e.getMessage());
-            }
-            results.add(record);
+        return plans.stream()
+                .map(plan -> executeSingleOrder(command, execution, plan))
+                .toList();
+    }
+
+    private OrderRecord executeSingleOrder(RebalancingOrderCommand command,
+                                            RebalancingExecution execution,
+                                            OrderPlan plan) {
+        OrderRecord record = txService.saveOrderPending(execution, plan);
+        try {
+            String orderNum = kisApiAdapter.placeOrder(
+                    command, plan.stockCode(), plan.stockName(),
+                    plan.orderType(), plan.quantity());
+            txService.completeOrder(record, orderNum);
+        } catch (KisApiException e) {
+            log.error("주문 실패 {} {} {}주",
+                    plan.orderType(), plan.stockCode(), plan.quantity(), e);
+            txService.failOrder(record, e.getMessage());
         }
-        return results;
+        return record;
     }
 }
