@@ -2,6 +2,7 @@ package com.rebra.rebalance.application.rebalancing;
 
 import com.rebra.rebalance.application.rebalancing.dto.RebalancingOrderCommand;
 import com.rebra.rebalance.application.rebalancing.dto.RebalancingResultEvent;
+import com.rebra.rebalance.domain.rebalancing.model.OrderPlan;
 import com.rebra.rebalance.domain.rebalancing.model.OrderRecord;
 import com.rebra.rebalance.domain.rebalancing.model.RebalancingExecution;
 import com.rebra.rebalance.domain.rebalancing.service.RebalancingDomainService;
@@ -37,7 +38,7 @@ public class RebalancingApplicationService {
         RebalancingExecution execution = checkIdempotency(command);
         InquireBalanceResult balance = fetchBalance(command);
         recoverIfProcessing(command, execution);
-        List<RebalancingDomainService.OrderPlan> plans = calculatePlans(command, execution, balance);
+        List<OrderPlan> plans = calculatePlans(command, execution, balance);
         if (plans.isEmpty()) {
             log.info("리밸런싱 불필요 jobId={}", command.getJobId());
             txService.completeExecution(execution, command, List.of());
@@ -59,7 +60,7 @@ public class RebalancingApplicationService {
     private RebalancingExecution checkIdempotency(RebalancingOrderCommand command) {
         RebalancingExecution execution = txService.findOrCreate(
                 command.getJobId(), command.getPortfolioId());
-        if (execution.isCompleted() || execution.isFailed()) {
+        if (execution.isTerminal()) {
             throw new IdempotencyViolationException(command.getJobId());
         }
         return execution;
@@ -84,7 +85,7 @@ public class RebalancingApplicationService {
         }
     }
 
-    private List<RebalancingDomainService.OrderPlan> calculatePlans(
+    private List<OrderPlan> calculatePlans(
             RebalancingOrderCommand command,
             RebalancingExecution execution,
             InquireBalanceResult balance) {
@@ -99,9 +100,9 @@ public class RebalancingApplicationService {
 
     private List<OrderRecord> executeOrders(RebalancingOrderCommand command,
                                              RebalancingExecution execution,
-                                             List<RebalancingDomainService.OrderPlan> plans) {
+                                             List<OrderPlan> plans) {
         List<OrderRecord> results = new ArrayList<>();
-        for (RebalancingDomainService.OrderPlan plan : plans) {
+        for (OrderPlan plan : plans) {
             OrderRecord record = txService.saveOrderPending(execution, plan);
             try {
                 String orderNum = kisApiAdapter.placeOrder(

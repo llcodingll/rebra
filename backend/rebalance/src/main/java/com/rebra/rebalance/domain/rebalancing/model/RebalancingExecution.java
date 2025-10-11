@@ -73,6 +73,10 @@ public class RebalancingExecution {
         return this.status == ExecutionStatus.FAILED;
     }
 
+    public boolean isTerminal() {
+        return this.status == ExecutionStatus.COMPLETED || this.status == ExecutionStatus.FAILED;
+    }
+
     public List<OrderRecord> getPendingOrders() {
         return orderRecords.stream()
                 .filter(o -> o.getStatus() == OrderStatus.PENDING)

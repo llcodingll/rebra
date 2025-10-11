@@ -1,6 +1,7 @@
 package com.rebra.rebalance.domain.rebalancing.service;
 
 import com.rebra.rebalance.domain.rebalancing.model.OrderRecord;
+import com.rebra.rebalance.domain.rebalancing.model.OrderPlan;
 import com.rebra.rebalance.domain.rebalancing.model.OrderStatus;
 import com.rebra.rebalance.domain.rebalancing.model.OrderType;
 import com.rebra.rebalance.domain.rebalancing.model.RebalancingStrategy;
@@ -19,9 +20,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class RebalancingDomainService {
-
-    public record OrderPlan(String stockCode, String stockName,
-                            OrderType orderType, int quantity, long price) {}
 
     /**
      * 현재 잔고와 목표 비중으로 주문 목록을 산출한다. (매도 먼저, 매수 나중 정렬)

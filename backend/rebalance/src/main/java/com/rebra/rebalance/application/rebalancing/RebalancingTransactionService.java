@@ -6,7 +6,7 @@ import com.rebra.rebalance.domain.rebalancing.model.OrderRecord;
 import com.rebra.rebalance.domain.rebalancing.model.RebalancingExecution;
 import com.rebra.rebalance.domain.rebalancing.repository.OrderRecordRepository;
 import com.rebra.rebalance.domain.rebalancing.repository.RebalancingExecutionRepository;
-import com.rebra.rebalance.domain.rebalancing.service.RebalancingDomainService;
+import com.rebra.rebalance.domain.rebalancing.model.OrderPlan;
 import com.rebra.rebalance.infrastructure.kafka.RebalancingResultProducer;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
@@ -51,7 +51,7 @@ public class RebalancingTransactionService {
 
     @Transactional
     public OrderRecord saveOrderPending(RebalancingExecution execution,
-                                        RebalancingDomainService.OrderPlan plan) {
+                                        OrderPlan plan) {
         return orderRecordRepository.save(OrderRecord.pending(
                 execution, plan.stockCode(), plan.stockName(),
                 plan.orderType(), plan.quantity(), plan.price()));
