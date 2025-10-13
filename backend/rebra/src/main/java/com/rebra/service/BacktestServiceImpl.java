@@ -229,18 +229,16 @@ public class BacktestServiceImpl implements BacktestService {
             acknowledgment.acknowledge();
         } catch (Exception e) {
             log.error("백테스트 결과 처리 실패: backtestId={}", backtestId, e);
-            
-            // 백테스트 상태를 FAILED로 변경 시도
             if (backtestId != null) {
                 try {
-                    // 간단한 고정 메시지만 전달
                     backtestDataService.updateBacktestStatusToFailed(backtestId, "메인 서버 오류");
-                } catch (Exception ex) {
-                    log.error("백테스트 상태 업데이트 실패: backtestId={}", backtestId, ex);
+                } catch (Exception dbEx) {
+                    log.error("DB 상태 업데이트 실패, 재처리 대기: backtestId={}", backtestId, dbEx);
                 }
+                acknowledgment.acknowledge();
+            } else {
+                acknowledgment.acknowledge();  // backtestId 없음 → 재처리해도 소용없음
             }
-            
-            acknowledgment.acknowledge();
         }
     }
 
