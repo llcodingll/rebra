@@ -106,10 +106,10 @@ public class RebalancingApplicationService {
                                             OrderPlan plan) {
         OrderRecord record = txService.saveOrderPending(execution, plan);
         try {
-            String orderNum = kisApiAdapter.placeOrder(
+            KisApiAdapter.PlaceOrderResult placed = kisApiAdapter.placeOrder(
                     command, plan.stockCode(), plan.stockName(),
                     plan.orderType(), plan.quantity());
-            txService.completeOrder(record, orderNum);
+            txService.completeOrder(record, placed.orderNumber(), placed.orderDate());
         } catch (KisApiException e) {
             log.error("주문 실패 {} {} {}주",
                     plan.orderType(), plan.stockCode(), plan.quantity(), e);

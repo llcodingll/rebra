@@ -43,6 +43,8 @@ public class OrderRecord {
 
     private String kisOrderNumber;
 
+    private String kisOrderDate;
+
     private String failReason;
 
     @CreationTimestamp
@@ -66,9 +68,10 @@ public class OrderRecord {
         return record;
     }
 
-    public void complete(String kisOrderNumber) {
+    public void complete(String kisOrderNumber, String kisOrderDate) {
         this.status = OrderStatus.COMPLETED;
         this.kisOrderNumber = kisOrderNumber;
+        this.kisOrderDate = kisOrderDate;
     }
 
     public void fail(String reason) {

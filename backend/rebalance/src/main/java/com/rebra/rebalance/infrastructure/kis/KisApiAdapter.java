@@ -15,10 +15,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Component
 public class KisApiAdapter {
+
+    public record PlaceOrderResult(String orderNumber, String orderDate) {}
 
     private static final String MOCK_BUY_TR_ID  = "VTTC0012U";
     private static final String MOCK_SELL_TR_ID = "VTTC0011U";
@@ -73,7 +77,7 @@ public class KisApiAdapter {
         }
     }
 
-    public String placeOrder(RebalancingOrderCommand cmd,
+    public PlaceOrderResult placeOrder(RebalancingOrderCommand cmd,
                              String stockCode, String stockName,
                              OrderType orderType, int quantity) {
         try {
@@ -100,8 +104,9 @@ public class KisApiAdapter {
             }
 
             String orderNumber = result.getOutput().getOdno();
+            String orderDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
             log.info("KIS 주문 완료 {} {} {}주 orderNo={}", orderType, stockCode, quantity, orderNumber);
-            return orderNumber;
+            return new PlaceOrderResult(orderNumber, orderDate);
 
         } catch (Exception e) {
             throw new KisApiException(stockCode, orderType, "주문 실패: " + e.getMessage());

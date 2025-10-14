@@ -58,8 +58,8 @@ public class RebalancingTransactionService {
     }
 
     @Transactional
-    public void completeOrder(OrderRecord record, String kisOrderNumber) {
-        record.complete(kisOrderNumber);
+    public void completeOrder(OrderRecord record, String kisOrderNumber, String kisOrderDate) {
+        record.complete(kisOrderNumber, kisOrderDate);
         orderRecordRepository.save(record);
     }
 
