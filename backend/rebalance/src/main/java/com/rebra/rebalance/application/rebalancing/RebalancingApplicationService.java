@@ -12,6 +12,7 @@ import com.rebra.rebalance.exception.RebalancingCutoffException;
 import com.rebra.rebalance.exception.RebalancingRecoveryException;
 import com.rebra.rebalance.infrastructure.kafka.RebalancingResultProducer;
 import com.rebra.rebalance.infrastructure.kis.KisApiAdapter;
+import com.youhogeon.finance.kis_api.KisClient;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,8 +36,9 @@ public class RebalancingApplicationService {
     public void execute(RebalancingOrderCommand command) {
         checkCutoff(command);
         RebalancingExecution execution = checkIdempotency(command);
-        InquireBalanceResult balance = kisApiAdapter.getBalance(command);
-        recoverIfProcessing(command, execution);
+        KisClient client = kisApiAdapter.buildClient(command);
+        InquireBalanceResult balance = kisApiAdapter.getBalance(command, client);
+        recoverIfProcessing(command, execution, client);
         List<OrderPlan> plans = calculatePlans(command, execution, balance);
         if (plans.isEmpty()) {
             log.info("리밸런싱 불필요 jobId={}", command.getJobId());
@@ -44,7 +46,7 @@ public class RebalancingApplicationService {
             return;
         }
         txService.markProcessing(execution);
-        List<OrderRecord> tradeResults = executeOrders(command, execution, plans);
+        List<OrderRecord> tradeResults = executeOrders(command, execution, plans, client);
         txService.completeExecution(execution, command, tradeResults);
     }
 
@@ -66,12 +68,14 @@ public class RebalancingApplicationService {
     }
 
     private void recoverIfProcessing(RebalancingOrderCommand command,
-                                      RebalancingExecution execution) {
+                                      RebalancingExecution execution,
+                                      KisClient client) {
         if (!execution.isProcessing()) return;
         for (OrderRecord pending : execution.getPendingOrders()) {
             try {
                 boolean executed = kisApiAdapter.isOrderExecuted(
-                        command, pending.getKisOrderNumber());
+                        command, client,
+                        pending.getKisOrderNumber(), pending.getKisOrderDate());
                 txService.recoverOrder(pending, executed);
             } catch (Exception e) {
                 log.error("복구 조회 실패 orderId={}", pending.getId(), e);
@@ -95,19 +99,21 @@ public class RebalancingApplicationService {
 
     private List<OrderRecord> executeOrders(RebalancingOrderCommand command,
                                              RebalancingExecution execution,
-                                             List<OrderPlan> plans) {
+                                             List<OrderPlan> plans,
+                                             KisClient client) {
         return plans.stream()
-                .map(plan -> executeSingleOrder(command, execution, plan))
+                .map(plan -> executeSingleOrder(command, execution, plan, client))
                 .toList();
     }
 
     private OrderRecord executeSingleOrder(RebalancingOrderCommand command,
                                             RebalancingExecution execution,
-                                            OrderPlan plan) {
+                                            OrderPlan plan,
+                                            KisClient client) {
         OrderRecord record = txService.saveOrderPending(execution, plan);
         try {
             KisApiAdapter.PlaceOrderResult placed = kisApiAdapter.placeOrder(
-                    command, plan.stockCode(), plan.stockName(),
+                    command, client, plan.stockCode(), plan.stockName(),
                     plan.orderType(), plan.quantity());
             txService.completeOrder(record, placed.orderNumber(), placed.orderDate());
         } catch (KisApiException e) {
