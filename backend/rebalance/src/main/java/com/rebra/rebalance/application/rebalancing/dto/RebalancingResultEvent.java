@@ -2,6 +2,9 @@ package com.rebra.rebalance.application.rebalancing.dto;
 
 import com.rebra.rebalance.domain.rebalancing.model.ExecutionStatus;
 import com.rebra.rebalance.domain.rebalancing.model.OrderRecord;
+import com.rebra.rebalance.domain.rebalancing.model.OrderStatus;
+import com.rebra.rebalance.domain.rebalancing.model.OrderType;
+import com.rebra.rebalance.infrastructure.kafka.dto.TradeRecordDto;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -18,21 +21,33 @@ public class RebalancingResultEvent {
     private String failReason;
     private Long totalSellAmount;
     private Long totalBuyAmount;
-    private List<OrderRecord> trades;
+    private List<TradeRecordDto> trades;
     private LocalDateTime completedAt;
 
     public static RebalancingResultEvent completed(Long jobId, Long portfolioId,
                                                     List<OrderRecord> trades) {
         long sellAmount = trades.stream()
-                .filter(t -> t.getOrderType().name().equals("SELL")
-                          && t.getStatus().name().equals("COMPLETED"))
+                .filter(t -> t.getOrderType() == OrderType.SELL
+                          && t.getStatus() == OrderStatus.COMPLETED)
                 .mapToLong(t -> t.getPrice() != null ? t.getPrice() * t.getQuantity() : 0L)
                 .sum();
         long buyAmount = trades.stream()
-                .filter(t -> t.getOrderType().name().equals("BUY")
-                          && t.getStatus().name().equals("COMPLETED"))
+                .filter(t -> t.getOrderType() == OrderType.BUY
+                          && t.getStatus() == OrderStatus.COMPLETED)
                 .mapToLong(t -> t.getPrice() != null ? t.getPrice() * t.getQuantity() : 0L)
                 .sum();
+
+        List<TradeRecordDto> tradeDtos = trades.stream()
+                .map(t -> TradeRecordDto.builder()
+                        .stockCode(t.getStockCode())
+                        .stockName(t.getStockName())
+                        .orderType(t.getOrderType().name())
+                        .quantity(t.getQuantity())
+                        .price(t.getPrice())
+                        .status(t.getStatus().name())
+                        .kisOrderNumber(t.getKisOrderNumber())
+                        .build())
+                .toList();
 
         return RebalancingResultEvent.builder()
                 .jobId(jobId)
@@ -40,7 +55,7 @@ public class RebalancingResultEvent {
                 .status(ExecutionStatus.COMPLETED)
                 .totalSellAmount(sellAmount)
                 .totalBuyAmount(buyAmount)
-                .trades(trades)
+                .trades(tradeDtos)
                 .completedAt(LocalDateTime.now())
                 .build();
     }
