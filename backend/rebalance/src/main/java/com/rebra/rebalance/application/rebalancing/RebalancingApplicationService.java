@@ -45,7 +45,9 @@ public class RebalancingApplicationService {
             txService.completeExecution(execution, command, List.of());
             return;
         }
-        txService.markProcessing(execution);
+        if (!execution.isProcessing()) {
+            txService.markProcessing(execution);
+        }
         List<OrderRecord> tradeResults = executeOrders(command, execution, plans, client);
         txService.completeExecution(execution, command, tradeResults);
     }

@@ -19,11 +19,9 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ContainerProperties;
-import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
-import org.springframework.util.backoff.FixedBackOff;
 import org.apache.kafka.clients.admin.NewTopic;
 
 import java.util.HashMap;
@@ -36,6 +34,12 @@ public class KafkaConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
+
+    @Value("${kafka.topics.rebalancing-orders}")
+    private String rebalancingOrdersTopic;
+
+    @Value("${kafka.topics.rebalancing-results}")
+    private String rebalancingResultsTopic;
 
     @Bean
     public ConsumerFactory<String, RebalancingOrderMessage> consumerFactory() {
@@ -67,11 +71,6 @@ public class KafkaConfig {
         factory.setConsumerFactory(consumerFactory());
         factory.setConcurrency(4);
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
-        factory.setCommonErrorHandler(new DefaultErrorHandler(
-                (record, e) -> log.error("재시도 초과 topic={} offset={} error={}",
-                        record.topic(), record.offset(), e.getMessage()),
-                new FixedBackOff(5_000L, 3L)
-        ));
         return factory;
     }
 
@@ -89,13 +88,13 @@ public class KafkaConfig {
     @Bean
     public KafkaTemplate<String, Object> kafkaTemplate() {
         KafkaTemplate<String, Object> template = new KafkaTemplate<>(producerFactory());
-        template.setDefaultTopic("rebalancing-results");
+        template.setDefaultTopic(rebalancingResultsTopic);
         return template;
     }
 
     @Bean
     public NewTopic rebalancingOrdersTopic() {
-        return TopicBuilder.name("rebalancing-orders")
+        return TopicBuilder.name(rebalancingOrdersTopic)
                 .partitions(4)
                 .replicas(1)
                 .config(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(7L * 24 * 60 * 60 * 1000))
@@ -104,7 +103,7 @@ public class KafkaConfig {
 
     @Bean
     public NewTopic rebalancingResultsTopic() {
-        return TopicBuilder.name("rebalancing-results")
+        return TopicBuilder.name(rebalancingResultsTopic)
                 .partitions(4)
                 .replicas(1)
                 .config(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(7L * 24 * 60 * 60 * 1000))
