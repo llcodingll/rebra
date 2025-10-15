@@ -232,10 +232,12 @@ public class BacktestServiceImpl implements BacktestService {
             if (backtestId != null) {
                 try {
                     backtestDataService.updateBacktestStatusToFailed(backtestId, "메인 서버 오류");
+                    acknowledgment.acknowledge();  // DB 업데이트 성공 → ACK (중복 처리 방지)
                 } catch (Exception dbEx) {
                     log.error("DB 상태 업데이트 실패, 재처리 대기: backtestId={}", backtestId, dbEx);
+                    // ACK 안 함 → DefaultErrorHandler가 5초 간격 3회 재시도
+                    throw new RuntimeException("DB 업데이트 실패, 재처리 필요", dbEx);
                 }
-                acknowledgment.acknowledge();
             } else {
                 acknowledgment.acknowledge();  // backtestId 없음 → 재처리해도 소용없음
             }
