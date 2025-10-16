@@ -42,7 +42,7 @@ public class RebalancingTransactionService {
     @Transactional
     public void recoverOrder(OrderRecord pending, boolean executed) {
         if (executed) {
-            pending.complete(pending.getKisOrderNumber());
+            pending.complete(pending.getKisOrderNumber(), pending.getKisOrderDate());
         } else {
             pending.fail("재처리 시 미체결 확인");
         }
