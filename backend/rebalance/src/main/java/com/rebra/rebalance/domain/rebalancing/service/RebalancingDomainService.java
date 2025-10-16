@@ -27,6 +27,13 @@ public class RebalancingDomainService {
     public List<OrderPlan> calculateOrders(InquireBalanceResult balance,
                                            List<StockTargetDto> targets,
                                            RebalancingStrategy strategy) {
+        return calculateOrders(balance, targets, strategy, 0L);
+    }
+
+    private List<OrderPlan> calculateOrders(InquireBalanceResult balance,
+                                            List<StockTargetDto> targets,
+                                            RebalancingStrategy strategy,
+                                            long extraCash) {
         if (targets == null || targets.isEmpty()) {
             return List.of();
         }
@@ -39,11 +46,11 @@ public class RebalancingDomainService {
                 .map(StockTargetDto::getStockCode)
                 .collect(Collectors.toSet());
 
-        // 관리 종목만의 총 평가액 계산
+        // 관리 종목만의 총 평가액 + 체결된 매도 현금 보정
         double totalValue = holdings.entrySet().stream()
                 .filter(e -> managedCodes.contains(e.getKey()))
                 .mapToDouble(e -> (double) e.getValue().price * e.getValue().quantity)
-                .sum();
+                .sum() + extraCash;
 
         if (totalValue <= 0) {
             log.warn("관리 종목 총 평가액이 0 이하 → 주문 산출 불가");
@@ -135,8 +142,15 @@ public class RebalancingDomainService {
                 .map(OrderRecord::getStockCode)
                 .collect(Collectors.toSet());
 
+        // 체결된 매도액 — 현금으로 잔고에 미반영된 금액 보정
+        long completedSellValue = completedOrders.stream()
+                .filter(o -> o.getOrderType() == OrderType.SELL
+                          && o.getStatus() == OrderStatus.COMPLETED)
+                .mapToLong(o -> o.getPrice() != null ? o.getPrice() * o.getQuantity() : 0L)
+                .sum();
+
         // 전체 계산 후 이미 완료된 종목 제외
-        List<OrderPlan> allPlans = calculateOrders(balance, targets, RebalancingStrategy.PERIODIC);
+        List<OrderPlan> allPlans = calculateOrders(balance, targets, RebalancingStrategy.PERIODIC, completedSellValue);
 
         return allPlans.stream()
                 .filter(plan -> {
