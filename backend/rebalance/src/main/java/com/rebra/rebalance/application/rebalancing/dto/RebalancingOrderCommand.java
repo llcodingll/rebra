@@ -23,7 +23,6 @@ public class RebalancingOrderCommand {
     private AccountType accountType;
     private ExecutionType executionType;
     private RebalancingStrategy strategy;
-    private Double safeAssetRatio;
     private List<StockTargetDto> targets;
     private LocalDateTime triggeredAt;
 
@@ -37,7 +36,6 @@ public class RebalancingOrderCommand {
                 .accountType(AccountType.valueOf(msg.getAccountType()))
                 .executionType(ExecutionType.valueOf(msg.getExecutionType()))
                 .strategy(RebalancingStrategy.valueOf(msg.getStrategy()))
-                .safeAssetRatio(msg.getSafeAssetRatio())
                 .targets(msg.getTargets())
                 .triggeredAt(msg.getTriggeredAt())
                 .build();

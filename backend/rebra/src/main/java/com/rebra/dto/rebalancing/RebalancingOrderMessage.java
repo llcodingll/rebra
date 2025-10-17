@@ -20,7 +20,6 @@ public class RebalancingOrderMessage {
     private String accountType;
     private String executionType;
     private String strategy;
-    private Double safeAssetRatio;
     private List<StockTargetDto> targets;
     private LocalDateTime triggeredAt;
 

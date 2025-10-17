@@ -122,7 +122,6 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
                 .executionType(executionType.name())
                 .strategy(portfolio.getRebalancingStrategy() != null
                         ? portfolio.getRebalancingStrategy().name() : "THRESHOLD")
-                .safeAssetRatio(portfolio.getSafeAssetRatio())
                 .targets(targets)
                 .triggeredAt(LocalDateTime.now())
                 .build();

@@ -57,7 +57,7 @@ public class RebalancingDomainService {
             return List.of();
         }
 
-        // 목표 비중 정규화 (safeAsset 제외된 targets의 합으로 나누기)
+        // 목표 비중 정규화
         double totalTargetWeight = targets.stream()
                 .mapToDouble(StockTargetDto::getTargetWeight)
                 .sum();

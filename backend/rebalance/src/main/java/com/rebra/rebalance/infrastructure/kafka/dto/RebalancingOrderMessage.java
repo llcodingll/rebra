@@ -21,7 +21,6 @@ public class RebalancingOrderMessage {
     private String accountType;     // AccountType enum 이름
     private String executionType;   // ExecutionType enum 이름
     private String strategy;        // RebalancingStrategy enum 이름
-    private Double safeAssetRatio;
     private List<StockTargetDto> targets;
     private LocalDateTime triggeredAt;
 }
