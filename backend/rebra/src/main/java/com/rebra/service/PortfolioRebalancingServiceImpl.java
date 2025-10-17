@@ -93,7 +93,7 @@ public class PortfolioRebalancingServiceImpl implements PortfolioRebalancingServ
                 .totalBuyAmount(0L)
                 .totalSellAmount(0L)
                 .rebalancingDate(LocalDateTime.now())
-                .status(TransactionStatus.PENDING)
+                .status(TransactionStatus.EXECUTING)
                 .executionType(executionType)
                 .totalPortfolioValue(0L)
                 .build();

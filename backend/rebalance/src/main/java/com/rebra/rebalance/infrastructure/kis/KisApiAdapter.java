@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 
 @Slf4j
 @Component
@@ -118,10 +119,10 @@ public class KisApiAdapter {
             api.setOdno(kisOrderNumber);
 
             InquireDailyCcldResult result = client.execute(api, credName(cmd));
-            if (result.getOutput1() == null || result.getOutput1().isEmpty()) {
+            if (result.getOutput1() == null || result.getOutput1().length == 0) {
                 return false;
             }
-            return result.getOutput1().stream()
+            return Arrays.stream(result.getOutput1())
                     .anyMatch(o -> Integer.parseInt(o.getTotCcldQty()) > 0);
         } catch (Exception e) {
             throw new KisApiException(null, null, "체결 조회 실패: " + e.getMessage());

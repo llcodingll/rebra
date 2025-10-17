@@ -42,10 +42,11 @@ public class RebalancingResultConsumer {
 
             log.info("리밸런싱 결과 수신 jobId={} status={}", jobId, status);
 
+            final Long capturedJobId = jobId;
             RebalancingOrder order = rebalancingOrderRepository
                     .findById(jobId)
                     .orElseThrow(() -> new IllegalStateException(
-                            "RebalancingOrder 없음 jobId=" + jobId));
+                            "RebalancingOrder 없음 jobId=" + capturedJobId));
 
             if ("COMPLETED".equals(status)) {
                 Long totalBuyAmount  = toLong(rawMessage.get("totalBuyAmount"));
