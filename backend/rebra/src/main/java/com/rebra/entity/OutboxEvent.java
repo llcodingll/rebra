@@ -39,7 +39,7 @@ public class OutboxEvent extends BaseEntity {
         event.rebalancingOrderId = rebalancingOrderId;
         event.portfolioId = portfolioId;
         event.payload = payload;
-        event.status = OutboxStatus.PENDING;
+        event.status = OutboxStatus.INIT;
         return event;
     }
 
@@ -48,7 +48,7 @@ public class OutboxEvent extends BaseEntity {
         this.publishedAt = LocalDateTime.now();
     }
 
-    public void markFailed() {
-        this.status = OutboxStatus.FAILED;
+    public void markConsumed() {
+        this.status = OutboxStatus.CONSUMED;
     }
 }
