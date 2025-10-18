@@ -24,10 +24,6 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.util.backoff.FixedBackOff;
 
-import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.common.config.TopicConfig;
-import org.springframework.kafka.config.TopicBuilder;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,14 +45,13 @@ public class KafkaConfig {
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        
-        // Producer 성능 및 안정성 설정
+
         configProps.put(ProducerConfig.ACKS_CONFIG, "all");
         configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
         configProps.put(ProducerConfig.BATCH_SIZE_CONFIG, 16384);
         configProps.put(ProducerConfig.LINGER_MS_CONFIG, 1);
         configProps.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 33554432);
-        
+
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 
@@ -74,34 +69,28 @@ public class KafkaConfig {
         configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         configProps.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class.getName());
-        
-        // JSON 역직렬화 설정
+
         configProps.put(JsonDeserializer.TRUSTED_PACKAGES, "com.rebra.calculator.dto,java.util");
         configProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "java.util.Map");
         configProps.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-        
-        // Consumer 안정성 설정
+
         configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         configProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         configProps.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 30000);
         configProps.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 10000);
-        
+
         return new DefaultKafkaConsumerFactory<>(configProps);
     }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, Object> factory = 
+        ConcurrentKafkaListenerContainerFactory<String, Object> factory =
             new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
-        
-        // 수동 커밋 설정
-        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
-        
-        // 동시성 설정 (백테스트 결과 처리용)
-        factory.setConcurrency(4);  // 파티션 수(4)와 일치시켜 실질적 병렬 처리 확보
 
-        // 재시도 설정: DB 일시 장애 시 5초 간격 3회 재시도 후 포기
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
+        factory.setConcurrency(4);
+
         factory.setCommonErrorHandler(new DefaultErrorHandler(
             (record, exception) -> log.error(
                 "재시도 초과, 메시지 버림: topic={}, offset={}, error={}",
@@ -112,7 +101,7 @@ public class KafkaConfig {
         return factory;
     }
 
-    // 백테스트 토픽 파티션 명시 (기본 1개 → 4개, concurrency와 정합성 확보)
+    // 백테스트 토픽 파티션 명시
     @Bean
     public KafkaAdmin.NewTopics backtestTopics() {
         return new KafkaAdmin.NewTopics(
@@ -128,59 +117,4 @@ public class KafkaConfig {
         template.setDefaultTopic("backtest-request");
         return template;
     }
-
-    // 리밸런싱 주문 발행 전용 KafkaTemplate (OutboxEventRelay에서 사용)
-    @Bean("rebalancingOrdersKafkaTemplate")
-    public KafkaTemplate<String, Object> rebalancingOrdersKafkaTemplate() {
-        KafkaTemplate<String, Object> template = new KafkaTemplate<>(producerFactory());
-        template.setDefaultTopic("rebalancing-orders");
-        return template;
-    }
-
-    // 리밸런싱 결과 Consumer Factory
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Object> rebalancingResultsListenerContainerFactory() {
-        Map<String, Object> configProps = new HashMap<>();
-        configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        configProps.put(ConsumerConfig.GROUP_ID_CONFIG, "rebra-main-server");
-        configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-        configProps.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class.getName());
-        configProps.put(JsonDeserializer.TRUSTED_PACKAGES, "com.rebra.kafka.dto,java.util");
-        configProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "java.util.Map");
-        configProps.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-        configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        configProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-
-        ConcurrentKafkaListenerContainerFactory<String, Object> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(new DefaultKafkaConsumerFactory<>(configProps));
-        factory.setConcurrency(4);
-        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
-        factory.setCommonErrorHandler(new DefaultErrorHandler(
-                (record, exception) -> log.error(
-                        "결과 재시도 초과: topic={} offset={} error={}",
-                        record.topic(), record.offset(), exception.getMessage()),
-                new FixedBackOff(5000L, 3L)
-        ));
-        return factory;
-    }
-
-    // 리밸런싱 토픽 (파티션 4개)
-    @Bean
-    public KafkaAdmin.NewTopics rebalancingTopics() {
-        return new KafkaAdmin.NewTopics(
-                TopicBuilder.name("rebalancing-orders")
-                        .partitions(4).replicas(1)
-                        .config(TopicConfig.RETENTION_MS_CONFIG,
-                                String.valueOf(7L * 24 * 60 * 60 * 1000))
-                        .build(),
-                TopicBuilder.name("rebalancing-results")
-                        .partitions(4).replicas(1)
-                        .config(TopicConfig.RETENTION_MS_CONFIG,
-                                String.valueOf(7L * 24 * 60 * 60 * 1000))
-                        .build()
-        );
-    }
-
 }

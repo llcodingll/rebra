@@ -1,4 +1,4 @@
-package com.rebra.kafka.dto;
+package com.rebra.redis.dto;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

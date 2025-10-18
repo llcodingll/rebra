@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rebra.entity.RebalancingOrder;
 import com.rebra.entity.TradeRecord;
 import com.rebra.enums.TransactionStatus;
-import com.rebra.kafka.dto.RebalancingResultMessage;
+import com.rebra.redis.dto.RebalancingResultMessage;
 import com.rebra.repository.OutboxEventRepository;
 import com.rebra.repository.RebalancingOrderRepository;
 import com.rebra.repository.TradeRecordRepository;
