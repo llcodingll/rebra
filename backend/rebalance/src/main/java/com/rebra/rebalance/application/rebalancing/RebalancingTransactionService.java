@@ -7,7 +7,7 @@ import com.rebra.rebalance.domain.rebalancing.model.RebalancingExecution;
 import com.rebra.rebalance.domain.rebalancing.repository.OrderRecordRepository;
 import com.rebra.rebalance.domain.rebalancing.repository.RebalancingExecutionRepository;
 import com.rebra.rebalance.domain.rebalancing.model.OrderPlan;
-import com.rebra.rebalance.infrastructure.kafka.RebalancingResultProducer;
+import com.rebra.rebalance.infrastructure.redis.RebalancingResultProducer;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;

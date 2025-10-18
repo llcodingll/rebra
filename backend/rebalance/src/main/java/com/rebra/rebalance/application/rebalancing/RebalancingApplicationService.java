@@ -10,7 +10,7 @@ import com.rebra.rebalance.exception.IdempotencyViolationException;
 import com.rebra.rebalance.exception.KisApiException;
 import com.rebra.rebalance.exception.RebalancingCutoffException;
 import com.rebra.rebalance.exception.RebalancingRecoveryException;
-import com.rebra.rebalance.infrastructure.kafka.RebalancingResultProducer;
+import com.rebra.rebalance.infrastructure.redis.RebalancingResultProducer;
 import com.rebra.rebalance.infrastructure.kis.KisApiAdapter;
 import com.youhogeon.finance.kis_api.KisClient;
 import com.youhogeon.finance.kis_api.api.rest.trading.InquireBalanceResult;

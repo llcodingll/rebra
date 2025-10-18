@@ -4,7 +4,7 @@ import com.rebra.rebalance.domain.rebalancing.model.ExecutionStatus;
 import com.rebra.rebalance.domain.rebalancing.model.OrderRecord;
 import com.rebra.rebalance.domain.rebalancing.model.OrderStatus;
 import com.rebra.rebalance.domain.rebalancing.model.OrderType;
-import com.rebra.rebalance.infrastructure.kafka.dto.TradeRecordDto;
+import com.rebra.rebalance.infrastructure.redis.dto.TradeRecordDto;
 import lombok.Builder;
 import lombok.Getter;
 
