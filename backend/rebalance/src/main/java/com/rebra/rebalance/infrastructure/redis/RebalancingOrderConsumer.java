@@ -10,17 +10,15 @@ import com.rebra.rebalance.infrastructure.redis.dto.RebalancingOrderMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.SmartLifecycle;
-import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.domain.Range;
 import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -153,7 +151,7 @@ public class RebalancingOrderConsumer implements SmartLifecycle {
             log.warn("15:30 cutoff 초과 jobId={}", jobId);
             redisStreamTemplate.opsForStream().acknowledge(streamKey, consumerGroup, record.getId());
         } catch (RebalancingException e) {
-            // ACK 없음 → PEL에 남음 → periodicReclaim(XAUTOCLAIM)에서 재처리
+            // ACK 없음 → PEL에 남음 → periodicReclaim(XCLAIM)에서 재처리
             log.error("리밸런싱 실패 jobId={} code={} msg={}",
                     jobId, e.getErrorCode().getCode(), e.getMessage());
         } catch (Exception e) {
@@ -166,29 +164,29 @@ public class RebalancingOrderConsumer implements SmartLifecycle {
         String consumerName = instanceId + ":rebalancing:executor:" + partition;
 
         try {
-            byte[] keyBytes = streamKey.getBytes(StandardCharsets.UTF_8);
-            List<ByteRecord> claimed = redisStreamTemplate.execute(
-                    (RedisCallback<List<ByteRecord>>) conn ->
-                            conn.streamCommands().xAutoClaim(
-                                    keyBytes, consumerGroup, consumerName,
-                                    Duration.ofMinutes(10), RecordId.of("0-0")));
+            PendingMessages pending = redisStreamTemplate.opsForStream()
+                    .pending(streamKey, Consumer.from(consumerGroup, consumerName),
+                            Range.unbounded(), 100L);
+
+            List<RecordId> staleIds = pending.stream()
+                    .filter(msg -> msg.getElapsedTimeSinceLastDelivery().toMillis()
+                            > Duration.ofMinutes(10).toMillis())
+                    .map(PendingMessage::getId)
+                    .toList();
+
+            if (staleIds.isEmpty()) return;
+
+            List<MapRecord<String, Object, Object>> claimed = redisStreamTemplate.opsForStream()
+                    .claim(streamKey, consumerGroup, consumerName, Duration.ZERO,
+                            staleIds.toArray(RecordId[]::new));
 
             if (claimed == null || claimed.isEmpty()) return;
 
-            log.info("XAUTOCLAIM: partition={} 회수 {}건", partition, claimed.size());
-            for (ByteRecord record : claimed) {
-                Map<Object, Object> fields = new LinkedHashMap<>();
-                record.getValue().forEach((k, v) -> fields.put(
-                        new String(k, StandardCharsets.UTF_8),
-                        new String(v, StandardCharsets.UTF_8)));
-                MapRecord<String, Object, Object> mapRecord = StreamRecords.newRecord()
-                        .in(streamKey)
-                        .withId(record.getId())
-                        .ofMap(fields);
-                processRecord(mapRecord, streamKey, consumerName);
-            }
+            log.info("XCLAIM: partition={} 회수 {}건", partition, claimed.size());
+            claimed.forEach(record -> processRecord(record, streamKey, consumerName));
+
         } catch (Exception e) {
-            log.warn("XAUTOCLAIM 실패 partition={}: {}", partition, e.getMessage());
+            log.warn("Stale 메시지 회수 실패 partition={}: {}", partition, e.getMessage());
         }
     }
 }
