@@ -42,14 +42,16 @@ public class RebalancingApplicationService {
         List<OrderPlan> plans = calculatePlans(command, execution, balance);
         if (plans.isEmpty()) {
             log.info("리밸런싱 불필요 jobId={}", command.getJobId());
-            txService.completeExecution(execution, command, List.of());
+            RebalancingResultEvent emptyResult = txService.completeExecution(execution, command, List.of());
+            resultProducer.sendSync(emptyResult);
             return;
         }
         if (!execution.isProcessing()) {
             txService.markProcessing(execution);
         }
         List<OrderRecord> tradeResults = executeOrders(command, execution, plans, client);
-        txService.completeExecution(execution, command, tradeResults);
+        RebalancingResultEvent result = txService.completeExecution(execution, command, tradeResults);
+        resultProducer.sendSync(result);
     }
 
     private void checkCutoff(RebalancingOrderCommand command) {

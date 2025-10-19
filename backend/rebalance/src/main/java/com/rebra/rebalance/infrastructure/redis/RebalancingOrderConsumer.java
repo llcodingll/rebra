@@ -9,20 +9,24 @@ import com.rebra.rebalance.exception.RebalancingException;
 import com.rebra.rebalance.infrastructure.redis.dto.RebalancingOrderMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.SmartLifecycle;
+import org.springframework.data.redis.connection.RedisCallback;
 import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PostConstruct;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 @Slf4j
 @Component
-public class RebalancingOrderConsumer {
+public class RebalancingOrderConsumer implements SmartLifecycle {
 
     private final RebalancingApplicationService applicationService;
     private final RedisTemplate<String, String> redisStreamTemplate;
@@ -41,6 +45,8 @@ public class RebalancingOrderConsumer {
     private String assignedPartitionsRaw;
 
     private List<Integer> assignedPartitions;
+    private volatile boolean running = false;
+    private final List<Thread> consumerThreads = new ArrayList<>();
 
     public RebalancingOrderConsumer(RebalancingApplicationService applicationService,
                                     RedisTemplate<String, String> redisStreamTemplate,
@@ -50,21 +56,41 @@ public class RebalancingOrderConsumer {
         this.objectMapper = objectMapper;
     }
 
-    @PostConstruct
+    @Override
     public void start() {
         assignedPartitions = Arrays.stream(assignedPartitionsRaw.split(","))
                 .map(String::trim)
                 .map(Integer::parseInt)
                 .toList();
 
+        running = true;
         for (int partition : assignedPartitions) {
             reclaimStale(partition);
             int p = partition;
-            Thread.ofVirtual()
+            Thread thread = Thread.ofVirtual()
                     .name("rebalancing-consumer-" + partition)
                     .start(() -> consumeLoop(p));
+            consumerThreads.add(thread);
         }
         log.info("RebalancingOrderConsumer 시작: 파티션={}", assignedPartitions);
+    }
+
+    @Override
+    public void stop(Runnable callback) {
+        running = false;
+        consumerThreads.forEach(Thread::interrupt);
+        log.info("RebalancingOrderConsumer 종료 중...");
+        callback.run();
+    }
+
+    @Override
+    public boolean isRunning() {
+        return running;
+    }
+
+    @Override
+    public int getPhase() {
+        return Integer.MAX_VALUE - 1;
     }
 
     @Scheduled(fixedDelay = 60000)
@@ -77,7 +103,7 @@ public class RebalancingOrderConsumer {
         String streamKey = streamPrefix + partition;
         String consumerName = instanceId + ":rebalancing:executor:" + partition;
 
-        while (!Thread.currentThread().isInterrupted()) {
+        while (!Thread.currentThread().isInterrupted() && running) {
             try {
                 List<MapRecord<String, Object, Object>> records = redisStreamTemplate.opsForStream()
                         .read(Consumer.from(consumerGroup, consumerName),
@@ -90,11 +116,12 @@ public class RebalancingOrderConsumer {
                     processRecord(record, streamKey, consumerName);
                 }
             } catch (Exception e) {
-                if (Thread.currentThread().isInterrupted()) break;
+                if (Thread.currentThread().isInterrupted() || !running) break;
                 log.error("Consumer 루프 오류 partition={}: {}", partition, e.getMessage());
                 try { Thread.sleep(1000); } catch (InterruptedException ie) { break; }
             }
         }
+        log.info("Consumer 루프 종료 partition={}", partition);
     }
 
     private void processRecord(MapRecord<String, Object, Object> record, String streamKey, String consumerName) {
@@ -126,6 +153,7 @@ public class RebalancingOrderConsumer {
             log.warn("15:30 cutoff 초과 jobId={}", jobId);
             redisStreamTemplate.opsForStream().acknowledge(streamKey, consumerGroup, record.getId());
         } catch (RebalancingException e) {
+            // ACK 없음 → PEL에 남음 → periodicReclaim(XAUTOCLAIM)에서 재처리
             log.error("리밸런싱 실패 jobId={} code={} msg={}",
                     jobId, e.getErrorCode().getCode(), e.getMessage());
         } catch (Exception e) {
@@ -138,16 +166,26 @@ public class RebalancingOrderConsumer {
         String consumerName = instanceId + ":rebalancing:executor:" + partition;
 
         try {
-            List<MapRecord<String, Object, Object>> claimed = redisStreamTemplate.opsForStream()
-                    .claim(streamKey, consumerGroup, consumerName,
-                            Duration.ofMinutes(10),
-                            RecordId.of("0-0"));
+            byte[] keyBytes = streamKey.getBytes(StandardCharsets.UTF_8);
+            List<ByteRecord> claimed = redisStreamTemplate.execute(
+                    (RedisCallback<List<ByteRecord>>) conn ->
+                            conn.streamCommands().xAutoClaim(
+                                    keyBytes, consumerGroup, consumerName,
+                                    Duration.ofMinutes(10), RecordId.of("0-0")));
 
-            if (claimed != null && !claimed.isEmpty()) {
-                log.info("XAUTOCLAIM: partition={} 회수 {}건", partition, claimed.size());
-                for (MapRecord<String, Object, Object> record : claimed) {
-                    processRecord(record, streamKey, consumerName);
-                }
+            if (claimed == null || claimed.isEmpty()) return;
+
+            log.info("XAUTOCLAIM: partition={} 회수 {}건", partition, claimed.size());
+            for (ByteRecord record : claimed) {
+                Map<Object, Object> fields = new LinkedHashMap<>();
+                record.getValue().forEach((k, v) -> fields.put(
+                        new String(k, StandardCharsets.UTF_8),
+                        new String(v, StandardCharsets.UTF_8)));
+                MapRecord<String, Object, Object> mapRecord = StreamRecords.newRecord()
+                        .in(streamKey)
+                        .withId(record.getId())
+                        .ofMap(fields);
+                processRecord(mapRecord, streamKey, consumerName);
             }
         } catch (Exception e) {
             log.warn("XAUTOCLAIM 실패 partition={}: {}", partition, e.getMessage());

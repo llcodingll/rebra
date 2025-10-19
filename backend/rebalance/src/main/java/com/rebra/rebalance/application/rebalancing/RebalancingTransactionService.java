@@ -7,7 +7,6 @@ import com.rebra.rebalance.domain.rebalancing.model.RebalancingExecution;
 import com.rebra.rebalance.domain.rebalancing.repository.OrderRecordRepository;
 import com.rebra.rebalance.domain.rebalancing.repository.RebalancingExecutionRepository;
 import com.rebra.rebalance.domain.rebalancing.model.OrderPlan;
-import com.rebra.rebalance.infrastructure.redis.RebalancingResultProducer;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,6 @@ public class RebalancingTransactionService {
 
     private final RebalancingExecutionRepository executionRepository;
     private final OrderRecordRepository orderRecordRepository;
-    private final RebalancingResultProducer resultProducer;
 
     @Transactional
     public RebalancingExecution findOrCreate(Long jobId, Long portfolioId) {
@@ -70,12 +68,11 @@ public class RebalancingTransactionService {
     }
 
     @Transactional
-    public void completeExecution(RebalancingExecution execution,
-                                   RebalancingOrderCommand command,
-                                   List<OrderRecord> tradeResults) {
+    public RebalancingResultEvent completeExecution(RebalancingExecution execution,
+                                                     RebalancingOrderCommand command,
+                                                     List<OrderRecord> tradeResults) {
         execution.complete();
         executionRepository.save(execution);
-        resultProducer.sendSync(RebalancingResultEvent.completed(
-                command.getJobId(), command.getPortfolioId(), tradeResults));
+        return RebalancingResultEvent.completed(command.getJobId(), command.getPortfolioId(), tradeResults);
     }
 }
