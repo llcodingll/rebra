@@ -10,7 +10,7 @@ import com.rebra.rebalance.infrastructure.redis.dto.RebalancingOrderMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.SmartLifecycle;
-import org.springframework.data.redis.connection.RedisCallback;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
