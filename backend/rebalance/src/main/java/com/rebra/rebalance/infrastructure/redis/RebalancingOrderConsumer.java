@@ -74,6 +74,11 @@ public class RebalancingOrderConsumer implements SmartLifecycle {
     }
 
     @Override
+    public void stop() {
+        stop(() -> {});
+    }
+
+    @Override
     public void stop(Runnable callback) {
         running = false;
         consumerThreads.forEach(Thread::interrupt);
