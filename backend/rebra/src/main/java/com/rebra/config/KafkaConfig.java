@@ -15,9 +15,11 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -90,7 +92,15 @@ public class KafkaConfig {
         
         // 동시성 설정 (백테스트 결과 처리용)
         factory.setConcurrency(2);
-        
+
+        // 재시도 설정: DB 일시 장애 시 5초 간격 3회 재시도 후 포기
+        factory.setCommonErrorHandler(new DefaultErrorHandler(
+            (record, exception) -> log.error(
+                "재시도 초과, 메시지 버림: topic={}, offset={}, error={}",
+                record.topic(), record.offset(), exception.getMessage()),
+            new FixedBackOff(5000L, 3L)
+        ));
+
         return factory;
     }
 
