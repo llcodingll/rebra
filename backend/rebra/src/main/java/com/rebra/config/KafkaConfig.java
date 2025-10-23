@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.config.TopicBuilder;
+import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -102,6 +104,15 @@ public class KafkaConfig {
         ));
 
         return factory;
+    }
+
+    // 백테스트 토픽 파티션 명시 (기본 1개 → 4개, concurrency와 정합성 확보)
+    @Bean
+    public KafkaAdmin.NewTopics backtestTopics() {
+        return new KafkaAdmin.NewTopics(
+            TopicBuilder.name("backtest-request").partitions(4).replicas(1).build(),
+            TopicBuilder.name("backtest-result").partitions(4).replicas(1).build()
+        );
     }
 
     // 백테스트 요청 전용 KafkaTemplate
