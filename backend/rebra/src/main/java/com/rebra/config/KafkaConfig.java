@@ -93,7 +93,7 @@ public class KafkaConfig {
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
         
         // 동시성 설정 (백테스트 결과 처리용)
-        factory.setConcurrency(2);
+        factory.setConcurrency(4);  // 파티션 수(4)와 일치시켜 실질적 병렬 처리 확보
 
         // 재시도 설정: DB 일시 장애 시 5초 간격 3회 재시도 후 포기
         factory.setCommonErrorHandler(new DefaultErrorHandler(
