@@ -38,6 +38,7 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -159,7 +160,8 @@ public class BacktestServiceImpl implements BacktestService {
 
                 // 5단계: Kafka로 백테스트 요청 전송
                 BacktestRequest backtestRequest = backtestDataService.createBacktestRequest(backtestRecordDto, request, tickers, null);
-                kafkaTemplate.send("backtest-request", backtestRecordDto.getId().toString(), backtestRequest);
+                kafkaTemplate.send("backtest-request", backtestRecordDto.getId().toString(), backtestRequest)
+                    .get(10, TimeUnit.SECONDS);
                 log.info("백테스트 요청 전송 완료: backtestId={}", backtestRecordDto.getId());
 
                 // 6단계: 상태를 PROCESSING으로 변경 (트랜잭션 있음)
@@ -227,18 +229,18 @@ public class BacktestServiceImpl implements BacktestService {
             acknowledgment.acknowledge();
         } catch (Exception e) {
             log.error("백테스트 결과 처리 실패: backtestId={}", backtestId, e);
-            
-            // 백테스트 상태를 FAILED로 변경 시도
             if (backtestId != null) {
                 try {
-                    // 간단한 고정 메시지만 전달
                     backtestDataService.updateBacktestStatusToFailed(backtestId, "메인 서버 오류");
-                } catch (Exception ex) {
-                    log.error("백테스트 상태 업데이트 실패: backtestId={}", backtestId, ex);
+                    acknowledgment.acknowledge();  // DB 업데이트 성공 → ACK (중복 처리 방지)
+                } catch (Exception dbEx) {
+                    log.error("DB 상태 업데이트 실패, 재처리 대기: backtestId={}", backtestId, dbEx);
+                    // ACK 안 함 → DefaultErrorHandler가 5초 간격 3회 재시도
+                    throw new RuntimeException("DB 업데이트 실패, 재처리 필요", dbEx);
                 }
+            } else {
+                acknowledgment.acknowledge();  // backtestId 없음 → 재처리해도 소용없음
             }
-            
-            acknowledgment.acknowledge();
         }
     }
 

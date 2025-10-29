@@ -9,15 +9,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.config.TopicBuilder;
+import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -89,9 +93,26 @@ public class KafkaConfig {
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
         
         // 동시성 설정 (백테스트 결과 처리용)
-        factory.setConcurrency(2);
-        
+        factory.setConcurrency(4);  // 파티션 수(4)와 일치시켜 실질적 병렬 처리 확보
+
+        // 재시도 설정: DB 일시 장애 시 5초 간격 3회 재시도 후 포기
+        factory.setCommonErrorHandler(new DefaultErrorHandler(
+            (record, exception) -> log.error(
+                "재시도 초과, 메시지 버림: topic={}, offset={}, error={}",
+                record.topic(), record.offset(), exception.getMessage()),
+            new FixedBackOff(5000L, 3L)
+        ));
+
         return factory;
+    }
+
+    // 백테스트 토픽 파티션 명시 (기본 1개 → 4개, concurrency와 정합성 확보)
+    @Bean
+    public KafkaAdmin.NewTopics backtestTopics() {
+        return new KafkaAdmin.NewTopics(
+            TopicBuilder.name("backtest-request").partitions(4).replicas(1).build(),
+            TopicBuilder.name("backtest-result").partitions(4).replicas(1).build()
+        );
     }
 
     // 백테스트 요청 전용 KafkaTemplate
