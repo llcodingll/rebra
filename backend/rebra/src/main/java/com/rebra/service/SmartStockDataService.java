@@ -1,6 +1,5 @@
 package com.rebra.service;
 
-import com.google.common.util.concurrent.Striped;
 import com.rebra.client.FssApiClient;
 import com.rebra.dto.external.FssStockPriceResponse;
 import com.rebra.dto.internal.StockPriceDto;
@@ -18,7 +17,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.locks.Lock;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,35 +28,25 @@ public class SmartStockDataService {
 
     private final StockServiceImpl stockService;
     private final FssApiClient fssApiClient;
+    private final RedissonClient redissonClient;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
-    
-    // Striped Lock for stock-level synchronization
-    private final Striped<Lock> stockLocks = Striped.lazyWeakLock(64);
 
     /**
      * 종목의 데이터를 효율적으로 확보 (스마트 캐싱)
-     * Striped Lock을 사용한 종목별 동시성 제어
+     * Redisson 분산 락을 사용한 종목별 동시성 제어
      */
     public void ensureDataAvailable(String stockCode, LocalDate requestStart, LocalDate requestEnd) {
-        Lock lock = stockLocks.get(stockCode);
+        RLock lock = redissonClient.getLock("stock-lock:" + stockCode);
         log.info("Lock 획득 시도 - 종목: {}, 스레드: {}", stockCode, Thread.currentThread().getName());
         lock.lock();
         log.info("Lock 획득 성공 - 종목: {}, 스레드: {}", stockCode, Thread.currentThread().getName());
-        
+
         try {
             // 트랜잭션과 비즈니스 로직은 StockServiceImpl에 위임
             stockService.ensureStockDataWithTransaction(stockCode, requestStart, requestEnd);
         } finally {
             log.info("Lock 해제 - 종목: {}, 스레드: {}", stockCode, Thread.currentThread().getName());
-            
-            // DB 반영 대기
-            try {
-                Thread.sleep(5000); // 5초 대기
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            
             lock.unlock();
         }
     }
