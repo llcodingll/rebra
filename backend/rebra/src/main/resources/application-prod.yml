@@ -28,6 +28,8 @@ spring:
         order_inserts: true
         order_updates: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+    # OSIV OFF: 트랜잭션마다 독립된 영속성 컨텍스트 사용
+    # Redisson 락 해제 후 후속 조회가 L1 캐시의 stale 값을 반환하는 문제 방지
     open-in-view: false
 
   # Kafka 설정
