@@ -102,7 +102,7 @@ JWT 액세스/리프레시 토큰 기반 인증으로 보안성을 보장하며,
 
 | 담당자 | 주요 작업 |
 |--------|-----------|
-| **배수한** | - [리밸런싱 서버 분리 및 메시지큐 도입]([https://velog.io/@swnbae](https://velog.io/@swnbae/redis-streams-%EC%84%9C%EB%B2%84%EB%B6%84%EB%A6%AC))<br>- [공공데이터 포털 화재 장애 대응]([https://velog.io/@swnbae](https://velog.io/@swnbae/%EC%A0%80%EC%AA%BD-%EC%A7%91%EC%9D%B4-%EB%AC%B4%EB%84%88%EC%A1%8C%EB%8B%A4%EA%B3%A0-%ED%95%B4%EC%84%9C-%EA%B5%AC%EA%B2%BD%ED%95%98%EB%9F%AC-%EA%B0%94%EC%A3%A0.-%EA%B7%B8%EB%9F%B0%EB%8D%B0-%EB%B3%B4%EA%B3%A0-%EC%98%A4%EB%8B%88))<br>- [백테스트 요청 동시성 문제 해결](https://velog.io/@swnbae)<br>- [사용자 민감정보(계좌번호) AES 암호화 구조 설계 및 구현](https://velog.io/@swnbae/%ED%95%98%EB%93%9C%EC%BD%94%EB%94%A9%EB%90%9C-%ED%82%A4%EB%A1%9C-%EC%95%94%ED%98%B8%ED%99%94%ED%95%98%EB%A9%B4-%EC%99%9C-%EC%9C%84%ED%97%98%ED%95%A0%EA%B9%8C)<br>- 거래 성과 기록 스케줄러 구현 및 배치 INSERT 도입<br>- Kakao OAuth2 + JWT 액세스/리프레시 토큰 인증 시스템 구현<br>- 포트폴리오 관련 API 구현 |
+| **배수한** | - [리밸런싱 서버 분리 및 메시지큐 도입](https://velog.io/@swnbae/redis-streams-%EC%84%9C%EB%B2%84%EB%B6%84%EB%A6%AC)<br>- [공공데이터 포털 화재 장애 대응](https://velog.io/@swnbae/%EC%A0%80%EC%AA%BD-%EC%A7%91%EC%9D%B4-%EB%AC%B4%EB%84%88%EC%A1%8C%EB%8B%A4%EA%B3%A0-%ED%95%B4%EC%84%9C-%EA%B5%AC%EA%B2%BD%ED%95%98%EB%9F%AC-%EA%B0%94%EC%A3%A0.-%EA%B7%B8%EB%9F%B0%EB%8D%B0-%EB%B3%B4%EA%B3%A0-%EC%98%A4%EB%8B%88)<br>- [백테스트 요청 동시성 문제 해결](https://velog.io/@swnbae)<br>- [사용자 민감정보(계좌번호) AES 암호화 구조 설계 및 구현](https://velog.io/@swnbae/%ED%95%98%EB%93%9C%EC%BD%94%EB%94%A9%EB%90%9C-%ED%82%A4%EB%A1%9C-%EC%95%94%ED%98%B8%ED%99%94%ED%95%98%EB%A9%B4-%EC%99%9C-%EC%9C%84%ED%97%98%ED%95%A0%EA%B9%8C)<br>- 거래 성과 기록 스케줄러 구현 및 배치 INSERT 도입<br>- Kakao OAuth2 + JWT 액세스/리프레시 토큰 인증 시스템 구현<br>- 포트폴리오 관련 API 구현 |
 | **유윤지** | |
 
 <br/>
